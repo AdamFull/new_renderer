@@ -5,18 +5,18 @@
     <!-- Individual Variables -->
     <Var name="low_precision_velocity" dtype="bool">true</Var>
 
-    <Var name="max_sun_count" dtype="u32">3</Var>
-    <Var name="max_sun_cast_shadow_count" dtype="u32">3</Var>
-    <Var name="cascade_shadow_resolution" dtype="u32">2048</Var>
-    <Var name="cascade_count" dtype="u32">4</Var>
+    <Var name="max_sun_count" dtype="uint32_t">3</Var>
+    <Var name="max_sun_cast_shadow_count" dtype="uint32_t">3</Var>
+    <Var name="cascade_shadow_resolution" dtype="uint32_t">2048</Var>
+    <Var name="cascade_count" dtype="uint32_t">4</Var>
 
-    <Var name="max_spot_count" dtype="u32">64</Var>
-    <Var name="max_spot_shadow_count" dtype="u32">16</Var>
-    <Var name="spot_shadow_resolution" dtype="u32">1024</Var>
+    <Var name="max_spot_count" dtype="uint32_t">64</Var>
+    <Var name="max_spot_shadow_count" dtype="uint32_t">16</Var>
+    <Var name="spot_shadow_resolution" dtype="uint32_t">1024</Var>
 
-    <Var name="max_point_count" dtype="u32">64</Var>
-    <Var name="max_point_shadow_count" dtype="u32">8</Var>
-    <Var name="point_shadow_resolution" dtype="u32">512</Var>
+    <Var name="max_point_count" dtype="uint32_t">64</Var>
+    <Var name="max_point_shadow_count" dtype="uint32_t">8</Var>
+    <Var name="point_shadow_resolution" dtype="uint32_t">512</Var>
 
     <VarBlock name="post_process">
       <VarBlock name="fxaa">
@@ -46,7 +46,7 @@
         <Var name="enable" dtype="bool">false</Var>
         <Var name="blur_scale" dtype="f32">1.0</Var>
         <Var name="blur_strength" dtype="f32">1.0</Var>
-        <Var name="bokeh_samples" dtype="i32">5</Var>
+        <Var name="bokeh_samples" dtype="int32_t">5</Var>
         <Var name="bokeh_poly" dtype="f32">8.0</Var>
         <Var name="focus_point" dtype="f32">8.24</Var>
         <Var name="near_field" dtype="f32">0.3</Var>
@@ -60,14 +60,14 @@
         <Var name="threshold" dtype="f32">1.0</Var>
         <Var name="filter_radius" dtype="f32">0.005</Var>
         <Var name="strength" dtype="f32">0.3</Var>
-        <Var name="layer_count" dtype="i32" flags="invisible">7</Var>
+        <Var name="layer_count" dtype="int32_t" flags="invisible">7</Var>
         <Var name="use_brightness" dtype="bool" flags="invisible">true</Var>
       </VarBlock>
 
       <VarBlock name="chromatic_aberration">
         <Var name="enable" dtype="bool">false</Var>
         <Var name="distortion" dtype="f32">2.2</Var>
-        <Var name="iterations" dtype="i32">12</Var>
+        <Var name="iterations" dtype="int32_t">12</Var>
       </VarBlock>
 
       <VarBlock name="vignette">
@@ -97,7 +97,7 @@
         <Var name="enable" dtype="bool">false</Var>
         <Var name="low_precision" dtype="bool">true</Var>
         <Var name="scele" dtype="f32">1.0</Var>
-        <Var name="max_samples" dtype="i32">16</Var>
+        <Var name="max_samples" dtype="int32_t">16</Var>
         <Var name="max_velocity" dtype="f32">30.0</Var>
         <Var name="threshold" dtype="f32">0.0001</Var>
       </VarBlock>

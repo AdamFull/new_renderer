@@ -5,7 +5,7 @@
 
 namespace engine
 {
-	using resource_handle_t = u64;
+	using resource_handle_t = uint64_t;
 	constexpr const resource_handle_t invalid_handle{ ~0ull };
 
 	template<class _Ty>
@@ -84,7 +84,7 @@ namespace engine
 			return get(id);
 		}
 
-		utl::vector<std::unique_ptr<_Ty>>& data()
+		std::vector<std::unique_ptr<_Ty>>& data()
 		{
 			return objects;
 		}
@@ -99,8 +99,8 @@ namespace engine
 		}
 	private:
 		std::queue<resource_handle_t> freeIds{};
-		utl::hash_map<u64, resource_handle_t> nameToId{};
-		utl::vector<std::unique_ptr<_Ty>> objects{};
+		std::unordered_map<uint64_t, resource_handle_t> nameToId{};
+		std::vector<std::unique_ptr<_Ty>> objects{};
 	};
 
 	template<class... _Args>
@@ -150,7 +150,7 @@ namespace engine
 		}
 
 		template<class _Ty>
-		utl::vector<std::unique_ptr<_Ty>>& data()
+		std::vector<std::unique_ptr<_Ty>>& data()
 		{
 			return std::get<CResourceHolder<_Ty>>(holders).data();
 		}

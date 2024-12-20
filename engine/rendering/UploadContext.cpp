@@ -22,7 +22,7 @@ namespace engine
 		{
 			std::string library_name;
 			std::string shader_name;
-			utl::vector<std::string> definitions;
+			std::vector<std::string> definitions;
 		};
 
 		FShaderNameInfo GetShaderNameInfo(const std::string& shader_name)
@@ -196,8 +196,8 @@ namespace engine
 				create_info.format = gfx::Format::eR8G8B8A8Unorm;
 				
 				// TODO: Add mip level generation
-				//create_info.levels = 1; utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
-				create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+				//create_info.levels = 1; static_cast<uint32_t>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+				create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(width, height)))) + 1u;
 				generate_mips = true;
 
 				// For mip generation
@@ -237,7 +237,7 @@ namespace engine
 				if (kTexture->generateMipmaps)
 				{
 					generate_mips = true;
-					create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+					create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 				}
 
 				// Get texture format
@@ -257,9 +257,9 @@ namespace engine
 				
 				// Collect image copy regions
 				auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
-				for (u32 layer = 0; layer < num_layers; layer++)
+				for (uint32_t layer = 0; layer < num_layers; layer++)
 				{
-					for (u32 level = 0u; level < kTexture->numLevels; level++)
+					for (uint32_t level = 0u; level < kTexture->numLevels; level++)
 					{
 						auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
 						region.layer = layer;
@@ -296,7 +296,7 @@ namespace engine
 				if (kTexture->generateMipmaps)
 				{
 					generate_mips = true;
-					create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+					create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 				}
 
 				if (ktxTexture2_NeedsTranscoding(kTexture))
@@ -311,9 +311,9 @@ namespace engine
 
 				// Collect image copy regions
 				auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
-				for (u32 layer = 0; layer < num_layers; layer++)
+				for (uint32_t layer = 0; layer < num_layers; layer++)
 				{
-					for (u32 level = 0u; level < kTexture->numLevels; level++)
+					for (uint32_t level = 0u; level < kTexture->numLevels; level++)
 					{
 						auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
 						region.layer = layer;
@@ -510,7 +510,7 @@ namespace engine
 				return nullptr;
 			}
 
-			const utl::vector<shader_compiler::FShaderModule>& shader_modules = found_shader_module->second;
+			const std::vector<shader_compiler::FShaderModule>& shader_modules = found_shader_module->second;
 
 			gfx::ShaderCreateInfo shader_create_info{};
 

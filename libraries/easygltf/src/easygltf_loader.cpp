@@ -75,7 +75,7 @@ public:
 		return std::filesystem::weakly_canonical(path).string();
 	}
 
-	bool readFile(std::string_view path, utl::vector<uint8_t>& data) override
+	bool readFile(std::string_view path, std::vector<uint8_t>& data) override
 	{
 		std::ifstream instream(path.data(), std::ios::in | std::ios::binary);
 		std::copy(std::istreambuf_iterator<char>(instream), std::istreambuf_iterator<char>(), std::back_inserter(data));
@@ -83,7 +83,7 @@ public:
 		return instream.is_open() && !data.empty();
 	}
 
-	bool writeFile(std::string_view path, const utl::vector<uint8_t>& data) override
+	bool writeFile(std::string_view path, const std::vector<uint8_t>& data) override
 	{
 		std::ofstream outstream(path.data(), std::ios::out | std::ios::binary);
 		outstream.write(reinterpret_cast<const char*>(data.data()), data.size());
@@ -157,7 +157,7 @@ bool CGLTFLoader::_load(std::string_view fsPath, FGLTFRoot& root)
 		return false;
 	}
 
-	utl::vector<uint8_t> rdata{};
+	std::vector<uint8_t> rdata{};
 	if (!m_pFS->readFile(fsPath, rdata))
 	{
 		m_pMessenger->message(DebugMessageType::error, std::format("Failed to read file {}", fsPath));
@@ -178,7 +178,7 @@ bool CGLTFLoader::_load(std::string_view fsPath, FGLTFRoot& root)
 	return _LoadGLTFFromMemory(rdata, root);
 }
 
-bool CGLTFLoader::_LoadGLTFFromMemory(const utl::vector<uint8_t>& data, FGLTFRoot& root)
+bool CGLTFLoader::_LoadGLTFFromMemory(const std::vector<uint8_t>& data, FGLTFRoot& root)
 {
 	auto json = nlohmann::json::parse(data);
 	json.get_to(root);
@@ -199,7 +199,7 @@ bool CGLTFLoader::_LoadGLTFFromMemory(const utl::vector<uint8_t>& data, FGLTFRoo
 	return validate(root, m_pMessenger);
 }
 
-bool CGLTFLoader::_loadGLBFromMemory(const utl::vector<uint8_t>& data, FGLTFRoot& root)
+bool CGLTFLoader::_loadGLBFromMemory(const std::vector<uint8_t>& data, FGLTFRoot& root)
 {
 	return false;
 }

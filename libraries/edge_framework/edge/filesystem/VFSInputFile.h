@@ -93,14 +93,14 @@ namespace edge
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Read(utl::vector<uint8_t>& buffer) override;
+			VFSInFile& Read(std::vector<uint8_t>& buffer) override;
 
 			/**
 			 * @brief Reads characters from the input file into a buffer.
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Read(utl::vector<uint32_t>& buffer) override;
+			VFSInFile& Read(std::vector<uint32_t>& buffer) override;
 
 			/**
 			 * @brief Puts the last character read back into the input file.

@@ -409,7 +409,7 @@ namespace edge
 					std::string_view substring = input.substr(start, (end == std::string_view::npos) ? input.size() - start : end - start);
 
 					// Combine the hash of the substring into the total hash
-					hash ^= utl::murmur_hash(substring);
+					hash ^= murmur_hash(substring);
 
 					// Move to the next substring
 					if (end == std::string_view::npos) break;
@@ -532,7 +532,7 @@ namespace edge
 					// Generate name
 					{
 						std::stringstream ss;
-						ss << compile_info.module_name << "/" << compile_info.name << "." << utl::enum_to_string(compile_info.stage) << "." << unique_shader_permutation_name_hash << ".spv";
+						ss << compile_info.module_name << "/" << compile_info.name << "." << edge::enum_to_string(compile_info.stage) << "." << unique_shader_permutation_name_hash << ".spv";
 						compiled_shader_path = ss.str();
 					}
 

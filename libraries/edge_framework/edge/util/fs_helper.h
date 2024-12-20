@@ -1,6 +1,8 @@
 #pragma once
 
-#include <hash.hpp>
+#include "Hash.hpp"
+
+#include <span>
 
 namespace edge
 {
@@ -8,7 +10,6 @@ namespace edge
 	{
         namespace format
         {
-            using namespace utl;
             // images
             constexpr inline uint32_t ktx = ".ktx"_hash32;
             constexpr inline uint32_t ktx2 = ".ktx2"_hash32;

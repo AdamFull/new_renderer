@@ -58,7 +58,7 @@ namespace engine
 
 			bool writing_commands{ false };
 
-			utl::hash_map<uint32_t, gfx::Sampler*> sampler_cache{};
+			std::unordered_map<uint32_t, gfx::Sampler*> sampler_cache{};
 
 			// Shader cache
 			shader_compiler::FShaderCacheData shader_cache{};

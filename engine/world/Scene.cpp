@@ -148,7 +148,7 @@ namespace engine
 				create_info.index_description.type = GetIndexType(accessor);
 			}
 
-			std::sort(create_info.attribute_descriptions.begin(), create_info.attribute_descriptions.end(), [](const auto& lhs, const auto& rhs) { return utl::enum_cast(lhs.attribute_flag) < utl::enum_cast(rhs.attribute_flag); });
+			std::sort(create_info.attribute_descriptions.begin(), create_info.attribute_descriptions.end(), [](const auto& lhs, const auto& rhs) { return edge::enum_cast(lhs.attribute_flag) < edge::enum_cast(rhs.attribute_flag); });
 
 			return create_info;
 		}
@@ -170,17 +170,17 @@ namespace engine
 				return std::string(edge::fsh::normalize(edge::fsh::to_posix_path(path, buffer), buffer2));
 			}
 
-			bool readFile(std::string_view path, utl::vector<uint8_t>& data) override
+			bool readFile(std::string_view path, std::vector<uint8_t>& data) override
 			{
 				return vfs->ReadFile(path, data);
 			}
 
-			bool writeFile(std::string_view path, const utl::vector<uint8_t>& data) override
+			bool writeFile(std::string_view path, const std::vector<uint8_t>& data) override
 			{
 				return vfs->WriteFile(path, data);
 			}
 
-			u64 fileSize(std::string_view path) override
+			uint64_t fileSize(std::string_view path) override
 			{
 				return vfs->FileSize(path);
 			}
@@ -293,7 +293,7 @@ namespace engine
 			// Load textures
 			for (const auto& texture : root.textures)
 			{
-				i32 texture_source{ texture.source };
+				int32_t texture_source{ texture.source };
 				if (texture.source < 0)
 					texture_source = texture.khrTextureBasisU.source;
 
@@ -311,7 +311,7 @@ namespace engine
 				resources.textures.push_back(renderer.AddRenderResource(image_path, texture_sampler));
 			}
 
-			for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
+			for (uint64_t idx = 0ull; idx < root.materials.size(); ++idx)
 			{
 				auto& material = root.materials[idx];
 				shlib::Material render_material{};
@@ -329,14 +329,14 @@ namespace engine
 				// Attach normal map texture
 				if (auto& texture = material.normalTexture; texture.index >= 0)
 				{
-					render_material.normalScale = utl::cast<f32>(texture.scale);
+					render_material.normalScale = static_cast<f32>(texture.scale);
 					render_material.normalTexture = resources.textures[texture.index];
 				}
 
 				// Attach baked ambient occlusion texture
 				if (auto& texture = material.occlusionTexture; texture.index >= 0)
 				{
-					render_material.occlusionStrenth = utl::cast<f32>(texture.strength);
+					render_material.occlusionStrenth = static_cast<f32>(texture.strength);
 					render_material.occlusionTexture = resources.textures[texture.index];
 				}
 
@@ -345,8 +345,8 @@ namespace engine
 					render_material.emissiveTexture = resources.textures[texture.index];
 
 				render_material.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-				render_material.roughnessFactor = utl::cast<f32>(material.pbrMetallicRoughness.roughnessFactor);
-				render_material.metallicFactor = utl::cast<f32>(material.pbrMetallicRoughness.metallicFactor);
+				render_material.roughnessFactor = static_cast<f32>(material.pbrMetallicRoughness.roughnessFactor);
+				render_material.metallicFactor = static_cast<f32>(material.pbrMetallicRoughness.metallicFactor);
 				render_material.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
 				if (material.alphaMode == easygltf::base::enumerators::alpha_mode::blend)
@@ -356,7 +356,7 @@ namespace engine
 				else
 					render_material.alphaMode = 2;
 
-				render_material.alphaCutoff = utl::cast<f32>(material.alphaCutoff);
+				render_material.alphaCutoff = static_cast<f32>(material.alphaCutoff);
 				render_material.doubleSided = material.doubleSided;
 
 				renderer.AddMaterial(render_material);
@@ -375,7 +375,7 @@ namespace engine
 			EntityManager::Create();
 		}
 
-		void Scene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale)
+		void Scene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index, f32 global_scale)
 		{
 			const auto& node = root.nodes[node_index];
 
@@ -491,7 +491,7 @@ namespace engine
 			std::vector<glm::u16vec2> texcoords;
 			std::vector<glm::u16vec2> normals;
 			std::vector<glm::u16vec2> tangents;
-			// TODO: i can use u16 for joints by default
+			// TODO: i can use uint16_t for joints by default
 			std::vector<uint8_t> joints;
 			std::vector<glm::u16vec3> weights;
 		};
@@ -514,7 +514,7 @@ namespace engine
 			return std::span<const uint8_t>(bytes_begin, bytes_count);
 		}
 
-		void Scene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
+		void Scene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index)
 		{
 			auto& render_world = renderer.GetRenderWorld();
 
@@ -541,7 +541,7 @@ namespace engine
 			glm::mat3 normal_encode_mat = glm::transpose(glm::inverse(position_encode_mat));
 
 			// Load mesh primitives
-			for (u64 i = 0ull; i < gltf_mesh.primitives.size(); ++i)
+			for (uint64_t i = 0ull; i < gltf_mesh.primitives.size(); ++i)
 			{
 				const auto& primitive = gltf_mesh.primitives[i];
 
@@ -648,7 +648,7 @@ namespace engine
 			}
 		}
 
-		void Scene::LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
+		void Scene::LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index)
 		{
 			const auto& node = root.nodes[node_index];
 			const auto& camera = root.cameras[node.camera];
@@ -677,7 +677,7 @@ namespace engine
 			engine::render::main_camera_index = nw_camera_component.frustumID;
 		}
 
-		void Scene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
+		void Scene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index)
 		{
 			const auto& node = root.nodes[node_index];
 
@@ -739,7 +739,7 @@ namespace engine
 
 						f32* buf = new f32[accessor.count];
 						util::Copy(buf, stream.data, stream.count * sizeof(f32));
-						for (u64 index = 0; index < stream.count; index++)
+						for (uint64_t index = 0; index < stream.count; index++)
 							sampler.inputs.push_back(buf[index]);
 
 						delete[] buf;
@@ -764,7 +764,7 @@ namespace engine
 						{
 							glm::vec3* buf = new glm::vec3[stream.count];
 							util::Copy(buf, stream.data, stream.count * sizeof(glm::vec3));
-							for (u64 index = 0; index < stream.count; index++)
+							for (uint64_t index = 0; index < stream.count; index++)
 								sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
 
 							delete[] buf;
@@ -773,7 +773,7 @@ namespace engine
 						{
 							glm::vec4* buf = new glm::vec4[stream.count];
 							util::Copy(buf, stream.data, stream.count * sizeof(glm::vec4));
-							for (u64 index = 0; index < stream.count; index++)
+							for (uint64_t index = 0; index < stream.count; index++)
 								sampler.outputsVec4.push_back(buf[index]);
 
 							delete[] buf;

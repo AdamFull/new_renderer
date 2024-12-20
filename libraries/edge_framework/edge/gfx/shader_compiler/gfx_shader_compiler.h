@@ -2,6 +2,8 @@
 
 #include "../gfx_enum.h"
 
+#include <span>
+
 namespace edge
 {
 	namespace gfx
@@ -54,14 +56,14 @@ namespace edge
 	}
 }
 
-UTL_REGISTER_ENUM_CLASS(edge::gfx::shc, ShaderLang,
-	UTL_ENUM_META(edge::gfx::shc::ShaderLang::eAuto, "Auto"),
-	UTL_ENUM_META(edge::gfx::shc::ShaderLang::eGLSL, "GLSL"),
-	UTL_ENUM_META(edge::gfx::shc::ShaderLang::eHLSL, "HLSL")
+EDGE_REGISTER_ENUM_CLASS(edge::gfx::shc, ShaderLang,
+	EDGE_ENUM_META(edge::gfx::shc::ShaderLang::eAuto, "Auto"),
+	EDGE_ENUM_META(edge::gfx::shc::ShaderLang::eGLSL, "GLSL"),
+	EDGE_ENUM_META(edge::gfx::shc::ShaderLang::eHLSL, "HLSL")
 )
 
-UTL_REGISTER_ENUM_CLASS(edge::gfx::shc, ShaderCompilerBuildType,
-	UTL_ENUM_META(edge::gfx::shc::ShaderCompilerBuildType::eDebug, "Debug"),
-	UTL_ENUM_META(edge::gfx::shc::ShaderCompilerBuildType::eExtendedDebug, "ExtDebug"),
-	UTL_ENUM_META(edge::gfx::shc::ShaderCompilerBuildType::eRelease, "Release")
+EDGE_REGISTER_ENUM_CLASS(edge::gfx::shc, ShaderCompilerBuildType,
+	EDGE_ENUM_META(edge::gfx::shc::ShaderCompilerBuildType::eDebug, "Debug"),
+	EDGE_ENUM_META(edge::gfx::shc::ShaderCompilerBuildType::eExtendedDebug, "ExtDebug"),
+	EDGE_ENUM_META(edge::gfx::shc::ShaderCompilerBuildType::eRelease, "Release")
 )

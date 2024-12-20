@@ -1,6 +1,6 @@
 #include "Performance.h"
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
 #include <Windows.h>
 
 namespace edge
@@ -21,6 +21,32 @@ namespace edge
 			LARGE_INTEGER current_time;
 			QueryPerformanceCounter(&current_time);
 			return static_cast<float>((double)current_time.QuadPart - (double)start_time.QuadPart) / (double)frequency.QuadPart;
+		}
+	};
+}
+#elif PLATFORM_ANDROID
+#include <time.h>
+
+namespace edge
+{
+	struct Stopwatch::StopwatchImpl
+	{
+		timespec start_time;
+
+		StopwatchImpl()
+		{
+			clock_gettime(CLOCK_MONOTONIC, &start_time);
+		}
+
+		float Elapsed()
+		{
+			timespec current_time;
+			clock_gettime(CLOCK_MONOTONIC, &current_time);
+
+			double start_in_seconds = start_time.tv_sec + (start_time.tv_nsec / 1e9);
+			double current_in_seconds = current_time.tv_sec + (current_time.tv_nsec / 1e9);
+
+			return static_cast<float>(current_in_seconds - start_in_seconds);
 		}
 	};
 }

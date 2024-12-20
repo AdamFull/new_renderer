@@ -60,7 +60,7 @@ namespace edge
 			 * @param data The data vector to be written.
 			 * @return A reference to the VFSOutFile object.
 			 */
-			VFSOutFile& Write(const utl::vector<uint8_t>& data) override;
+			VFSOutFile& Write(const std::vector<uint8_t>& data) override;
 
 			/**
 			 * @brief Writes a buffer of characters to the output file.

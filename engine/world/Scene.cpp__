@@ -62,17 +62,17 @@ public:
 		return fs::normalize(fs::to_posix_path(path));
 	}
 
-	bool readFile(const std::string& path, utl::vector<uint8_t>& data) override
+	bool readFile(const std::string& path, std::vector<uint8_t>& data) override
 	{
 		return m_pVFS->ReadFile(path, data);
 	}
 
-	bool writeFile(const std::string& path, const utl::vector<uint8_t>& data) override
+	bool writeFile(const std::string& path, const std::vector<uint8_t>& data) override
 	{
 		return m_pVFS->WriteFile(path, data);
 	}
 
-	u64 fileSize(const std::string& path) override
+	uint64_t fileSize(const std::string& path) override
 	{
 		return m_pVFS->FileSize(path);
 	}
@@ -80,22 +80,22 @@ private:
 	IVirtualFileSystemInterface* m_pVFS{ nullptr };
 };
 
-void convert_indices_space(utl::vector<uint8_t>& indices, u64 index_size, i32 vertex_start)
+void convert_indices_space(std::vector<uint8_t>& indices, uint64_t index_size, int32_t vertex_start)
 {
-	for (u64 shift = 0ull; shift < indices.size() / index_size; shift += index_size)
+	for (uint64_t shift = 0ull; shift < indices.size() / index_size; shift += index_size)
 	{
 		switch (index_size)
 		{
 		case 4: {
-			u32 index = *reinterpret_cast<u32*>(&indices[shift]);
+			uint32_t index = *reinterpret_cast<uint32_t*>(&indices[shift]);
 			index += vertex_start;
-			*reinterpret_cast<u32*>(&indices[shift]) = index;
+			*reinterpret_cast<uint32_t*>(&indices[shift]) = index;
 		} break;
 		case 2:
 		{
 			uint16_t index = *reinterpret_cast<uint16_t*>(&indices[shift]);
 			index += vertex_start;
-			*reinterpret_cast<uint16_t*>(&indices[shift]) = utl::cast<uint16_t>(index);
+			*reinterpret_cast<uint16_t*>(&indices[shift]) = static_cast<uint16_t>(index);
 		} break;
 		case 1:
 		{
@@ -158,8 +158,8 @@ void CScene::MakeGenerateScene(const std::string& path)
 
 	auto& current_scene = root.scenes[root.scene < 0 ? 0 : root.scene];
 
-	constexpr const u64 duplicate_count = 1000;
-	for (u64 idx = 0ull; idx < duplicate_count; ++idx)
+	constexpr const uint64_t duplicate_count = 1000;
+	for (uint64_t idx = 0ull; idx < duplicate_count; ++idx)
 	{
 		// Add new node to scene
 		current_scene.nodes.emplace_back(static_cast<int32_t>(root.nodes.size()));
@@ -195,7 +195,7 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 	// Load textures
 	for (const auto& texture : root.textures)
 	{
-		i32 texture_source{ texture.source };
+		int32_t texture_source{ texture.source };
 		if (texture.source < 0)
 			texture_source = texture.khrTextureBasisU.source;
 
@@ -213,8 +213,8 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 	// TODO: RENDER WORLD
 	//auto& render_world = m_pRenderInterface->GetRenderWorld();
 
-	utl::vector<render::FMaterial> materials{};
-	for (u64 idx = 0ull; idx < root.materials.size(); ++idx)
+	std::vector<render::FMaterial> materials{};
+	for (uint64_t idx = 0ull; idx < root.materials.size(); ++idx)
 	{
 		auto& material = root.materials[idx];
 		auto& material_data = materials.emplace_back();
@@ -233,14 +233,14 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 		// Attach normal map texture
 		if (auto& texture = material.normalTexture; texture.index >= 0)
 		{
-			material_data.normalScale = utl::cast<f32>(texture.scale);
+			material_data.normalScale = static_cast<f32>(texture.scale);
 			material_data.normalTexture = m_resources.textures[texture.index];
 		}
 
 		// Attach baked ambient occlusion texture
 		if (auto& texture = material.occlusionTexture; texture.index >= 0)
 		{
-			material_data.occlusionStrenth = utl::cast<f32>(texture.strength);
+			material_data.occlusionStrenth = static_cast<f32>(texture.strength);
 			material_data.occlusionTexture = m_resources.textures[texture.index];
 		}
 
@@ -249,18 +249,18 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 			material_data.emissiveTexture = m_resources.textures[texture.index];
 
 		material_data.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-		material_data.roughnessFactor = utl::cast<f32>(material.pbrMetallicRoughness.roughnessFactor);
-		material_data.metallicFactor = utl::cast<f32>(material.pbrMetallicRoughness.metallicFactor);
+		material_data.roughnessFactor = static_cast<f32>(material.pbrMetallicRoughness.roughnessFactor);
+		material_data.metallicFactor = static_cast<f32>(material.pbrMetallicRoughness.metallicFactor);
 		material_data.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
 		if (material.alphaMode == easygltf::base::enumerators::alpha_mode::blend)
-			material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eBlend);
+			material_data.alphaMode = static_cast<uint32_t>(render::EAlphaMode::eBlend);
 		else if (material.alphaMode == easygltf::base::enumerators::alpha_mode::mask)
-			material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eMask);
+			material_data.alphaMode = static_cast<uint32_t>(render::EAlphaMode::eMask);
 		else
-			material_data.alphaMode = utl::cast<u32>(render::EAlphaMode::eOpaque);
+			material_data.alphaMode = static_cast<uint32_t>(render::EAlphaMode::eOpaque);
 
-		material_data.alphaCutoff = utl::cast<f32>(material.alphaCutoff);
+		material_data.alphaCutoff = static_cast<f32>(material.alphaCutoff);
 		material_data.doubleSided = material.doubleSided;
 	}
 
@@ -288,7 +288,7 @@ void CScene::LoadGLTF(easygltf::FGLTFRoot& root)
 	EntityManager::Create();
 }
 
-void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale)
+void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index, f32 global_scale)
 {
 	const auto& node = root.nodes[node_index];
 
@@ -324,7 +324,7 @@ void CScene::LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent
 	EntityManager::AttachChild(parent, new_node);
 }
 
-void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
+void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index)
 {
 	const auto& node = root.nodes[node_index];
 	const auto& mesh = root.meshes[node.mesh];
@@ -333,7 +333,7 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 	mesh_component.skin = node.skin;
 
 	// Load mesh primitives
-	for (u64 i = 0ull; i < mesh.primitives.size(); ++i)
+	for (uint64_t i = 0ull; i < mesh.primitives.size(); ++i)
 	{
 		const auto& primitive = mesh.primitives[i];
 
@@ -342,11 +342,11 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 
 		// Load vertices
 		
-		std::hash<u32> attribute_hasher;
-		utl::vector<render::FVertexAttributePointer> attributes{};
-		u64 position_index{ 0ull };
+		std::hash<uint32_t> attribute_hasher;
+		std::vector<render::FVertexAttributePointer> attributes{};
+		uint64_t position_index{ 0ull };
 
-		u64 attributes_hash{ 0ull };
+		uint64_t attributes_hash{ 0ull };
 		for (const auto& [name, accessor_idx] : primitive.attributes)
 		{
 			if (name == "TEXCOORD_1")
@@ -368,11 +368,11 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 				position_index = attributes.size() - 1ull;
 			}
 
-			attributes_hash ^= attribute_hasher(utl::cast<u32>(attrib.type) + 1u) << 1;
+			attributes_hash ^= attribute_hasher(static_cast<uint32_t>(attrib.type) + 1u) << 1;
 		}
 
 		// Attributes should be sorted by value type
-		std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return utl::cast<u32>(lhs.type) < utl::cast<u32>(rhs.type); });
+		std::sort(attributes.begin(), attributes.end(), [](const auto& lhs, const auto& rhs) { return static_cast<uint32_t>(lhs.type) < static_cast<uint32_t>(rhs.type); });
 
 		// Load indices
 		render::FVertexAttributePointer indices{};
@@ -384,7 +384,7 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 			indices.stride = stream.stride;
 			indices.count = stream.count;
 
-			attributes_hash ^= attribute_hasher(utl::cast<u32>(indices.stride)) << 1;
+			attributes_hash ^= attribute_hasher(static_cast<uint32_t>(indices.stride)) << 1;
 		}
 
 		// Get or Create vertex buffer
@@ -441,7 +441,7 @@ void CScene::LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::enti
 	}
 }
 
-void CScene::LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
+void CScene::LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index)
 {
 	const auto& node = root.nodes[node_index];
 	const auto& camera = root.cameras[node.camera];
@@ -467,7 +467,7 @@ void CScene::LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::en
 	EntityManager::AddComponent<FCameraComponent>(parent, std::move(camera_component));
 }
 
-void CScene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index)
+void CScene::LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index)
 {
 	const auto& node = root.nodes[node_index];
 
@@ -529,7 +529,7 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 
 				f32* buf = new f32[accessor.count];
 				util::Copy(buf, stream.data, stream.count * sizeof(f32));
-				for (u64 index = 0; index < stream.count; index++)
+				for (uint64_t index = 0; index < stream.count; index++)
 					sampler.inputs.push_back(buf[index]);
 
 				delete[] buf;
@@ -554,7 +554,7 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 				{
 					glm::vec3* buf = new glm::vec3[stream.count];
 					util::Copy(buf, stream.data, stream.count * sizeof(glm::vec3));
-					for (u64 index = 0; index < stream.count; index++)
+					for (uint64_t index = 0; index < stream.count; index++)
 						sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
 
 					delete[] buf;
@@ -563,7 +563,7 @@ void CScene::LoadAnimations(const easygltf::FGLTFRoot& root)
 				{
 					glm::vec4* buf = new glm::vec4[stream.count];
 					util::Copy(buf, stream.data, stream.count * sizeof(glm::vec4));
-					for (u64 index = 0; index < stream.count; index++)
+					for (uint64_t index = 0; index < stream.count; index++)
 						sampler.outputsVec4.push_back(buf[index]);
 
 					delete[] buf;

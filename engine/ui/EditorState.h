@@ -17,8 +17,8 @@ namespace engine
 		bool IsSelected(entt::entity entity);
 
 		entt::entity GetSelection();
-		const utl::vector<entt::entity>& GetAllSelections();
+		const std::vector<entt::entity>& GetAllSelections();
 	private:
-		utl::vector<entt::entity> m_vSelected;
+		std::vector<entt::entity> m_vSelected;
 	};
 }

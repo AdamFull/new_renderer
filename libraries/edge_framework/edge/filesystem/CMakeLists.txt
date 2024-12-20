@@ -3,7 +3,7 @@ project(edge_filesystem)
 
 include(GenerateExportHeader)
 
-find_package(libzip REQUIRED)
+#find_package(libzip REQUIRED)
 
 add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/pak_archive/lib" pak_archive)
 
@@ -30,11 +30,11 @@ file(GLOB VFS_HEADERS_NATIVE "${CMAKE_CURRENT_SOURCE_DIR}/native/*.h")
 set(CPPVFS_HEADER_FILES ${CPPVFS_HEADER_FILES} ${VFS_HEADERS_NATIVE})
 
 # ZIP FS
-file(GLOB VFS_SOURCES_ZIP "${CMAKE_CURRENT_SOURCE_DIR}/zip/*.cpp")
-set(CPPVFS_SOURCE_FILES ${CPPVFS_SOURCE_FILES} ${VFS_SOURCES_ZIP})
+#file(GLOB VFS_SOURCES_ZIP "${CMAKE_CURRENT_SOURCE_DIR}/zip/*.cpp")
+#set(CPPVFS_SOURCE_FILES ${CPPVFS_SOURCE_FILES} ${VFS_SOURCES_ZIP})
 
-file(GLOB VFS_HEADERS_ZIP "${CMAKE_CURRENT_SOURCE_DIR}/zip/*.h")
-set(CPPVFS_HEADER_FILES ${CPPVFS_HEADER_FILES} ${VFS_HEADERS_ZIP})
+#file(GLOB VFS_HEADERS_ZIP "${CMAKE_CURRENT_SOURCE_DIR}/zip/*.h")
+#set(CPPVFS_HEADER_FILES ${CPPVFS_HEADER_FILES} ${VFS_HEADERS_ZIP})
 
 
 if(INCENERATE_FILESYSTEM_BUILD_SHARED)
@@ -60,7 +60,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_link_libraries(${PROJECT_NAME} 
-    PRIVATE libzip::zip 
+    #PRIVATE libzip::zip 
     PRIVATE libgpak
     PUBLIC utility_lib
 )

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <standart_library.h>
+#include <string>
+#include <memory>
 
 namespace edge
 {

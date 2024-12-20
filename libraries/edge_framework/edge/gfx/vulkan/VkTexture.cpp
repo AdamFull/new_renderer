@@ -23,7 +23,7 @@ namespace edge
 				srv = std::make_unique<ImageView>(*image, create_info, 0u, 0u, create_info.levels);
 
 				subresources.resize(create_info.levels);
-				for (u32 mip_index = 0u; mip_index < create_info.levels; ++mip_index)
+				for (uint32_t mip_index = 0u; mip_index < create_info.levels; ++mip_index)
 				{
 					subresources[mip_index] = std::make_unique<ImageView>(*image, create_info, 0u, mip_index, 1u);
 				}

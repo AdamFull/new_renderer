@@ -116,9 +116,11 @@ namespace edge
 			//ui->NewFrame(delta_time);
 			OnUpdate(delta_time);
 
-			if (fixed_simulation_fps)
+			accumulated_frame_time += delta_time;
+			while (accumulated_frame_time > fixed_delta_time)
 			{
-				delta_time = simulation_frame_time;
+				app->FixedUpdate(fixed_delta_time);
+				accumulated_frame_time -= fixed_delta_time;
 			}
 
 			app->Update(delta_time);
@@ -259,12 +261,6 @@ namespace edge
 		OnAppStart(app_ci->name);
 
 		return true;
-	}
-
-	void Runtime::ForceSimulationFps(float fps)
-	{
-		fixed_simulation_fps = true;
-		simulation_frame_time = 1 / fps;
 	}
 
 	void Runtime::ForceRender(bool should_always_render)

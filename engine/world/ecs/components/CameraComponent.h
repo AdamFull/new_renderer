@@ -51,7 +51,7 @@ namespace engine
 				bool controllable{ true };
 				bool orbit{ true };
 
-				u64 frustumID{ ~0ull };
+				uint64_t frustumID{ ~0ull };
 
 				std::vector<FPupa> pupas;
 			};
@@ -59,9 +59,9 @@ namespace engine
 	}
 }
 
-UTL_REGISTER_ENUM_CLASS(engine::world::ecs, ECameraType,
-	UTL_ENUM_META(engine::world::ecs::ECameraType::eOrthographic, "Orthographic"),
-	UTL_ENUM_META(engine::world::ecs::ECameraType::ePerspective, "Perspective")
+EDGE_REGISTER_ENUM_CLASS(engine::world::ecs, ECameraType,
+	EDGE_ENUM_META(engine::world::ecs::ECameraType::eOrthographic, "Orthographic"),
+	EDGE_ENUM_META(engine::world::ecs::ECameraType::ePerspective, "Perspective")
 );
 
 REFL_AUTO(

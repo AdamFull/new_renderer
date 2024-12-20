@@ -39,6 +39,12 @@ namespace edge
 		virtual bool Prepare(const ApplicationOptions& options);
 
 		/**
+		 * @brief Updates the application 50 times per second
+		 * @param delta_time Fixed time tick
+		 */
+		virtual void FixedUpdate(float delta_time);
+
+		/**
 		 * @brief Updates the application
 		 * @param delta_time The time since the last update
 		 */

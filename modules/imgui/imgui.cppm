@@ -31,7 +31,7 @@ export module imgui;
 //	using ImFontConfig = ::ImFontConfig;                // Configuration data when adding a font or merging fonts
 //	using ImFontGlyph = ::ImFontGlyph;                 // A single font glyph (code point + coordinates within in ImFontAtlas + offset)
 //	using ImFontGlyphRangesBuilder = ::ImFontGlyphRangesBuilder;    // Helper to build glyph ranges from text/string data
-//	using ImColor = ::ImColor;                     // Helper functions to create a color that can be converted to either u32 or float4 (*OBSOLETE* please avoid using)
+//	using ImColor = ::ImColor;                     // Helper functions to create a color that can be converted to either uint32_t or float4 (*OBSOLETE* please avoid using)
 //	using ImGuiContext = ::ImGuiContext;                // Dear ImGui context (opaque structure, unless including imgui_internal.h)
 //	using ImGuiIO = ::ImGuiIO;                     // Main configuration and I/O between your application and ImGui
 //	using ImGuiInputTextCallbackData = ::ImGuiInputTextCallbackData;  // Shared state of InputText() when using custom ImGuiInputTextCallback (rare/advanced use)

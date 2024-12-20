@@ -8,8 +8,8 @@ using namespace engine::world;
 
 entt::registry EntityManager::m_registry{};
 entt::entity EntityManager::m_root{};
-utl::vector<std::unique_ptr<ecs::ISystem>> EntityManager::m_vSystems;
-utl::vector<FComponentMeta> EntityManager::m_meta;
+std::vector<std::unique_ptr<ecs::ISystem>> EntityManager::m_vSystems;
+std::vector<FComponentMeta> EntityManager::m_meta;
 
 entt::entity EntityManager::CreateRoot(std::string_view name)
 {

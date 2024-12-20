@@ -44,7 +44,7 @@ namespace engine
 				// TODO: get current player camera?
 				auto& camera = render_world.GetRenderCamera(render::main_camera_index);
 
-				u64 light_count{ 0ull };
+				uint64_t light_count{ 0ull };
 
 				// Calculate cascades shadow data
 				{
@@ -75,9 +75,9 @@ namespace engine
 
 							// Calculate split depths based on view camera frustum
 							// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
-							for (u32 i = 0; i < shlib::cascade_shadow_map_cascade_count; i++)
+							for (uint32_t i = 0; i < shlib::cascade_shadow_map_cascade_count; i++)
 							{
-								f32 p = utl::cast<f32>(i + 1) / utl::cast<f32>(shlib::cascade_shadow_map_cascade_count);
+								f32 p = static_cast<f32>(i + 1) / static_cast<f32>(shlib::cascade_shadow_map_cascade_count);
 								f32 log = min_z * glm::pow(ratio, p);
 								f32 uniform = min_z + range * p;
 								f32 d = cascade_split_lambda * (log - uniform) + uniform;
@@ -86,7 +86,7 @@ namespace engine
 
 							// Calculate orthographic projection matrix for each cascade
 							f32 lastSplitDist = 0.0;
-							for (u32 i = 0; i < shlib::cascade_shadow_map_cascade_count; i++)
+							for (uint32_t i = 0; i < shlib::cascade_shadow_map_cascade_count; i++)
 							{
 								auto& splitDist = cascadeSplits[i];
 
@@ -112,7 +112,7 @@ namespace engine
 									corner = invCorner / invCorner.w;
 								}
 
-								for (u32 j = 0; j < 4; ++j)
+								for (uint32_t j = 0; j < 4; ++j)
 								{
 									glm::vec4 dist = frustumCorners[j + 4] - frustumCorners[j];
 									frustumCorners[j + 4] = frustumCorners[j] + (dist * splitDist);
@@ -144,10 +144,10 @@ namespace engine
 								glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 								shadowOrigin = shadowMatrix * shadowOrigin;
 								f32 storedW = shadowOrigin.w;
-								shadowOrigin = shadowOrigin * utl::cast<f32>(shlib::cascade_shadow_map_resolution) / 2.0f;
+								shadowOrigin = shadowOrigin * static_cast<f32>(shlib::cascade_shadow_map_resolution) / 2.0f;
 								glm::vec4 roundedOrigin = glm::round(shadowOrigin);
 								glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
-								roundOffset = roundOffset * 2.0f / utl::cast<f32>(shlib::cascade_shadow_map_resolution);
+								roundOffset = roundOffset * 2.0f / static_cast<f32>(shlib::cascade_shadow_map_resolution);
 								roundOffset.z = 0.0f;
 								roundOffset.w = 0.0f;
 								glm::mat4 lightProjectionMatrix = lightOrthoMatrix;
@@ -218,7 +218,7 @@ namespace engine
 				
 							light.shadowIndex = point_light_count++;
 				
-							for (u64 idx = 0ull; idx < matrices.size(); ++idx)
+							for (uint64_t idx = 0ull; idx < matrices.size(); ++idx)
 							{
 								auto& view = matrices[idx];
 								render_world.UpdateRenderCamera(light.shadow_casters[idx], view, shadowProj, true, shlib::point_light_shadow_map_resolution, shlib::point_light_shadow_map_resolution);

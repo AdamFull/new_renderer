@@ -19,7 +19,7 @@ namespace engine
 			eNone = 0,
 			eHiddenInEditor = 1 << 0
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EComponentFlags, EComponentFlagBits);
+		EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EComponentFlags, EComponentFlagBits);
 
 		struct FComponentMeta
 		{
@@ -174,8 +174,8 @@ namespace engine
 		private:
 			static entt::registry m_registry;
 			static entt::entity m_root;
-			static utl::vector<std::unique_ptr<ecs::ISystem>> m_vSystems;
-			static utl::vector<FComponentMeta> m_meta;
+			static std::vector<std::unique_ptr<ecs::ISystem>> m_vSystems;
+			static std::vector<FComponentMeta> m_meta;
 		};
 	}
 }

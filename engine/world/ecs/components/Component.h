@@ -12,8 +12,8 @@
 #include <utility>
 
 #include <standart_library.h>
-#include <string.hpp>
-#include <enum.hpp>
+#include <edge/util/String.hpp>
+#include <edge/util/Enum.hpp>
 
 namespace icon
 {
@@ -68,4 +68,4 @@ namespace glm
 #define DECLARE_COMPONENT(clazz, clazz_ico, clazz_name) \
 	using _Self = clazz; \
 	static constexpr std::string_view _NameRaw = std::string_view(clazz_name); \
-	static constexpr std::string_view _Name = utl::join_v<clazz_ico, _NameRaw>;
+	static constexpr std::string_view _Name = edge::join_v<clazz_ico, _NameRaw>;

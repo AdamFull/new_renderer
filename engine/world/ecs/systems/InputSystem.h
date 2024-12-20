@@ -13,7 +13,7 @@ namespace engine
 		{
 			struct FInputAxis
 			{
-				utl::vector<utl::reactive::function<void(f32, f32)>> listeners;
+				std::vector<utl::reactive::function<void(f32, f32)>> listeners;
 			};
 
 			class CInputSystem : public ISystem

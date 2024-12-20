@@ -27,6 +27,6 @@ namespace engine
 		void Destroy();
 		void PostDestroy();
 	private:
-		utl::vector<std::unique_ptr<IEngineSystem>> m_vSystems{};
+		std::vector<std::unique_ptr<IEngineSystem>> m_vSystems{};
 	};
 }

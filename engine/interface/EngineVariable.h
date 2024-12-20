@@ -1,7 +1,7 @@
 #pragma once
 
-#include <enum.hpp>
-#include <hash.hpp>
+#include <edge/util/Enum.hpp>
+#include <edge/util/Hash.hpp>
 
 namespace engine
 {
@@ -10,7 +10,7 @@ namespace engine
 		eMutable = 1 << 0,
 		eVisible = 1 << 1
 	};
-	UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderVariableFlags, ERenderVariableFlagBits)
+	EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ERenderVariableFlags, ERenderVariableFlagBits)
 
 	enum class EVariableType
 	{
@@ -40,7 +40,7 @@ namespace engine
 	template<class _Ty>
 	struct FNumericVectorInitialData
 	{
-		utl::vector<_Ty> values{};
+		std::vector<_Ty> values{};
 		_Ty min{ std::numeric_limits<_Ty>::min() };
 		_Ty max{ std::numeric_limits<_Ty>::max() };
 	};
@@ -79,18 +79,18 @@ namespace engine
 		void AddVariable(const char* name, std::unique_ptr<IVariable>&& var)
 		{
 			// TODO: check for collisions
-			m_variables.emplace(utl::murmur_hash(name), std::move(var));
+			m_variables.emplace(edge::murmur_hash(name), std::move(var));
 		}
 
 		void AddBlock(const char* name, std::unique_ptr<IVariableBlock>&& block)
 		{
 			// TODO: check for collisions
-			m_blocks.emplace(utl::murmur_hash(name), std::move(block));
+			m_blocks.emplace(edge::murmur_hash(name), std::move(block));
 		}
 
 	protected:
-		utl::hash_map<u64, std::unique_ptr<IVariable>> m_variables{};
-		utl::hash_map<u64, std::unique_ptr<IVariableBlock>> m_blocks{};
+		std::unordered_map<uint64_t, std::unique_ptr<IVariable>> m_variables{};
+		std::unordered_map<uint64_t, std::unique_ptr<IVariableBlock>> m_blocks{};
 	};
 
 	class IVariableManager 

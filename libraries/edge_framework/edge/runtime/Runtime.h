@@ -80,8 +80,6 @@ namespace edge
 		bool AppRequested();
 		bool StartApp();
 
-		void ForceSimulationFps(float fps);
-
 		// Force the application to always render even if it is not in focus
 		void ForceRender(bool should_always_render);
 
@@ -109,10 +107,11 @@ namespace edge
 		void OnAppClose(const std::string& app_id);
 		void OnClose();
 
+		const float fixed_delta_time{ 0.02f };
+		float accumulated_frame_time{ 0.0f };
+
 		Window::Properties window_properties; /* Source of truth for window state */
-		bool fixed_simulation_fps{ false };   /* Delta time should be fixed with a fabricated value */
 		bool always_render{ false };          /* App should always render even if not in focus */
-		float simulation_frame_time = 0.016f; /* A fabricated delta time */
 		bool process_input_events{ true };    /* App should continue processing input events */
 		bool focused{ true };                 /* App is currently in focus at an operating system level */
 		bool close_requested{ false };        /* Close requested */

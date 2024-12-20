@@ -39,7 +39,7 @@
 
 namespace render_label
 {
-	using namespace utl;
+	using namespace edge;
 
 	constexpr const uint32_t write_image0 = "write_image0"_hash32;
 	constexpr const uint32_t write_image1 = "write_image1"_hash32;
@@ -374,8 +374,6 @@ namespace engine
 
 		void Renderer::BuildGraph()
 		{
-			using namespace utl;
-
 			static bool use_low_precision_velocity{ false };
 			static bool bloom_use_brightness{ true };
 			static uint32_t bloom_blur_depth = 5;
@@ -825,7 +823,7 @@ namespace engine
 						self.ResolveDependencies(command_list);
 
 						auto& pc = self.GetConstantBlock();
-						pc.Set(utl::murmur_hash("draw_counts"), count_buffer->GetAddress());
+						pc.Set(edge::murmur_hash("draw_counts"), count_buffer->GetAddress());
 						self.PushConstantRanges(command_list);
 
 						self.BindResources(command_list);
@@ -858,8 +856,8 @@ namespace engine
 						self.ResolveDependencies(command_list);
 
 						auto& pc = self.GetConstantBlock();
-						pc.Set(utl::murmur_hash("source_descriptions"), draw_commands->GetAddress());
-						pc.Set(utl::murmur_hash("alive_bits"), alive_bits->GetAddress());
+						pc.Set(edge::murmur_hash("source_descriptions"), draw_commands->GetAddress());
+						pc.Set(edge::murmur_hash("alive_bits"), alive_bits->GetAddress());
 						self.PushConstantRanges(command_list);
 
 						self.BindResources(command_list);
@@ -896,9 +894,9 @@ namespace engine
 						self.ResolveDependencies(command_list);
 			
 						auto& pc = self.GetConstantBlock();
-						pc.Set(utl::murmur_hash("input_buffer"), alive_bits->GetAddress());
-						pc.Set(utl::murmur_hash("output_buffer"), alive_offsets->GetAddress());
-						pc.Set(utl::murmur_hash("size"), render_world->GetDrawCount());
+						pc.Set(edge::murmur_hash("input_buffer"), alive_bits->GetAddress());
+						pc.Set(edge::murmur_hash("output_buffer"), alive_offsets->GetAddress());
+						pc.Set(edge::murmur_hash("size"), render_world->GetDrawCount());
 						self.PushConstantRanges(command_list);
 			
 						self.BindResources(command_list);
@@ -944,12 +942,12 @@ namespace engine
 						self.ResolveDependencies(command_list);
 
 						auto& pc = self.GetConstantBlock();
-						pc.Set(utl::murmur_hash("source_descriptions"), draw_commands->GetAddress());
-						pc.Set(utl::murmur_hash("alive_descriptions"), alive_meshes->GetAddress());
-						pc.Set(utl::murmur_hash("alive_draw_commands"), argument_buffer->GetAddress());
-						pc.Set(utl::murmur_hash("alive_bits"), alive_bits->GetAddress());
-						pc.Set(utl::murmur_hash("alive_offsets"), alive_offsets->GetAddress());
-						pc.Set(utl::murmur_hash("draw_counts"), count_buffer->GetAddress());
+						pc.Set(edge::murmur_hash("source_descriptions"), draw_commands->GetAddress());
+						pc.Set(edge::murmur_hash("alive_descriptions"), alive_meshes->GetAddress());
+						pc.Set(edge::murmur_hash("alive_draw_commands"), argument_buffer->GetAddress());
+						pc.Set(edge::murmur_hash("alive_bits"), alive_bits->GetAddress());
+						pc.Set(edge::murmur_hash("alive_offsets"), alive_offsets->GetAddress());
+						pc.Set(edge::murmur_hash("draw_counts"), count_buffer->GetAddress());
 						self.PushConstantRanges(command_list);
 			
 						self.BindResources(command_list);
@@ -1021,9 +1019,9 @@ namespace engine
 #endif
 			
 						// Bind buffers that uses in draw
-						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto& constants = self.GetConstantBlock();
 			
@@ -1130,9 +1128,9 @@ namespace engine
 #endif
 			
 						// Bind buffers that uses in draw
-						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto& constants = self.GetConstantBlock();
 			
@@ -1239,9 +1237,9 @@ namespace engine
 #endif
 			
 						// Bind buffers that uses in draw
-						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto& constants = self.GetConstantBlock();
 			
@@ -1348,9 +1346,9 @@ namespace engine
 #endif
 			
 						// Bind buffers that uses in draw
-						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto camera_id = render_world->GetResourceId(main_camera_index);
 						auto draw_call_id = camera_id * render_world->GetMeshCount();
@@ -1443,9 +1441,9 @@ namespace engine
 #endif
 						buffers.Set(render_label::indices, geometry_buffer.GetIndexBufferAddress());
 
-						auto& draw_data_block = self.GetUniformBlock(utl::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(utl::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(utl::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
 			
 						auto& constants = self.GetConstantBlock();
 						constants.Set(render_label::call_id, 0u);
@@ -1515,7 +1513,7 @@ namespace engine
 			
 			// Post processing
 			{
-				u32 pass_count{ 0u };
+				uint32_t pass_count{ 0u };
 			
 				// FXAA 
 				{
@@ -2052,13 +2050,13 @@ namespace engine
 									scale.x = 2.f / draw_data->DisplaySize.x;
 									scale.y = 2.f / draw_data->DisplaySize.y;
 
-									constants.Set("scale"_hash32, scale);
+									constants.Set(edge::murmur_hash("scale"), scale);
 
 									glm::vec2 translate;
 									translate.x = -1.0f - draw_data->DisplayPos.x * scale.x;
 									translate.y = -1.0f - draw_data->DisplayPos.y * scale.y;
 
-									constants.Set("translate"_hash32, translate);
+									constants.Set(edge::murmur_hash("translate"), translate);
 
 									self.PushConstantRanges(command_list);
 								}
@@ -2068,10 +2066,10 @@ namespace engine
 								ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
 								// Collect resource dependencies
-								for (i32 n = 0; n < draw_data->CmdListsCount; n++)
+								for (int32_t n = 0; n < draw_data->CmdListsCount; n++)
 								{
 									const ImDrawList* cmd_list = draw_data->CmdLists[n];
-									for (i32 cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+									for (int32_t cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 									{
 										const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
 
@@ -2101,12 +2099,12 @@ namespace engine
 
 								// Render command lists
 								// (Because we merged all buffers into a single one, we maintain our own offset into them)
-								i32 global_vtx_offset = 0;
-								i32 global_idx_offset = 0;
-								for (i32 n = 0; n < draw_data->CmdListsCount; n++)
+								int32_t global_vtx_offset = 0;
+								int32_t global_idx_offset = 0;
+								for (int32_t n = 0; n < draw_data->CmdListsCount; n++)
 								{
 									const ImDrawList* cmd_list = draw_data->CmdLists[n];
-									for (i32 cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+									for (int32_t cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 									{
 										const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
 										if (pcmd->UserCallback != nullptr)

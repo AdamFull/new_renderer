@@ -1,5 +1,7 @@
 #include "VFSInputFile.h"
 
+#include <stdexcept>
+
 namespace edge
 {
 	namespace filesystem
@@ -102,7 +104,7 @@ namespace edge
 			return *this;
 		}
 
-		VFSInFile& VFSInFile::Read(utl::vector<uint8_t>& buffer)
+		VFSInFile& VFSInFile::Read(std::vector<uint8_t>& buffer)
 		{
 			Seekg(0, SEEK_END);
 			auto filesize = Tellg();
@@ -115,7 +117,7 @@ namespace edge
 			return *this;
 		}
 
-		VFSInFile& VFSInFile::Read(utl::vector<uint32_t>& buffer)
+		VFSInFile& VFSInFile::Read(std::vector<uint32_t>& buffer)
 		{
 			Seekg(0, SEEK_END);
 			auto filesize = Tellg() / sizeof(uint32_t);

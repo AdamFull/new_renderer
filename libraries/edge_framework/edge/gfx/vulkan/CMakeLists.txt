@@ -14,7 +14,7 @@ find_package(VulkanHeaders CONFIG)
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)
 
-add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/vma" vma)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../../external/vma" vma)
 
 set(VULKAN_RENDERER_DEFINITIONS 
 	"VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1"
@@ -104,8 +104,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} 
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../"
-	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/vma/include"
-	PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/Vulkan-Headers/include"
+	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../../../external/vma/include"
 )
 
 target_link_libraries(${PROJECT_NAME}

@@ -6,7 +6,9 @@
 
 #include "../DirectoryIteratorInterface.h"
 
+#include <array>
 #include <string>
+#include <codecvt>
 
 namespace edge
 {

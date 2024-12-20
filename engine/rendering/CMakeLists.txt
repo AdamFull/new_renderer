@@ -34,5 +34,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} 
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/tools"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
-    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/vma/include"
 )

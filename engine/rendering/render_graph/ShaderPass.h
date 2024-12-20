@@ -68,7 +68,7 @@ namespace engine
 			}
 
 			// For render script
-			void Set(uint32_t name, const void* raw_data, u64 size)
+			void Set(uint32_t name, const void* raw_data, uint64_t size)
 			{
 				auto var_begin = reflection.shader_variables.Begin() + resource.range_begin;
 				auto var_end = reflection.shader_variables.Begin() + resource.variable_count;
@@ -88,7 +88,7 @@ namespace engine
 			}
 			
 			template<class _Ty>
-			void Set(uint32_t name, const _Ty& object, u64 size = 0ull)
+			void Set(uint32_t name, const _Ty& object, uint64_t size = 0ull)
 			{
 				auto var_begin = reflection.shader_variables.Begin() + resource.range_begin;
 				auto var_end = reflection.shader_variables.Begin() + resource.variable_count;
@@ -153,7 +153,7 @@ namespace engine
 		private:
 			const edge::gfx::ShaderReflection& reflection;
 			const edge::gfx::ShaderResource& resource;
-			utl::vector<char> data{};
+			std::vector<char> data{};
 		};
 
 		class ShaderPass : public ExecutionNode

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gfx_structures.h"
-#include <hash.hpp>
+#include "../util/Hash.hpp"
 #include <cassert>
 
 namespace edge
@@ -47,8 +47,8 @@ namespace edge
 
 		inline constexpr uint32_t Hash(ShaderStageFlag flag, uint32_t hash = 0u)
 		{
-			std::string_view enum_string = utl::enum_to_string(flag);
-			return utl::murmur_hash(enum_string, hash);
+			std::string_view enum_string = enum_to_string(flag);
+			return murmur_hash(enum_string, hash);
 		}
 	}
 }

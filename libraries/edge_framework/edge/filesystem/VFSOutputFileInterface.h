@@ -1,6 +1,9 @@
 #pragma once
 
-#include <standart_library.h>
+#include <string>
+#include <vector>
+#include <memory>
+#include <istream>
 
 namespace edge
 {
@@ -35,7 +38,7 @@ namespace edge
 			 * @param data The data vector to be written.
 			 * @return A reference to the IVFSOutputFileInterface object.
 			 */
-			virtual IVFSOutputFileInterface& Write(const utl::vector<uint8_t>& data) = 0;
+			virtual IVFSOutputFileInterface& Write(const std::vector<uint8_t>& data) = 0;
 
 			/**
 			 * @brief Writes a buffer of characters to the output file.

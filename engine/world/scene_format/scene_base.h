@@ -11,92 +11,92 @@ namespace engine
 	{
 		namespace defaults
 		{
-			constexpr const u32 version{ 0x01010001 };
-			constexpr const i32 invalid_index{ -1 };
+			constexpr const uint32_t version{ 0x01010001 };
+			constexpr const int32_t invalid_index{ -1 };
 		}
 
-		using node_flags_t = u32;
+		using node_flags_t = uint32_t;
 		namespace node_flags
 		{
-			constexpr const u32 enabled{ 1 << 0 };
-			constexpr const u32 visible{ 1 << 1 };
+			constexpr const uint32_t enabled{ 1 << 0 };
+			constexpr const uint32_t visible{ 1 << 1 };
 		}
 
-		using component_type_t = u32;
+		using component_type_t = uint32_t;
 		namespace component_type
 		{
-			constexpr const u32 invalid{ 0u };
-			constexpr const u32 transform{ 1u };
-			constexpr const u32 camera{ 2u };
-			constexpr const u32 mesh{ 3u };
-			constexpr const u32 directional_light{ 4u };
-			constexpr const u32 point_light{ 5u };
-			constexpr const u32 spot_light{ 6u };
+			constexpr const uint32_t invalid{ 0u };
+			constexpr const uint32_t transform{ 1u };
+			constexpr const uint32_t camera{ 2u };
+			constexpr const uint32_t mesh{ 3u };
+			constexpr const uint32_t directional_light{ 4u };
+			constexpr const uint32_t point_light{ 5u };
+			constexpr const uint32_t spot_light{ 6u };
 		}
 
-		using primitive_topology_t = u32;
+		using primitive_topology_t = uint32_t;
 		namespace primitive_topology
 		{
-			constexpr const u32 invalid{ 0u };
-			constexpr const u32 points{ 1u };
-			constexpr const u32 line{ 2u };
-			constexpr const u32 line_loop{ 3u };
-			constexpr const u32 line_strip{ 4u };
-			constexpr const u32 triangles{ 5u };
-			constexpr const u32 triangles_strip{ 6u };
-			constexpr const u32 triangles_fan{ 7u };
+			constexpr const uint32_t invalid{ 0u };
+			constexpr const uint32_t points{ 1u };
+			constexpr const uint32_t line{ 2u };
+			constexpr const uint32_t line_loop{ 3u };
+			constexpr const uint32_t line_strip{ 4u };
+			constexpr const uint32_t triangles{ 5u };
+			constexpr const uint32_t triangles_strip{ 6u };
+			constexpr const uint32_t triangles_fan{ 7u };
 		}
 
-		using attribute_type_t = u32;
+		using attribute_type_t = uint32_t;
 		namespace attribute_type
 		{
-			constexpr const u32 invalid{ 0u };
-			constexpr const u32 position{ 1u };
-			constexpr const u32 normal{ 2u };
-			constexpr const u32 tex_coord_0{ 3u };
-			constexpr const u32 tex_coord_1{ 4u };
-			constexpr const u32 color_0{ 5u };
-			constexpr const u32 color_1{ 6u };
-			constexpr const u32 joints{ 7u };
-			constexpr const u32 weights{ 8u };
-			constexpr const u32 custom{ 9u };
+			constexpr const uint32_t invalid{ 0u };
+			constexpr const uint32_t position{ 1u };
+			constexpr const uint32_t normal{ 2u };
+			constexpr const uint32_t tex_coord_0{ 3u };
+			constexpr const uint32_t tex_coord_1{ 4u };
+			constexpr const uint32_t color_0{ 5u };
+			constexpr const uint32_t color_1{ 6u };
+			constexpr const uint32_t joints{ 7u };
+			constexpr const uint32_t weights{ 8u };
+			constexpr const uint32_t custom{ 9u };
 		}
 
-		using buffer_view_type_t = u32;
+		using buffer_view_type_t = uint32_t;
 		namespace buffer_view_type
 		{
-			constexpr const u32 invalid{ 0u };
-			constexpr const u32 array_buffer{ 1u };
-			constexpr const u32 element_array_buffer{ 2u };
+			constexpr const uint32_t invalid{ 0u };
+			constexpr const uint32_t array_buffer{ 1u };
+			constexpr const uint32_t element_array_buffer{ 2u };
 		}
 
-		using light_flags_t = u32;
+		using light_flags_t = uint32_t;
 		namespace light_flags
 		{
-			constexpr const u32 cast_shadows{ 1 << 0 };
+			constexpr const uint32_t cast_shadows{ 1 << 0 };
 		}
 
-		using primitive_flags_t = u32;
+		using primitive_flags_t = uint32_t;
 		namespace primitive_flags
 		{
-			constexpr const u32 cast_shadows{ 1 << 0 };
+			constexpr const uint32_t cast_shadows{ 1 << 0 };
 		}
 
-		using accessor_id_t = i32;
-		using buffer_id_t = i32;
-		using buffer_view_id_t = i32;
-		using component_id_t = i32;
-		using material_id_t = i32;
-		using scene_id_t = i32;
+		using accessor_id_t = int32_t;
+		using buffer_id_t = int32_t;
+		using buffer_view_id_t = int32_t;
+		using component_id_t = int32_t;
+		using material_id_t = int32_t;
+		using scene_id_t = int32_t;
 
 		struct FVersion
 		{
 			union {
-				u32 code;
+				uint32_t code;
 				struct {
-					u8 major;
-					u8 minor;
-					u16 patch;
+					uint8_t major;
+					uint8_t minor;
+					uint16_t patch;
 				};
 			};
 
@@ -134,8 +134,8 @@ namespace engine
 
 		struct FMeshPrimitiveLod
 		{
-			utl::hash_map<attribute_type_t, accessor_id_t> attributes; // (required)
-			utl::vector<utl::hash_map<attribute_type_t, accessor_id_t>> targets;
+			std::unordered_map<attribute_type_t, accessor_id_t> attributes; // (required)
+			std::vector<std::unordered_map<attribute_type_t, accessor_id_t>> targets;
 
 			bool operator==(const FMeshPrimitiveLod& other) const
 			{
@@ -145,7 +145,7 @@ namespace engine
 
 		struct FMeshPrimitive
 		{
-			utl::vector<FMeshPrimitiveLod> lods{};
+			std::vector<FMeshPrimitiveLod> lods{};
 
 			material_id_t material{ defaults::invalid_index };
 			accessor_id_t indices{ defaults::invalid_index };
@@ -165,8 +165,8 @@ namespace engine
 		struct FMeshComponent
 		{
 			std::string src; // (required) link to asset or asset uuid/guid
-			utl::vector<FMeshPrimitive> primitives; // (required)
-			utl::vector<float> weights;
+			std::vector<FMeshPrimitive> primitives; // (required)
+			std::vector<float> weights;
 
 			bool operator==(const FMeshComponent& other) const
 			{
@@ -220,7 +220,7 @@ namespace engine
 			std::string name;
 			node_flags_t flags{ node_flags::enabled | node_flags::visible };
 
-			utl::vector<FComponentDescription> components{};
+			std::vector<FComponentDescription> components{};
 		};
 		
 		// Base structure with scene data
@@ -228,10 +228,10 @@ namespace engine
 		{
 			FHeader asset{};
 
-			utl::vector<FAudioEmitterComponent> audio_emitter_components{};
-			utl::vector<FMeshComponent> mesh_components{};
-			utl::vector<FTransformComponent> transform_components{};
-			utl::vector<FLightComponent> light_components{};
+			std::vector<FAudioEmitterComponent> audio_emitter_components{};
+			std::vector<FMeshComponent> mesh_components{};
+			std::vector<FTransformComponent> transform_components{};
+			std::vector<FLightComponent> light_components{};
 
 			scene_id_t current_scene{};
 		};
@@ -250,9 +250,9 @@ namespace engine
 		struct FBufferView
 		{
 			buffer_id_t buffer{ defaults::invalid_index }; // (required)
-			u64 byte_offset{ 0ull };
-			u64 byte_length{ 0ull }; // (required)
-			u64 byte_stride{ 0ull };
+			uint64_t byte_offset{ 0ull };
+			uint64_t byte_length{ 0ull }; // (required)
+			uint64_t byte_stride{ 0ull };
 
 			buffer_view_type_t type{ buffer_view_type::invalid };
 
@@ -268,14 +268,14 @@ namespace engine
 		struct FAccessor
 		{
 			buffer_view_id_t buffer_view{ defaults::invalid_index };
-			u64 byte_offset{ 0ull };
-			u64 count{ 0ull }; // (required)
+			uint64_t byte_offset{ 0ull };
+			uint64_t count{ 0ull }; // (required)
 			bool normalized{ false };
 			component_type_t component_type{ component_type::invalid }; // (required)
 			std::string type{ }; // (required)
 
-			utl::vector<double> min{};
-			utl::vector<double> max{};
+			std::vector<double> min{};
+			std::vector<double> max{};
 
 			bool operator==(const FAccessor& other) const
 			{
@@ -304,9 +304,9 @@ namespace engine
 
 		struct FMeshAsset : FAsset
 		{
-			utl::vector<FAccessor> accessors{};
-			utl::vector<FBufferView> buffer_views{};
-			utl::vector<FBuffer> buffers{};
+			std::vector<FAccessor> accessors{};
+			std::vector<FBufferView> buffer_views{};
+			std::vector<FBuffer> buffers{};
 			// animations
 			// skins
 			// skeleton (contains data about skin and bones/nodes)
@@ -317,20 +317,20 @@ namespace engine
 		//	Stream getStream(const Accessor& accessor) const;
 		//	Stream getStream(int32_t accessor_id) const;
 		//
-		//	utl::vector<Accessor> accessors{};
-		//	utl::vector<Animation> animations{};
+		//	std::vector<Accessor> accessors{};
+		//	std::vector<Animation> animations{};
 		//	Asset asset{};
-		//	utl::vector<Buffer> buffers{};
-		//	utl::vector<BufferView> bufferViews{};
-		//	utl::vector<Camera> cameras{};
-		//	utl::vector<Image> images{};
-		//	utl::vector<Material> materials{};
-		//	utl::vector<Mesh> meshes{};
-		//	utl::vector<Node> nodes{};
-		//	utl::vector<Sampler> samplers{};
-		//	utl::vector<Scene> scenes{};
-		//	utl::vector<Skin> skins{};
-		//	utl::vector<Texture> textures{};
+		//	std::vector<Buffer> buffers{};
+		//	std::vector<BufferView> bufferViews{};
+		//	std::vector<Camera> cameras{};
+		//	std::vector<Image> images{};
+		//	std::vector<Material> materials{};
+		//	std::vector<Mesh> meshes{};
+		//	std::vector<Node> nodes{};
+		//	std::vector<Sampler> samplers{};
+		//	std::vector<Scene> scenes{};
+		//	std::vector<Skin> skins{};
+		//	std::vector<Texture> textures{};
 		//
 		//	// Extensions
 		//	extensions::KHR_audio::Audio khrAudio{};

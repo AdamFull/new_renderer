@@ -96,7 +96,7 @@ void CSkinningSystem::__Update(f32 fDt)
 	//auto& render_world = m_pRenderInterface->GetRenderWorld();
 	//auto& world_stats = render_world->GetStats();
 
-	//for (u64 idx = 0ull; idx < root_component.skins.size(); ++idx)
+	//for (uint64_t idx = 0ull; idx < root_component.skins.size(); ++idx)
 	//{
 	//	auto& skin = root_component.skins[idx];
 	//	root_component.skinRemap[idx] = world_stats.matricesCount;

@@ -100,7 +100,7 @@ namespace edge
 
 			void CollectExecutionModes(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, uint32_t index)
 			{
-				auto mode = utl::cast<spv::ExecutionMode>(index);
+				auto mode = static_cast<spv::ExecutionMode>(index);
 				switch (mode)
 				{
 				case spv::ExecutionMode::ExecutionModeInvocations:
@@ -119,7 +119,7 @@ namespace edge
 
 			void CollectUniformBlockReflection(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, ShaderStageFlag stage, DescriptorType type)
 			{
-				uint32_t name_hash = utl::murmur_hash(res.name);
+				uint32_t name_hash = murmur_hash(res.name);
 				auto found = FindShaderResourceByNameHash(reflection, name_hash);
 				if (found != reflection.shader_resources.End())
 				{
@@ -160,7 +160,7 @@ namespace edge
 
 						auto& variable_name = compiler->get_member_name(refl_type.self, i);
 						std::strcpy(variable.name, variable_name.c_str());
-						variable.name_hash = utl::murmur_hash(variable_name);
+						variable.name_hash = murmur_hash(variable_name);
 					}
 
 					uniform_block.variable_count = reflection.shader_variables.count;
@@ -169,7 +169,7 @@ namespace edge
 
 			void CollectUniformReflection(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, ShaderStageFlag stage, DescriptorType type)
 			{
-				uint32_t name_hash = utl::murmur_hash(res.name);
+				uint32_t name_hash = murmur_hash(res.name);
 				auto found = FindShaderResourceByNameHash(reflection, name_hash);
 				if (found != reflection.shader_resources.End())
 				{
@@ -200,7 +200,7 @@ namespace edge
 				if (!constants.name_hash)
 				{
 					std::strcpy(constants.name, res.name.c_str());
-					constants.name_hash = utl::murmur_hash(res.name);
+					constants.name_hash = murmur_hash(res.name);
 				}
 
 				constants.size = std::max(constants.size, static_cast<uint32_t>(compiler->get_declared_struct_size(type)));
@@ -221,7 +221,7 @@ namespace edge
 
 						auto& variable_name = compiler->get_member_name(type.self, i);
 						std::strcpy(variable.name, variable_name.c_str());
-						variable.name_hash = utl::murmur_hash(variable_name);
+						variable.name_hash = murmur_hash(variable_name);
 					}
 
 					constants.variable_count = reflection.shader_variables.count;
@@ -233,7 +233,7 @@ namespace edge
 				VertexInput& vertex_input = reflection.AddVertexInput();
 
 				std::strcpy(vertex_input.name, res.name.c_str());
-				vertex_input.name_hash = utl::murmur_hash(res.name);
+				vertex_input.name_hash = murmur_hash(res.name);
 				vertex_input.location = compiler->get_decoration(res.id, spv::DecorationLocation);
 
 				spirv_cross::SPIRType type = compiler->get_type(res.type_id);
@@ -254,7 +254,7 @@ namespace edge
 
 				// Parse execution modes
 				auto& execution_modes = compiler.get_execution_mode_bitset();
-				execution_modes.for_each_bit([&](u32 i) { CollectExecutionModes(reflection, &compiler, i); });
+				execution_modes.for_each_bit([&](uint32_t i) { CollectExecutionModes(reflection, &compiler, i); });
 
 				// Parse uniform buffers
 				for (const auto& res : resources.uniform_buffers)

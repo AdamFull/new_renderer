@@ -19,7 +19,7 @@ namespace engine
 			eIndirectBuffer = 1 << 5,
 			eAllBuffer = eStorageBuffer | eIndirectBuffer
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
+		EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
 
 		struct RenderResource
 		{
@@ -35,11 +35,11 @@ namespace engine
 
 			edge::gfx::AccessTypeFlags GetAccess() const
 			{
-				if (utl::eq_(current_state, edge::gfx::ResourceStateFlag::eRead))
+				if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eRead))
 					return edge::gfx::AccessTypeFlag::eRead;
-				else if (utl::eq_(current_state, edge::gfx::ResourceStateFlag::eWrite))
+				else if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eWrite))
 					return edge::gfx::AccessTypeFlag::eWrite;
-				else if (utl::eq_(current_state, edge::gfx::ResourceStateFlag::eRead | edge::gfx::ResourceStateFlag::eWrite))
+				else if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eRead | edge::gfx::ResourceStateFlag::eWrite))
 					return edge::gfx::AccessTypeFlag::eRead | edge::gfx::AccessTypeFlag::eWrite;
 
 				return {};
@@ -63,7 +63,7 @@ namespace engine
 			eStencil = 1 << 2,
 			eDepthStencil = eDepth | eStencil
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceAttachmentTypeFlags, ResourceAttachmentTypeFlag);
+		EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceAttachmentTypeFlags, ResourceAttachmentTypeFlag);
 
 		// Describes out attachment like color or depth/stencil attachment
 		struct RenderResourceAttachment

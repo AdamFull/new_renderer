@@ -118,7 +118,7 @@ namespace edge
 				{
 					return vk::ImageLayout::eColorAttachmentOptimal;
 				}
-				else if (utl::eq_(flags, ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment))
+				else if (eq_(flags, ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment))
 				{
 					if (flags & ResourceStateFlag::eWrite)
 						return vk::ImageLayout::eDepthStencilAttachmentOptimal;
@@ -226,7 +226,7 @@ namespace edge
 				}
 				if (flags & (ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment))
 				{
-					if (!utl::eq_(flags, ResourceStateFlag::eSample))
+					if (!eq_(flags, ResourceStateFlag::eSample))
 						stages |= vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
 				}
 				if (flags & ResourceStateFlag::eCopy)

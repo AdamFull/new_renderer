@@ -8,6 +8,7 @@ set(TRACY_CALLSTACK ON CACHE BOOL "Enfore callstack collection for tracy regions
 endif()
 
 find_package(Tracy CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
 # Enable tracy profiler
@@ -31,5 +32,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE Tracy::TracyClient
+    PRIVATE nlohmann_json::nlohmann_json
     PRIVATE spdlog::spdlog
 )

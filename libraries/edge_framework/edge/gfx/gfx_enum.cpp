@@ -5,14 +5,14 @@ namespace edge
 	namespace gfx
 	{
 		template<typename _FlagT>
-		std::vector<std::string> serialize_hr_flags(const utl::flags<_FlagT>& flags)
+		std::vector<std::string> serialize_hr_flags(const flags<_FlagT>& flags)
 		{
-			std::vector<std::string> flags_vector{ utl::enum_metadata<_FlagT>.size() };
-			for (int32_t i = 0; i < utl::enum_metadata<_FlagT>.size(); ++i)
+			std::vector<std::string> flags_vector{ enum_metadata<_FlagT>.size() };
+			for (int32_t i = 0; i < enum_metadata<_FlagT>.size(); ++i)
 			{
-				if (utl::eq_(flags, utl::enum_metadata<_FlagT>[i].first))
+				if (eq_(flags, enum_metadata<_FlagT>[i].first))
 				{
-					flags_vector[i] = utl::enum_metadata<_FlagT>[i].second;
+					flags_vector[i] = enum_metadata<_FlagT>[i].second;
 				}
 			}
 
@@ -20,12 +20,12 @@ namespace edge
 		}
 
 		template<typename _FlagT>
-		utl::flags<_FlagT> deserialize_hr_flags(const std::vector<std::string>& flags_vector)
+		flags<_FlagT> deserialize_hr_flags(const std::vector<std::string>& flags_vector)
 		{
-			utl::flags<_FlagT> flags{};
+			flags<_FlagT> flags{};
 			for (int32_t i = 0; i < flags_vector.size(); ++i)
 			{
-				flags |= utl::enum_from_string<_FlagT>(flags_vector[i].c_str());
+				flags |= enum_from_string<_FlagT>(flags_vector[i].c_str());
 			}
 			return flags;
 		}

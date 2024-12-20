@@ -3,8 +3,6 @@
 #include <edge/gfx/gfx_structures.h>
 #include <embed/shaders/includes/shlib.h>
 
-#include <hash.hpp>
-
 namespace engine
 {
 	namespace render

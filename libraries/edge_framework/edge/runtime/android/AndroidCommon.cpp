@@ -1,4 +1,5 @@
 #include "AndroidCommon.h"
+#include "AndroidRuntime.h"
 
 #include <game-activity/native_app_glue/android_native_app_glue.h>
 
@@ -27,8 +28,8 @@ namespace edge
 			}
 			if (app->userData)
 			{
-				auto platform = reinterpret_cast<AndroidPlatform*>(app->userData);
-				platform->process_android_input_events();
+				auto runtime = reinterpret_cast<AndroidRuntime*>(app->userData);
+				runtime->ProcessInputEvents();
 			}
 			return true;
 		}

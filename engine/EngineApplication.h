@@ -45,6 +45,6 @@ namespace engine
 		std::unique_ptr<world::Scene> scene{};
 
 		// Engine ui windows (imgui)
-		utl::vector<std::unique_ptr<IEditorWindow>> app_windows{};
+		std::vector<std::unique_ptr<IEditorWindow>> app_windows{};
 	};
 }

@@ -20,7 +20,7 @@ namespace engine
 			eJoint = 1 << 5,
 			eWeight = 1 << 6
 		};
-		UTL_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(VertexAttributeFlags, VertexAttributeFlag);
+		EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(VertexAttributeFlags, VertexAttributeFlag);
 
 		struct AttributeDescription
 		{

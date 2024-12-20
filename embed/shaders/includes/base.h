@@ -7,7 +7,7 @@
 
 #include <cstdint>
 #include <array>
-#include <hash.hpp>
+#include <edge/util/Hash.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/packing.hpp>
@@ -23,13 +23,13 @@
 #define CONSTANT constexpr const
 
 #define CB_BEGIN(BufferName, BufferSet, BufferBinding) \
-constexpr const uint32_t BufferName##_label = utl::murmur_hash(#BufferName); \
+constexpr const uint32_t BufferName##_label = edge::murmur_hash(#BufferName); \
 struct BufferName {
 #define CB_END(BufferName) };
 #define CB_END_E() };
 
 #define BEGIN_STRUCT_REGISTER(BufferName) \
-constexpr const uint32_t BufferName##_label = utl::murmur_hash(#BufferName); \
+constexpr const uint32_t BufferName##_label = edge::murmur_hash(#BufferName); \
 struct BufferName {
 #define END_STRUCT_REGISTER() };
 

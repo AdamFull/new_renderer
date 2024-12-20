@@ -3,6 +3,8 @@
 #include "VkDescriptorSet.h"
 #include "../gfx_base.h"
 
+#include <deque>
+
 namespace edge
 {
 	namespace gfx

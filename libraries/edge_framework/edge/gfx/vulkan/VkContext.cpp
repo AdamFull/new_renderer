@@ -394,7 +394,7 @@ namespace edge
 				*total_memory = 0ull;
 				*used_memory = 0ull;
 
-				auto heaps_count = static_cast<u64>(memory_props.memoryProperties.memoryHeapCount);
+				auto heaps_count = static_cast<uint64_t>(memory_props.memoryProperties.memoryHeapCount);
 				for (int32_t i = 0; i < heaps_count; ++i)
 				{
 					auto heapFlags = memory_props.memoryProperties.memoryHeaps[i].flags;

@@ -24,22 +24,22 @@ std::unique_ptr<IVariable> CVariableManager::MakeVariable(const char* name, cons
 			return std::make_unique<CBoolVariable>(*initial);
 		} break;
 		case EVariableDataType::eInt: {
-			auto initial = static_cast<FNumericScalarInitialData<i32>*>(create_info.initial);
+			auto initial = static_cast<FNumericScalarInitialData<int32_t>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eUInt: {
-			auto initial = static_cast<FNumericScalarInitialData<u32>*>(create_info.initial);
+			auto initial = static_cast<FNumericScalarInitialData<uint32_t>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eInt64: {
-			auto initial = static_cast<FNumericScalarInitialData<i64>*>(create_info.initial);
+			auto initial = static_cast<FNumericScalarInitialData<int64_t>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eUInt64: {
-			auto initial = static_cast<FNumericScalarInitialData<u64>*>(create_info.initial);
+			auto initial = static_cast<FNumericScalarInitialData<uint64_t>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eFloat: {
-			auto initial = static_cast<FNumericScalarInitialData<f32>*>(create_info.initial);
+			auto initial = static_cast<FNumericScalarInitialData<float>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eDouble: {
-			auto initial = static_cast<FNumericScalarInitialData<f64>*>(create_info.initial);
+			auto initial = static_cast<FNumericScalarInitialData<double>*>(create_info.initial);
 		} break;
 		}
 	}
@@ -51,22 +51,22 @@ std::unique_ptr<IVariable> CVariableManager::MakeVariable(const char* name, cons
 			auto initial = static_cast<FNumericVectorInitialData<bool>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eInt: {
-			auto initial = static_cast<FNumericVectorInitialData<i32>*>(create_info.initial);
+			auto initial = static_cast<FNumericVectorInitialData<int32_t>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eUInt: {
-			auto initial = static_cast<FNumericVectorInitialData<u32>*>(create_info.initial);
+			auto initial = static_cast<FNumericVectorInitialData<uint32_t>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eInt64: {
-			auto initial = static_cast<FNumericVectorInitialData<i64>*>(create_info.initial);
+			auto initial = static_cast<FNumericVectorInitialData<int64_t>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eUInt64: {
-			auto initial = static_cast<FNumericVectorInitialData<u64>*>(create_info.initial);
+			auto initial = static_cast<FNumericVectorInitialData<uint64_t>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eFloat: {
-			auto initial = static_cast<FNumericVectorInitialData<f32>*>(create_info.initial);
+			auto initial = static_cast<FNumericVectorInitialData<float>*>(create_info.initial);
 		} break;
 		case EVariableDataType::eDouble: {
-			auto initial = static_cast<FNumericVectorInitialData<f64>*>(create_info.initial);
+			auto initial = static_cast<FNumericVectorInitialData<double>*>(create_info.initial);
 		} break;
 		}
 	}

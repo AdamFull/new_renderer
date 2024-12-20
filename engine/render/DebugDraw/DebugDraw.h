@@ -32,16 +32,16 @@ struct ImDbgVertex
 {
     glm::vec3 position;
     glm::vec2 uv;
-    u32 color;
+    uint32_t color;
 };
 
 struct ImDbgDrawCmd
 {
     ImDbgDrawType type;
 
-	u32 vertexOffset;
-	u32 indexOffset;
-	u32 indexCount;
+	uint32_t vertexOffset;
+	uint32_t indexOffset;
+	uint32_t indexCount;
 
 	ImDbgHandle handle;
 
@@ -52,17 +52,17 @@ struct ImDbgDrawList
 {
 	ImDbgGeometryType type;
 
-	utl::vector<ImDbgVertex> vertices;
-	utl::vector<ImDbgIndex> indices;
+	std::vector<ImDbgVertex> vertices;
+	std::vector<ImDbgIndex> indices;
 
-	utl::vector<ImDbgDrawCmd> drawCommands;
+	std::vector<ImDbgDrawCmd> drawCommands;
 };
 
 struct ImDbgDrawData
 {
-	u32 totalVertexCount;
-	u32 totalIndexCount;
-	utl::vector<ImDbgDrawList> drawLists;
+	uint32_t totalVertexCount;
+	uint32_t totalIndexCount;
+	std::vector<ImDbgDrawList> drawLists;
 };
 
 
@@ -88,9 +88,9 @@ namespace ImDbg
 	public:
 		constexpr ArrayProxy() noexcept : m_data{ nullptr }, m_size{ 0ull }{}
 		ArrayProxy(_Ty const& val) noexcept : m_data{ &val }, m_size{ 1ull }{}
-		ArrayProxy(u64 size, _Ty const* data) : m_data{ data }, m_size{ size }{}
+		ArrayProxy(uint64_t size, _Ty const* data) : m_data{ data }, m_size{ size }{}
 
-		template<u64 _Size>
+		template<uint64_t _Size>
 		ArrayProxy(_Ty const(&arr)[_Size]) noexcept : m_data{ arr }, m_size{ _Size }{}
 
 		ArrayProxy(std::initializer_list<_Ty> const& list) noexcept : m_data{ list.begin() }, m_size{ list.size() }{}
@@ -130,14 +130,14 @@ namespace ImDbg
 
 		bool empty() const noexcept { return (m_size == 0); }
 
-		u64 size() const noexcept { return m_size; }
+		uint64_t size() const noexcept { return m_size; }
 		_Ty const* data() const noexcept { return m_data; }
 	private:
 		const _Ty* m_data{ nullptr };
-		u64 m_size{ 0ull };
+		uint64_t m_size{ 0ull };
 	};
 
-	constexpr u8 hex_to_value(char c) 
+	constexpr uint8_t hex_to_value(char c) 
 	{
 		return (c >= '0' && c <= '9') ? (c - '0') :
 			(c >= 'A' && c <= 'F') ? (c - 'A' + 10) :
@@ -299,8 +299,8 @@ namespace ImDbg
 	void CreateContext();
 	void DestroyContext();
 
-	void LoadFont(const u8* data, u32 data_size, u32 character_size);
-	void GetTexDataAsRGBA32(u32 index, u8** out_pixels, i32* out_width, i32* out_height, i32* out_bytes_per_pixel);
+	void LoadFont(const uint8_t* data, uint32_t data_size, uint32_t character_size);
+	void GetTexDataAsRGBA32(uint32_t index, uint8_t** out_pixels, int32_t* out_width, int32_t* out_height, int32_t* out_bytes_per_pixel);
 
 	void NewFrame();
 	void EndFrame();
@@ -310,10 +310,10 @@ namespace ImDbg
 	void DrawLine2D(const glm::vec2& from, const glm::vec2& to, ImDbgColor color, f32 thickness = 1.0f);
 	void DrawRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color, f32 thickness = 1.0f);
 	void DrawFillRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color);
-	void DrawArc2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments = 36, f32 thickness = 1.0f);
-	void DrawPie2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments = 36);
+	void DrawArc2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, int32_t segments = 36, f32 thickness = 1.0f);
+	void DrawPie2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, int32_t segments = 36);
 	void DrawRingArc2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, f32 start_angle, f32 end_angle, ImDbgColor color, int segments = 36);
-	void DrawRing2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, ImDbgColor color, i32 segments = 36);
+	void DrawRing2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, ImDbgColor color, int32_t segments = 36);
 	void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color, f32 thickness = 1.0f);
 	void DrawFillCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color);
 	void DrawTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color, f32 thickness = 1.0f);

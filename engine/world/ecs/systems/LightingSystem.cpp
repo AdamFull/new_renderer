@@ -64,7 +64,7 @@ namespace engine
 						commit.color = light.color;
 						commit.intencity = light.intencity;
 						commit.shadowIndex = light.shadowIndex;
-						commit.castShadows = utl::cast<int>(light.castShadows);
+						commit.castShadows = static_cast<int>(light.castShadows);
 
 						render_world.AddLight(commit);
 						directional_light_count++;
@@ -92,7 +92,7 @@ namespace engine
 						commit.intencity = light.intencity;
 						commit.radius = light.radius;
 						commit.shadowIndex = light.shadowIndex;
-						commit.castShadows = utl::cast<int>(light.castShadows);
+						commit.castShadows = static_cast<int>(light.castShadows);
 
 						render_world.AddLight(commit);
 						point_light_count++;
@@ -118,9 +118,9 @@ namespace engine
 						commit.intencity = light.intencity;
 						commit.lightAngleScale = 1.f / (glm::max)(0.001f, glm::cos(light.innerAngle) - glm::cos(light.outerAngle));
 						commit.lightAngleOffset = -glm::cos(light.outerAngle) * commit.lightAngleScale;
-						commit.toTarget = utl::cast<int>(light.toTarget);
+						commit.toTarget = static_cast<int>(light.toTarget);
 						commit.shadowIndex = light.shadowIndex;
-						commit.castShadows = utl::cast<int>(light.castShadows);
+						commit.castShadows = static_cast<int>(light.castShadows);
 
 						render_world.AddLight(commit);
 						spot_light_count++;

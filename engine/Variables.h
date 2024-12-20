@@ -18,13 +18,13 @@ namespace engine
 	class CIntVariable : public IVariable
 	{
 	public:
-		CIntVariable(const FNumericScalarInitialData<i32>& initial) : m_value{ initial.value } {}
+		CIntVariable(const FNumericScalarInitialData<int32_t>& initial) : m_value{ initial.value } {}
 		~CIntVariable() = default;
 
 		void Display() override;
 	private:
-		i32 m_value{ 0 };
-		i32 m_min{ 0 };
-		i32 m_max{ 0 };
+		int32_t m_value{ 0 };
+		int32_t m_min{ 0 };
+		int32_t m_max{ 0 };
 	};
 }

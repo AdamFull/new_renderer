@@ -15,7 +15,7 @@ namespace engine
 				FHierarchyComponent(){};
 				FHierarchyComponent(entt::entity parent) : parent(parent) {}
 				entt::entity parent{ entt::null };
-				utl::vector<entt::entity> children{};
+				std::vector<entt::entity> children{};
 			};
 		}
 	}

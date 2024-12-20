@@ -391,7 +391,7 @@ namespace engine
 		}
 	}
 
-	bool ReadFile(std::string_view path, utl::vector<u8>& out)
+	bool ReadFile(std::string_view path, std::vector<uint8_t>& out)
 	{
 		std::ifstream file(path.data(), std::ios::binary);
 		if (!file.is_open())
@@ -426,11 +426,11 @@ namespace engine
 
 		// Load additional fonts
 		auto& font_manager = ImFontManager::GetInstance();
-		font_manager->SetFileReaderFn([](std::string_view path, utl::vector<u8>& out) { return ReadFile(path, out); });
+		font_manager->SetFileReaderFn([](std::string_view path, std::vector<uint8_t>& out) { return ReadFile(path, out); });
 
 		auto font_path = std::format("embed/font/{}", FONT_ICON_FILE_NAME_MDI);
 
-		utl::vector<u8> data;
+		std::vector<uint8_t> data;
 		ReadFile(font_path, data);
 
 		// Load fonts
@@ -576,13 +576,13 @@ namespace engine
 
 	}
 
-	//void CImGuiEngineSystem::HandleFocusChanged(i32 focused)
+	//void CImGuiEngineSystem::HandleFocusChanged(int32_t focused)
 //{
 //	ImGuiIO& io = ImGui::GetIO();
 //	io.AddFocusEvent(focused);
 //}
 //
-//void CImGuiEngineSystem::HandleCursorEnter(i32 enter)
+//void CImGuiEngineSystem::HandleCursorEnter(int32_t enter)
 //{
 //	ImGuiIO& io = ImGui::GetIO();
 //	if (enter)

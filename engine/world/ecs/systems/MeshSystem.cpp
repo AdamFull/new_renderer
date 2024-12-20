@@ -41,7 +41,7 @@ namespace engine
 					if (!base.visible)
 						continue;
 
-					//if (auto found = root_component.skinRemap.find(utl::cast<u32>(mesh_component.skin)); found != root_component.skinRemap.end())
+					//if (auto found = root_component.skinRemap.find(static_cast<uint32_t>(mesh_component.skin)); found != root_component.skinRemap.end())
 					//	scene_node.skeletonID = found->second;
 
 					if (mesh_component.skin != -1)

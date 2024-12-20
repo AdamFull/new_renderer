@@ -6,6 +6,8 @@
 #include "DirectoryIteratorInterface.h"
 #include <nlohmann/json.hpp>
 
+#include <string_view>
+
 namespace edge
 {
     namespace filesystem
@@ -40,11 +42,11 @@ namespace edge
 
             virtual bool ReadFile(std::string_view path, char* data, size_t size) = 0;
             virtual bool ReadFile(std::string_view path, std::string& data) = 0;
-            virtual bool ReadFile(std::string_view path, utl::vector<uint8_t>& data) = 0;
-            virtual bool ReadFile(std::string_view path, utl::vector<uint32_t>& data) = 0;
+            virtual bool ReadFile(std::string_view path, std::vector<uint8_t>& data) = 0;
+            virtual bool ReadFile(std::string_view path, std::vector<uint32_t>& data) = 0;
 
             virtual bool WriteFile(std::string_view path, const std::string& data) = 0;
-            virtual bool WriteFile(std::string_view path, const utl::vector<uint8_t>& binary) = 0;
+            virtual bool WriteFile(std::string_view path, const std::vector<uint8_t>& binary) = 0;
 
             template<class _Ty>
             bool ReadJson(std::string_view path, _Ty& type)

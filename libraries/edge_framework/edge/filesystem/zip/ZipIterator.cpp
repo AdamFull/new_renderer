@@ -8,7 +8,7 @@ namespace edge
 {
     namespace filesystem
     {
-        void get_entries(zip* archive, utl::vector<std::string>& outresults, std::string_view start_path, bool recurse)
+        void get_entries(zip* archive, std::vector<std::string>& outresults, std::string_view start_path, bool recurse)
         {
             for (zip_int64_t i = 0; i < zip_get_num_entries(archive, 0); ++i)
             {

@@ -13,9 +13,9 @@
 
 #include "monoisome_regular.ttf.h"
 
-constexpr const u32 start_glyph = 33 - 1; 
-constexpr const u32 max_glyph_count = 128;
-constexpr const u32 max_atlas_width = 1024;
+constexpr const uint32_t start_glyph = 33 - 1; 
+constexpr const uint32_t max_glyph_count = 128;
+constexpr const uint32_t max_atlas_width = 1024;
 constexpr const glm::vec2 default_uv = { 0.01f, 0.01f };
 
 static ImDbgContext* context{ nullptr };
@@ -33,21 +33,21 @@ struct FontAtlas
 {
     FT_Face face;
 
-    utl::vector<ImDbgFontGlyph> glyphs{};
+    std::vector<ImDbgFontGlyph> glyphs{};
 
     f32 lineHeight{};
 
-    u8* texture{ nullptr };
-    u32 width{};
-    u32 height{};
-    u64 size{};
-    u32 stride{};
+    uint8_t* texture{ nullptr };
+    uint32_t width{};
+    uint32_t height{};
+    uint64_t size{};
+    uint32_t stride{};
 };
 
 struct FontImpl
 {
     FT_Library ft;
-    utl::vector<FontAtlas> atlases;
+    std::vector<FontAtlas> atlases;
 };
 
 namespace ImDbg
@@ -100,7 +100,7 @@ namespace ImDbg
         context = nullptr;
     }
 
-	void LoadFont(const u8* data, u32 data_size, u32 character_size)
+	void LoadFont(const uint8_t* data, uint32_t data_size, uint32_t character_size)
 	{
 		auto& new_atlas = context->font->atlases.emplace_back();
 
@@ -118,9 +118,9 @@ namespace ImDbg
         new_atlas.width = 1;
         while (new_atlas.width < max_dim) new_atlas.width <<= 1;
         
-        u32 maxy{};
+        uint32_t maxy{};
         glm::uvec2 pen{};
-        for (u64 i = start_glyph; i < max_glyph_count; i++)
+        for (uint64_t i = start_glyph; i < max_glyph_count; i++)
         {
             FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
             FT_Bitmap* bmp = &new_atlas.face->glyph->bitmap;
@@ -144,9 +144,9 @@ namespace ImDbg
         while (new_atlas.height < maxy) new_atlas.height <<= 1;
 
         // Fill glyph texture
-        new_atlas.stride = sizeof(u32);
-        new_atlas.size = (u64)new_atlas.width * (u64)new_atlas.height * (u64)new_atlas.stride;
-        new_atlas.texture = (u8*)calloc(new_atlas.size, 1);
+        new_atlas.stride = sizeof(uint32_t);
+        new_atlas.size = (uint64_t)new_atlas.width * (uint64_t)new_atlas.height * (uint64_t)new_atlas.stride;
+        new_atlas.texture = (uint8_t*)calloc(new_atlas.size, 1);
 
         int strip_width = 3; // Width of the filled strip
         for (int y = 0; y < new_atlas.height; ++y)
@@ -154,13 +154,13 @@ namespace ImDbg
             for (int x = 0; x < strip_width; ++x)
             {
                 int pixel_index = (y * new_atlas.width + x) * new_atlas.stride;
-                for (u64 idx = 0; idx < new_atlas.stride; ++idx)
+                for (uint64_t idx = 0; idx < new_atlas.stride; ++idx)
                     new_atlas.texture[pixel_index + idx] = 0xFF;
             }
         }
 
         glm::uvec2 cursor{ strip_width + 1, 0};
-        for (u64 i = start_glyph; i < max_glyph_count; i++)
+        for (uint64_t i = start_glyph; i < max_glyph_count; i++)
         {
             FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
             FT_Bitmap* bmp = &new_atlas.face->glyph->bitmap;
@@ -171,16 +171,16 @@ namespace ImDbg
                 cursor.y += ((new_atlas.face->size->metrics.height >> 6) + 1);
             }
 
-            for (u64 row = 0; row < bmp->rows; ++row)
+            for (uint64_t row = 0; row < bmp->rows; ++row)
             {
-                for (u64 col = 0; col < bmp->width; ++col)
+                for (uint64_t col = 0; col < bmp->width; ++col)
                 {
                     int x = cursor.x + col;
                     int y = cursor.y + row;
                     int pixel_index = (y * new_atlas.width + x) * new_atlas.stride;
                     auto value = bmp->buffer[row * bmp->pitch + col];
 
-                    for (u64 idx = 0; idx < new_atlas.stride; ++idx)
+                    for (uint64_t idx = 0; idx < new_atlas.stride; ++idx)
                         new_atlas.texture[pixel_index + idx] = value;
                 }
             }
@@ -201,7 +201,7 @@ namespace ImDbg
         //stbi_write_png("font.png", new_atlas.width, new_atlas.height, new_atlas.stride, new_atlas.texture, new_atlas.width * new_atlas.stride);
 	}
 
-    void GetTexDataAsRGBA32(u32 index, u8** out_pixels, i32* out_width, i32* out_height, i32* out_bytes_per_pixel)
+    void GetTexDataAsRGBA32(uint32_t index, uint8_t** out_pixels, int32_t* out_width, int32_t* out_height, int32_t* out_bytes_per_pixel)
     {
         auto& atlas = context->font->atlases[index];
         *out_pixels = atlas.texture;
@@ -244,7 +244,7 @@ namespace ImDbg
         if (!context)
             return;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::ePoints];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::ePoints];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.type = ImDbgDrawType::e2D;
@@ -268,7 +268,7 @@ namespace ImDbg
         auto min = glm::min(from, to);
         auto range = glm::max(from, to) - min;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.type = ImDbgDrawType::e2D;
@@ -298,12 +298,12 @@ namespace ImDbg
         DrawFillPolygon2D(points, color);
     }
 
-    void DrawArc2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments, f32 thickness)
+    void DrawArc2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, int32_t segments, f32 thickness)
     {
         if (!context)
             return;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eLines];
 
         float increment = (end_angle - start_angle) / segments;
 
@@ -315,7 +315,7 @@ namespace ImDbg
         new_draw_cmd.clipRect = CalculateClipRect(center - glm::vec2(radius) - thickness, radius * 2 + thickness, radius * 2 + thickness);
 
         // Add vertices for the arc
-        for (i32 i = 0; i <= segments; ++i)
+        for (int32_t i = 0; i <= segments; ++i)
         {
             float theta = start_angle + i * increment;
             glm::vec2 pos = center + radius * glm::vec2(glm::cos(theta), glm::sin(theta));
@@ -323,7 +323,7 @@ namespace ImDbg
         }
 
         // Add indices for the arc
-        for (i32 i = 0; i < segments; ++i)
+        for (int32_t i = 0; i < segments; ++i)
         {
             draw_list.indices.emplace_back(i);
             draw_list.indices.emplace_back(i + 1);
@@ -333,12 +333,12 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawPie2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments)
+    void DrawPie2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, int32_t segments)
     {
         if (!context)
             return;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eTriangles];
 
         float increment = (end_angle - start_angle) / segments;
 
@@ -372,9 +372,9 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawRingArc2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, f32 start_angle, f32 end_angle, ImDbgColor color, i32 segments)
+    void DrawRingArc2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, f32 start_angle, f32 end_angle, ImDbgColor color, int32_t segments)
     {
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eTriangles];
 
         float increment = (end_angle - start_angle) / segments;
 
@@ -416,7 +416,7 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawRing2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, ImDbgColor color, i32 segments)
+    void DrawRing2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, ImDbgColor color, int32_t segments)
     {
         DrawRingArc2D(center, inner_radius, outer_radius, 0.f, 2.f * glm::pi<f32>(), color, segments);
     }
@@ -455,7 +455,7 @@ namespace ImDbg
 
         // Calculate polygon aabb
         glm::vec2 min{ points[0] }, max{ points[0] };
-        for (i32 i = 1; i < points.size(); ++i)
+        for (int32_t i = 1; i < points.size(); ++i)
         {
             min = glm::min(min, points[i]);
             max = glm::max(max, points[i]);
@@ -463,7 +463,7 @@ namespace ImDbg
 
         glm::vec2 range = max - min;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.type = ImDbgDrawType::e2D;
@@ -475,7 +475,7 @@ namespace ImDbg
         for (const auto& point : points)
             draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(point, 0.f), default_uv, color });
 
-        for (i32 i = 0; i < points.size(); ++i)
+        for (int32_t i = 0; i < points.size(); ++i)
         {
             draw_list.indices.emplace_back(i);
             draw_list.indices.emplace_back(((i + 1) % points.size()));
@@ -494,7 +494,7 @@ namespace ImDbg
 
         // Calculate polygon aabb
         glm::vec2 min{ points[0] }, max{ points[0] };
-        for (i32 i = 1; i < points.size(); ++i)
+        for (int32_t i = 1; i < points.size(); ++i)
         {
             min = glm::min(min, points[i]);
             max = glm::max(max, points[i]);
@@ -502,7 +502,7 @@ namespace ImDbg
 
         glm::vec2 range = max - min;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eTriangles];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.type = ImDbgDrawType::e2D;
@@ -514,7 +514,7 @@ namespace ImDbg
         for (const auto& point : points)
             draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(point, 0.f), default_uv, color });
 
-        for (i32 i = 0; i < points.size() - 1; ++i)
+        for (int32_t i = 0; i < points.size() - 1; ++i)
         {
             if (i > 1)
             {
@@ -533,7 +533,7 @@ namespace ImDbg
         if (!context)
             return;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eLines];
 
         const int segments = 8;
         float increment = glm::half_pi<float>() / segments;
@@ -622,7 +622,7 @@ namespace ImDbg
         if (!context)
             return;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eTriangles];
 
         // Define corners
         glm::vec2 top_left = glm::vec2(min.x + radius, min.y + radius);
@@ -638,7 +638,7 @@ namespace ImDbg
         new_draw_cmd.clipRect = CalculateClipRect(min, max.x - min.x, max.y - min.y);
 
         // Center rectangle
-        u32 vertex_count{ 0u };
+        uint32_t vertex_count{ 0u };
         draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(min.x + radius, min.y, 0.f), default_uv, color });
         draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x - radius, min.y, 0.f), default_uv, color });
         draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(max.x - radius, max.y, 0.f), default_uv, color });
@@ -689,13 +689,13 @@ namespace ImDbg
         const int segments = 8;
         float increment = glm::half_pi<float>() / segments;
 
-        for (i32 i = 0; i <= segments; ++i)
+        for (int32_t i = 0; i <= segments; ++i)
         {
             float theta = i * increment;
             draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(top_left - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
-        for (i32 i = 0; i < segments; ++i)
+        for (int32_t i = 0; i < segments; ++i)
         {
             draw_list.indices.emplace_back(vertex_count);
             draw_list.indices.emplace_back(vertex_count + i);
@@ -704,13 +704,13 @@ namespace ImDbg
         }
         vertex_count += segments;
 
-        for (i32 i = 0; i <= segments; ++i)
+        for (int32_t i = 0; i <= segments; ++i)
         {
             float theta = i * increment + glm::half_pi<float>();
             draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(top_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
-        for (i32 i = 0; i < segments; ++i)
+        for (int32_t i = 0; i < segments; ++i)
         {
             draw_list.indices.emplace_back(vertex_count);
             draw_list.indices.emplace_back(vertex_count + i);
@@ -725,7 +725,7 @@ namespace ImDbg
             draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(bottom_right - radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
-        for (i32 i = 0; i < segments; ++i)
+        for (int32_t i = 0; i < segments; ++i)
         {
             draw_list.indices.emplace_back(vertex_count);
             draw_list.indices.emplace_back(vertex_count + i);
@@ -734,13 +734,13 @@ namespace ImDbg
         }
         vertex_count += segments;
 
-        for (i32 i = 0; i <= segments; ++i)
+        for (int32_t i = 0; i <= segments; ++i)
         {
             f32 theta = i * increment + 3.0f * glm::half_pi<float>();
             draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(bottom_left + radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
-        for (i32 i = 0; i < segments; ++i)
+        for (int32_t i = 0; i < segments; ++i)
         {
             draw_list.indices.emplace_back(vertex_count);
             draw_list.indices.emplace_back(vertex_count + i);
@@ -758,7 +758,7 @@ namespace ImDbg
         if (!context)
             return;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eTriangles];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eTriangles];
 
         auto& font_atlas = context->font->atlases[0]; // Assuming you have only one font atlas
 
@@ -771,7 +771,7 @@ namespace ImDbg
 
         glm::vec3 min{ position, 0.f }, max{ position, 0.f };
 
-        u32 vertex_count{ 0u };
+        uint32_t vertex_count{ 0u };
         glm::vec2 cursor = position; // Initial position of the text
         for (char c : text)
         {
@@ -808,7 +808,7 @@ namespace ImDbg
             draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x1, y1, 0.f), glm::vec2(u1, v1), color });
             draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(x0, y1, 0.f), glm::vec2(u0, v1), color });
 
-            for (i32 i = draw_list.vertices.size() - 4; i < draw_list.vertices.size(); ++i)
+            for (int32_t i = draw_list.vertices.size() - 4; i < draw_list.vertices.size(); ++i)
             {
                 const auto& vertex = draw_list.vertices[i];
                 min = glm::min(min, vertex.position);
@@ -842,7 +842,7 @@ namespace ImDbg
         if (!context)
             return;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::ePoints];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::ePoints];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.type = ImDbgDrawType::e3D;
@@ -862,7 +862,7 @@ namespace ImDbg
         if (!context)
             return;
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.type = ImDbgDrawType::e3D;
@@ -896,14 +896,14 @@ namespace ImDbg
             { min.x, max.y, max.z }
         };
 
-        static const u32 boxIndices[] =
+        static const uint32_t boxIndices[] =
         {
             0, 1, 1, 2, 2, 3, 3, 0,
             4, 5, 5, 6, 6, 7, 7, 4,
             0, 4, 1, 5, 2, 6, 3, 7
         };
 
-        auto& draw_list = context->drawData.drawLists[(u32)ImDbgGeometryType::eLines];
+        auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eLines];
 
         auto& new_draw_cmd = draw_list.drawCommands.emplace_back();
         new_draw_cmd.type = ImDbgDrawType::e3D;

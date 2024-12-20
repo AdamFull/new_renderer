@@ -76,7 +76,7 @@ namespace edge
             /**
              * @brief A vector of strings representing the entries in the archive.
              */
-            utl::vector<std::string> entries_;
+            std::vector<std::string> entries_;
         };
     }
 }

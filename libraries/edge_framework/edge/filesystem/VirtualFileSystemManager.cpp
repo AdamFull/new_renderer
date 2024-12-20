@@ -212,7 +212,7 @@ namespace edge
 			return false;
 		}
 
-		bool VirtualFileSystemManager::ReadFile(std::string_view path, utl::vector<uint8_t>& data)
+		bool VirtualFileSystemManager::ReadFile(std::string_view path, std::vector<uint8_t>& data)
 		{
 			auto pFile = OpenFile(path);
 			if (pFile && pFile->IsOpen())
@@ -224,7 +224,7 @@ namespace edge
 			return false;
 		}
 
-		bool VirtualFileSystemManager::ReadFile(std::string_view path, utl::vector<uint32_t>& data)
+		bool VirtualFileSystemManager::ReadFile(std::string_view path, std::vector<uint32_t>& data)
 		{
 			auto pFile = OpenFile(path);
 			if (pFile && pFile->IsOpen())
@@ -248,7 +248,7 @@ namespace edge
 			return false;
 		}
 
-		bool VirtualFileSystemManager::WriteFile(std::string_view path, const utl::vector<uint8_t>& binary)
+		bool VirtualFileSystemManager::WriteFile(std::string_view path, const std::vector<uint8_t>& binary)
 		{
 			auto pFile = CreateFile(path);
 			if (pFile && pFile->IsOpen())

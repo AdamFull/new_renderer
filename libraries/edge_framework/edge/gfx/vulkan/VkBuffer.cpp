@@ -112,13 +112,13 @@ namespace edge
 			{
 				if (persistent)
 				{
-					engine::util::Copy(mapped_data, offset, data, size, 0ull, std::execution::par);
+					engine::util::Copy(mapped_data, offset, data, size, 0ull);
 					Flush();
 				}
 				else
 				{
 					MapMemory();
-					engine::util::Copy(mapped_data, offset, data, size, 0ull, std::execution::par);
+					engine::util::Copy(mapped_data, offset, data, size, 0ull);
 					Flush();
 					UnmapMemory();
 				}

@@ -4,10 +4,10 @@
 #include <stb/stb_image.h>
 #include <ktx.h>
 
-#include <edge/util/fs_helper.h>
-#include <edge/util/Logger.h>
+#include "../util/fs_helper.h"
+#include "../util/Logger.h"
 
-#include <edge/util/Profiler.h>
+#include "../util/Profiler.h"
 
 #include "native_format/vk_format.h"
 
@@ -351,10 +351,9 @@ namespace edge
 				EDGE_PROFILE_ZONE_SCOPED;
 
 				BeginCommands();
-				using namespace utl;
 
 				auto ext = edge::fsh::get_ext(texture_path);
-				auto ext_hash = utl::murmur_hash(ext.data(), ext.size(), 0);
+				auto ext_hash = murmur_hash(ext.data(), ext.size(), 0);
 				bool generate_mips{ false };
 
 				std::vector<uint8_t> data{};
@@ -389,8 +388,8 @@ namespace edge
 					create_info.format = gfx::Format::eR8G8B8A8Unorm;
 
 					// TODO: Add mip level generation
-					//create_info.levels = 1; utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
-					create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+					//create_info.levels = 1; static_cast<uint32_t>(std::floor(std::log2((std::max)(width, height)))) + 1u;
+					create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(width, height)))) + 1u;
 					generate_mips = true;
 
 					// For mip generation
@@ -430,7 +429,7 @@ namespace edge
 					if (kTexture->generateMipmaps)
 					{
 						generate_mips = true;
-						create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+						create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 					}
 
 					// Get texture format
@@ -489,7 +488,7 @@ namespace edge
 					if (kTexture->generateMipmaps)
 					{
 						generate_mips = true;
-						create_info.levels = utl::cast<u32>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+						create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 					}
 
 					if (ktxTexture2_NeedsTranscoding(kTexture))
@@ -654,7 +653,7 @@ namespace edge
 					shader_cache[shader_key] = new_shader;
 					return new_shader;
 				}
-				
+
 				return found_shader->second;
 			}
 

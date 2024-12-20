@@ -4,7 +4,7 @@
 
 #include <edge/util/util.h>
 
-#include <hash.hpp>
+#include <edge/util/Hash.hpp>
 
 #include <edge/util/Profiler.h>
 
@@ -50,15 +50,15 @@ namespace engine
 
 		uint32_t Hash(const AttributeDescription& desc, uint32_t hash)
 		{
-			hash = utl::murmur_hash(utl::enum_cast(desc.attribute_flag), hash);
-			hash = utl::murmur_hash(utl::enum_cast(desc.format), hash);
+			hash = edge::murmur_hash(edge::enum_cast(desc.attribute_flag), hash);
+			hash = edge::murmur_hash(edge::enum_cast(desc.format), hash);
 
 			return hash;
 		}
 
 		uint32_t Hash(const IndexDescription& desc, uint32_t hash)
 		{
-			hash = utl::murmur_hash(utl::enum_cast(desc.type), hash);
+			hash = edge::murmur_hash(edge::enum_cast(desc.type), hash);
 			return hash;
 		}
 
@@ -161,7 +161,7 @@ namespace engine
 			buffer_update_info.update_size = data.size();
 
 			resource_loader.BeginBufferUpdate(buffer_update_info);
-			util::Copy(buffer_update_info.map_info.data, data.data(), data.size(), std::execution::par);
+			util::Copy(buffer_update_info.map_info.data, data.data(), data.size());
 			buffer_update_info.regions[buffer_update_info.region_count++] = { 0ull, 0ull, data.size() };
 			resource_loader.EndBufferUpdate(buffer_update_info);
 		}

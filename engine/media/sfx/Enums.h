@@ -1,6 +1,6 @@
 #pragma once
 
-#include <enum.hpp>
+#include <edge/util/Enum.hpp>
 
 namespace engine
 {

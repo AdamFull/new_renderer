@@ -5,8 +5,7 @@
 #include <edge/gfx/gfx_util.h>
 
 #include <edge/util/Logger.h>
-
-#include <hash.hpp>
+#include <edge/util/Hash.hpp>
 
 #include <edge/util/Profiler.h>
 
@@ -118,7 +117,7 @@ namespace engine
 
 		UniformHandle& ShaderPass::GetUniformBlock(const char* name)
 		{
-			return GetUniformBlock(utl::murmur_hash(name));
+			return GetUniformBlock(edge::murmur_hash(name));
 		}
 		
 		void ShaderPass::BindResources(edge::gfx::CommandList& command_list)

@@ -134,11 +134,11 @@ namespace edge
 
 			bool ReadFile(std::string_view path, char* data, size_t size) override;
 			bool ReadFile(std::string_view path, std::string& data) override;
-			bool ReadFile(std::string_view path, utl::vector<uint8_t>& data) override;
-			bool ReadFile(std::string_view path, utl::vector<uint32_t>& data) override;
+			bool ReadFile(std::string_view path, std::vector<uint8_t>& data) override;
+			bool ReadFile(std::string_view path, std::vector<uint32_t>& data) override;
 
 			bool WriteFile(std::string_view path, const std::string& data) override;
-			bool WriteFile(std::string_view path, const utl::vector<uint8_t>& binary) override;
+			bool WriteFile(std::string_view path, const std::vector<uint8_t>& binary) override;
 		private:
 			/**
 			 * @brief Retrieves the filesystem implementation for the given path.
@@ -155,7 +155,7 @@ namespace edge
 			 */
 			static void ProcessCopyFile(const std::unique_ptr<IVFSInterface>& pFSFrom, const std::unique_ptr<IVFSInterface>& pFSTo, std::string_view path);
 		private:
-			utl::hash_map<std::string, std::unique_ptr<IVFSInterface>> m_vMountedFS{};
+			std::unordered_map<std::string, std::unique_ptr<IVFSInterface>> m_vMountedFS{};
 			std::mutex m_SynchronizationMutex;
 		};
 	}

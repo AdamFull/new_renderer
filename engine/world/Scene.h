@@ -12,10 +12,10 @@ namespace engine
 	{
 		struct SceneLoadedResources
 		{
-			utl::hash_map<uint32_t, utl::vector<uint32_t>> vertexHandlers{};
+			std::unordered_map<uint32_t, std::vector<uint32_t>> vertexHandlers{};
 
-			utl::vector<uint32_t> textures{};
-			utl::vector<uint32_t> materials{};
+			std::vector<uint32_t> textures{};
+			std::vector<uint32_t> materials{};
 		};
 
 		class Scene final
@@ -30,11 +30,11 @@ namespace engine
 		private:
 			void LoadGLTF(easygltf::FGLTFRoot& root);
 
-			void LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index, f32 global_scale = 1.f);
+			void LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index, f32 global_scale = 1.f);
 
-			void LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
-			void LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
-			void LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, u32 node_index);
+			void LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index);
+			void LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index);
+			void LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index);
 
 			void LoadAnimations(const easygltf::FGLTFRoot& root);
 			void LoadSkins(const easygltf::FGLTFRoot& root);
@@ -44,7 +44,7 @@ namespace engine
 			edge::filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
 
 			SceneLoadedResources resources{};
-			utl::hash_map<u32, entt::entity> node_to_entity{};
+			std::unordered_map<uint32_t, entt::entity> node_to_entity{};
 		};
 	}
 }

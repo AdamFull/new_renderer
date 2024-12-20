@@ -20,6 +20,11 @@ namespace edge
 		return true;
 	}
 
+	void Application::FixedUpdate(float delta_time)
+	{
+
+	}
+
 	void Application::Update(float delta_time)
 	{
 

@@ -1,7 +1,8 @@
 #include "gfx_context.h"
 
 #include <vulkan/VkContext.h>
-#include <hash.hpp>
+#include "../../util/Enum.hpp"
+#include "../../util/Hash.hpp"
 
 namespace edge
 {
@@ -9,18 +10,18 @@ namespace edge
 	{
 		uint32_t Hash(const VertexAttributeDescription& desc, uint32_t hash)
 		{
-			hash = utl::murmur_hash(desc.location, hash);
-			hash = utl::murmur_hash(desc.binding, hash);
-			hash = utl::murmur_hash(utl::enum_cast(desc.format), hash);
-			hash = utl::murmur_hash(desc.offset, hash);
+			hash = murmur_hash(desc.location, hash);
+			hash = murmur_hash(desc.binding, hash);
+			hash = murmur_hash(enum_cast(desc.format), hash);
+			hash = murmur_hash(desc.offset, hash);
 
 			return hash;
 		}
 
 		uint32_t Hash(const VertexBindingDescription& desc, uint32_t hash)
 		{
-			hash = utl::murmur_hash(desc.binding, hash);
-			hash = utl::murmur_hash(desc.stride, hash);
+			hash = murmur_hash(desc.binding, hash);
+			hash = murmur_hash(desc.stride, hash);
 
 			return hash;
 		}
@@ -42,39 +43,39 @@ namespace edge
 
 		uint32_t Hash(const RasterizationState& state, uint32_t hash)
 		{
-			hash = utl::murmur_hash(state.depth_clamp, hash);
-			hash = utl::murmur_hash(state.discard_enable, hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.fill_mode), hash);
-			//hash = utl::murmur_hash(static_cast<uint32_t>(state.cull_mode), hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.front_face), hash);
+			hash = murmur_hash(state.depth_clamp, hash);
+			hash = murmur_hash(state.discard_enable, hash);
+			hash = murmur_hash(enum_cast(state.fill_mode), hash);
+			//hash = murmur_hash(static_cast<uint32_t>(state.cull_mode), hash);
+			hash = murmur_hash(enum_cast(state.front_face), hash);
 
 			return hash;
 		}
 
 		uint32_t Hash(const MultisampleState& state, uint32_t hash)
 		{
-			hash = utl::murmur_hash(utl::enum_cast(state.sample_count), hash);
-			hash = utl::murmur_hash(state.alpha_to_coverage, hash);
-			hash = utl::murmur_hash(state.alpha_to_one, hash);
+			hash = murmur_hash(enum_cast(state.sample_count), hash);
+			hash = murmur_hash(state.alpha_to_coverage, hash);
+			hash = murmur_hash(state.alpha_to_one, hash);
 			return hash;
 		}
 
 		uint32_t Hash(const DepthStencilState& state, uint32_t hash)
 		{
-			hash = utl::murmur_hash(state.depth_test, hash);
-			hash = utl::murmur_hash(state.depth_write, hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.depth_compare_op), hash);
+			hash = murmur_hash(state.depth_test, hash);
+			hash = murmur_hash(state.depth_write, hash);
+			hash = murmur_hash(enum_cast(state.depth_compare_op), hash);
 
-			hash = utl::murmur_hash(state.stencil_test, hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.stencil_front_compare_op), hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.front_fail), hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.depth_front_fail), hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.front_pass), hash);
+			hash = murmur_hash(state.stencil_test, hash);
+			hash = murmur_hash(enum_cast(state.stencil_front_compare_op), hash);
+			hash = murmur_hash(enum_cast(state.front_fail), hash);
+			hash = murmur_hash(enum_cast(state.depth_front_fail), hash);
+			hash = murmur_hash(enum_cast(state.front_pass), hash);
 
-			hash = utl::murmur_hash(utl::enum_cast(state.stencil_back_compare_op), hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.back_fail), hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.depth_back_fail), hash);
-			hash = utl::murmur_hash(utl::enum_cast(state.back_pass), hash);
+			hash = murmur_hash(enum_cast(state.stencil_back_compare_op), hash);
+			hash = murmur_hash(enum_cast(state.back_fail), hash);
+			hash = murmur_hash(enum_cast(state.depth_back_fail), hash);
+			hash = murmur_hash(enum_cast(state.back_pass), hash);
 
 			return hash;
 		}
@@ -83,25 +84,25 @@ namespace edge
 		{
 			for (int32_t i = 0; i < color.color.size(); ++i)
 			{
-				hash = utl::murmur_hash(color.color[i], hash);
+				hash = murmur_hash(color.color[i], hash);
 			}
 
-			hash = utl::murmur_hash(color.depth, hash);
-			hash = utl::murmur_hash(color.stencil, hash);
+			hash = murmur_hash(color.depth, hash);
+			hash = murmur_hash(color.stencil, hash);
 
 			return hash;
 		}
 
 		uint32_t Hash(const ColorBlendAttachment& attachment, uint32_t hash)
 		{
-			hash = utl::murmur_hash(attachment.enable, hash);
-			hash = utl::murmur_hash(utl::enum_cast(attachment.src_color), hash);
-			hash = utl::murmur_hash(utl::enum_cast(attachment.dst_color), hash);
-			hash = utl::murmur_hash(utl::enum_cast(attachment.color_blend_op), hash);
+			hash = murmur_hash(attachment.enable, hash);
+			hash = murmur_hash(enum_cast(attachment.src_color), hash);
+			hash = murmur_hash(enum_cast(attachment.dst_color), hash);
+			hash = murmur_hash(enum_cast(attachment.color_blend_op), hash);
 
-			hash = utl::murmur_hash(utl::enum_cast(attachment.src_alpha), hash);
-			hash = utl::murmur_hash(utl::enum_cast(attachment.dst_alpha), hash);
-			hash = utl::murmur_hash(utl::enum_cast(attachment.alpha_blend_op), hash);
+			hash = murmur_hash(enum_cast(attachment.src_alpha), hash);
+			hash = murmur_hash(enum_cast(attachment.dst_alpha), hash);
+			hash = murmur_hash(enum_cast(attachment.alpha_blend_op), hash);
 
 			//hash = utl::murmur_hash(static_cast<uint32_t>(attachment.color_mask), hash);
 
@@ -128,13 +129,13 @@ namespace edge
 
 			//for (int32_t i = 0; i < state.color_format_count; ++i)
 			//{
-			//	hash = utl::murmur_hash(utl::enum_cast(state.color_formats[i]), hash);
+			//	hash = murmur_hash(enum_cast(state.color_formats[i]), hash);
 			//}
 			//
-			//hash = utl::murmur_hash(utl::enum_cast(state.depth_format), hash);
-			//hash = utl::murmur_hash(utl::enum_cast(state.stencil_format), hash);
+			//hash = murmur_hash(enum_cast(state.depth_format), hash);
+			//hash = murmur_hash(enum_cast(state.stencil_format), hash);
 
-			hash = utl::murmur_hash(utl::enum_cast(state.primitive_topology), hash);
+			hash = murmur_hash(enum_cast(state.primitive_topology), hash);
 
 			return hash;
 		}
@@ -143,17 +144,17 @@ namespace edge
 
 		uint32_t Hash(const SamplerCreateInfo& create_info, uint32_t hash)
 		{
-			hash = utl::murmur_hash(utl::enum_cast(create_info.mag_filter), hash);
-			hash = utl::murmur_hash(utl::enum_cast(create_info.min_filter), hash);
-			hash = utl::murmur_hash(utl::enum_cast(create_info.mip_map_mode), hash);
-			hash = utl::murmur_hash(utl::enum_cast(create_info.address_u), hash);
-			hash = utl::murmur_hash(utl::enum_cast(create_info.address_v), hash);
-			hash = utl::murmur_hash(utl::enum_cast(create_info.address_w), hash);
-			hash = utl::murmur_hash(create_info.mip_lod_bias, hash);
-			hash = utl::murmur_hash(create_info.max_anisotropy, hash);
-			hash = utl::murmur_hash(utl::enum_cast(create_info.depth_compare), hash);
-			hash = utl::murmur_hash(create_info.min_lod, hash);
-			hash = utl::murmur_hash(create_info.max_lod, hash);
+			hash = murmur_hash(enum_cast(create_info.mag_filter), hash);
+			hash = murmur_hash(enum_cast(create_info.min_filter), hash);
+			hash = murmur_hash(enum_cast(create_info.mip_map_mode), hash);
+			hash = murmur_hash(enum_cast(create_info.address_u), hash);
+			hash = murmur_hash(enum_cast(create_info.address_v), hash);
+			hash = murmur_hash(enum_cast(create_info.address_w), hash);
+			hash = murmur_hash(create_info.mip_lod_bias, hash);
+			hash = murmur_hash(create_info.max_anisotropy, hash);
+			hash = murmur_hash(enum_cast(create_info.depth_compare), hash);
+			hash = murmur_hash(create_info.min_lod, hash);
+			hash = murmur_hash(create_info.max_lod, hash);
 
 			return hash;
 		}

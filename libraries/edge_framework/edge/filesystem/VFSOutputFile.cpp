@@ -1,5 +1,7 @@
 #include "VFSOutputFile.h"
 
+#include <stdexcept>
+
 namespace edge
 {
 	namespace filesystem
@@ -41,7 +43,7 @@ namespace edge
 			return *this;
 		}
 
-		VFSOutFile& VFSOutFile::Write(const utl::vector<uint8_t>& data)
+		VFSOutFile& VFSOutFile::Write(const std::vector<uint8_t>& data)
 		{
 			if (m_pFileInterface)
 				m_pFileInterface->Write(data.data(), sizeof(uint8_t), data.size());

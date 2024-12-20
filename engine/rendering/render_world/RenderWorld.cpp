@@ -86,12 +86,12 @@ namespace engine
 			auto& camera = world_cameras->Get(world_resource.resource_id);
 
 			uint32_t camera_hash{ 0u };
-			camera_hash = utl::murmur_hash(reinterpret_cast<const char*>(&translation.x), sizeof(glm::vec3), camera_hash);
-			camera_hash = utl::murmur_hash(reinterpret_cast<const char*>(&rotation.x), sizeof(glm::quat), camera_hash);
-			camera_hash = utl::murmur_hash(camera.fov, camera_hash);
-			camera_hash = utl::murmur_hash(camera.z_near, camera_hash);
-			camera_hash = utl::murmur_hash(camera.z_far, camera_hash);
-			camera_hash = utl::murmur_hash(camera.aspect, camera_hash);
+			camera_hash = edge::murmur_hash(reinterpret_cast<const char*>(&translation.x), sizeof(glm::vec3), camera_hash);
+			camera_hash = edge::murmur_hash(reinterpret_cast<const char*>(&rotation.x), sizeof(glm::quat), camera_hash);
+			camera_hash = edge::murmur_hash(camera.fov, camera_hash);
+			camera_hash = edge::murmur_hash(camera.z_near, camera_hash);
+			camera_hash = edge::murmur_hash(camera.z_far, camera_hash);
+			camera_hash = edge::murmur_hash(camera.aspect, camera_hash);
 
 			bool dirty = camera_hash != camera.last_hash;
 			camera.last_hash = camera_hash;
@@ -166,12 +166,12 @@ namespace engine
 			auto& camera = world_cameras->Get(world_resource.resource_id);
 
 			uint32_t camera_hash{ 0u };
-			camera_hash = utl::murmur_hash(reinterpret_cast<const char*>(&view[0]), sizeof(glm::mat4), camera_hash);
-			camera_hash = utl::murmur_hash(reinterpret_cast<const char*>(&projection[0]), sizeof(glm::mat4), camera_hash);
-			camera_hash = utl::murmur_hash(camera.fov, camera_hash);
-			camera_hash = utl::murmur_hash(camera.z_near, camera_hash);
-			camera_hash = utl::murmur_hash(camera.z_far, camera_hash);
-			camera_hash = utl::murmur_hash(camera.aspect, camera_hash);
+			camera_hash = edge::murmur_hash(reinterpret_cast<const char*>(&view[0]), sizeof(glm::mat4), camera_hash);
+			camera_hash = edge::murmur_hash(reinterpret_cast<const char*>(&projection[0]), sizeof(glm::mat4), camera_hash);
+			camera_hash = edge::murmur_hash(camera.fov, camera_hash);
+			camera_hash = edge::murmur_hash(camera.z_near, camera_hash);
+			camera_hash = edge::murmur_hash(camera.z_far, camera_hash);
+			camera_hash = edge::murmur_hash(camera.aspect, camera_hash);
 
 			bool dirty = camera_hash != camera.last_hash;
 			camera.last_hash = camera_hash;

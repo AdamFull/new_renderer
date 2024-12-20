@@ -1,7 +1,7 @@
 #pragma once
 
 #include <reactive/function.h>
-#include <hash.hpp>
+#include <edge/util/Hash.hpp>
 #include <container/hash_map.h>
 #include <edge/runtime/InputEvents.h>
 
@@ -23,15 +23,15 @@ namespace engine
 	struct FInputAxis
 	{
 		EAxisType type{};
-		utl::hash_map<edge::KeyCode, f32> keyValue{};
-		utl::vector<utl::reactive::function<void(f32)>> callbacks{};
+		std::unordered_map<edge::KeyCode, f32> keyValue{};
+		std::vector<utl::reactive::function<void(f32)>> callbacks{};
 	};
 
 	struct FInputAction
 	{
-		utl::vector<edge::KeyCode> keys{};
+		std::vector<edge::KeyCode> keys{};
 		//KeyState state{ KeyState::eReleased };
-		//utl::vector<utl::reactive::function<void(KeyState)>> callbacks{};
+		//std::vector<utl::reactive::function<void(KeyState)>> callbacks{};
 	};
 
 	class CInputMapper
@@ -47,14 +47,14 @@ namespace engine
 		{
 			std::array<edge::KeyCode, sizeof...(_Args)> keys{ {args...} };
 			
-			auto& action = m_inputActions[utl::murmur_hash_64(action_name)];
+			auto& action = m_inputActions[edge::murmur_hash_64(action_name)];
 			action.keys.insert(action.keys.end(), keys.begin(), keys.end());
 		}
 
 		template<class... _Args>
 		void BindAction(const char* action_name, _Args&& ...args)
 		{
-			auto found = m_inputActions.find(utl::murmur_hash_64(action_name));
+			auto found = m_inputActions.find(edge::murmur_hash_64(action_name));
 			if (found != m_inputActions.end())
 			{
 				auto& input_action = found->second;
@@ -67,7 +67,7 @@ namespace engine
 		{
 			static_assert(sizeof...(_Args) % 2ull == 0, "Incorrect argument count, it should be even.");
 
-			auto& new_axis = m_inputAxis[utl::murmur_hash_64(axis_name)];
+			auto& new_axis = m_inputAxis[edge::murmur_hash_64(axis_name)];
 			new_axis.type = type;
 
 			UnpackAxisValues(new_axis.keyValue, std::forward<_Args>(args)...);
@@ -76,7 +76,7 @@ namespace engine
 		template<class... _Args>
 		void BindAxis(const char* axis_name, _Args& ...args)
 		{
-			auto found = m_inputAxis.find(utl::murmur_hash_64(axis_name));
+			auto found = m_inputAxis.find(edge::murmur_hash_64(axis_name));
 			if (found != m_inputAxis.end())
 			{
 				auto& found_axis = found->second;
@@ -89,23 +89,23 @@ namespace engine
 		//void HandleKeyInput(KeyCode code, EKeyState state);
 		//void HandleAxisInput(f32 x, f32 y, f32 xmax, f32 ymax);
 
-		void UnpackAxisValues(utl::hash_map<edge::KeyCode, f32>& map) {}
+		void UnpackAxisValues(std::unordered_map<edge::KeyCode, f32>& map) {}
 
 		template<class... _Args>
-		void UnpackAxisValues(utl::hash_map<edge::KeyCode, f32>& map, edge::KeyCode key, f32 value, _Args&&... args)
+		void UnpackAxisValues(std::unordered_map<edge::KeyCode, f32>& map, edge::KeyCode key, f32 value, _Args&&... args)
 		{ 
 			map[key] = value; 
 			UnpackAxisValues(map, std::forward<_Args>(args)...);
 		}
 
 		template<class... _Args>
-		void UnpackAxisValues(utl::hash_map<edge::KeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
+		void UnpackAxisValues(std::unordered_map<edge::KeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
 	private:
 		edge::CKeyDecoder m_keyDecoder{};
 
-		utl::hash_map<u64, FInputAction> m_inputActions{};
-		utl::hash_map<u64, FInputAxis> m_inputAxis{};
+		std::unordered_map<uint64_t, FInputAction> m_inputActions{};
+		std::unordered_map<uint64_t, FInputAxis> m_inputAxis{};
 
-		utl::hash_map<EAxisType, f32> m_hwAxis{};
+		std::unordered_map<EAxisType, f32> m_hwAxis{};
 	};
 }

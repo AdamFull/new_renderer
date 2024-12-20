@@ -7,9 +7,10 @@
 #include <edge/util/fs_helper.h>
 #include <edge/util/Logger.h>
 
-#include <hash.hpp>
+#include <edge/util/Hash.hpp>
 
 #include <execution>
+#include <set>
 #include <format>
 
 namespace edge
@@ -291,7 +292,7 @@ namespace edge
 				bool building_release = compile_info.build_type == ShaderCompilerBuildType::eRelease;
 				if (!building_release)
 				{
-					messages = utl::cast<EShMessages>(messages | EShMsgDebugInfo);
+					messages = static_cast<EShMessages>(messages | EShMsgDebugInfo);
 					//shader.setDebugInfo(true);
 				}
 
@@ -342,7 +343,7 @@ namespace edge
 					return false;
 				}
 
-				hash = utl::murmur_hash(preprocessed_code);
+				hash = edge::murmur_hash(preprocessed_code);
 
 				return true;
 			}
