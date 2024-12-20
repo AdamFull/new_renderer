@@ -1,11 +1,11 @@
 #include "gfx_shader_effect_compiler.h"
-#include <serialization.hpp>
+#include "../../util/Serialization.hpp"
 
 #include "glsl_shader_compiler.h"
 #include "../gfx_util.h"
 
-#include <edge/util/fs_helper.h>
-#include <edge/util/Logger.h>
+#include "../../util/fs_helper.h"
+#include "../../util/Logger.h"
 
 #include <execution>
 
@@ -24,16 +24,16 @@ namespace edge
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompileSourceDesc& type)
 			{
-				utl::serialize_to("source", json, type.source);
-				utl::serialize_to("type", json, type.type);
-				utl::serialize_to("definitions", json, type.definitions);
+				serialize_to("source", json, type.source);
+				serialize_to("type", json, type.type);
+				serialize_to("definitions", json, type.definitions);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompileSourceDesc& type)
 			{
-				utl::parse_from("source", json, type.source, true);
-				utl::parse_from("type", json, type.type, true);
-				utl::parse_from("definitions", json, type.definitions);
+				parse_from("source", json, type.source, true);
+				parse_from("type", json, type.type, true);
+				parse_from("definitions", json, type.definitions);
 			}
 
 			struct ShaderEffectCompileSamplerDesc
@@ -44,43 +44,43 @@ namespace edge
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompileSamplerDesc& type)
 			{
-				utl::serialize_to("binding", json, type.binding);
+				serialize_to("binding", json, type.binding);
 
-				utl::serialize_to("address_u", json, type.sampler_create_info.address_u);
-				utl::serialize_to("address_v", json, type.sampler_create_info.address_v);
-				utl::serialize_to("address_w", json, type.sampler_create_info.address_w);
+				serialize_to("address_u", json, type.sampler_create_info.address_u);
+				serialize_to("address_v", json, type.sampler_create_info.address_v);
+				serialize_to("address_w", json, type.sampler_create_info.address_w);
 
-				utl::serialize_to("min_filter", json, type.sampler_create_info.min_filter);
-				utl::serialize_to("mag_filter", json, type.sampler_create_info.mag_filter);
-				utl::serialize_to("mip_filter", json, type.sampler_create_info.mip_map_mode);
+				serialize_to("min_filter", json, type.sampler_create_info.min_filter);
+				serialize_to("mag_filter", json, type.sampler_create_info.mag_filter);
+				serialize_to("mip_filter", json, type.sampler_create_info.mip_map_mode);
 
-				utl::serialize_to("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
-				utl::serialize_to("min_lod", json, type.sampler_create_info.min_lod);
-				utl::serialize_to("max_lod", json, type.sampler_create_info.max_lod);
-				utl::serialize_to("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
+				serialize_to("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
+				serialize_to("min_lod", json, type.sampler_create_info.min_lod);
+				serialize_to("max_lod", json, type.sampler_create_info.max_lod);
+				serialize_to("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
 
-				utl::serialize_to("compare_op", json, type.sampler_create_info.depth_compare);
+				serialize_to("compare_op", json, type.sampler_create_info.depth_compare);
 
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompileSamplerDesc& type)
 			{
-				utl::parse_from("binding", json, type.binding, true);
+				parse_from("binding", json, type.binding, true);
 
-				utl::parse_from("address_u", json, type.sampler_create_info.address_u);
-				utl::parse_from("address_v", json, type.sampler_create_info.address_v);
-				utl::parse_from("address_w", json, type.sampler_create_info.address_w);
+				parse_from("address_u", json, type.sampler_create_info.address_u);
+				parse_from("address_v", json, type.sampler_create_info.address_v);
+				parse_from("address_w", json, type.sampler_create_info.address_w);
 
-				utl::parse_from("min_filter", json, type.sampler_create_info.min_filter);
-				utl::parse_from("mag_filter", json, type.sampler_create_info.mag_filter);
-				utl::parse_from("mip_filter", json, type.sampler_create_info.mip_map_mode);
+				parse_from("min_filter", json, type.sampler_create_info.min_filter);
+				parse_from("mag_filter", json, type.sampler_create_info.mag_filter);
+				parse_from("mip_filter", json, type.sampler_create_info.mip_map_mode);
 
-				utl::parse_from("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
-				utl::parse_from("min_lod", json, type.sampler_create_info.min_lod);
-				utl::parse_from("max_lod", json, type.sampler_create_info.max_lod);
-				utl::parse_from("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
+				parse_from("mip_lod_bias", json, type.sampler_create_info.mip_lod_bias);
+				parse_from("min_lod", json, type.sampler_create_info.min_lod);
+				parse_from("max_lod", json, type.sampler_create_info.max_lod);
+				parse_from("max_anisotropy", json, type.sampler_create_info.max_anisotropy);
 
-				utl::parse_from("compare_op", json, type.sampler_create_info.depth_compare);
+				parse_from("compare_op", json, type.sampler_create_info.depth_compare);
 			}
 
 			struct ShaderEffectCompilePipelineState
@@ -95,18 +95,18 @@ namespace edge
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompilePipelineState& type)
 			{
-				utl::serialize_to("rasterization_state", json, type.rasterization_state);
-				utl::serialize_to("multisample_state", json, type.multisample_state);
-				utl::serialize_to("depth_stencil_state", json, type.depth_stencil_state);
-				utl::serialize_to("color_blending_state", json, type.color_blending_state);
+				serialize_to("rasterization_state", json, type.rasterization_state);
+				serialize_to("multisample_state", json, type.multisample_state);
+				serialize_to("depth_stencil_state", json, type.depth_stencil_state);
+				serialize_to("color_blending_state", json, type.color_blending_state);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompilePipelineState& type)
 			{
-				utl::parse_from("rasterization_state", json, type.rasterization_state);
-				utl::parse_from("multisample_state", json, type.multisample_state);
-				utl::parse_from("depth_stencil_state", json, type.depth_stencil_state);
-				utl::parse_from("color_blending_state", json, type.color_blending_state);
+				parse_from("rasterization_state", json, type.rasterization_state);
+				parse_from("multisample_state", json, type.multisample_state);
+				parse_from("depth_stencil_state", json, type.depth_stencil_state);
+				parse_from("color_blending_state", json, type.color_blending_state);
 			}
 
 			struct ShaderEffectCompileRules
@@ -118,16 +118,16 @@ namespace edge
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompileRules& type)
 			{
-				utl::serialize_to("shader_model", json, type.shader_model);
-				utl::serialize_to("permutation_pattern", json, type.permutation_pattern);
-				utl::serialize_to("permutate", json, type.permutate);
+				serialize_to("shader_model", json, type.shader_model);
+				serialize_to("permutation_pattern", json, type.permutation_pattern);
+				serialize_to("permutate", json, type.permutate);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompileRules& type)
 			{
-				utl::parse_from("shader_model", json, type.shader_model);
-				utl::parse_from("permutation_pattern", json, type.permutation_pattern);
-				utl::parse_from("permutate", json, type.permutate);
+				parse_from("shader_model", json, type.shader_model);
+				parse_from("permutation_pattern", json, type.permutation_pattern);
+				parse_from("permutate", json, type.permutate);
 			}
 
 			struct ShaderEffectCompileDesc
@@ -141,92 +141,92 @@ namespace edge
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompileDesc& type)
 			{
-				utl::serialize_to("name", json, type.name);
-				utl::serialize_to("shaders", json, type.shaders);
-				utl::serialize_to("samplers", json, type.samplers);
-				utl::serialize_to("pipeline_state", json, type.pipeline_state);
-				utl::serialize_to("compile", json, type.compile);
+				serialize_to("name", json, type.name);
+				serialize_to("shaders", json, type.shaders);
+				serialize_to("samplers", json, type.samplers);
+				serialize_to("pipeline_state", json, type.pipeline_state);
+				serialize_to("compile", json, type.compile);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompileDesc& type)
 			{
-				utl::parse_from("name", json, type.name);
-				utl::parse_from("shaders", json, type.shaders);
-				utl::parse_from("samplers", json, type.samplers);
-				utl::parse_from("pipeline_state", json, type.pipeline_state);
-				utl::parse_from("compile", json, type.compile);
+				parse_from("name", json, type.name);
+				parse_from("shaders", json, type.shaders);
+				parse_from("samplers", json, type.samplers);
+				parse_from("pipeline_state", json, type.pipeline_state);
+				parse_from("compile", json, type.compile);
 			}
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompilerModule& type)
 			{
-				utl::serialize_to("name", json, type.name);
-				utl::serialize_to("path", json, type.path);
-				utl::serialize_to("include", json, type.include);
-				utl::serialize_to("exclude", json, type.exclude);
+				serialize_to("name", json, type.name);
+				serialize_to("path", json, type.path);
+				serialize_to("include", json, type.include);
+				serialize_to("exclude", json, type.exclude);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompilerModule& type)
 			{
-				utl::parse_from("name", json, type.name);
-				utl::parse_from("path", json, type.path);
-				utl::parse_from("include", json, type.include);
-				utl::parse_from("exclude", json, type.exclude);
+				parse_from("name", json, type.name);
+				parse_from("path", json, type.path);
+				parse_from("include", json, type.include);
+				parse_from("exclude", json, type.exclude);
 			}
 
 
 			void to_json(nlohmann::json& json, const ShaderEffectCompilerConfig& type)
 			{
-				utl::serialize_to("lang", json, type.lang);
-				utl::serialize_to("include_directories", json, type.include_directories);
-				utl::serialize_to("common_directories", json, type.common_directories);
-				utl::serialize_to("permutation_patterns", json, type.permutation_patterns);
-				utl::serialize_to("modules", json, type.modules);
+				serialize_to("lang", json, type.lang);
+				serialize_to("include_directories", json, type.include_directories);
+				serialize_to("common_directories", json, type.common_directories);
+				serialize_to("permutation_patterns", json, type.permutation_patterns);
+				serialize_to("modules", json, type.modules);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectCompilerConfig& type)
 			{
-				utl::parse_from("lang", json, type.lang);
-				utl::parse_from("include_directories", json, type.include_directories);
-				utl::parse_from("common_directories", json, type.common_directories);
-				utl::parse_from("permutation_patterns", json, type.permutation_patterns);
-				utl::parse_from("modules", json, type.modules);
+				parse_from("lang", json, type.lang);
+				parse_from("include_directories", json, type.include_directories);
+				parse_from("common_directories", json, type.common_directories);
+				parse_from("permutation_patterns", json, type.permutation_patterns);
+				parse_from("modules", json, type.modules);
 			}
 
 
 			void to_json(nlohmann::json& json, const CachedShaderDesc& type)
 			{
-				utl::serialize_to("stage", json, type.stage);
-				utl::serialize_to("shader_key", json, type.shader_key);
+				serialize_to("stage", json, type.stage);
+				serialize_to("shader_key", json, type.shader_key);
 			}
 
 			void from_json(const nlohmann::json& json, CachedShaderDesc& type)
 			{
-				utl::parse_from("stage", json, type.stage);
-				utl::parse_from("shader_key", json, type.shader_key, true);
+				parse_from("stage", json, type.stage);
+				parse_from("shader_key", json, type.shader_key, true);
 			}
 
 
 			void to_json(nlohmann::json& json, const ShaderEffectDesc& type)
 			{
-				utl::serialize_to("shader_descriptions", json, type.shader_descriptions);
+				serialize_to("shader_descriptions", json, type.shader_descriptions);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderEffectDesc& type)
 			{
-				utl::parse_from("shader_descriptions", json, type.shader_descriptions);
+				parse_from("shader_descriptions", json, type.shader_descriptions);
 			}
 
 
 			void to_json(nlohmann::json& json, const ShaderCache& type)
 			{
-				utl::serialize_to("shaders", json, type.shaders);
-				utl::serialize_to("modules", json, type.modules);
+				serialize_to("shaders", json, type.shaders);
+				serialize_to("modules", json, type.modules);
 			}
 
 			void from_json(const nlohmann::json& json, ShaderCache& type)
 			{
-				utl::parse_from("shaders", json, type.shaders);
-				utl::parse_from("modules", json, type.modules);
+				parse_from("shaders", json, type.shaders);
+				parse_from("modules", json, type.modules);
 			}
 
 

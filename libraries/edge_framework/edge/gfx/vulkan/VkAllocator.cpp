@@ -2,8 +2,8 @@
 #include "VkPhysicalDevice.h"
 #include "VkDevice.h"
 
-#include <edge/util/Logger.h>
-#include <edge/util/util.h>
+#include "../../util/Logger.h"
+#include "../../util/util.h"
 
 #include <volk.h>
 

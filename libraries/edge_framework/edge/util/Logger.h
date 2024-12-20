@@ -29,25 +29,33 @@ namespace edge
 
 	inline void CreateLogger(const LoggerCreateInfo& create_info)
 	{
-		auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 		auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(create_info.output_log_path.data(), true);
 
+#ifndef PLATFORM_ANDROID
+		auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 		spdlog::sinks_init_list sink_list = { console_sink, file_sink };
+#else
+		spdlog::sinks_init_list sink_list = { file_sink };
+#endif
 
 #ifdef PLATFORM_ANDROID
-		auto logger = spdlog::android_logger_mt(name.c_str(), name.c_str());
+		auto logger = spdlog::android_logger_mt(create_info.logger_name.data(), create_info.logger_name.data());
 #else
 		auto logger = std::make_shared<spdlog::logger>(create_info.logger_name.data(), sink_list.begin(), sink_list.end());
 #endif
 
 #ifdef NDEBUG
 		spdlog::set_level(spdlog::level::info);
+#ifndef PLATFORM_ANDROID
 		console_sink->set_level(spdlog::level::info);
+#endif
 		file_sink->set_level(spdlog::level::info);
 		spdlog::info("Logger initialized in RELEASE mode");
 #else
 		logger->set_level(spdlog::level::trace);
+#ifndef PLATFORM_ANDROID
 		console_sink->set_level(spdlog::level::trace);
+#endif
 		file_sink->set_level(spdlog::level::trace);
 		spdlog::debug("Logger initialized in DEBUG mode");
 #endif

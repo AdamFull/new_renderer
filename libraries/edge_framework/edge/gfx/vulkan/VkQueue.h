@@ -18,7 +18,7 @@ namespace edge
 				VulkanQueue(VulkanQueue&& other);
 				~VulkanQueue() = default;
 
-				VulkanQueue(const VulkanQueue&) = default;
+				VulkanQueue(const VulkanQueue&) = delete;
 				VulkanQueue& operator=(const VulkanQueue&) = delete;
 				VulkanQueue& operator=(VulkanQueue&&) = delete;
 

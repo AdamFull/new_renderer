@@ -1,8 +1,9 @@
 #include "VkContext.h"
 #include "Config.h"
 
-#include <edge/util/Logger.h>
-#include <edge/runtime/Window.h>
+#include "../../util/Logger.h"
+#include "../../util/Profiler.h"
+#include "../../runtime/Window.h"
 
 #include "VkPhysicalDevice.h"
 #include "VkDevice.h"
@@ -27,6 +28,8 @@
 #include "VkUtil.h"
 
 #include <volk.h>
+
+#include <algorithm>
 
 
 #ifdef CreateSemaphore
@@ -237,7 +240,7 @@ namespace edge
 			Swapchain* VulkanContext::CreateSwapchain(const SwapChainCreateInfo& create_info)
 			{
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-				vk::PresentModeKHR present_mode = (window->GetProperties().vsync == Window::Vsync::OFF) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
+				vk::PresentModeKHR present_mode = (create_info.window->GetProperties().vsync == Window::Vsync::OFF) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
 				std::vector<vk::PresentModeKHR> present_mode_priority_list{ vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eImmediate };
 #else
 				vk::PresentModeKHR present_mode = (create_info.window->GetProperties().vsync == edge::Window::Vsync::ON) ? vk::PresentModeKHR::eFifo : vk::PresentModeKHR::eMailbox;
@@ -355,12 +358,12 @@ namespace edge
 
 				if (usage & BufferUsageFlag::eVertex)
 				{
-					alignment = std::max(alignment, 16ull);
+					alignment = std::max<uint64_t>(alignment, 16ull);
 				}
 
 				if (usage & BufferUsageFlag::eIndex)
 				{
-					alignment = std::max(alignment, 4ull);
+					alignment = std::max<uint64_t>(alignment, 4ull);
 				}
 
 				if (usage & BufferUsageFlag::eUniform)

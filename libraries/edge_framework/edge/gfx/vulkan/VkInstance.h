@@ -4,7 +4,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include <edge/util/Result.hpp>
+#include "../../util/Result.hpp"
 #include "VkResource.h"
 
 namespace edge

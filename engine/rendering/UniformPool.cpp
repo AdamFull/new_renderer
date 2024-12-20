@@ -2,8 +2,7 @@
 
 #include <edge/gfx/gfx_context.h>
 
-#include <memory.hpp>
-
+#include <edge/util/Memory.hpp>
 #include <edge/util/Profiler.h>
 
 namespace engine
@@ -97,7 +96,7 @@ namespace engine
 
 		edge::gfx::BufferSuballocation UniformPool::RequestBlock(uint64_t requested_size)
 		{
-			uint64_t aligned_size = utl::aligned_size(requested_size, minimal_alignment);
+			uint64_t aligned_size = edge::aligned_size(requested_size, minimal_alignment);
 			auto found = std::find_if(pool_frames.begin(), pool_frames.end(), [&aligned_size](const std::unique_ptr<UniformPoolFrame>& frame)
 				{
 					return frame->HasEnoughtSpace(aligned_size);

@@ -1,5 +1,26 @@
 #include <include/easygltf/easygltf_base.h>
-#include <serialization.hpp>
+
+namespace utl
+{
+    template<class _Ty>
+    inline void parse_from(const std::string& name, const nlohmann::json& json, _Ty& type, bool required = false)
+    {
+        if (auto obj = json.find(name); obj != json.end())
+            type = obj->get<_Ty>();
+        else
+        {
+            if (required)
+                throw std::runtime_error("Required argument was not found");
+        }
+    }
+
+    template<class _Ty>
+    inline void serialize_to(const std::string& name, nlohmann::json& json, const _Ty& type, bool condition = true)
+    {
+        if (condition)
+            json[name] = type;
+    }
+}
 
 namespace parsing
 {

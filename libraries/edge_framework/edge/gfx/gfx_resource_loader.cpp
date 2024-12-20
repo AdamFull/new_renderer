@@ -599,7 +599,7 @@ namespace edge
 				return texture;
 			}
 
-			Sampler* GetSampler(const SamplerCreateInfo& create_info)
+			Sampler* GetSampler(const SamplerCreateInfo& create_info) override
 			{
 				uint32_t sampler_hash = Hash(create_info);
 				if (auto found = sampler_cache.find(sampler_hash); found != sampler_cache.end())
