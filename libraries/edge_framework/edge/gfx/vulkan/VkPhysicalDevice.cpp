@@ -3,6 +3,8 @@
 #include "../../util/Logger.h"
 #include <vulkan/vulkan_to_string.hpp>
 
+#include <iomanip>
+
 namespace edge
 {
 	namespace gfx
