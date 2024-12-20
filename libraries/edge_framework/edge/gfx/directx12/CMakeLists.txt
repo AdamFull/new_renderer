@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.18.0)
+project(gfx_d3d12)
+
+file(GLOB_RECURSE D3D12_RENDERER_SOURCES FILES *.cpp *.h)
+
+add_library(${PROJECT_NAME} STATIC ${D3D12_RENDERER_SOURCES})
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_EXTENSIONS OFF
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+)

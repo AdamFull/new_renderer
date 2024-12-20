@@ -21,13 +21,59 @@ set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "Enable util module support." FORCE)
 
 find_package(Ktx CONFIG REQUIRED)
 
-add_subdirectory(directx12)
-add_subdirectory(vulkan)
 add_subdirectory(shader_compiler)
 
 file(GLOB GFX_SOURCES FILES *.cpp *.h)
 
 add_library(${PROJECT_NAME} STATIC ${GFX_SOURCES})
+
+if(ANDROID)
+    add_subdirectory(vulkan)
+    target_link_libraries(${PROJECT_NAME} PRIVATE gfx_vulkan)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE VULKAN_SUPPORTED=1)
+elseif(WIN32)
+    add_subdirectory(directx12)
+    add_subdirectory(vulkan)
+    add_subdirectory(opengl)
+
+    target_link_libraries(${PROJECT_NAME} 
+        PRIVATE gfx_d3d12
+        PRIVATE gfx_vulkan
+        PRIVATE gfx_opengl
+    )
+
+    target_compile_definitions(${PROJECT_NAME} 
+        PRIVATE D3D12_SUPPORTED=1
+        PRIVATE VULKAN_SUPPORTED=1
+        PRIVATE OPENGL_SUPPORTED=1
+    )
+elseif(APPLE)
+    add_subdirectory(vulkan)
+    add_subdirectory(opengl)
+
+    target_link_libraries(${PROJECT_NAME} 
+        PRIVATE gfx_vulkan
+        PRIVATE gfx_opengl
+    )
+
+    target_compile_definitions(${PROJECT_NAME} 
+        PRIVATE VULKAN_SUPPORTED=1
+        PRIVATE OPENGL_SUPPORTED=1
+    )
+elseif(UNIX)
+    add_subdirectory(vulkan)
+    add_subdirectory(opengl)
+
+    target_link_libraries(${PROJECT_NAME} 
+        PRIVATE gfx_vulkan
+        PRIVATE gfx_opengl
+    )
+
+    target_compile_definitions(${PROJECT_NAME} 
+        PRIVATE VULKAN_SUPPORTED=1
+        PRIVATE OPENGL_SUPPORTED=1
+    )
+endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
@@ -41,7 +87,6 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	PUBLIC gfx_vulkan
     PRIVATE gfx_shader_compiler
     PRIVATE KTX::ktx
 )
