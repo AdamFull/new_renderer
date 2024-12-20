@@ -1,7 +1,7 @@
 #pragma once
 
 #include <entt/fwd.hpp>
-#include <nlohmann/json.hpp>
+#include <edge/util/Serialization.hpp>
 
 namespace engine
 {

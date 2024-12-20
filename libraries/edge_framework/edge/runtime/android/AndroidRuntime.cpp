@@ -5,7 +5,9 @@
 #include "AndroidCommon.h"
 #include "AndroidWindow.h"
 
-#include <util/Logger.h>
+#include "../../util/Logger.h"
+
+#include <game-activity/GameActivity.h>
 
 namespace edge
 {
@@ -201,7 +203,7 @@ namespace edge
 
 			if (write(app->msgwrite, &cmd, sizeof(cmd)) != sizeof(cmd))
 			{
-				LOGE("Failure writing android_app cmd: {}\n", strerror(errno));
+				EDGE_LOGE("Failure writing android_app cmd: {}\n", strerror(errno));
 			}
 		}
 
@@ -271,8 +273,8 @@ namespace edge
 			android_app_set_key_event_filter(app, KeyEventFilter);
 			android_app_set_motion_event_filter(app, MotionEventFilter);
 
-			app->onAppCmd = on_app_cmd;
-			app->activity->callbacks->onContentRectChanged = on_content_rect_changed;
+			app->onAppCmd = OnAppCmd;
+			//app->activity->callbacks->onContentRectChanged = OnContentRectChanged;
 			app->userData = this;
 
 			auto code = Runtime::Initialize();
@@ -303,7 +305,7 @@ namespace edge
 				break;
 			case ExitCode::FatalError:
 			{
-					// TODO: crash dump!
+				// TODO: crash dump!
 			} break;
 			default:
 				break;
@@ -382,19 +384,20 @@ namespace edge
 			surface_ready = true;
 		}
 
-		android_app* AndroidRuntime::GetApp()
+		android_app* AndroidRuntime::GetAndroidApp()
 		{
 			return ctx->GetApp();
 		}
 
-		android_app const* AndroidRuntime::GetApp() const
+		android_app const* AndroidRuntime::GetAndroidApp() const
 		{
 			return ctx->GetApp();
 		}
 
 		void AndroidRuntime::CreateWindow(const Window::Properties& properties)
 		{
-			return std::make_unique<AndroidWindow>(*this, app->window, properties);
+			auto app = ctx->GetApp();
+			window = std::make_unique<AndroidWindow>(*this, app->window, properties);
 		}
 	}
 }

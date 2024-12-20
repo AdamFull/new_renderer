@@ -22,10 +22,10 @@ namespace edge
 
 			void ProcessInputEvents();
 
-			void SetSurfaceReady(); 
+			void SetSurfaceReady();
 
-			android_app* GetApp();
-			android_app const* GetApp() const;
+			android_app* GetAndroidApp();
+			android_app const* GetAndroidApp() const;
 
 		protected:
 			virtual void CreateWindow(const Window::Properties& properties) override;

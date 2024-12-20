@@ -1,6 +1,6 @@
 #pragma once
 
-#include <edge/util/Enum.hpp>
+#include "../util/Enum.hpp"
 
 namespace edge
 {

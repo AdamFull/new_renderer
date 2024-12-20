@@ -1,7 +1,7 @@
 #pragma once 
 
 #include <standart_library.h>
-#include <nlohmann/json.hpp>
+#include <edge/util/Serialization.hpp>
 
 #include <glm/glm.hpp>
 

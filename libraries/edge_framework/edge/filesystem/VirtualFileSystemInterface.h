@@ -4,7 +4,8 @@
 #include "VFSInputFileInterface.h"
 #include "VFSOutputFileInterface.h"
 #include "DirectoryIteratorInterface.h"
-#include <nlohmann/json.hpp>
+
+#include "../util/Serialization.hpp"
 
 #include <string_view>
 

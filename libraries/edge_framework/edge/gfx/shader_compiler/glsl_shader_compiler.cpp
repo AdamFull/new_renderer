@@ -4,10 +4,9 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/build_info.h>
 
-#include <edge/util/fs_helper.h>
-#include <edge/util/Logger.h>
-
-#include <edge/util/Hash.hpp>
+#include "../../util/fs_helper.h"
+#include "../../util/Logger.h"
+#include "../../util/Hash.hpp"
 
 #include <execution>
 #include <set>

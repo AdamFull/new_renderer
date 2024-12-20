@@ -49,7 +49,6 @@
     "backward-cpp",
     "refl-cpp",
     "meshoptimizer",
-    "nlohmann-json",
     "mimalloc",
     "benchmark",
     "freetype",

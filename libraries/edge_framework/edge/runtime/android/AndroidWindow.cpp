@@ -22,23 +22,6 @@ namespace edge
 			native_surface = nullptr;
 		}
 
-		//vk::SurfaceKHR AndroidWindow::CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks)
-		//{
-		//	if (instance == VK_NULL_HANDLE || !handle || properties.mode == Mode::Headless)
-		//	{
-		//		return VK_NULL_HANDLE;
-		//	}
-		//
-		//	vk::SurfaceKHR surface{};
-		//
-		//	vk::AndroidSurfaceCreateInfoKHR info{};
-		//	info.window = handle;
-		//
-		//	auto result = instance.createAndroidSurfaceKHR(&info, callbacks, &surface);
-		//
-		//	return surface;
-		//}
-
 		bool AndroidWindow::ShouldClose()
 		{
 			return finish_called;
@@ -70,7 +53,7 @@ namespace edge
 
 		std::vector<const char*> AndroidWindow::GetRequiredSurfaceExtensions() const
 		{
-			return { VK_KHR_ANDROID_SURFACE_EXTENSION_NAME };
+			return { "VK_KHR_android_surface" };
 		}
 	}
 }

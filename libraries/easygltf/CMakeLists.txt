@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.18.0)
 project(easygltf)
 
 find_package(meshoptimizer CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
 
 file(GLOB_RECURSE EASYGLTF_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB_RECURSE EASYGLTF_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -21,5 +20,4 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE meshoptimizer::meshoptimizer
-    PRIVATE nlohmann_json::nlohmann_json
 )

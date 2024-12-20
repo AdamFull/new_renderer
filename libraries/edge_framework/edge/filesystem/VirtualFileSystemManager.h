@@ -4,7 +4,6 @@
 
 #include "VirtualFileSystemInterface.h"
 
-#include <container/hash_map.h>
 #include <mutex>
 
 #ifdef CreateDirectory

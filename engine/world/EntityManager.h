@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <entt/entt.hpp>
-#include <nlohmann/json.hpp>
+#include <edge/util/Serialization.hpp>
 #include <standart_library.h>
 
 #include "../ui/InspectorDrawer.h"

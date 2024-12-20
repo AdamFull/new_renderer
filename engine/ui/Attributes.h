@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nlohmann/json.hpp>
+#include <edge/util/Serialization.hpp>
 #include <refl.hpp>
 #include <entt/entt.hpp>
 #include <array>

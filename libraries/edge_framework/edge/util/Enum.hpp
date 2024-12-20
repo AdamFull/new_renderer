@@ -10,7 +10,8 @@
 #include <array>
 #include <type_traits>
 #include <string_view>
-#include <nlohmann/json.hpp>
+
+#include "Serialization.hpp"
 
 namespace edge
 {

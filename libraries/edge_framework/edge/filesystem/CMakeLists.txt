@@ -7,7 +7,7 @@ include(GenerateExportHeader)
 
 add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/pak_archive/lib" pak_archive)
 
-option(INCENERATE_FILESYSTEM_BUILD_SHARED "Build incenerate filesystem as a shared library" ON)
+option(INCENERATE_FILESYSTEM_BUILD_SHARED "Build incenerate filesystem as a shared library" OFF)
 
 file(GLOB VFS_SOURCES_HEAD "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 set(CPPVFS_SOURCE_FILES ${VFS_SOURCES_HEAD})
@@ -74,6 +74,6 @@ generate_export_header(${PROJECT_NAME}
               )
 
 target_include_directories(${PROJECT_NAME}  
-    PUBLIC "${CMAKE_BINARY_DIR}/exports"
+    PRIVATE "${CMAKE_BINARY_DIR}/exports"
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/pak_archive/lib"
 )

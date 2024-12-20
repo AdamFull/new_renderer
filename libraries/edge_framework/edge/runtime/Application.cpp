@@ -2,8 +2,6 @@
 
 #include <cassert>
 
-#include <imgui.h>
-
 namespace edge
 {
 	bool Application::Prepare(const ApplicationOptions& options)
