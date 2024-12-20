@@ -6,11 +6,11 @@
 #include "VkSemaphore.h"
 #include "VkFence.h"
 
-#include <edge/util/Logger.h>
+#include "../../util/Logger.h"
 
 #include <glm/glm.hpp>
 
-#include <edge/util/Profiler.h>
+#include "../../util/Profiler.h"
 
 namespace edge
 {

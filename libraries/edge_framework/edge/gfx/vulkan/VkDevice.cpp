@@ -1,7 +1,7 @@
 #include "VkDevice.h"
 #include "VkPhysicalDevice.h"
 
-#include <edge/util/Logger.h>
+#include "../../util/Logger.h"
 
 #include <volk.h>
 

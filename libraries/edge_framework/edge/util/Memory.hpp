@@ -1,6 +1,8 @@
 #pragma once
 
-#include <standart_library.h>
+#include <cassert>
+#include <memory>
+#include <atomic>
 
 namespace edge
 {
@@ -25,7 +27,7 @@ namespace edge
 		return (const char*)end - (const char*)start;
 	}
 
-	inline constexpr std::size_t aligned_size(std::size_t size, std::size_t alignment) 
+	inline constexpr std::size_t aligned_size(std::size_t size, std::size_t alignment)
 	{
 		return (size + alignment - 1) & ~(alignment - 1);
 	}
@@ -61,7 +63,7 @@ namespace edge
 		}
 	}
 
-	
+
 	class raw_memory_view
 	{
 	public:
@@ -73,7 +75,7 @@ namespace edge
 		constexpr raw_memory_view(std::size_t size, void* data) : data_{ data }, size_{ size } {}
 
 		template<typename _Ty, std::size_t _Size>
-		constexpr raw_memory_view(_Ty (&arr)[_Size]) noexcept : data_{ &arr[0]}, size_{_Size * sizeof(_Ty)} {}
+		constexpr raw_memory_view(_Ty(&arr)[_Size]) noexcept : data_{ &arr[0] }, size_{ _Size * sizeof(_Ty) } {}
 
 		template <typename _Ty>
 		constexpr raw_memory_view(std::initializer_list<_Ty> const& list) noexcept : data_{ list.begin() }, size_{ list.size() * sizeof(_Ty) } {}
@@ -171,7 +173,7 @@ namespace edge
 
 	// Memory allocator concept
 	template <typename _Pool>
-	concept memory_pool = requires(_Pool pool, std::size_t count, std::size_t size, void* ptr) 
+	concept memory_pool = requires(_Pool pool, std::size_t count, std::size_t size, void* ptr)
 	{
 		{ pool.allocate(count, size) } -> std::same_as<void*>;
 		{ pool.deallocate(ptr, count, size) };
@@ -296,7 +298,7 @@ namespace edge
 			free_block* current = free_list_;
 			free_block* prev = nullptr;
 
-			while (current && current < block) 
+			while (current && current < block)
 			{
 				prev = current;
 				current = current->next;
@@ -343,13 +345,13 @@ namespace edge
 			merge_blocks();
 		}
 
-		void merge_blocks() 
+		void merge_blocks()
 		{
 			free_block* current = free_list_;
 
-			while (current && current->next) 
+			while (current && current->next)
 			{
-				if (ptr_offset(current, current->size + sizeof(free_block)) == current->next) 
+				if (ptr_offset(current, current->size + sizeof(free_block)) == current->next)
 				{
 					current->size += current->next->size + sizeof(free_block);
 					current->next = current->next->next;
@@ -373,7 +375,7 @@ namespace edge
 		using difference_type = ptrdiff_t;
 
 		template<typename _Other>
-		struct rebind 
+		struct rebind
 		{
 			using other = allocator<_Other, _Pool>;
 		};
@@ -419,12 +421,12 @@ namespace edge
 		}
 
 		template <typename U>
-		bool operator!=(const allocator<U, _Pool>& other) const noexcept 
+		bool operator!=(const allocator<U, _Pool>& other) const noexcept
 		{
 			return !(*this == other);
 		}
 	private:
-		template<typename _Other, memory_pool _Pool>
+		template<typename _Other, memory_pool _OtherPool>
 		friend class allocator;
 
 		_Pool& pool_;
@@ -457,13 +459,12 @@ struct std::allocator_traits<edge::allocator<_Ty, _Pool>>
 		a.deallocate(p, n, sizeof(_Ty));
 	}
 
-	template<typename _Ty, typename... Args>
+	template<typename... Args>
 	static void construct(allocator_type& a, _Ty* p, Args&&... args)
 	{
 		::new (static_cast<void*>(p)) _Ty(std::forward<Args>(args)...);
 	}
 
-	template<typename _Ty>
 	static void destroy(allocator_type& a, _Ty* p)
 	{
 		p->~_Ty();

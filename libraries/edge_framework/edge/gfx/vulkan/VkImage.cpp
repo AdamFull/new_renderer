@@ -1,7 +1,7 @@
 #include "VkImage.h"
 
 #include "VkUtil.h"
-#include <edge/util/Logger.h>
+#include "../../util/Logger.h"
 
 namespace edge
 {

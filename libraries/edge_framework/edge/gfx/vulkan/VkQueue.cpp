@@ -9,7 +9,7 @@
 
 #include "VkUtil.h"
 
-#include <edge/util/Profiler.h>
+#include "../../util/Profiler.h"
 
 namespace edge
 {
