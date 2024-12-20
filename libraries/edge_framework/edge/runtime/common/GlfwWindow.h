@@ -18,8 +18,6 @@ namespace edge
 
 		virtual ~GlfwWindow();
 
-		vk::SurfaceKHR CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks) override;
-
 		bool ShouldClose() override;
 
 		void ProcessEvents() override;

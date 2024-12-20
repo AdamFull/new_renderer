@@ -3,34 +3,41 @@
 #include "AndroidCommon.h"
 #include "AndroidRuntime.h"
 
+#include "AndroidNativeSurface.h"
+
 namespace edge
 {
 	namespace android
 	{
 		AndroidWindow::AndroidWindow(AndroidRuntime& runtime, ANativeWindow*& window, const Window::Properties& properties) :
 			Window{ properties },
-			runtime{ runtime },
-			handle{ window }
+			runtime{ runtime }
 		{
-
+			native_surface = new AndroidNativeSurface(window);
 		}
 
-		vk::SurfaceKHR AndroidWindow::CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks)
+		AndroidWindow::~AndroidWindow()
 		{
-			if (instance == VK_NULL_HANDLE || !handle || properties.mode == Mode::Headless)
-			{
-				return VK_NULL_HANDLE;
-			}
-
-			vk::SurfaceKHR surface{};
-
-			vk::AndroidSurfaceCreateInfoKHR info{};
-			info.window = handle;
-
-			auto result = instance.createAndroidSurfaceKHR(&info, callbacks, &surface);
-
-			return surface;
+			delete native_surface;
+			native_surface = nullptr;
 		}
+
+		//vk::SurfaceKHR AndroidWindow::CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks)
+		//{
+		//	if (instance == VK_NULL_HANDLE || !handle || properties.mode == Mode::Headless)
+		//	{
+		//		return VK_NULL_HANDLE;
+		//	}
+		//
+		//	vk::SurfaceKHR surface{};
+		//
+		//	vk::AndroidSurfaceCreateInfoKHR info{};
+		//	info.window = handle;
+		//
+		//	auto result = instance.createAndroidSurfaceKHR(&info, callbacks, &surface);
+		//
+		//	return surface;
+		//}
 
 		bool AndroidWindow::ShouldClose()
 		{

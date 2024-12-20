@@ -14,9 +14,7 @@ namespace edge
 		{
 		public:
 			AndroidWindow(AndroidRuntime& runtime, ANativeWindow*& window, const Window::Properties& properties);
-			~AndroidWindow() = default;
-
-			vk::SurfaceKHR CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks) override;
+			~AndroidWindow();
 
 			bool ShouldClose() override;
 
@@ -31,9 +29,6 @@ namespace edge
 			std::vector<const char*> GetRequiredSurfaceExtensions() const override;
 		private:
 			AndroidRuntime& runtime;
-
-			// Handle to the android window
-			ANativeWindow*& handle;
 
 			bool finish_called{ false };
 		};

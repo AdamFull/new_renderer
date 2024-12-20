@@ -10,12 +10,6 @@ namespace edge
 		HeadlessWindow(const Window::Properties& properties);
 		virtual ~HeadlessWindow() = default;
 
-		/**
-		 * @brief A direct window doesn't have a surface
-		 * @returns nullptr
-		 */
-		vk::SurfaceKHR CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks) override;
-
 		bool ShouldClose() override;
 
 		void Close() override;

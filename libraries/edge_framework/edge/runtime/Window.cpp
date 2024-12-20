@@ -7,6 +7,11 @@ namespace edge
 	{
 	}
 
+	NativeSurface* Window::GetNativeSurface()
+	{
+		return native_surface;
+	}
+
 	void Window::ProcessEvents()
 	{
 	}
@@ -35,12 +40,5 @@ namespace edge
 	Window::Mode Window::GetWindowMode() const
 	{
 		return properties.mode;
-	}
-
-	bool Window::GetDisplayPresentInfo(VkDisplayPresentInfoKHR* info,
-		uint32_t src_width, uint32_t src_height) const
-	{
-		// Default is to not use the extra present info
-		return false;
 	}
 }

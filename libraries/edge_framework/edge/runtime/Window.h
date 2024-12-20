@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include <vulkan/vulkan.hpp>
+#include "NativeSurface.h"
 
 namespace edge
 {
@@ -69,12 +69,10 @@ namespace edge
 		virtual ~Window() = default;
 
 		/**
-		 * @brief Gets a handle from the platform's Vulkan surface
-		 * @param instance A Vulkan instance
-		 * @param physical_device A Vulkan PhysicalDevice
-		 * @returns A VkSurfaceKHR handle, for use by the application
+		 * @brief Gets current platform native surface
+		 * @returns A pointer to native surface handle
 		 */
-		virtual vk::SurfaceKHR CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks) = 0;
+		virtual NativeSurface* GetNativeSurface();
 
 		/**
 		 * @brief Checks if the window should be closed
@@ -115,18 +113,6 @@ namespace edge
 		 */
 		Extent Resize(const Extent& extent);
 
-		/**
-		 * @brief Get the display present info for the window if needed
-		 *
-		 * @param info Filled in when the method returns true
-		 * @param src_width The width of the surface being presented
-		 * @param src_height The height of the surface being presented
-		 * @return true if the present info was filled in and should be used
-		 * @return false if the extra present info should not be used. info is left untouched.
-		 */
-		virtual bool GetDisplayPresentInfo(VkDisplayPresentInfoKHR* info,
-			uint32_t src_width, uint32_t src_height) const;
-
 		virtual std::vector<const char*> GetRequiredSurfaceExtensions() const = 0;
 
 		const Extent& GetExtent() const;
@@ -140,5 +126,6 @@ namespace edge
 
 	protected:
 		Properties properties;
+		NativeSurface* native_surface{ nullptr };
 	};
 }

@@ -9,6 +9,8 @@
 #include <edge/util/Logger.h>
 #include "../Runtime.h"
 
+#include "GlfwNativeSurface.h"
+
 namespace edge
 {
 	namespace
@@ -331,29 +333,16 @@ namespace edge
 
 		glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1);
 		glfwSetInputMode(handle, GLFW_STICKY_MOUSE_BUTTONS, 1);
+
+		native_surface = MakeGlfwNativeSurface(handle);
 	}
 
 	GlfwWindow::~GlfwWindow()
 	{
-		glfwTerminate();
-	}
+		delete native_surface;
+		native_surface = nullptr;
 
-	vk::SurfaceKHR GlfwWindow::CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks)
-	{
-		if (instance == nullptr || !handle)
-		{
-			return nullptr;
-		}
-	
-		VkSurfaceKHR surface;
-		VkResult errCode = glfwCreateWindowSurface(instance, handle, (VkAllocationCallbacks*)callbacks, &surface);
-	
-		if (errCode != VK_SUCCESS)
-		{
-			return nullptr;
-		}
-	
-		return surface;
+		glfwTerminate();
 	}
 
 	bool GlfwWindow::ShouldClose()

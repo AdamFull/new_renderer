@@ -5,6 +5,12 @@
 #include "../../util/Profiler.h"
 #include "../../runtime/Window.h"
 
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+#include "../../runtime/win64/WindowsNativeSurface.h"
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+#include "../../runtime/android/AndroidNativeSurface.h"
+#endif
+
 #include "VkPhysicalDevice.h"
 #include "VkDevice.h"
 #include "VkDebug.h"
@@ -106,7 +112,27 @@ namespace edge
 
 				instance = instance_builder.BuildUnique();
 
-				surface = window->CreateSurface(instance->GetHandle(), allocation_callbacks);
+				auto* native_surface = window->GetNativeSurface();
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+				{
+					win32::WindowsNativeSurface* windows_surface = static_cast<win32::WindowsNativeSurface*>(native_surface);
+
+					vk::Win32SurfaceCreateInfoKHR surface_create_info{};
+					surface_create_info.hwnd = windows_surface->GetHandle();
+					surface_create_info.hinstance = windows_surface->GetHandleInstance();
+
+					auto result = Handle(*instance).createWin32SurfaceKHR(&surface_create_info, allocation_callbacks, &surface);
+				}
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+				{
+					android::AndroidNativeSurface* android_surface = static_cast<android::AndroidNativeSurface*>(native_surface);
+
+					vk::AndroidSurfaceCreateInfoKHR surface_create_info{};
+					surface_create_info.window = android_surface->GetHandle();
+					auto result = Handle(*instance).createAndroidSurfaceKHR(&surface_create_info, allocation_callbacks, &surface);
+				}
+#endif
+
 				if (!surface)
 				{
 					throw std::runtime_error("Failed to create window surface.");

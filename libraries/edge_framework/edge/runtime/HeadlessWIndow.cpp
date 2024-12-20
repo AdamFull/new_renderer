@@ -8,11 +8,6 @@ namespace edge
 
 	}
 
-	vk::SurfaceKHR HeadlessWindow::CreateSurface(vk::Instance instance, vk::AllocationCallbacks* callbacks)
-	{
-		return nullptr;
-	}
-
 	bool HeadlessWindow::ShouldClose()
 	{
 		return closed;
