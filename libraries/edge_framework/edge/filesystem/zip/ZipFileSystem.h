@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../VFSInterface.h"
 
 struct zip;
@@ -17,7 +15,7 @@ namespace edge
 		 * ZipFileSystem is a derived class from IVFSInterface and implements its
 		 * interface for working with files and directories within a ZIP archive.
 		 */
-		class INCENERATE_VFS_EXPORT ZipFileSystem final : public IVFSInterface
+		class ZipFileSystem final : public IVFSInterface
 		{
 		public:
 			/**

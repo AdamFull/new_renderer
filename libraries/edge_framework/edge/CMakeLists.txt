@@ -25,8 +25,9 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE edge_utils
-    PRIVATE edge_runtime
-    PRIVATE edge_filesystem
-    PRIVATE edge_gfx
+    PUBLIC 
+    edge_utils 
+    edge_runtime 
+    edge_filesystem 
+    edge_gfx
 )

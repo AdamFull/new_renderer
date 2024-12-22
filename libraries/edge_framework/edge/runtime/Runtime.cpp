@@ -5,9 +5,9 @@
 #include "../filesystem/native/NativeFileSystem.h"
 
 #include "RuntimeContext.h"
-#include <edge/util/Logger.h>
+#include "../util/Logger.h"
 
-#include <edge/util/Profiler.h>
+#include "../util/Profiler.h"
 
 #ifdef CreateWindow
 #undef CreateWindow

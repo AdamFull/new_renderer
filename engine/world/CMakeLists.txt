@@ -25,8 +25,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE easygltf
-    PRIVATE EnTT::EnTT
+    PUBLIC easygltf EnTT::EnTT
 )
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC world_pch.h)

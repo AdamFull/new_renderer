@@ -5,7 +5,6 @@ add_subdirectory(media)
 add_subdirectory(rendering)
 #add_subdirectory(scripting)
 add_subdirectory(world)
-add_subdirectory(integrations)
 add_subdirectory(ui)
 
 file(GLOB ENGINE_APP_SOURCES FILES *.cpp *.h)
@@ -32,12 +31,5 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC edge_framework
-    PUBLIC glm_module
-	PRIVATE engine_rendering
-    PRIVATE engine_ui
-	PRIVATE media_engine
-	#PRIVATE script_engine
-	PRIVATE engine_world
-	PRIVATE imgui_integration
+    PUBLIC edge_framework engine_rendering engine_ui media_engine engine_world
 )

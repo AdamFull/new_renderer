@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "VirtualFileSystemInterface.h"
 
 #include <mutex>
@@ -25,7 +23,7 @@ namespace edge
 		 * CFilesystemWrapper allows mounting different file systems with IVFSInterface implementations,
 		 * and transparently performing operations on them, such as copy, create, delete, etc.
 		 */
-		class INCENERATE_VFS_EXPORT VirtualFileSystemManager final : public IVirtualFileSystemInterface
+		class VirtualFileSystemManager final : public IVirtualFileSystemInterface
 		{
 		public:
 			/**

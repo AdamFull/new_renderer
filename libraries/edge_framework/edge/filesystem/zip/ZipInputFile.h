@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../InputFileInterface.h"
 
 #include <string>
@@ -27,7 +25,7 @@ namespace edge
          * ZipInputFile is a derived class from IInputFileInterface and implements its
          * interface for reading files within a ZIP archive.
          */
-        class INCENERATE_VFS_EXPORT ZipInputFile final : public IInputFileInterface
+        class ZipInputFile final : public IInputFileInterface
         {
         public:
             /**

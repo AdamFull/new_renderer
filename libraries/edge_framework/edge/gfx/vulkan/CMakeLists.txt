@@ -11,15 +11,10 @@ set(ENABLE_VULKAN_DEBUG ON CACHE BOOL "Enable VK_EXT_debug_utils or VK_EXT_debug
 
 find_package(volk CONFIG REQUIRED)
 find_package(VulkanHeaders CONFIG)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../../external/vma" vma)
-
-set(VULKAN_RENDERER_DEFINITIONS 
-	"VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1"
-	"VK_NO_PROTOTYPES"
-)
 
 file(GLOB_RECURSE VULKAN_RENDERER_SOURCES FILES *.cpp *.h)
 
@@ -96,22 +91,28 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
-target_include_directories(${PROJECT_NAME} 
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../"
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../../../external/vma/include"
+add_library(vulkan_common INTERFACE)
+target_link_libraries(vulkan_common
+    INTERFACE
+    Vulkan::Headers
+    volk::volk 
+    volk::volk_headers
+    GPUOpen::VulkanMemoryAllocator
+    unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
+)
+target_compile_definitions(vulkan_common 
+    INTERFACE
+    VMA_STATIC_VULKAN_FUNCTIONS=0
+    VMA_DYNAMIC_VULKAN_FUNCTIONS=1
+    VMA_STATS_STRING_ENABLED=0 
+
+    VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
+    VK_NO_PROTOTYPES
 )
 
 target_link_libraries(${PROJECT_NAME}
-	PRIVATE utility_lib
-    PRIVATE volk::volk 
-    PRIVATE volk::volk_headers
-	PRIVATE Vulkan::Headers
-	PRIVATE VulkanMemoryAllocator
-	PRIVATE spirv-cross-core
-	PRIVATE spirv-cross-glsl
-)
-
-target_compile_definitions(${PROJECT_NAME} 
-	PUBLIC ${VULKAN_RENDERER_DEFINITIONS}
+    PRIVATE
+    vulkan_common
+	spirv-cross-core
+	spirv-cross-glsl
 )

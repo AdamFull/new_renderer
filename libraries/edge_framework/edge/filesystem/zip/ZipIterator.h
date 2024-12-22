@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../DirectoryIteratorInterface.h"
 
 #include <vector>
@@ -19,7 +17,7 @@ namespace edge
          * ZipIterator is a derived class from IDirectoryIterator and implements its
          * interface for iterating through the files within a ZIP archive.
          */
-        class INCENERATE_VFS_EXPORT ZipIterator final : public IDirectoryIterator
+        class ZipIterator final : public IDirectoryIterator
         {
         public:
             /**

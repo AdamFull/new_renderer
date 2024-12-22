@@ -41,6 +41,8 @@
       "name": "entt",
       "version>=": "3.14.0"
     },
+    "vulkan-memory-allocator",
+    "vulkan-memory-allocator-hpp",
     "meshoptimizer",
     "nlohmann-json",
     "mimalloc",

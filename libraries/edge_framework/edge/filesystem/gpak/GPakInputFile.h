@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../InputFileInterface.h"
 
 #include <string>
@@ -21,7 +19,7 @@ namespace edge
 		 * a implementation for reading from files using the gpak
 		 * file handling functions.
 		 */
-		class INCENERATE_VFS_EXPORT GPakInputFile final : public IInputFileInterface
+		class GPakInputFile final : public IInputFileInterface
 		{
 		public:
 			/**

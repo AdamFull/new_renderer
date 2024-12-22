@@ -18,10 +18,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_link_libraries(${PROJECT_NAME} 
-	PRIVATE glslang::glslang
-	PRIVATE glslang::SPIRV
-    PRIVATE spirv-cross-core
-	PRIVATE spirv-cross-glsl
-	PRIVATE spirv-cross-msl
-	PRIVATE spirv-cross-hlsl
+	PRIVATE
+	glslang::glslang
+	glslang::SPIRV
+    spirv-cross-core
+	spirv-cross-glsl
+	spirv-cross-msl
+	spirv-cross-hlsl
 )

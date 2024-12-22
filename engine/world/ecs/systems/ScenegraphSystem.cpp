@@ -7,6 +7,8 @@
 #include "../components/TransformComponent.h"
 #include "../../EntityManager.h"
 
+#include <entt/entt.hpp>
+
 #include <edge/util/Profiler.h>
 
 namespace engine

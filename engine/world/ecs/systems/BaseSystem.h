@@ -1,5 +1,6 @@
 #pragma once
 
+#include <entt/entt.hpp>
 #include <utils/stopwatch.h>
 #include <edge/runtime/InputEvents.h>
 

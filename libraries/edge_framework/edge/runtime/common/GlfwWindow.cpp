@@ -6,7 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-#include <edge/util/Logger.h>
+#include "../../util/Logger.h"
 #include "../Runtime.h"
 
 #include "GlfwNativeSurface.h"

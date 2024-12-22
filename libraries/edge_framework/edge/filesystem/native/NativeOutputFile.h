@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../OutputFileInterface.h"
 
 #include <string>
@@ -17,7 +15,7 @@ namespace edge
          * NativeOutputFile is a derived class from IOutputFileInterface and provides
          * an implementation for working with output files using native file I/O functions.
          */
-        class INCENERATE_VFS_EXPORT NativeOutputFile final : public IOutputFileInterface
+        class NativeOutputFile final : public IOutputFileInterface
         {
         public:
             /**

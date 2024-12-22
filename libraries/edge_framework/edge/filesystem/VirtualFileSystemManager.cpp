@@ -3,7 +3,7 @@
 #include "VFSOutputFile.h"
 #include "DirectoryIterator.h"
 
-#include <edge/util/fs_helper.h>
+#include "../util/fs_helper.h"
 
 namespace edge
 {

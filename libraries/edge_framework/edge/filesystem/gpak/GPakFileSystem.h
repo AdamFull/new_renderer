@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../VFSInterface.h"
 
 struct gpak;
@@ -17,7 +15,7 @@ namespace edge
 		 * GPakFileSystem is a derived class from IVFSInterface that provides
 		 * a implementation for gpak file system operations.
 		 */
-		class INCENERATE_VFS_EXPORT GPakFileSystem final : public IVFSInterface
+		class GPakFileSystem final : public IVFSInterface
 		{
 		public:
 			/**

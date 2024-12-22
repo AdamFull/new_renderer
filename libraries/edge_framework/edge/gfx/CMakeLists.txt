@@ -29,7 +29,9 @@ add_library(${PROJECT_NAME} STATIC ${GFX_SOURCES})
 
 if(ANDROID)
     add_subdirectory(vulkan)
-    target_link_libraries(${PROJECT_NAME} PRIVATE gfx_vulkan)
+    target_link_libraries(${PROJECT_NAME} 
+    PUBLIC 
+    gfx_vulkan)
     target_compile_definitions(${PROJECT_NAME} PRIVATE VULKAN_SUPPORTED=1)
 elseif(WIN32)
     add_subdirectory(directx12)
@@ -37,9 +39,10 @@ elseif(WIN32)
     add_subdirectory(opengl)
 
     target_link_libraries(${PROJECT_NAME} 
-        PRIVATE gfx_d3d12
-        PRIVATE gfx_vulkan
-        PRIVATE gfx_opengl
+        PUBLIC
+        gfx_d3d12
+        gfx_vulkan
+        gfx_opengl
     )
 
     target_compile_definitions(${PROJECT_NAME} 
@@ -52,8 +55,9 @@ elseif(APPLE)
     add_subdirectory(opengl)
 
     target_link_libraries(${PROJECT_NAME} 
-        PRIVATE gfx_vulkan
-        PRIVATE gfx_opengl
+        PUBLIC
+        gfx_vulkan
+        gfx_opengl
     )
 
     target_compile_definitions(${PROJECT_NAME} 
@@ -65,8 +69,9 @@ elseif(UNIX)
     add_subdirectory(opengl)
 
     target_link_libraries(${PROJECT_NAME} 
-        PRIVATE gfx_vulkan
-        PRIVATE gfx_opengl
+        PUBLIC
+        gfx_vulkan
+        gfx_opengl
     )
 
     target_compile_definitions(${PROJECT_NAME} 
@@ -82,11 +87,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_include_directories(${PROJECT_NAME} 
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../../external/stb"
+    PUBLIC 
+    "${CMAKE_CURRENT_SOURCE_DIR}" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../external/stb"
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE gfx_shader_compiler
-    PRIVATE KTX::ktx
+    PRIVATE 
+    KTX::ktx
+    PUBLIC
+    gfx_shader_compiler
 )

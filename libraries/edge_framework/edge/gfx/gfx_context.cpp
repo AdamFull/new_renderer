@@ -12,8 +12,8 @@
 #include <opengl/OGLContext.h>
 #endif
 
-#include "../../util/Enum.hpp"
-#include "../../util/Hash.hpp"
+#include "../util/Enum.hpp"
+#include "../util/Hash.hpp"
 
 namespace edge
 {

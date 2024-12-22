@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "OutputFileInterface.h"
 #include "VFSOutputFileInterface.h"
 
@@ -16,7 +14,7 @@ namespace edge
 		 * VFSOutFile provides file output operations, such as writing data, seeking positions,
 		 * and flushing the output buffer.
 		 */
-		class INCENERATE_VFS_EXPORT VFSOutFile final : public IVFSOutputFileInterface
+		class VFSOutFile final : public IVFSOutputFileInterface
 		{
 		public:
 			/**

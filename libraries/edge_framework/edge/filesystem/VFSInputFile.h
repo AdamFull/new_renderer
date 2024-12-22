@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "InputFileInterface.h"
 #include "VfsInputFileInterface.h"
 
@@ -16,7 +14,7 @@ namespace edge
 		 * VFSInFile provides file input operations, such as reading data, seeking positions,
 		 * and checking the end of the file.
 		 */
-		class INCENERATE_VFS_EXPORT VFSInFile final : public IVFSInputFileInterface
+		class VFSInFile final : public IVFSInputFileInterface
 		{
 		public:
 			/**

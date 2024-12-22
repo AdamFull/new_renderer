@@ -4,6 +4,7 @@
 #include <edge/util/Serialization.hpp>
 
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 namespace engine
 {

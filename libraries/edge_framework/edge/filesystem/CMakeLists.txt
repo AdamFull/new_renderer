@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(edge_filesystem)
 
-include(GenerateExportHeader)
-
 #find_package(libzip REQUIRED)
 
 add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/pak_archive/lib" pak_archive)
+#add_subdirectory("../../external/pak_archive/lib" pak_archive)
 
 option(INCENERATE_FILESYSTEM_BUILD_SHARED "Build incenerate filesystem as a shared library" OFF)
 
@@ -36,22 +35,7 @@ set(CPPVFS_HEADER_FILES ${CPPVFS_HEADER_FILES} ${VFS_HEADERS_NATIVE})
 #file(GLOB VFS_HEADERS_ZIP "${CMAKE_CURRENT_SOURCE_DIR}/zip/*.h")
 #set(CPPVFS_HEADER_FILES ${CPPVFS_HEADER_FILES} ${VFS_HEADERS_ZIP})
 
-
-if(INCENERATE_FILESYSTEM_BUILD_SHARED)
-    add_library(${PROJECT_NAME} SHARED ${CPPVFS_SOURCE_FILES} ${CPPVFS_HEADER_FILES})
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DIncenerateFilesystem_EXPORTS)
-
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${ENGINE_BINARIES_PATH}
-        RUNTIME_OUTPUT_DIRECTORY_DEBUG ${ENGINE_BINARIES_PATH}
-        RUNTIME_OUTPUT_DIRECTORY_RELEASE ${ENGINE_BINARIES_PATH}
-        RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${ENGINE_BINARIES_PATH}
-        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${ENGINE_BINARIES_PATH}
-    )
-else()
-	add_library(${PROJECT_NAME} STATIC ${CPPVFS_SOURCE_FILES} ${CPPVFS_HEADER_FILES})
-	target_compile_definitions(${PROJECT_NAME} PUBLIC -DINCENERATEFILESYSTEM_STATIC_DEFINE)
-endif()
+add_library(${PROJECT_NAME} STATIC ${CPPVFS_SOURCE_FILES} ${CPPVFS_HEADER_FILES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
@@ -62,18 +46,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_link_libraries(${PROJECT_NAME} 
     #PRIVATE libzip::zip 
     PRIVATE libgpak
-    PUBLIC utility_lib
 )
 
-generate_export_header(${PROJECT_NAME} 
-              EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/ie_vfs_exports.h
-              EXPORT_MACRO_NAME INCENERATE_VFS_EXPORT
-              NO_EXPORT_MACRO_NAME INCENERATE_VFS_NO_EXPORT
-              DEPRECATED_MACRO_NAME INCENERATE_VFS_DEPRECATED
-              NO_DEPRECATED_MACRO_NAME INCENERATE_VFS_NO_DEPRECATED
-              )
-
-target_include_directories(${PROJECT_NAME}  
-    PRIVATE "${CMAKE_BINARY_DIR}/exports"
+target_include_directories(${PROJECT_NAME}
     PRIVATE "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/pak_archive/lib"
+    #PRIVATE PRIVATE "../../external/pak_archive/lib"
 )

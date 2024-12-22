@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "DirectoryIteratorInterface.h"
 
 namespace edge
@@ -12,7 +10,7 @@ namespace edge
          * @class DirectoryIterator
          * @brief This class provides a directory iterator implementation.
          */
-        class INCENERATE_VFS_EXPORT DirectoryIterator : public IDirectoryIteratorInterface
+        class DirectoryIterator : public IDirectoryIteratorInterface
         {
         public:
             /**

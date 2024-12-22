@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../VFSInterface.h"
 
 #include <filesystem>
@@ -25,7 +23,7 @@ namespace edge
          * NativeFileSystem is a derived class from IVFSInterface that provides
          * a platform-specific implementation for native file system operations.
          */
-        class INCENERATE_VFS_EXPORT NativeFileSystem final : public IVFSInterface
+        class NativeFileSystem final : public IVFSInterface
         {
         public:
             /**

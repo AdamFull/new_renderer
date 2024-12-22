@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../../util/fs_helper.h"
 
 #include "../DirectoryIteratorInterface.h"
@@ -26,7 +24,7 @@ namespace edge
          * @tparam _Ty The type of native directory iterator to be used.
          */
         template<class _Ty>
-        class INCENERATE_VFS_EXPORT NativeIterator final : public IDirectoryIterator
+        class NativeIterator final : public IDirectoryIterator
         {
         public:
             /**

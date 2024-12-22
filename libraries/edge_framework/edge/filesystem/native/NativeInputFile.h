@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../InputFileInterface.h"
 
 #include <string>
@@ -18,7 +16,7 @@ namespace edge
          * a platform-specific implementation for reading from files using the native
          * file handling functions.
          */
-        class INCENERATE_VFS_EXPORT CNativeInputFile final : public IInputFileInterface
+        class CNativeInputFile final : public IInputFileInterface
         {
         public:
             /**

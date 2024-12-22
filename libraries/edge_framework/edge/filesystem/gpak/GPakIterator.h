@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ie_vfs_exports.h"
-
 #include "../DirectoryIteratorInterface.h"
 
 struct gpak;
@@ -19,7 +17,7 @@ namespace edge
          * GPakIterator is a derived class from IDirectoryIterator and implements its
          * interface for iterating through the files within a gpak archive.
          */
-        class INCENERATE_VFS_EXPORT GPakIterator final : public IDirectoryIterator
+        class GPakIterator final : public IDirectoryIterator
         {
         public:
             /**

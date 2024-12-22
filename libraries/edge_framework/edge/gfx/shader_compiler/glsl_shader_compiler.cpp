@@ -338,7 +338,7 @@ namespace edge
 				auto resources = GetResources();
 				if (!shader.preprocess(&resources, k_client_version, ENoProfile, false, false, messages, &preprocessed_code, includer))
 				{
-					EDGE_LOGE("\Preprocess error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
+					EDGE_LOGE("\nPreprocess error: In shader \"{}\" \n{}\n{}\n", compile_info.name, shader.getInfoLog(), shader.getInfoDebugLog());
 					return false;
 				}
 
@@ -425,7 +425,7 @@ namespace edge
 				uint8_t* begin = reinterpret_cast<uint8_t*>(&spirv_code[0]);
 				uint8_t* end = begin + code.size();
 
-				std::copy(std::execution::par_unseq, begin, end, code.begin());
+				std::copy(begin, end, code.begin());
 
 				return true;
 			}
