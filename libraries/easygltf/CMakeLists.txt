@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(easygltf)
 
+find_package(glm CONFIG REQUIRED)
 find_package(meshoptimizer CONFIG REQUIRED)
 
 file(GLOB_RECURSE EASYGLTF_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
@@ -19,5 +20,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	PRIVATE meshoptimizer::meshoptimizer
+	PRIVATE 
+    meshoptimizer::meshoptimizer
+    glm::glm
 )

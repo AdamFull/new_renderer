@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(application)
 
-add_subdirectory(media)
+find_package(glm CONFIG REQUIRED)
+find_package(EnTT CONFIG REQUIRED)
+
+#add_subdirectory(media)
 add_subdirectory(rendering)
 #add_subdirectory(scripting)
 add_subdirectory(world)
@@ -30,6 +33,22 @@ target_include_directories(${PROJECT_NAME}
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
+add_library(engine_common INTERFACE)
+target_link_libraries(engine_common
+    INTERFACE
+    glm::glm 
+    EnTT::EnTT 
+    imdbg 
+    imgui
+)
+
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC edge_framework engine_rendering engine_ui media_engine engine_world
+    PUBLIC
+    easygltf
+    edge_framework
+    engine_common  
+    engine_rendering 
+    engine_ui 
+    #media_engine 
+    engine_world
 )

@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include <embed/shaders/includes/shlib.h>
-
 namespace engine
 {
 	namespace render

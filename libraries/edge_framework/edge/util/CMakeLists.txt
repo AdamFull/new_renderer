@@ -32,8 +32,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 add_library(util_common INTERFACE)
 target_link_libraries(util_common 
     INTERFACE 
-    Tracy::TracyClient 
     spdlog::spdlog
+    Tracy::TracyClient 
 )
 
 target_link_libraries(${PROJECT_NAME} 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <include/easygltf/editor/easygltf_editor_fwd.h>
-#include <include/easygltf/easygltf_base.h>
+#include "easygltf_editor_fwd.h"
+#include "../easygltf_base.h"
 #include <glm/glm.hpp>
 
 namespace easygltf

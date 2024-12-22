@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(engine_world)
 
-find_package(EnTT CONFIG REQUIRED)
-
 file(GLOB_RECURSE ENGINE_WORLD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB_RECURSE ENGINE_WORLD_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
@@ -22,10 +20,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} 
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/engine"
     PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/easygltf/include"
-)
-
-target_link_libraries(${PROJECT_NAME}
-    PUBLIC easygltf EnTT::EnTT
 )
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC world_pch.h)
