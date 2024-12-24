@@ -4,15 +4,17 @@ project(application)
 find_package(glm CONFIG REQUIRED)
 find_package(EnTT CONFIG REQUIRED)
 
-#add_subdirectory(media)
-add_subdirectory(rendering)
-#add_subdirectory(scripting)
-add_subdirectory(world)
-add_subdirectory(ui)
-
 file(GLOB ENGINE_APP_SOURCES FILES *.cpp *.h)
+file(GLOB_RECURSE ENGINE_RENDERING_SOURCES FILES rendering/*cpp)
+file(GLOB_RECURSE ENGINE_WORLD_SOURCES FILES world/*cpp)
+file(GLOB_RECURSE ENGINE_UI_SOURCES FILES ui/*cpp)
 
-add_library(${PROJECT_NAME} STATIC ${ENGINE_APP_SOURCES})
+add_library(${PROJECT_NAME} STATIC 
+    ${ENGINE_APP_SOURCES}
+    ${ENGINE_RENDERING_SOURCES}
+    ${ENGINE_WORLD_SOURCES}
+    ${ENGINE_UI_SOURCES}
+)
 
 if(MSVC)
 	# mask out the min/max macros from minwindef.h
@@ -31,6 +33,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
+	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../libraries/easygltf/include"
 )
 
 add_library(engine_common INTERFACE)
@@ -46,9 +49,5 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
     easygltf
     edge_framework
-    engine_common  
-    engine_rendering 
-    engine_ui 
-    #media_engine 
-    engine_world
+    engine_common 
 )
