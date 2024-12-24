@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Component.h"
-#include <container/hash_map.h>
 
 namespace engine
 {

@@ -9,6 +9,7 @@ endif()
 
 find_package(Tracy CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 # Enable tracy profiler
 #add_definitions(-DTRACY_ENABLE)
@@ -34,6 +35,7 @@ target_link_libraries(util_common
     INTERFACE 
     spdlog::spdlog
     Tracy::TracyClient 
+    nlohmann_json::nlohmann_json
 )
 
 target_link_libraries(${PROJECT_NAME} 

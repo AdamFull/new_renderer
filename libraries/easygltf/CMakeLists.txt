@@ -3,6 +3,7 @@ project(easygltf)
 
 find_package(glm CONFIG REQUIRED)
 find_package(meshoptimizer CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 file(GLOB_RECURSE EASYGLTF_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB_RECURSE EASYGLTF_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -19,8 +20,15 @@ target_include_directories(${PROJECT_NAME}
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/"
 )
 
+add_library(easygltf_common INTERFACE)
+target_link_libraries(easygltf_common
+    INTERFACE
+    glm::glm
+    nlohmann_json::nlohmann_json
+)
+
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE 
+    easygltf_common
     meshoptimizer::meshoptimizer
-    glm::glm
 )

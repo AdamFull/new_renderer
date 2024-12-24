@@ -2,7 +2,6 @@
 
 #include <reactive/function.h>
 #include <edge/util/Hash.hpp>
-#include <container/hash_map.h>
 #include <edge/runtime/InputEvents.h>
 
 namespace engine
