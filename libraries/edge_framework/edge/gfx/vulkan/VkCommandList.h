@@ -14,13 +14,6 @@ namespace edge
 			class VulkanCommandList final : public CommandList, public VulkanResource<vk::CommandBuffer>
 			{
 			public:
-				enum class ResetMode
-				{
-					ResetPool,
-					ResetIndividually,
-					AlwaysAllocate,
-				};
-
 				VulkanCommandList(VulkanCommandPool& command_pool, vk::CommandBufferLevel level);
 				VulkanCommandList(VulkanCommandList&& other);
 				~VulkanCommandList();
