@@ -8,6 +8,11 @@
 
 #if defined(PLATFORM_WINDOWS)
 #include "../../runtime/win64/WindowsNativeSurface.h"
+#include "gl/wgl.h"
+#include "gl/wglext.h"
+
+#pragma comment (lib, "opengl32.lib")
+
 #endif
 
 #ifdef CreateSemaphore
@@ -20,6 +25,19 @@ namespace edge
 	{
 		namespace opengl
 		{
+#if defined(PLATFORM_WINDOWS)
+			void* LoadWGLExtension(const char* name) 
+			{
+				void* ptr = wglGetProcAddress(name);
+				if (!ptr || (ptr == (void*)0x1) || (ptr == (void*)0x2) || (ptr == (void*)0x3) || (ptr == (void*)-1)) 
+				{
+					throw std::runtime_error(std::string("Failed to load WGL extension: ") + name);
+				}
+
+				return ptr;
+			}
+#endif
+
 			OpenGLContext::OpenGLContext(const ContextCreateInfo& create_info)
 			{
 				auto* window = create_info.window;
@@ -28,40 +46,44 @@ namespace edge
 				win32::WindowsNativeSurface* windows_surface = static_cast<win32::WindowsNativeSurface*>(native_surface);
 				HDC hdc = GetDC(windows_surface->GetHandle());
 
-				//// Set a pixel format for the device context
-				//PIXELFORMATDESCRIPTOR pfd = { 0 };
-				//pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-				//pfd.nVersion = 1;
-				//pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-				//pfd.iPixelType = PFD_TYPE_RGBA;
-				//pfd.cColorBits = 32;
-				//pfd.cDepthBits = 24;
-				//pfd.cStencilBits = 8;
-				//pfd.iLayerType = PFD_MAIN_PLANE;
-				//
-				//int pixelFormat = ChoosePixelFormat(hdc, &pfd);
-				//
-				//// Create a temporary OpenGL context
-				//HGLRC tempContext = wglCreateContext(hdc);
-				//wglMakeCurrent(hdc, tempContext);
-				//
-				//if (!gladLoadGLLoader((GLADloadproc)wglGetProcAddress)) 
-				//{
-				//	EDGE_LOGE("Failed to initialize glad.");
-				//}
-				//
-				//// Create a modern OpenGL context
-				//int attribs[] = {
-				//	WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-				//	WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-				//	WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-				//	0
-				//};
-				//
-				//HGLRC modernContext = wglCreateContextAttribsARB(hdc, 0, attribs);
-				//wglMakeCurrent(NULL, NULL);
-				//wglDeleteContext(tempContext);
-				//wglMakeCurrent(hdc, modernContext);
+				// Set a pixel format for the device context
+				PIXELFORMATDESCRIPTOR pfd = { 0 };
+				pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+				pfd.nVersion = 1;
+				pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+				pfd.iPixelType = PFD_TYPE_RGBA;
+				pfd.cColorBits = 32;
+				pfd.cDepthBits = 24;
+				pfd.cStencilBits = 8;
+				pfd.iLayerType = PFD_MAIN_PLANE;
+				
+				int pixelFormat = ChoosePixelFormat(hdc, &pfd);
+				
+				// Create a temporary OpenGL context
+				HGLRC tempContext = wglCreateContext(hdc);
+				wglMakeCurrent(hdc, tempContext);
+
+				// Load wglCreateContextAttribsARB
+				auto wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)LoadWGLExtension("wglCreateContextAttribsARB");
+
+				// Define Attributes for Core 4.6 Context
+				int contextAttribs[] = 
+				{
+					WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+					WGL_CONTEXT_MINOR_VERSION_ARB, 6,
+					WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+					WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+					0
+				};
+
+				// Create Core 4.6 Context
+				auto hGLRC = wglCreateContextAttribsARB(hdc, nullptr, contextAttribs);
+
+				// Clean up Temporary Context
+				wglMakeCurrent(nullptr, nullptr);
+				wglDeleteContext(tempContext);
+
+				wglMakeCurrent(hdc, hGLRC);
 #endif
 
 				assert(false && "NOT IMPLEMENTED");
