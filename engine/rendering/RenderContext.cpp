@@ -379,12 +379,60 @@ namespace engine
 			}
 
 			bool surface_updated{ false };
-			auto& command_list = BeginCommands(surface_updated);
+			if (!frame_active)
+			{
+				if (swapchain)
+				{
+					surface_updated = HandleSurfaceChange();
+				}
+
+				current_frame = render_frames[current_frame_index].get();
+
+				// We will use the acquired semaphore in a different frame context,
+				// so we need to hold ownership.
+				acquired_semaphore = current_frame->image_avaliable;
+
+				if (swapchain)
+				{
+					if (!swapchain->AcquireNextImage(acquired_semaphore, nullptr, &active_frame_index))
+					{
+						surface_updated = HandleSurfaceChange(true);
+
+						bool acquire_result{ false };
+						if (surface_updated)
+						{
+							acquire_result = swapchain->AcquireNextImage(acquired_semaphore, nullptr, &active_frame_index);
+						}
+
+						if (!acquire_result)
+						{
+							current_frame->Reset();
+							return;
+						}
+					}
+				}
+
+				// Now the frame is active again
+				frame_active = true;
+				current_frame->Reset();
+			}
+
+			if (!acquired_semaphore)
+			{
+				throw std::runtime_error("Couldn't begin frame");
+			}
+
+			// Begin new command list
+			current_command_list = current_frame->command_pool->Allocate();
+			current_command_list->Begin();
+
+			// Update render targets if needed
 			if (surface_updated)
 			{
 				UpdateRenderTargets();
 			}
 
+			// Get previous frame time 
 			uint64_t timestamps[2] = {};
 			timestamp_query->GetData(0u, &timestamps[0]);
 
@@ -396,8 +444,9 @@ namespace engine
 
 			gpu_delta_time = static_cast<float>(elapsed_time) * timestamp_frequency / 1000000000.f;
 
-			command_list.ResetQuery(timestamp_query, 0u, 2u);
-			command_list.BeginQuery(timestamp_query, 0u);
+			// Reset performance query
+			current_command_list->ResetQuery(timestamp_query, 0u, 2u);
+			current_command_list->BeginQuery(timestamp_query, 0u);
 
 			// Update bindless textures
 			uint32_t array_index{ 0u };
@@ -434,17 +483,76 @@ namespace engine
 
 			global_resource_descriptor->Flush();
 
-			edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
-			//auto upload_avaliable = GetUploadAvaliableSemaphore();
-			//upload_wait_semaphore = Submit(&upload_avaliable, upload_avaliable.semaphore ? 1 : 0);
-			upload_wait_semaphore = resource_loader.Submit(nullptr, 0);
+			edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore = resource_loader.Submit(nullptr, 0);
 
-			auto& command_list = *current_command_list;
-			command_list.EndQuery(timestamp_query, 1u);
+			// Finish performance query
+			current_command_list->EndQuery(timestamp_query, 1u);
 
 			// Submit commands
-			EndFrame(upload_wait_semaphore);
+			current_command_list->End();
+			current_frame->fence->Reset();
 
+			try
+			{
+				EDGE_PROFILE_ZONE_SCOPED_NAMED("Submit");
+
+				// TODO: COMMAND BUFFERS
+				edge::gfx::SubmitInfo submit_info{};
+
+				edge::gfx::SemaphoreSubmitInfo wait_semaphores[2] = {
+					edge::gfx::SemaphoreSubmitInfo{ acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
+					upload_wait_semaphore
+				};
+
+				submit_info.wait_semaphore_infos = &wait_semaphores[0];
+				submit_info.wait_semaphore_count = upload_wait_semaphore.semaphore ? 2 : 1;
+
+
+				edge::gfx::SemaphoreSubmitInfo signal_semaphores[2] = {
+					edge::gfx::SemaphoreSubmitInfo{ current_frame->render_finished, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
+					edge::gfx::SemaphoreSubmitInfo{ current_frame->upload_avaliable, 0ull, edge::gfx::StageFlag::eAllCommands }
+				};
+
+				submit_info.signal_semaphore_infos = &signal_semaphores[0];
+				submit_info.signal_semaphore_count = 1u;
+
+				submit_info.command_lists = &current_command_list;
+				submit_info.command_buffer_count = 1u;
+
+				queue->Submit(submit_info, current_frame->fence);
+			}
+			catch (std::exception error)
+			{
+				EDGE_LOGE("failed to submit Draw command buffer!");
+			}
+
+			if (swapchain)
+			{
+				EDGE_PROFILE_ZONE_SCOPED_NAMED("Present");
+
+				auto* wait_semaphore = current_frame->render_finished;
+
+				edge::gfx::PresentInfo present_info = {};
+				present_info.wait_semaphore_count = 1;
+				present_info.wait_semaphores = &wait_semaphore;
+
+				present_info.swapchain_count = 1;
+				present_info.swapchains = &swapchain;
+				present_info.image_indices = &GetCurrentFrameIndex();
+
+				queue->Present(present_info);
+				current_frame->fence->Wait();
+
+				current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
+			}
+
+			previous_frame_semaphore = current_frame->upload_avaliable;
+			if (acquired_semaphore)
+			{
+				acquired_semaphore = nullptr;
+			}
+
+			// Update render resources state
 			for (auto& render_resource : render_resources)
 			{
 				if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage || render_resource.finalized)
@@ -454,6 +562,7 @@ namespace engine
 			}
 
 			global_resource_descriptor = nullptr;
+			frame_active = false;
 		}
 
 		edge::gfx::Context& RenderContext::GetContext()
@@ -580,137 +689,6 @@ namespace engine
 		const uint32_t& RenderContext::GetCurrentFrameIndex() const
 		{
 			return current_frame_index;
-		}
-
-		edge::gfx::CommandList& RenderContext::BeginCommands(bool& surface_updated)
-		{
-			EDGE_PROFILE_ZONE_SCOPED;
-
-			if (!frame_active)
-			{
-				BeginFrame(surface_updated);
-			}
-
-			if (!acquired_semaphore)
-			{
-				throw std::runtime_error("Couldn't begin frame");
-			}
-
-			current_command_list = current_frame->command_pool->Allocate();
-			current_command_list->Begin();
-			return *current_command_list;
-		}
-
-		void RenderContext::BeginFrame(bool& surface_updated)
-		{
-			EDGE_PROFILE_ZONE_SCOPED;
-
-			if (swapchain)
-			{
-				surface_updated = HandleSurfaceChange();
-			}
-
-			assert(!frame_active && "Frame is still active, please call end_frame");
-
-			current_frame = render_frames[current_frame_index].get();
-
-			// We will use the acquired semaphore in a different frame context,
-			// so we need to hold ownership.
-			acquired_semaphore = current_frame->image_avaliable;
-
-			if (swapchain)
-			{
-				if (!swapchain->AcquireNextImage(acquired_semaphore, nullptr, &active_frame_index))
-				{
-					surface_updated = HandleSurfaceChange(true);
-
-					bool acquire_result{ false };
-					if (surface_updated)
-					{
-						acquire_result = swapchain->AcquireNextImage(acquired_semaphore, nullptr, &active_frame_index);
-					}
-
-					if (!acquire_result)
-					{
-						current_frame->Reset();
-						return;
-					}
-				}
-			}
-
-			// Now the frame is active again
-			frame_active = true;
-			current_frame->Reset();
-		}
-
-		void RenderContext::EndFrame(edge::gfx::SemaphoreSubmitInfo wait_semaphore)
-		{
-			EDGE_PROFILE_ZONE_SCOPED;
-
-			current_command_list->End();
-			frame_active = false;
-
-			current_frame->fence->Reset();
-
-			try
-			{
-				EDGE_PROFILE_ZONE_SCOPED_NAMED("Submit");
-
-				// TODO: COMMAND BUFFERS
-				edge::gfx::SubmitInfo submit_info{};
-
-				edge::gfx::SemaphoreSubmitInfo wait_semaphores[2] = {
-					edge::gfx::SemaphoreSubmitInfo{ acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
-					wait_semaphore
-				};
-
-				submit_info.wait_semaphore_infos = &wait_semaphores[0];
-				submit_info.wait_semaphore_count = wait_semaphore.semaphore ? 2 : 1;
-
-
-				edge::gfx::SemaphoreSubmitInfo signal_semaphores[2] = {
-					edge::gfx::SemaphoreSubmitInfo{ current_frame->render_finished, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
-					edge::gfx::SemaphoreSubmitInfo{ current_frame->upload_avaliable, 0ull, edge::gfx::StageFlag::eAllCommands }
-				};
-
-				submit_info.signal_semaphore_infos = &signal_semaphores[0];
-				submit_info.signal_semaphore_count = 1u;
-
-				submit_info.command_lists = &current_command_list;
-				submit_info.command_buffer_count = 1u;
-
-				queue->Submit(submit_info, current_frame->fence);
-			}
-			catch (std::exception error)
-			{
-				EDGE_LOGE("failed to submit Draw command buffer!");
-			}
-
-			if (swapchain)
-			{
-				EDGE_PROFILE_ZONE_SCOPED_NAMED("Present");
-
-				auto* wait_semaphore = current_frame->render_finished;
-
-				edge::gfx::PresentInfo present_info = {};
-				present_info.wait_semaphore_count = 1;
-				present_info.wait_semaphores = &wait_semaphore;
-
-				present_info.swapchain_count = 1;
-				present_info.swapchains = &swapchain;
-				present_info.image_indices = &GetCurrentFrameIndex();
-
-				queue->Present(present_info);
-				current_frame->fence->Wait();
-
-				current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
-			}
-
-			previous_frame_semaphore = current_frame->upload_avaliable;
-			if (acquired_semaphore)
-			{
-				acquired_semaphore = nullptr;
-			}
 		}
 
 		void RenderContext::UpdateSwapchain(uint32_t width, uint32_t height)

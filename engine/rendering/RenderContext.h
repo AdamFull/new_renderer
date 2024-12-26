@@ -76,11 +76,6 @@ namespace engine
 
 			const uint32_t& GetCurrentFrameIndex() const;
 
-			edge::gfx::CommandList& BeginCommands(bool& surface_updated);
-
-			void BeginFrame(bool& surface_updated);
-			void EndFrame(edge::gfx::SemaphoreSubmitInfo wait_semaphore);
-
 			void UpdateSwapchain(uint32_t width, uint32_t height);
 			void UpdateSwapchain(uint32_t image_count);
 

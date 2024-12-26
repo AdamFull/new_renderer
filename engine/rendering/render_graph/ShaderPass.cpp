@@ -362,19 +362,13 @@ namespace engine
 				}
 				else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 				{
-					// At first creating resource barrier
-					auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
-					barrier.buffer = execution_context.GetBuffer(render_resource);
-					barrier.src_state = render_resource.GetState();
-					barrier.dst_state = render_resource.GetState();
-
 					// And also create resource descriptor
 					edge::gfx::BufferDescriptor descriptor{};
 					descriptor.type = refl_resource.type;
 					descriptor.set = refl_resource.set;
 					descriptor.binding = refl_resource.binding;
 
-					descriptor.buffer = barrier.buffer;
+					descriptor.buffer = execution_context.GetBuffer(render_resource);
 					descriptor.size = descriptor.buffer->GetSize();
 
 					resource_descriptor->BindBuffer(descriptor);
