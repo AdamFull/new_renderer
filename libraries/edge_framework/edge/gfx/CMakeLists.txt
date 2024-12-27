@@ -36,47 +36,38 @@ if(ANDROID)
 elseif(WIN32)
     add_subdirectory(directx12)
     add_subdirectory(vulkan)
-    add_subdirectory(opengl)
 
     target_link_libraries(${PROJECT_NAME} 
         PUBLIC
         gfx_d3d12
         gfx_vulkan
-        gfx_opengl
     )
 
     target_compile_definitions(${PROJECT_NAME} 
         PRIVATE D3D12_SUPPORTED=1
         PRIVATE VULKAN_SUPPORTED=1
-        PRIVATE OPENGL_SUPPORTED=1
     )
 elseif(APPLE)
     add_subdirectory(vulkan)
-    add_subdirectory(opengl)
 
     target_link_libraries(${PROJECT_NAME} 
         PUBLIC
         gfx_vulkan
-        gfx_opengl
     )
 
     target_compile_definitions(${PROJECT_NAME} 
         PRIVATE VULKAN_SUPPORTED=1
-        PRIVATE OPENGL_SUPPORTED=1
     )
 elseif(UNIX)
     add_subdirectory(vulkan)
-    add_subdirectory(opengl)
 
     target_link_libraries(${PROJECT_NAME} 
         PUBLIC
         gfx_vulkan
-        gfx_opengl
     )
 
     target_compile_definitions(${PROJECT_NAME} 
         PRIVATE VULKAN_SUPPORTED=1
-        PRIVATE OPENGL_SUPPORTED=1
     )
 endif()
 
@@ -98,3 +89,5 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
     gfx_shader_compiler
 )
+
+add_subdirectory(shaders)

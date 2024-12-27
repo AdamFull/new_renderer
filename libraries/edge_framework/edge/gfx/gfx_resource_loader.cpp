@@ -14,10 +14,33 @@
 #include "gfx_context.h"
 #include "shader_compiler/gfx_shader_effect_compiler.h"
 
+#include "MipGeneratorShader.h"
+#include "MipGeneratorShaderMip2.h"
+#include "MipGeneratorShaderMip3.h"
+#include "MipGeneratorShaderMip4.h"
+
 namespace edge
 {
 	namespace gfx
 	{
+		int32_t GetShaderIndex(ShaderStageFlag stage)
+		{
+			if (stage == ShaderStageFlag::eVertex)
+				return 0;
+			else if (stage == ShaderStageFlag::eTessellationControl)
+				return 1;
+			else if (stage == ShaderStageFlag::eTessellationEvaluation)
+				return 2;
+			else if (stage == ShaderStageFlag::eGeometry)
+				return 3;
+			else if (stage == ShaderStageFlag::eFragment)
+				return 4;
+			else if (stage == ShaderStageFlag::eCompute)
+				return 5;
+
+			return -1;
+		}
+
 		class ResourceUploaderImpl
 		{
 		public:
@@ -145,29 +168,39 @@ namespace edge
 			MipGeneratorImpl(ResourceLoader& resource_loader) :
 				context{ resource_loader.GetContext() }
 			{
-				const char* mip_generate_shaders[] = {
-				"utility:generate_mips_4x",
-				"utility:generate_mips_4x:MIP_2",
-				"utility:generate_mips_4x:MIP_2:MIP_3",
-				"utility:generate_mips_4x:MIP_2:MIP_3:MIP_4"
+				const std::span<const uint8_t> mip_generate_shaders[] = 
+				{
+					{ reinterpret_cast<const uint8_t*>(MipGeneratorShader), MipGeneratorShader_size },
+					{ reinterpret_cast<const uint8_t*>(MipGeneratorShaderMip2), MipGeneratorShaderMip2_size },
+					{ reinterpret_cast<const uint8_t*>(MipGeneratorShaderMip3), MipGeneratorShaderMip3_size },
+					{ reinterpret_cast<const uint8_t*>(MipGeneratorShaderMip4), MipGeneratorShaderMip4_size }
 				};
+
+				uint32_t compute_stage_index = GetShaderIndex(ShaderStageFlag::eCompute);
 
 				// Load all shaders
 				for (int32_t i = 0; i < shader_instances.size(); ++i)
 				{
 					auto& shader_instance = shader_instances[i];
 
-					shader_instance.shader = resource_loader.LoadShader(mip_generate_shaders[i]);
+					ShaderCreateInfo shader_create_info{};
+					shader_create_info.stages |= ShaderStageFlag::eCompute;
 
+					auto& stage_create_info = shader_create_info.shader_stages[compute_stage_index];
+					stage_create_info.stage = ShaderStageFlag::eCompute;
+					stage_create_info.code = mip_generate_shaders[i];
+				
+					shader_instance.shader = context.CreateShader(shader_create_info);
+				
 					RootSignatureCreateInfo root_sign_ci{};
 					root_sign_ci.shader = shader_instance.shader;
-
+				
 					shader_instance.root_signature = context.CreateRootSignature(root_sign_ci);
-
+				
 					ComputePipelineCreateInfo pipeline_ci{};
 					pipeline_ci.shader = shader_instance.shader;
 					pipeline_ci.root_signature = shader_instance.root_signature;
-
+				
 					shader_instance.pipeline = context.CreatePipeline(pipeline_ci);
 				}
 
@@ -606,24 +639,6 @@ namespace edge
 					return found->second;
 
 				return sampler_cache[sampler_hash] = context.CreateSampler(create_info);
-			}
-
-			int32_t GetShaderIndex(ShaderStageFlag stage)
-			{
-				if (stage == ShaderStageFlag::eVertex)
-					return 0;
-				else if (stage == ShaderStageFlag::eTessellationControl)
-					return 1;
-				else if (stage == ShaderStageFlag::eTessellationEvaluation)
-					return 2;
-				else if (stage == ShaderStageFlag::eGeometry)
-					return 3;
-				else if (stage == ShaderStageFlag::eFragment)
-					return 4;
-				else if (stage == ShaderStageFlag::eCompute)
-					return 5;
-
-				return -1;
 			}
 
 			Shader* LoadShader(std::string_view shader_name) override

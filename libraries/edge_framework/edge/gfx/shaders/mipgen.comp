@@ -1,0 +1,100 @@
+// Based on https://github.com/GameTechDev/TAA/blob/main/MiniEngine/Core/Shaders/GenerateMipsCS.hlsli
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 1) uniform writeonly image2D write_image0;
+layout(set = 0, binding = 2) uniform writeonly image2D write_image1;
+layout(set = 0, binding = 3) uniform writeonly image2D write_image2;
+layout(set = 0, binding = 4) uniform writeonly image2D write_image3;
+layout(set = 0, binding = 5) uniform sampler2D sample_image0;
+
+shared float color_r[64];
+shared float color_g[64];
+shared float color_b[64];
+shared float color_a[64];
+
+void StoreColor(uint index, vec4 color)
+{
+    color_r[index] = color.r;
+    color_g[index] = color.g;
+    color_b[index] = color.b;
+    color_a[index] = color.a;
+}
+
+vec4 LoadColor(uint index)
+{
+    return vec4(color_r[index], color_g[index], color_b[index], color_a[index]);
+}
+
+void GroupMemoryBarrierWithGroupSync()
+{
+	groupMemoryBarrier();
+	barrier();
+}
+
+void main()
+{
+    ivec2 id = ivec2(gl_GlobalInvocationID.xy);
+    vec2 texelSize = 1.0 / vec2(imageSize(write_image0));
+
+    vec2 uv = texelSize * (vec2(id) + 0.5);
+    vec4 color0 = texture(sample_image0, uv);
+
+    imageStore(write_image0, id, color0);
+
+#ifdef MIP_2
+    // Without lane swizzle operations, the only way to share data with other
+    // threads is through LDS.
+    StoreColor(gl_LocalInvocationIndex, color0);
+
+    // This guarantees all LDS writes are complete and that all threads have
+    // executed all instructions so far (and therefore have issued their LDS
+    // write instructions.)
+    GroupMemoryBarrierWithGroupSync();
+
+    // With low three bits for X and high three bits for Y, this bit mask
+    // (binary: 001001) checks that X and Y are even.
+    if ((gl_LocalInvocationIndex & 0x9) == 0)
+    {
+        vec4 color1 = LoadColor(gl_LocalInvocationIndex + 0x01);
+        vec4 color2 = LoadColor(gl_LocalInvocationIndex + 0x08);
+        vec4 color3 = LoadColor(gl_LocalInvocationIndex + 0x09);
+        color0 = 0.25 * (color0 + color1 + color2 + color3);
+
+        imageStore(write_image1, id / 2, color0);
+        StoreColor(gl_LocalInvocationIndex, color0);
+    }
+#endif
+    
+#ifdef MIP_3
+    GroupMemoryBarrierWithGroupSync();
+
+    // This bit mask (binary: 011011) checks that X and Y are multiples of four.
+    if ((gl_LocalInvocationIndex & 0x1B) == 0)
+    {
+        vec4 color1 = LoadColor(gl_LocalInvocationIndex + 0x02);
+        vec4 color2 = LoadColor(gl_LocalInvocationIndex + 0x10);
+        vec4 color3 = LoadColor(gl_LocalInvocationIndex + 0x12);
+        color0 = 0.25 * (color0 + color1 + color2 + color3);
+
+        imageStore(write_image2, id / 4, color0);
+        StoreColor(gl_LocalInvocationIndex, color0);
+    }
+#endif
+
+#ifdef MIP_4
+    GroupMemoryBarrierWithGroupSync();
+
+    // This bit mask would be 111111 (X & Y multiples of 8), but only one
+    // thread fits that criteria.
+    if (gl_LocalInvocationIndex == 0)
+    {
+        vec4 color1 = LoadColor(gl_LocalInvocationIndex + 0x04);
+        vec4 color2 = LoadColor(gl_LocalInvocationIndex + 0x20);
+        vec4 color3 = LoadColor(gl_LocalInvocationIndex + 0x24);
+        color0 = 0.25 * (color0 + color1 + color2 + color3);
+
+        imageStore(write_image3, id / 8, color0);
+    }
+#endif
+}

@@ -10,8 +10,7 @@ namespace edge
 		{
 			eAuto,
 			eVulkan,
-			eDirectx12,
-			eOpenGL
+			eDirectx12
 		};
 
 		enum class ResourceType
