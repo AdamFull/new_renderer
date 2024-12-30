@@ -30,6 +30,7 @@ float4 LoadColor(uint index)
 // #define MIP_3
 // #define MIP_4
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void main(uint3 DTid: SV_DispatchThreadID, uint3 GTid: SV_GroupThreadID, uint GIid: SV_GroupIndex)
 {
