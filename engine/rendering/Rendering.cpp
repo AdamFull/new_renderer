@@ -1,9 +1,9 @@
 #include "Rendering.h"
 
 #include <edge/gfx/gfx_context.h>
+#include <edge/gfx/gfx_shader_effect_system.h>
 
 #include "RenderContext.h"
-#include "UploadContext.h"
 
 #include "render_graph/ComputePass.h"
 #include "render_graph/RenderPass.h"
@@ -217,10 +217,14 @@ namespace engine
 			edge::gfx::ResourceLoaderCreateInfo loader_create_info{};
 			loader_create_info.context = gfx_context.get();
 			loader_create_info.filesystem_wrapper = fs.get();
-			loader_create_info.shader_cache_patch = "/root/embed/rendering/shaders/shader_cache.shc";
-			loader_create_info.shader_compile_config_path = "/source/embed/shaders/config.json";
-
 			resource_loader = edge::gfx::CreateResourceLoader(loader_create_info);
+
+			edge::gfx::ShaderEffectSystemCreateInfo effect_system_create_info{};
+			effect_system_create_info.context = gfx_context.get();
+			effect_system_create_info.filesystem_wrapper = fs.get();
+			effect_system_create_info.effect_database_path = "/root/embed/rendering/shaders/shader_cache.shc";
+			effect_system_create_info.effect_database_compile_config_path = "/source/embed/shaders/config.json";
+			shader_effect_system = edge::gfx::CreateShaderEffectSystem(effect_system_create_info);
 
 			render_context = std::make_unique<RenderContext>(*this, window);
 
@@ -321,6 +325,16 @@ namespace engine
 		edge::gfx::Context& Renderer::GetContext()
 		{
 			return *gfx_context;
+		}
+
+		edge::gfx::ShaderEffectSystem& Renderer::GetShaderEffectSystem()
+		{
+			return *shader_effect_system;
+		}
+
+		edge::gfx::ShaderEffectSystem const& Renderer::GetShaderEffectSystem() const
+		{
+			return *shader_effect_system;
 		}
 
 		GeometryBuffer& Renderer::RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)

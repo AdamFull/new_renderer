@@ -16,7 +16,7 @@ namespace engine
 			resource_attachments{ create_info.resource_attachments }
 		{
 			edge::gfx::GraphicsPipelineCreateInfo pipeline_ci{};
-			pipeline_ci.shader = shader;
+			pipeline_ci.shader = shader_effect->GetShader();
 			pipeline_ci.root_signature = root_signature;
 			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
 			pipeline_ci.pipeline_state = create_info.pipeline_state;

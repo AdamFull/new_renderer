@@ -12,7 +12,6 @@
 #include "native_format/vk_format.h"
 
 #include "gfx_context.h"
-#include "shader_compiler/gfx_shader_effect_compiler.h"
 
 #include "MipGeneratorShader.h"
 #include "MipGeneratorShaderMip2.h"
@@ -23,24 +22,6 @@ namespace edge
 {
 	namespace gfx
 	{
-		int32_t GetShaderIndex(ShaderStageFlag stage)
-		{
-			if (stage == ShaderStageFlag::eVertex)
-				return 0;
-			else if (stage == ShaderStageFlag::eTessellationControl)
-				return 1;
-			else if (stage == ShaderStageFlag::eTessellationEvaluation)
-				return 2;
-			else if (stage == ShaderStageFlag::eGeometry)
-				return 3;
-			else if (stage == ShaderStageFlag::eFragment)
-				return 4;
-			else if (stage == ShaderStageFlag::eCompute)
-				return 5;
-
-			return -1;
-		}
-
 		class ResourceUploaderImpl
 		{
 		public:
@@ -176,8 +157,6 @@ namespace edge
 					{ reinterpret_cast<const uint8_t*>(MipGeneratorShaderMip4), MipGeneratorShaderMip4_size }
 				};
 
-				uint32_t compute_stage_index = GetShaderIndex(ShaderStageFlag::eCompute);
-
 				// Load all shaders
 				for (int32_t i = 0; i < shader_instances.size(); ++i)
 				{
@@ -186,7 +165,7 @@ namespace edge
 					ShaderCreateInfo shader_create_info{};
 					shader_create_info.stages |= ShaderStageFlag::eCompute;
 
-					auto& stage_create_info = shader_create_info.shader_stages[compute_stage_index];
+					auto& stage_create_info = shader_create_info.shader_stages[5];
 					stage_create_info.stage = ShaderStageFlag::eCompute;
 					stage_create_info.code = mip_generate_shaders[i];
 				
@@ -358,14 +337,6 @@ namespace edge
 				{
 					uploaders[i] = std::make_unique<ResourceUploaderImpl>(context, *queue);
 				}
-
-				// Create shader compiler
-				shc::ShaderEffectCompilerCreateInfo shader_compiler_ci{};
-				shader_compiler_ci.filesystem_wrapper = create_info.filesystem_wrapper;
-				shader_compiler_ci.shader_compile_config_path = create_info.shader_compile_config_path;
-				shader_compiler_ci.shader_cache_patch = create_info.shader_cache_patch;
-
-				effect_compiler = std::make_unique<shc::ShaderEffectCompiler>(shader_compiler_ci);
 
 				// Create mip generator
 				mip_generator = std::make_unique<MipGeneratorImpl>(*this);
@@ -641,37 +612,6 @@ namespace edge
 				return sampler_cache[sampler_hash] = context.CreateSampler(create_info);
 			}
 
-			Shader* LoadShader(std::string_view shader_name) override
-			{
-				auto shader_key = shc::GetUniqueHashName(shader_name);
-				auto found_shader = shader_cache.find(shader_key);
-				if (found_shader == shader_cache.end())
-				{
-					// Try to create it
-					auto effect_create_info = effect_compiler->GetEffect(shader_name);
-					if (effect_create_info.shader_stages.empty())
-						return nullptr;
-
-					ShaderCreateInfo shader_create_info{};
-
-					for (const auto& shader_stage : effect_create_info.shader_stages)
-					{
-						shader_create_info.stages |= shader_stage.stage;
-
-						auto stage_index = GetShaderIndex(shader_stage.stage);
-						auto& stage_ci = shader_create_info.shader_stages[stage_index];
-						stage_ci.stage = shader_stage.stage;
-						stage_ci.code = shader_stage.code;
-					}
-
-					auto* new_shader = context.CreateShader(shader_create_info);
-					shader_cache[shader_key] = new_shader;
-					return new_shader;
-				}
-
-				return found_shader->second;
-			}
-
 			void BeginBufferUpdate(BufferUpdateInfo& update_info) override
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
@@ -809,10 +749,7 @@ namespace edge
 
 			bool is_writing_commands{ false };
 
-			std::unique_ptr<shc::ShaderEffectCompiler> effect_compiler;
-
 			std::unordered_map<uint32_t, Sampler*> sampler_cache{};
-			std::unordered_map<uint32_t, Shader*> shader_cache{};
 
 			std::unique_ptr<MipGeneratorImpl> mip_generator;
 		};

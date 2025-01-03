@@ -24,7 +24,7 @@ namespace engine
 
 		struct PassCreateInfo
 		{
-			edge::gfx::Shader* shader{ nullptr };
+			edge::gfx::ShaderEffect* shader{ nullptr };
 			edge::gfx::PipelineCache* pipeline_cache{ nullptr };
 			edge::gfx::SharedDescriptor* shared_descriptor{ nullptr };
 
@@ -215,7 +215,7 @@ namespace engine
 			std::vector<UniformHandle> uniform_handles;
 			std::unique_ptr<UniformHandle> constant_block;
 
-			edge::gfx::Shader* shader{ nullptr };
+			edge::gfx::ShaderEffect* shader_effect{ nullptr };
 			edge::gfx::RootSignature* root_signature{ nullptr };
 			edge::gfx::Pipeline* pipeline{ nullptr };
 

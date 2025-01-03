@@ -271,6 +271,14 @@ namespace edge
 			ShaderReflection reflection{};
 		};
 
+		class ShaderEffect
+		{
+		public:
+			virtual ~ShaderEffect() = default;
+
+			virtual Shader* GetShader() = 0;
+		};
+
 		class RootSignature : public GFXResource
 		{
 		public:

@@ -34,6 +34,9 @@ namespace engine
 			edge::gfx::ResourceLoader& GetResourceLoader() override;
 			edge::gfx::ResourceLoader const& GetResourceLoader() const override;
 
+			edge::gfx::ShaderEffectSystem& GetShaderEffectSystem() override;
+			edge::gfx::ShaderEffectSystem const& GetShaderEffectSystem() const override;
+
 			edge::gfx::Context& GetContext() override;
 
 			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
@@ -51,6 +54,7 @@ namespace engine
 
 			std::unique_ptr<edge::gfx::Context> gfx_context{};
 			std::unique_ptr<edge::gfx::ResourceLoader> resource_loader{};
+			std::unique_ptr<edge::gfx::ShaderEffectSystem> shader_effect_system{};
 			std::unique_ptr<ExecutionContext> render_context{};
 			std::unique_ptr<IRenderWorld> render_world{};
 

@@ -16,13 +16,14 @@ namespace engine
 		ShaderPass::ShaderPass(ExecutionContext& execution_context, const PassCreateInfo& create_info) :
 			execution_context{ execution_context },
 			context{ execution_context.GetContext() },
-			shader{ create_info.shader },
+			shader_effect{ create_info.shader },
 			debug_name{ create_info.debug_name },
 			one_time{ create_info.one_time },
 			shared_descriptor{ create_info.shared_descriptor },
 			draw_callback{ create_info.draw_callback },
 			enabled_callback{ create_info.enabled_callback }
 		{
+			auto* shader = shader_effect->GetShader();
 			auto& reflection = shader->GetReflection();
 			
 			// Create uniform block handlers for resources
@@ -65,7 +66,6 @@ namespace engine
 		{
 			context.Destroy(pipeline);
 			context.Destroy(root_signature);
-			context.Destroy(shader);
 			context.Destroy(timestamp_query);
 		}
 
@@ -176,12 +176,15 @@ namespace engine
 
 		void ShaderPass::PushConstantRanges(edge::gfx::CommandList& command_list)
 		{
+			auto* shader = shader_effect->GetShader();
+
 			auto& constant_data = constant_block->Data();
 			command_list.PushConstants(shader, root_signature, std::span<const char>(constant_data.data(), constant_data.size()));
 		}
 
 		void ShaderPass::DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z)
 		{
+			auto* shader = shader_effect->GetShader();
 			auto& reflection = shader->GetReflection();
 			group_x = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_x) / static_cast<float>(reflection.local_sizes[0]))), 1u);
 			group_y = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_y) / static_cast<float>(reflection.local_sizes[1]))), 1u);
@@ -235,6 +238,7 @@ namespace engine
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
+			auto* shader = shader_effect->GetShader();
 			auto& reflection = shader->GetReflection();
 			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const edge::gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
 			if (found != reflection.shader_resources.End())
@@ -336,6 +340,7 @@ namespace engine
 				resource_descriptor = descriptor_allocator.AllocateDescriptors(root_signature);
 			}
 
+			auto* shader = shader_effect->GetShader();
 			auto& reflection = shader->GetReflection();
 
 			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const edge::gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });

@@ -81,6 +81,7 @@ namespace engine
 		RenderContext::RenderContext(IRenderer& renderer, edge::Window* window) :
 			context{ renderer.GetContext() },
 			resource_loader{ renderer.GetResourceLoader() },
+			shader_effect_system{ renderer.GetShaderEffectSystem() },
 			window{ *window }
 		{
 			// Select queue that can present
@@ -311,7 +312,7 @@ namespace engine
 		{
 			RenderPassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
-			pass_ci.shader = resource_loader.LoadShader(create_info.shader_name);
+			pass_ci.shader = &shader_effect_system.LoadEffect(create_info.shader_name);
 			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.pipeline_state = create_info.pipeline_state;
 			pass_ci.draw_callback = std::move(create_info.draw_callback);
@@ -327,7 +328,7 @@ namespace engine
 		{
 			ComputePassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
-			pass_ci.shader = resource_loader.LoadShader(create_info.shader_name);
+			pass_ci.shader = &shader_effect_system.LoadEffect(create_info.shader_name);
 			pass_ci.one_time = create_info.one_time;
 			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.draw_callback = std::move(create_info.draw_callback);

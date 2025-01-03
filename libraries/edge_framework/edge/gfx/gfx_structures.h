@@ -31,6 +31,7 @@ namespace edge
 		class Texture;
 		class Sampler;
 		class Shader;
+		class ShaderEffect;
 		class RootSignature;
 		class Pipeline;
 		class PipelineCache;

@@ -11,7 +11,7 @@ namespace engine
 			ShaderPass{ execution_context, create_info }
 		{
 			edge::gfx::ComputePipelineCreateInfo pipeline_ci{};
-			pipeline_ci.shader = shader;
+			pipeline_ci.shader = shader_effect->GetShader();
 			pipeline_ci.root_signature = root_signature;
 			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
 

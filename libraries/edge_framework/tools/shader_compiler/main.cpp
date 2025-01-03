@@ -1,5 +1,6 @@
 #include <slang.h>
 #include <slang-com-ptr.h>
+#include <slang-com-helper.h>
 
 #include <spdlog/spdlog.h>
 #include <argparse/argparse.hpp>
@@ -224,17 +225,14 @@ public:
 		if (!ReadFile(path, content))
 			return SLANG_E_CANNOT_OPEN;
 
-		// Create an ISlangBlob to hold the file data
-		Slang::ComPtr<ISlangBlob> blob;
-		//SlangResult res = spCreateBlob(content.data(), content.size(), blob.writeRef());
-		//if (SLANG_FAILED(res))
-		//{
-		//	return res;
-		//}
-
-		// Return the blob
-		*outBlob = blob.detach();
+		
+		
 		return SLANG_OK;
+	}
+
+	SLANG_NO_THROW void* SLANG_MCALL castAs(const SlangUUID& guid) override
+	{
+		return nullptr;
 	}
 
 	// A method to retrieve all accessed files
@@ -336,6 +334,9 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	//FilesystemWrapper* filesystem = new FilesystemWrapper();
+	//spSetFileSystem(compileRequest, filesystem);
+
 	auto filename = GetFileName(input_file_path);
 	auto source_language = DetectSourceLanguage(input_file_path);
 
@@ -402,8 +403,6 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	//SlangReflection* programReflection = spGetReflection(compileRequest);
-
 	// Save compiled code
 	size_t size = 0;
 	void const* compiled_code = spGetEntryPointCode(compileRequest, 0, &size);
@@ -427,7 +426,13 @@ int main(int argc, char* argv[])
 	// Generate depfile
 	if (argparser.is_used("-depfile"))
 	{
-		// TODO: Add to dependency all included files
+		SlangReflection* reflection = spGetReflection(compileRequest);
+		
+		auto output_path = argparser.get<std::string>("-o");
+
+		std::stringstream ss;
+
+		ss << output_path << ": ";
 	}
 	
 	spDestroyCompileRequest(compileRequest);

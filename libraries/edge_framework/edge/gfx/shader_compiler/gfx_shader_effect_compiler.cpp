@@ -267,7 +267,7 @@ namespace edge
 					json.get_to(shader_cache);
 				}
 
-				CompileModules();
+				//CompileModules();
 			}
 
 			ShaderEffectCompiler::~ShaderEffectCompiler()

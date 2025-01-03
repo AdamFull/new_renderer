@@ -209,8 +209,8 @@ public:
         edge::gfx::ResourceLoaderCreateInfo loader_create_info{};
         loader_create_info.context = gfx_context.get();
         loader_create_info.filesystem_wrapper = gfx_fs_wrapper.get();
-        loader_create_info.shader_cache_patch = "/root/shaders/shader_cache.shc";
-        loader_create_info.shader_compile_config_path = "/source/libraries/edge_framework/examples/HelloTriangle/shaders/config.json";
+        //loader_create_info.shader_cache_patch = "/root/shaders/shader_cache.shc";
+        //loader_create_info.shader_compile_config_path = "/source/libraries/edge_framework/examples/HelloTriangle/shaders/config.json";
 
 		// You can also implement your own resource loader
         resource_loader = edge::gfx::CreateResourceLoader(loader_create_info);

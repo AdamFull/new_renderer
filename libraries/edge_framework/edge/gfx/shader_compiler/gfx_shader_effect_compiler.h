@@ -43,8 +43,8 @@ namespace edge
 			struct ShaderEffectDesc
 			{
 				std::vector<CachedShaderDesc> shader_descriptions;
-				//std::vector<SamplerCreateInfo
-				// ...
+				//std::vector<SamplerCreateInfo> sampler_create_infos;
+				
 			};
 
 			struct ShaderCache

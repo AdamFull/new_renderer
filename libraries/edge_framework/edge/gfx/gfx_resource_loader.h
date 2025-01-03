@@ -13,9 +13,6 @@ namespace edge
 		{
 			Context* context{ nullptr };
 			FilesystemWrapper* filesystem_wrapper{ nullptr };
-
-			std::string_view shader_compile_config_path{ "" };
-			std::string_view shader_cache_patch{ "" };
 		};
 
 		class ResourceLoader
@@ -27,8 +24,6 @@ namespace edge
 			virtual Texture* LoadTexture(const TextureCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
 
 			virtual Sampler* GetSampler(const SamplerCreateInfo& create_info) = 0;
-
-			virtual Shader* LoadShader(std::string_view shader_name) = 0;
 
 			virtual void BeginBufferUpdate(BufferUpdateInfo& update_info) = 0;
 			virtual void EndBufferUpdate(BufferUpdateInfo& update_info) = 0;
