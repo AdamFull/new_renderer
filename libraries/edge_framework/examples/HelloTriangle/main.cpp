@@ -239,18 +239,19 @@ public:
 		}
 
 		// Create shader and pipeline
-		edge::gfx::ShaderCreateInfo shader_ci{};
-		shader_ci.stages = edge::gfx::ShaderStageFlag::eVertex | edge::gfx::ShaderStageFlag::eFragment;
+		const edge::gfx::ShaderStageInfo shader_stages[]
+		{
+			{
+				.stage = edge::gfx::ShaderStageFlag::eVertex,
+				.code = { reinterpret_cast<const uint8_t*>(HelloTriangleVert), HelloTriangleVert_size }
+			},
+			{
+				.stage = edge::gfx::ShaderStageFlag::eFragment,
+				.code = { reinterpret_cast<const uint8_t*>(HelloTriangleFrag), HelloTriangleFrag_size }
+			}
+		};
 
-		auto& vertex_stage = shader_ci.shader_stages[0];
-		vertex_stage.stage = edge::gfx::ShaderStageFlag::eVertex;
-		vertex_stage.code = std::span{ reinterpret_cast<const uint8_t*>(HelloTriangleVert), HelloTriangleVert_size };
-
-		auto& fragment_stage = shader_ci.shader_stages[4];
-		fragment_stage.stage = edge::gfx::ShaderStageFlag::eFragment;
-		fragment_stage.code = std::span{ reinterpret_cast<const uint8_t*>(HelloTriangleFrag), HelloTriangleFrag_size };
-
-		shader = gfx_context->CreateShader(shader_ci);
+		shader = gfx_context->CreateShader(shader_stages);
 
 		// Create root signature
 		edge::gfx::RootSignatureCreateInfo root_sign_ci{};

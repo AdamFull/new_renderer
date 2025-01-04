@@ -69,7 +69,7 @@ namespace edge
 				return nullptr;
 			}
 
-			Shader* D3D12Context::CreateShader(const ShaderCreateInfo& create_info)
+			Shader* D3D12Context::CreateShader(std::span<const ShaderStageInfo> shader_stages)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;

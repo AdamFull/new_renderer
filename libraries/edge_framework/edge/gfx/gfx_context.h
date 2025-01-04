@@ -34,7 +34,7 @@ namespace edge
 			virtual Texture* CreateTexture(const TextureCreateInfo& create_info) = 0;
 			virtual Texture* CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) = 0;
 
-			virtual Shader* CreateShader(const ShaderCreateInfo& create_info) = 0;
+			virtual Shader* CreateShader(std::span<const ShaderStageInfo> shader_stages) = 0;
 
 			virtual RootSignature* CreateRootSignature(const RootSignatureCreateInfo& create_info) = 0;
 

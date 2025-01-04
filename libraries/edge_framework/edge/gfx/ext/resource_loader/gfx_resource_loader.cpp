@@ -157,14 +157,15 @@ namespace edge
 					{
 						auto& shader_instance = shader_instances[i];
 
-						ShaderCreateInfo shader_create_info{};
-						shader_create_info.stages |= ShaderStageFlag::eCompute;
+						const edge::gfx::ShaderStageInfo shader_stages[]
+						{
+							{
+								.stage = edge::gfx::ShaderStageFlag::eCompute,
+								.code = mip_generate_shaders[i]
+							}
+						};
 
-						auto& stage_create_info = shader_create_info.shader_stages[5];
-						stage_create_info.stage = ShaderStageFlag::eCompute;
-						stage_create_info.code = mip_generate_shaders[i];
-
-						shader_instance.shader = context.CreateShader(shader_create_info);
+						shader_instance.shader = context.CreateShader(shader_stages);
 
 						RootSignatureCreateInfo root_sign_ci{};
 						root_sign_ci.shader = shader_instance.shader;

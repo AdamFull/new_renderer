@@ -318,9 +318,9 @@ namespace edge
 				return new VulkanTexture(*allocator, swapchain, image_index);
 			}
 
-			Shader* VulkanContext::CreateShader(const ShaderCreateInfo& create_info)
+			Shader* VulkanContext::CreateShader(std::span<const ShaderStageInfo> shader_stages)
 			{
-				return new VulkanShader(*device, create_info);
+				return new VulkanShader(*device, shader_stages);
 			}
 
 			RootSignature* VulkanContext::CreateRootSignature(const RootSignatureCreateInfo& create_info)

@@ -31,7 +31,7 @@ namespace edge
 				Texture* CreateTexture(const TextureCreateInfo& create_info) override;
 				Texture* CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) override;
 
-				Shader* CreateShader(const ShaderCreateInfo& create_info) override;
+				Shader* CreateShader(std::span<const ShaderStageInfo> shader_stages) override;
 
 				RootSignature* CreateRootSignature(const RootSignatureCreateInfo& create_info) override;
 

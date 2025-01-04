@@ -33,7 +33,7 @@ namespace edge
 			class VulkanShader final : public Shader
 			{
 			public:
-				VulkanShader(Device& device, const ShaderCreateInfo& create_info);
+				VulkanShader(Device& device, std::span<const ShaderStageInfo> shader_stages);
 				VulkanShader(VulkanShader&& other);
 				~VulkanShader() = default;
 

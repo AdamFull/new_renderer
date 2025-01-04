@@ -41,24 +41,14 @@ namespace edge
 			}
 
 
-			VulkanShader::VulkanShader(Device& device, const ShaderCreateInfo& create_info) :
+			VulkanShader::VulkanShader(Device& device, std::span<const ShaderStageInfo> shader_stages) :
 				device{ device }
 			{
-				static ShaderStageFlag all_stages[] =
+				for (const auto& stage : shader_stages)
 				{
-					ShaderStageFlag::eVertex, ShaderStageFlag::eTessellationControl, ShaderStageFlag::eTessellationEvaluation,
-					ShaderStageFlag::eGeometry, ShaderStageFlag::eFragment, ShaderStageFlag::eCompute
-				};
-
-				for (int32_t i = 0; i < std::size(all_stages); ++i)
-				{
-					if (create_info.stages & all_stages[i])
-					{
-						auto& stage_create_info = create_info.shader_stages[i];
-						auto& shader_module = shader_modules.NewElement();
-						shader_module = std::make_unique<ShaderModule>(device, stage_create_info);
-						AddReflectionStage(stage_create_info);
-					}
+					auto& new_shader_module = shader_modules.NewElement();
+					new_shader_module = std::make_unique<ShaderModule>(device, stage);
+					AddReflectionStage(stage);
 				}
 			}
 

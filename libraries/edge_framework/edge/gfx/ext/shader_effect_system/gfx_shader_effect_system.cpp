@@ -36,19 +36,19 @@ namespace edge
 					if (create_info.shader_stages.empty())
 						return;
 
-					ShaderCreateInfo shader_create_info{};
-
+					std::vector<ShaderStageInfo> shader_stages;
 					for (const auto& shader_stage : create_info.shader_stages)
 					{
-						shader_create_info.stages |= shader_stage.stage;
-
-						auto stage_index = GetShaderIndex(shader_stage.stage);
-						auto& stage_ci = shader_create_info.shader_stages[stage_index];
-						stage_ci.stage = shader_stage.stage;
-						stage_ci.code = shader_stage.code;
+						shader_stages.emplace_back(
+							ShaderStageInfo
+							{
+								.stage = shader_stage.stage,
+								.code = shader_stage.code
+							}
+						);
 					}
 
-					shader = context.CreateShader(shader_create_info);
+					shader = context.CreateShader(shader_stages);
 				}
 
 				~ShaderEffectImpl()

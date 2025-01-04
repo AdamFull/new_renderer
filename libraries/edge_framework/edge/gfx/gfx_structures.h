@@ -78,14 +78,6 @@ namespace edge
 			std::span<const uint8_t> code{};
 		};
 
-		struct ShaderCreateInfo
-		{
-			ShaderStageFlags stages{};
-
-			// At this moment only 6 shader types is avaliable
-			std::array<ShaderStageInfo, 6ull> shader_stages{};
-		};
-
 		struct RootSignatureCreateInfo
 		{
 			Shader* shader{ nullptr };
