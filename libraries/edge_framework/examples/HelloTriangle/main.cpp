@@ -7,6 +7,15 @@
 
 #include <regex>
 
+#include "HelloTriangleVert.h"
+#include "HelloTriangleFrag.h"
+
+struct BasicVertex
+{
+	struct Vec3 { float x, y, z; } pos;
+	struct Vec2 { float x, y; } uv;
+};
+
 class VFSWrapper final : public edge::gfx::FilesystemWrapper
 {
 public:
@@ -209,8 +218,6 @@ public:
         edge::gfx::ext::ResourceLoaderCreateInfo loader_create_info{};
         loader_create_info.context = gfx_context.get();
         loader_create_info.filesystem_wrapper = gfx_fs_wrapper.get();
-        //loader_create_info.shader_cache_patch = "/root/shaders/shader_cache.shc";
-        //loader_create_info.shader_compile_config_path = "/source/libraries/edge_framework/examples/HelloTriangle/shaders/config.json";
 
 		// You can also implement your own resource loader
         resource_loader = edge::gfx::ext::CreateResourceLoader(loader_create_info);
@@ -230,6 +237,85 @@ public:
 		{
 			render_frames[i] = std::make_unique<RenderFrame>(*gfx_context, swapchain, queue, i);
 		}
+
+		// Create shader and pipeline
+		edge::gfx::ShaderCreateInfo shader_ci{};
+		shader_ci.stages = edge::gfx::ShaderStageFlag::eVertex | edge::gfx::ShaderStageFlag::eFragment;
+
+		auto& vertex_stage = shader_ci.shader_stages[0];
+		vertex_stage.stage = edge::gfx::ShaderStageFlag::eVertex;
+		vertex_stage.code = std::span{ reinterpret_cast<const uint8_t*>(HelloTriangleVert), HelloTriangleVert_size };
+
+		auto& fragment_stage = shader_ci.shader_stages[4];
+		fragment_stage.stage = edge::gfx::ShaderStageFlag::eFragment;
+		fragment_stage.code = std::span{ reinterpret_cast<const uint8_t*>(HelloTriangleFrag), HelloTriangleFrag_size };
+
+		shader = gfx_context->CreateShader(shader_ci);
+
+		// Create root signature
+		edge::gfx::RootSignatureCreateInfo root_sign_ci{};
+		root_sign_ci.shader = shader;
+
+		root_sign = gfx_context->CreateRootSignature(root_sign_ci);
+
+		edge::gfx::GraphicsPipelineCreateInfo pipeline_ci{};
+		pipeline_ci.shader = shader;
+		pipeline_ci.root_signature = root_sign;
+
+		pipeline_ci.color_formats[0] = render_frames[0]->backbuffer->GetFormat();
+		pipeline_ci.color_format_count = 1u;
+
+		pipeline_ci.pipeline_state.rasterization_state.front_face = edge::gfx::FrontFace::eCW;
+
+		// Position
+		pipeline_ci.pipeline_state.vertex_layout.attributes[0].binding = 0;
+		pipeline_ci.pipeline_state.vertex_layout.attributes[0].location = 0;
+		pipeline_ci.pipeline_state.vertex_layout.attributes[0].offset = offsetof(BasicVertex, pos);
+		pipeline_ci.pipeline_state.vertex_layout.attributes[0].format = edge::gfx::Format::eR32G32B32Sfloat;
+
+		// UV
+		pipeline_ci.pipeline_state.vertex_layout.attributes[1].binding = 0;
+		pipeline_ci.pipeline_state.vertex_layout.attributes[1].location = 1;
+		pipeline_ci.pipeline_state.vertex_layout.attributes[1].offset = offsetof(BasicVertex, uv);
+		pipeline_ci.pipeline_state.vertex_layout.attributes[1].format = edge::gfx::Format::eR32G32Sfloat;
+
+		pipeline_ci.pipeline_state.vertex_layout.attribute_count = 2u;
+
+		pipeline_ci.pipeline_state.vertex_layout.bindings[0].binding = 0;
+		pipeline_ci.pipeline_state.vertex_layout.bindings[0].stride = sizeof(BasicVertex);
+		pipeline_ci.pipeline_state.vertex_layout.binding_count = 1u;
+
+		pipeline_ci.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
+		pipeline_ci.pipeline_state.color_blending_state.attachment_count = 1u;
+
+		pipeline = gfx_context->CreatePipeline(pipeline_ci);
+
+		// Create vertex buffers
+		const BasicVertex vertices[] = 
+		{
+			{{1.0f, 1.0f, 1.0f}, {0.0f, -0.5f}},
+			{{0.0f, 1.0f, 0.0f}, {0.5f, 0.5f}},
+			{{0.0f, 0.0f, 1.0f}, {-0.5f, 0.5f}}
+		};
+
+		edge::gfx::BufferCreateInfo vertex_buffer_ci{};
+		vertex_buffer_ci.usage = edge::gfx::BufferUsageFlag::eVertexBuffer;
+		vertex_buffer_ci.size = sizeof(vertices);
+
+		vertex_buffer = gfx_context->CreateBuffer(vertex_buffer_ci);
+
+		// Upload vertex data in to buffer
+		edge::gfx::BufferUpdateInfo update_info{};
+		update_info.dst_buffer = vertex_buffer;
+		update_info.update_size = sizeof(vertices);
+
+		resource_loader->BeginBufferUpdate(update_info);
+
+		memcpy(update_info.map_info.data, &vertices[0], sizeof(vertices));
+		update_info.regions[0].size = sizeof(vertices);
+		update_info.region_count = 1u;
+
+		resource_loader->EndBufferUpdate(update_info);
 
 		return true;
     }
@@ -279,11 +365,39 @@ public:
 		edge::gfx::TextureBarrier texture_translation{};
 		texture_translation.texture = current_frame->backbuffer;
 		texture_translation.src_state = edge::gfx::ResourceStateFlag::eUndefined;
-		texture_translation.dst_state = edge::gfx::ResourceStateFlag::ePresentSrc;
+		texture_translation.dst_state = edge::gfx::ResourceStateFlag::eColorAttachmentWrite;
 
 		edge::gfx::ResourceBarrierInfo barrier{};
 		barrier.texture_barriers = &texture_translation;
 		barrier.texture_barrier_count = 1u;
+
+		command_list->ResourceBarrier(barrier);
+
+		command_list->BindPipeline(pipeline);
+
+		uint32_t stride{ 0u };
+		const uint64_t offset{ 0ull };
+		command_list->BindVertexBuffers(1, &vertex_buffer, &stride, &offset);
+
+		edge::gfx::RenderingInfo rendering_info{};
+		rendering_info.width = current_frame->backbuffer->GetWidth();
+		rendering_info.height = current_frame->backbuffer->GetHeight();
+		rendering_info.attachments[0].texture = current_frame->backbuffer;
+		rendering_info.attachments[0].texture_state = texture_translation.dst_state;
+		rendering_info.attachments[0].load_op = edge::gfx::LoadOp::eClear;
+		rendering_info.attachments[0].store_op = edge::gfx::StoreOp::eStore;
+		rendering_info.attachment_count = 1;
+
+		command_list->SetViewport(0, 0, rendering_info.width, rendering_info.height, 0.f, 1.f);
+		command_list->SerScissor(0, 0, rendering_info.width, rendering_info.height);
+
+		command_list->BeginRendering(rendering_info);
+		command_list->Draw(3u, 0u, 0u, 1u);
+		command_list->EndRendering();
+
+		// Prepare image for present
+		texture_translation.src_state = texture_translation.dst_state;
+		texture_translation.dst_state = edge::gfx::ResourceStateFlag::ePresentSrc;
 
 		command_list->ResourceBarrier(barrier);
 
@@ -436,6 +550,12 @@ private:
 
 	uint32_t active_frame_index{ 0u };
 	edge::gfx::Semaphore* acquired_semaphore{ nullptr };
+
+	edge::gfx::Shader* shader{ nullptr };
+	edge::gfx::RootSignature* root_sign{ nullptr };
+	edge::gfx::Pipeline* pipeline{ nullptr };
+
+	edge::gfx::Buffer* vertex_buffer{ nullptr };
 };
 
 int RuntimeMain(const edge::RuntimeContext& context)

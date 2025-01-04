@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(EdgeHelloTriangle)
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/../../edge/gfx/ext/cmake/ShaderEmbedding.cmake")
+
 set(EDGE_HELLO_TRIANGLE_SOURCES main.cpp)
 
 if(ANDROID)
@@ -28,7 +30,12 @@ target_include_directories(${PROJECT_NAME}
 	"${CMAKE_CURRENT_SOURCE_DIR}/../../"
 )
 
+add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/simple.vert" GLSLANG_FLAGS ${GLSL_FLAGS} EMBED_TARGET HelloTriangleVert)
+add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/simple.frag" GLSLANG_FLAGS ${GLSL_FLAGS} EMBED_TARGET HelloTriangleFrag)
+
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
     edge_framework
+	HelloTriangleVert
+	HelloTriangleFrag
 )
