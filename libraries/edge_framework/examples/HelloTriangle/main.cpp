@@ -244,9 +244,9 @@ public:
 			surface_updated = HandleSurfaceChange();
 		}
 
-		auto& current_frame = render_frames[active_frame_index];
+		auto& previous_frame = render_frames[active_frame_index];
 
-		acquired_semaphore = current_frame->image_avaliable;
+		acquired_semaphore = previous_frame->image_avaliable;
 
 		if (swapchain)
 		{
@@ -262,22 +262,30 @@ public:
 
 				if (!acquire_result)
 				{
-					current_frame->Reset();
+					previous_frame->Reset();
 					return;
 				}
 			}
 		}
 
 		// New frame begins here
-		current_frame->Reset();
+		previous_frame->Reset();
+
+		auto& current_frame = render_frames[active_frame_index];
 
 		auto* command_list = current_frame->command_pool->Allocate();
 		command_list->Begin();
 
+		edge::gfx::TextureBarrier texture_translation{};
+		texture_translation.texture = current_frame->backbuffer;
+		texture_translation.src_state = edge::gfx::ResourceStateFlag::eUndefined;
+		texture_translation.dst_state = edge::gfx::ResourceStateFlag::ePresentSrc;
 
+		edge::gfx::ResourceBarrierInfo barrier{};
+		barrier.texture_barriers = &texture_translation;
+		barrier.texture_barrier_count = 1u;
 
-
-
+		command_list->ResourceBarrier(barrier);
 
 		// Submit resource uploader queue
 		edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore = resource_loader->Submit(nullptr, 0);

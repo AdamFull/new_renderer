@@ -131,7 +131,7 @@ namespace engine
 			// Create uniform pool
 			global_uniform_pool = std::make_unique<UniformPool>(context);
 
-			current_frame = render_frames[current_frame_index].get();
+			current_frame = render_frames[active_frame_index].get();
 		}
 
 		RenderContext::~RenderContext()
@@ -387,11 +387,11 @@ namespace engine
 					surface_updated = HandleSurfaceChange();
 				}
 
-				current_frame = render_frames[current_frame_index].get();
+				auto previous_frame = render_frames[active_frame_index].get();
 
 				// We will use the acquired semaphore in a different frame context,
 				// so we need to hold ownership.
-				acquired_semaphore = current_frame->image_avaliable;
+				acquired_semaphore = previous_frame->image_avaliable;
 
 				if (swapchain)
 				{
@@ -407,7 +407,7 @@ namespace engine
 
 						if (!acquire_result)
 						{
-							current_frame->Reset();
+							previous_frame->Reset();
 							return;
 						}
 					}
@@ -415,7 +415,9 @@ namespace engine
 
 				// Now the frame is active again
 				frame_active = true;
-				current_frame->Reset();
+				previous_frame->Reset();
+
+				current_frame = render_frames[active_frame_index].get();
 			}
 
 			if (!acquired_semaphore)
@@ -544,7 +546,7 @@ namespace engine
 				queue->Present(present_info);
 				current_frame->fence->Wait();
 
-				current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
+				//current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
 			}
 
 			previous_frame_semaphore = current_frame->upload_avaliable;
@@ -689,7 +691,7 @@ namespace engine
 
 		const uint32_t& RenderContext::GetCurrentFrameIndex() const
 		{
-			return current_frame_index;
+			return active_frame_index;
 		}
 
 		void RenderContext::UpdateSwapchain(uint32_t width, uint32_t height)
@@ -750,7 +752,6 @@ namespace engine
 				UpdateSwapchain(surface_width, surface_height);
 
 				active_frame_index = 0u;
-				current_frame_index = 0u;
 
 				return true;
 			}
