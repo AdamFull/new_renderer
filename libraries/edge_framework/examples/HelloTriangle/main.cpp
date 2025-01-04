@@ -3,7 +3,7 @@
 #include <edge/util/Profiler.h>
 
 #include <edge/gfx/gfx_context.h>
-#include <edge/gfx/gfx_resource_loader.h>
+#include <edge/gfx/ext/resource_loader/gfx_resource_loader.h>
 
 #include <regex>
 
@@ -206,14 +206,14 @@ public:
         // Create filesystem wrapper
         gfx_fs_wrapper = std::make_unique<VFSWrapper>(*options.filesystem);
 
-        edge::gfx::ResourceLoaderCreateInfo loader_create_info{};
+        edge::gfx::ext::ResourceLoaderCreateInfo loader_create_info{};
         loader_create_info.context = gfx_context.get();
         loader_create_info.filesystem_wrapper = gfx_fs_wrapper.get();
         //loader_create_info.shader_cache_patch = "/root/shaders/shader_cache.shc";
         //loader_create_info.shader_compile_config_path = "/source/libraries/edge_framework/examples/HelloTriangle/shaders/config.json";
 
 		// You can also implement your own resource loader
-        resource_loader = edge::gfx::CreateResourceLoader(loader_create_info);
+        resource_loader = edge::gfx::ext::CreateResourceLoader(loader_create_info);
 
 		// Init everything we need for rendering
 		queue = gfx_context->RequestQueue(edge::gfx::QueueTypeFlag::ePresent);
@@ -417,7 +417,7 @@ private:
 private:
     std::unique_ptr<edge::gfx::Context> gfx_context{};
     std::unique_ptr<edge::gfx::FilesystemWrapper> gfx_fs_wrapper{};
-    std::unique_ptr<edge::gfx::ResourceLoader> resource_loader{};
+    std::unique_ptr<edge::gfx::ext::ResourceLoader> resource_loader{};
 
 	edge::Window* window{ nullptr };
 

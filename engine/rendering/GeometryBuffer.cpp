@@ -76,7 +76,7 @@ namespace engine
 
 
 
-		GeometryBuffer::GeometryBuffer(edge::gfx::ResourceLoader& resource_loader) :
+		GeometryBuffer::GeometryBuffer(edge::gfx::ext::ResourceLoader& resource_loader) :
 			resource_loader{ resource_loader }
 		{
 		}
@@ -168,7 +168,7 @@ namespace engine
 
 
 
-		InterleavedGeometryBuffer::InterleavedGeometryBuffer(edge::gfx::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
+		InterleavedGeometryBuffer::InterleavedGeometryBuffer(edge::gfx::ext::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
 			GeometryBuffer{ resource_loader }
 		{
 			uint32_t offset{ 0u };
@@ -254,7 +254,7 @@ namespace engine
 		}
 
 
-		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(edge::gfx::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
+		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(edge::gfx::ext::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
 			GeometryBuffer{ resource_loader }
 		{
 			for (auto& desc : create_info.attribute_descriptions)

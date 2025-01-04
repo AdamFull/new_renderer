@@ -1,7 +1,7 @@
 #pragma once
 
 #include <edge/gfx/gfx_context.h>
-#include <edge/gfx/gfx_resource_loader.h>
+#include <edge/gfx/ext/resource_loader/gfx_resource_loader.h>
 
 #include <edge/util/util.h>
 
@@ -19,7 +19,7 @@ namespace engine
 				uint32_t count;
 			};
 
-			DynamicBuffer(edge::gfx::ResourceLoader& resource_loader, uint64_t capacity = 64u, edge::gfx::BufferUsageFlags flags = {}) :
+			DynamicBuffer(edge::gfx::ext::ResourceLoader& resource_loader, uint64_t capacity = 64u, edge::gfx::BufferUsageFlags flags = {}) :
 				resource_loader{ resource_loader },
 				context{ resource_loader.GetContext() },
 				usage_flags{ flags }
@@ -130,7 +130,7 @@ namespace engine
 			}
 		private:
 			edge::gfx::Context& context;
-			edge::gfx::ResourceLoader& resource_loader;
+			edge::gfx::ext::ResourceLoader& resource_loader;
 
 			edge::gfx::BufferUsageFlags usage_flags{};
 

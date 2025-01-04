@@ -13,8 +13,11 @@ namespace edge
 
 	namespace gfx
 	{
-		class ResourceLoader;
-		class ShaderEffectSystem;
+		namespace ext
+		{
+			class ResourceLoader;
+			class ShaderEffectSystem;
+		}
 	}
 }
 
@@ -87,8 +90,8 @@ namespace engine
 			void UpdateResources();
 		private:
 			edge::gfx::Context& context;
-			edge::gfx::ResourceLoader& resource_loader;
-			edge::gfx::ShaderEffectSystem& shader_effect_system;
+			edge::gfx::ext::ResourceLoader& resource_loader;
+			edge::gfx::ext::ShaderEffectSystem& shader_effect_system;
 
 			const edge::Window& window;
 			const edge::gfx::Queue* queue;

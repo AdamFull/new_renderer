@@ -4,9 +4,9 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/build_info.h>
 
-#include "../../util/fs_helper.h"
-#include "../../util/Logger.h"
-#include "../../util/Hash.hpp"
+#include "../../../util/fs_helper.h"
+#include "../../../util/Logger.h"
+#include "../../../util/Hash.hpp"
 
 #include <execution>
 #include <set>
@@ -16,7 +16,7 @@ namespace edge
 {
 	namespace gfx
 	{
-		namespace shc
+		namespace ext
 		{
 			// Just copy of https://github.com/KhronosGroup/glslang/blob/main/StandAlone/DirStackFileIncluder.h
 			class shader_includer : public glslang::TShader::Includer

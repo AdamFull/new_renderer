@@ -1,6 +1,6 @@
 #pragma once
 
-#include <edge/gfx/gfx_resource_loader.h>
+#include <edge/gfx/ext/resource_loader/gfx_resource_loader.h>
 
 #include <unordered_map>
 
@@ -82,7 +82,7 @@ namespace engine
 		class GeometryBuffer
 		{
 		public:
-			GeometryBuffer(edge::gfx::ResourceLoader& resource_loader);
+			GeometryBuffer(edge::gfx::ext::ResourceLoader& resource_loader);
 			virtual ~GeometryBuffer();
 
 			virtual void Flush();
@@ -107,7 +107,7 @@ namespace engine
 		protected:
 			void TryFlushBuffer(edge::gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage);
 		protected:
-			edge::gfx::ResourceLoader& resource_loader;
+			edge::gfx::ext::ResourceLoader& resource_loader;
 			edge::gfx::VertexLayout vertex_layout{};
 			IndexData index_data{};
 		};

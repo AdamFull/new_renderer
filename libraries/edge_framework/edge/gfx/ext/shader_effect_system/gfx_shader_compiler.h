@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../gfx_enum.h"
+#include "../../gfx_enum.h"
 
 #include <span>
 
@@ -8,7 +8,7 @@ namespace edge
 {
 	namespace gfx
 	{
-		namespace shc
+		namespace ext
 		{
 			enum class ShaderLang
 			{
@@ -56,14 +56,14 @@ namespace edge
 	}
 }
 
-EDGE_REGISTER_ENUM_CLASS(edge::gfx::shc, ShaderLang,
-	EDGE_ENUM_META(edge::gfx::shc::ShaderLang::eAuto, "Auto"),
-	EDGE_ENUM_META(edge::gfx::shc::ShaderLang::eGLSL, "GLSL"),
-	EDGE_ENUM_META(edge::gfx::shc::ShaderLang::eHLSL, "HLSL")
+EDGE_REGISTER_ENUM_CLASS(edge::gfx::ext, ShaderLang,
+	EDGE_ENUM_META(edge::gfx::ext::ShaderLang::eAuto, "Auto"),
+	EDGE_ENUM_META(edge::gfx::ext::ShaderLang::eGLSL, "GLSL"),
+	EDGE_ENUM_META(edge::gfx::ext::ShaderLang::eHLSL, "HLSL")
 )
 
-EDGE_REGISTER_ENUM_CLASS(edge::gfx::shc, ShaderCompilerBuildType,
-	EDGE_ENUM_META(edge::gfx::shc::ShaderCompilerBuildType::eDebug, "Debug"),
-	EDGE_ENUM_META(edge::gfx::shc::ShaderCompilerBuildType::eExtendedDebug, "ExtDebug"),
-	EDGE_ENUM_META(edge::gfx::shc::ShaderCompilerBuildType::eRelease, "Release")
+EDGE_REGISTER_ENUM_CLASS(edge::gfx::ext, ShaderCompilerBuildType,
+	EDGE_ENUM_META(edge::gfx::ext::ShaderCompilerBuildType::eDebug, "Debug"),
+	EDGE_ENUM_META(edge::gfx::ext::ShaderCompilerBuildType::eExtendedDebug, "ExtDebug"),
+	EDGE_ENUM_META(edge::gfx::ext::ShaderCompilerBuildType::eRelease, "Release")
 )

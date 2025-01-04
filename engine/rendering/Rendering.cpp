@@ -1,7 +1,7 @@
 #include "Rendering.h"
 
 #include <edge/gfx/gfx_context.h>
-#include <edge/gfx/gfx_shader_effect_system.h>
+#include <edge/gfx/ext/shader_effect_system/gfx_shader_effect_system.h>
 
 #include "RenderContext.h"
 
@@ -214,17 +214,17 @@ namespace engine
 			// Create filesystem wrapper
 			fs = std::make_unique<VFSWrapper>(*vfs);
 
-			edge::gfx::ResourceLoaderCreateInfo loader_create_info{};
+			edge::gfx::ext::ResourceLoaderCreateInfo loader_create_info{};
 			loader_create_info.context = gfx_context.get();
 			loader_create_info.filesystem_wrapper = fs.get();
-			resource_loader = edge::gfx::CreateResourceLoader(loader_create_info);
+			resource_loader = edge::gfx::ext::CreateResourceLoader(loader_create_info);
 
-			edge::gfx::ShaderEffectSystemCreateInfo effect_system_create_info{};
+			edge::gfx::ext::ShaderEffectSystemCreateInfo effect_system_create_info{};
 			effect_system_create_info.context = gfx_context.get();
 			effect_system_create_info.filesystem_wrapper = fs.get();
 			effect_system_create_info.effect_database_path = "/root/embed/rendering/shaders/shader_cache.shc";
 			effect_system_create_info.effect_database_compile_config_path = "/source/embed/shaders/config.json";
-			shader_effect_system = edge::gfx::CreateShaderEffectSystem(effect_system_create_info);
+			shader_effect_system = edge::gfx::ext::CreateShaderEffectSystem(effect_system_create_info);
 
 			render_context = std::make_unique<RenderContext>(*this, window);
 
@@ -312,12 +312,12 @@ namespace engine
 			render_context->End();
 		}
 
-		edge::gfx::ResourceLoader& Renderer::GetResourceLoader()
+		edge::gfx::ext::ResourceLoader& Renderer::GetResourceLoader()
 		{
 			return *resource_loader;
 		}
 
-		edge::gfx::ResourceLoader const& Renderer::GetResourceLoader() const
+		edge::gfx::ext::ResourceLoader const& Renderer::GetResourceLoader() const
 		{
 			return *resource_loader;
 		}
@@ -327,12 +327,12 @@ namespace engine
 			return *gfx_context;
 		}
 
-		edge::gfx::ShaderEffectSystem& Renderer::GetShaderEffectSystem()
+		edge::gfx::ext::ShaderEffectSystem& Renderer::GetShaderEffectSystem()
 		{
 			return *shader_effect_system;
 		}
 
-		edge::gfx::ShaderEffectSystem const& Renderer::GetShaderEffectSystem() const
+		edge::gfx::ext::ShaderEffectSystem const& Renderer::GetShaderEffectSystem() const
 		{
 			return *shader_effect_system;
 		}

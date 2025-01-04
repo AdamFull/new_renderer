@@ -1,13 +1,13 @@
 #pragma once
 
 #include "gfx_shader_compiler.h"
-#include "../gfx_common.h"
+#include "../../gfx_common.h"
 
 namespace edge
 {
 	namespace gfx
 	{
-		namespace shc
+		namespace ext
 		{
 			class GLSLShaderCompiler : public ShaderCompiler
 			{

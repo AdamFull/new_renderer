@@ -3,7 +3,7 @@
 #include "ExecutionContext.h"
 #include "GeometryBufferInterface.h"
 #include "render_world/RenderWorldInterface.h"
-#include <edge/gfx/gfx_shader_effect_system.h>
+#include <edge/gfx/ext/shader_effect_system/gfx_shader_effect_system.h>
 
 namespace engine
 {
@@ -18,11 +18,11 @@ namespace engine
 
 			virtual void Render(float delta_time) = 0;
 
-			virtual edge::gfx::ResourceLoader& GetResourceLoader() = 0;
-			virtual edge::gfx::ResourceLoader const& GetResourceLoader() const = 0;
+			virtual edge::gfx::ext::ResourceLoader& GetResourceLoader() = 0;
+			virtual edge::gfx::ext::ResourceLoader const& GetResourceLoader() const = 0;
 
-			virtual edge::gfx::ShaderEffectSystem& GetShaderEffectSystem() = 0;
-			virtual edge::gfx::ShaderEffectSystem const& GetShaderEffectSystem() const = 0;
+			virtual edge::gfx::ext::ShaderEffectSystem& GetShaderEffectSystem() = 0;
+			virtual edge::gfx::ext::ShaderEffectSystem const& GetShaderEffectSystem() const = 0;
 
 			virtual uint32_t AddRenderResource(std::string_view path, edge::gfx::Sampler* sampler = nullptr) = 0;
 			virtual uint32_t AddRenderResource(const TextureResourceCreateInfo& create_info, edge::gfx::Sampler* sampler = nullptr) = 0;

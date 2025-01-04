@@ -1,11 +1,11 @@
 #include "gfx_shader_effect_compiler.h"
-#include "../../util/Serialization.hpp"
+#include "../../../util/Serialization.hpp"
 
 #include "glsl_shader_compiler.h"
-#include "../gfx_util.h"
+#include "../../gfx_util.h"
 
-#include "../../util/fs_helper.h"
-#include "../../util/Logger.h"
+#include "../../../util/fs_helper.h"
+#include "../../../util/Logger.h"
 
 #include <execution>
 
@@ -13,7 +13,7 @@ namespace edge
 {
 	namespace gfx
 	{
-		namespace shc
+		namespace ext
 		{
 			struct ShaderEffectCompileSourceDesc
 			{
