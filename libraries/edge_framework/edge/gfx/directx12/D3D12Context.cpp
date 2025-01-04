@@ -123,7 +123,7 @@ namespace edge
 				return nullptr;
 			}
 
-			void D3D12Context::WaitForFences(uint32_t fence_count, Fence** fences, uint64_t timeout)
+			void D3D12Context::WaitForFences(std::span<Fence*> fences, uint64_t timeout)
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}

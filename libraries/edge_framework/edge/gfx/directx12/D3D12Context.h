@@ -48,7 +48,7 @@ namespace edge
 
 				QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) override;
 
-				void WaitForFences(uint32_t fence_count, Fence** fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
+				void WaitForFences(std::span<Fence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
 
 				void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) override;
 				void RequestTimestampFrequency(float* frequency) override;

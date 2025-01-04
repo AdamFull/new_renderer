@@ -51,7 +51,7 @@ namespace edge
 
 			virtual QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) = 0;
 
-			virtual void WaitForFences(uint32_t fence_count, Fence** fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) = 0;
+			virtual void WaitForFences(std::span<Fence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) = 0;
 
 			virtual void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) = 0;
 			virtual void RequestTimestampFrequency(float* frequency) = 0;

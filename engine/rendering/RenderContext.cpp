@@ -486,7 +486,7 @@ namespace engine
 
 			global_resource_descriptor->Flush();
 
-			edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore = resource_loader.Submit(nullptr, 0);
+			edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore = resource_loader.Submit({});
 
 			// Finish performance query
 			current_command_list->EndQuery(timestamp_query, 1u);
@@ -507,20 +507,17 @@ namespace engine
 					upload_wait_semaphore
 				};
 
-				submit_info.wait_semaphore_infos = &wait_semaphores[0];
-				submit_info.wait_semaphore_count = upload_wait_semaphore.semaphore ? 2 : 1;
+				submit_info.wait_semaphore_infos = { &wait_semaphores[0], upload_wait_semaphore.semaphore ? 2u : 1u };
 
 
-				edge::gfx::SemaphoreSubmitInfo signal_semaphores[2] = {
+				edge::gfx::SemaphoreSubmitInfo signal_semaphores[] = {
 					edge::gfx::SemaphoreSubmitInfo{ current_frame->render_finished, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
-					edge::gfx::SemaphoreSubmitInfo{ current_frame->upload_avaliable, 0ull, edge::gfx::StageFlag::eAllCommands }
+					//edge::gfx::SemaphoreSubmitInfo{ current_frame->upload_avaliable, 0ull, edge::gfx::StageFlag::eAllCommands }
 				};
 
-				submit_info.signal_semaphore_infos = &signal_semaphores[0];
-				submit_info.signal_semaphore_count = 1u;
+				submit_info.signal_semaphore_infos = signal_semaphores;
 
-				submit_info.command_lists = &current_command_list;
-				submit_info.command_buffer_count = 1u;
+				submit_info.command_lists = { &current_command_list, 1 };
 
 				queue->Submit(submit_info, current_frame->fence);
 			}
@@ -536,11 +533,8 @@ namespace engine
 				auto* wait_semaphore = current_frame->render_finished;
 
 				edge::gfx::PresentInfo present_info = {};
-				present_info.wait_semaphore_count = 1;
-				present_info.wait_semaphores = &wait_semaphore;
-
-				present_info.swapchain_count = 1;
-				present_info.swapchains = &swapchain;
+				present_info.wait_semaphores = { &wait_semaphore, 1 };
+				present_info.swapchains = { &swapchain, 1 };
 				present_info.image_indices = &GetCurrentFrameIndex();
 
 				queue->Present(present_info);

@@ -1,7 +1,7 @@
 layout (location = 0) in vec2 inPos;
-layout (location = 1) in vec2 inUV;
+layout (location = 1) in vec3 inColor;
 
-layout (location = 0) out vec2 outUV;
+layout (location = 0) out vec3 outColor;
 
 out gl_PerVertex 
 {
@@ -10,6 +10,6 @@ out gl_PerVertex
 
 void main() 
 {
-	outUV = inUV;
+	outColor = inColor;
 	gl_Position = vec4(inPos, 0.0, 1.0);
 }

@@ -179,7 +179,7 @@ namespace edge
 			virtual void PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data) = 0;
 
 			virtual void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) = 0;
-			virtual void BindVertexBuffers(uint32_t buffer_count, Buffer** vertex_buffers, const uint32_t* strides, const uint64_t* offsets) = 0;
+			virtual void BindVertexBuffers(std::span<Buffer*> vertex_buffers, std::span<const uint32_t> strides, std::span<const uint64_t> offsets) = 0;
 
 			virtual void Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) = 0;
 			virtual void DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) = 0;

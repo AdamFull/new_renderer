@@ -12,8 +12,8 @@
 
 struct BasicVertex
 {
-	struct Vec3 { float x, y, z; } pos;
-	struct Vec2 { float x, y; } uv;
+	struct Vec2 { float x, y; } pos;
+	struct Vec3 { float x, y, z; } color;
 };
 
 class VFSWrapper final : public edge::gfx::FilesystemWrapper
@@ -271,13 +271,13 @@ public:
 		pipeline_ci.pipeline_state.vertex_layout.attributes[0].binding = 0;
 		pipeline_ci.pipeline_state.vertex_layout.attributes[0].location = 0;
 		pipeline_ci.pipeline_state.vertex_layout.attributes[0].offset = offsetof(BasicVertex, pos);
-		pipeline_ci.pipeline_state.vertex_layout.attributes[0].format = edge::gfx::Format::eR32G32B32Sfloat;
+		pipeline_ci.pipeline_state.vertex_layout.attributes[0].format = edge::gfx::Format::eR32G32Sfloat;
 
 		// UV
 		pipeline_ci.pipeline_state.vertex_layout.attributes[1].binding = 0;
 		pipeline_ci.pipeline_state.vertex_layout.attributes[1].location = 1;
-		pipeline_ci.pipeline_state.vertex_layout.attributes[1].offset = offsetof(BasicVertex, uv);
-		pipeline_ci.pipeline_state.vertex_layout.attributes[1].format = edge::gfx::Format::eR32G32Sfloat;
+		pipeline_ci.pipeline_state.vertex_layout.attributes[1].offset = offsetof(BasicVertex, color);
+		pipeline_ci.pipeline_state.vertex_layout.attributes[1].format = edge::gfx::Format::eR32G32B32Sfloat;
 
 		pipeline_ci.pipeline_state.vertex_layout.attribute_count = 2u;
 
@@ -293,9 +293,9 @@ public:
 		// Create vertex buffers
 		const BasicVertex vertices[] = 
 		{
-			{{1.0f, 1.0f, 1.0f}, {0.0f, -0.5f}},
-			{{0.0f, 1.0f, 0.0f}, {0.5f, 0.5f}},
-			{{0.0f, 0.0f, 1.0f}, {-0.5f, 0.5f}}
+			{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+			{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+			{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
 		};
 
 		edge::gfx::BufferCreateInfo vertex_buffer_ci{};
@@ -377,7 +377,7 @@ public:
 
 		uint32_t stride{ 0u };
 		const uint64_t offset{ 0ull };
-		command_list->BindVertexBuffers(1, &vertex_buffer, &stride, &offset);
+		command_list->BindVertexBuffers(std::span{ &vertex_buffer, 1 }, std::span{ &stride, 1 }, std::span{ &offset, 1 });
 
 		edge::gfx::RenderingInfo rendering_info{};
 		rendering_info.width = current_frame->backbuffer->GetWidth();
@@ -402,7 +402,7 @@ public:
 		command_list->ResourceBarrier(barrier);
 
 		// Submit resource uploader queue
-		edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore = resource_loader->Submit(nullptr, 0);
+		edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore = resource_loader->Submit({});
 
 		// Here is frame finished
 		command_list->End();
@@ -421,20 +421,17 @@ public:
 				upload_wait_semaphore
 			};
 
-			submit_info.wait_semaphore_infos = &wait_semaphores[0];
-			submit_info.wait_semaphore_count = upload_wait_semaphore.semaphore ? 2 : 1;
+			submit_info.wait_semaphore_infos = wait_semaphores;
 
 
-			edge::gfx::SemaphoreSubmitInfo signal_semaphores[2] = {
+			edge::gfx::SemaphoreSubmitInfo signal_semaphores[1] = {
 				edge::gfx::SemaphoreSubmitInfo{ current_frame->render_finished, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
-				edge::gfx::SemaphoreSubmitInfo{ current_frame->upload_avaliable, 0ull, edge::gfx::StageFlag::eAllCommands }
+				//edge::gfx::SemaphoreSubmitInfo{ current_frame->upload_avaliable, 0ull, edge::gfx::StageFlag::eAllCommands }
 			};
 
-			submit_info.signal_semaphore_infos = &signal_semaphores[0];
-			submit_info.signal_semaphore_count = 1u;
+			submit_info.signal_semaphore_infos = signal_semaphores;
 
-			submit_info.command_lists = &command_list;
-			submit_info.command_buffer_count = 1u;
+			submit_info.command_lists = { &command_list, 1 };
 
 			queue->Submit(submit_info, current_frame->fence);
 		}
@@ -450,11 +447,9 @@ public:
 			auto* wait_semaphore = current_frame->render_finished;
 
 			edge::gfx::PresentInfo present_info = {};
-			present_info.wait_semaphore_count = 1;
-			present_info.wait_semaphores = &wait_semaphore;
+			present_info.wait_semaphores = { &wait_semaphore, 1 };
 
-			present_info.swapchain_count = 1;
-			present_info.swapchains = &swapchain;
+			present_info.swapchains = { &swapchain, 1 };
 			present_info.image_indices = &active_frame_index;
 
 			queue->Present(present_info);

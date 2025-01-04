@@ -216,7 +216,7 @@ namespace engine
 			uint64_t offset{ 0ull };
 
 			assert(vertex_data.buffer && "VERTEX BUFFER IS NOT ALLOCATED");
-			command_list.BindVertexBuffers(1u, &vertex_data.buffer, &stride, &offset);
+			command_list.BindVertexBuffers({ &vertex_data.buffer, 1u }, { &stride, 1u }, { &offset, 1u });
 		}
 
 		uint64_t InterleavedGeometryBuffer::GetBufferAddress(VertexAttributeFlag flag)
@@ -312,7 +312,7 @@ namespace engine
 				}
 			}
 
-			command_list.BindVertexBuffers(buffer_count, vertex_buffers.data(), strides.data(), offsets.data());
+			command_list.BindVertexBuffers({ vertex_buffers.data(), buffer_count }, { strides.data(), buffer_count }, { offsets.data(), buffer_count });
 		}
 
 		uint64_t DeinterleavedGeometryBuffer::GetBufferAddress(VertexAttributeFlag flag)

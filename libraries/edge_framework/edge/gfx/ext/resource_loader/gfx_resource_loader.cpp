@@ -86,26 +86,20 @@ namespace edge
 					return *active_command_list;
 				}
 
-				SemaphoreSubmitInfo Submit(SemaphoreSubmitInfo* wait_infos, uint32_t semaphore_count)
+				SemaphoreSubmitInfo Submit(std::span<SemaphoreSubmitInfo> wait_infos)
 				{
 					constexpr size_t k_max_wait_semaphores{ 8ull };
 
 					SubmitInfo submit_info{};
 
-					SemaphoreSubmitInfo wait_semaphores[k_max_wait_semaphores]{};
-					std::copy(wait_infos, wait_infos + semaphore_count, &wait_semaphores[0]);
-
-					submit_info.wait_semaphore_infos = &wait_semaphores[0];
-					submit_info.wait_semaphore_count = semaphore_count;
+					submit_info.wait_semaphore_infos = wait_infos;
 
 					// Not shure in witch state i have to signal it
 					SemaphoreSubmitInfo signal_semaphore_info{ signal_semaphore, 0ull, StageFlag::eTransfer };
 
-					submit_info.signal_semaphore_infos = &signal_semaphore_info;
-					submit_info.signal_semaphore_count = 1u;
+					submit_info.signal_semaphore_infos = { &signal_semaphore_info, 1u };
 
-					submit_info.command_lists = &active_command_list;
-					submit_info.command_buffer_count = 1u;
+					submit_info.command_lists = { &active_command_list, 1u };
 
 					queue.Submit(submit_info, fence);
 
@@ -279,8 +273,7 @@ namespace edge
 						// Finally bind descriptor
 						BindDescriptorsInfo bind_info{};
 						bind_info.pipeline_type = PipelineType::eCompute;
-						bind_info.resource_descriptors = &descriptor;
-						bind_info.resource_descriptors_count = 1u;
+						bind_info.resource_descriptors = { &descriptor, 1u };
 						bind_info.root_signature = generator.root_signature;
 
 						descriptor->Flush();
@@ -683,7 +676,7 @@ namespace edge
 					update_info.map_info.avaliable_size = 0ull;
 				}
 
-				SemaphoreSubmitInfo Submit(SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count) override
+				SemaphoreSubmitInfo Submit(std::span<SemaphoreSubmitInfo> wait_infos) override
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
@@ -696,7 +689,7 @@ namespace edge
 						command_list.End();
 						is_writing_commands = false;
 
-						auto signal_semaphore_info = uploader.Submit(wait_infos, wait_semaphore_count);
+						auto signal_semaphore_info = uploader.Submit(wait_infos);
 
 						active_uploader = (active_uploader + 1u) % uploader_count;
 

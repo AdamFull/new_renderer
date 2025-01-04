@@ -59,20 +59,15 @@ namespace edge
 
 		struct SubmitInfo
 		{
-			uint32_t wait_semaphore_count{ 0u };
-			SemaphoreSubmitInfo* wait_semaphore_infos{ nullptr };
-			uint32_t command_buffer_count{ 0u };
-			CommandList** command_lists{ nullptr };
-			uint32_t signal_semaphore_count{ 0u };
-			SemaphoreSubmitInfo* signal_semaphore_infos{ nullptr };
+			std::span<SemaphoreSubmitInfo> wait_semaphore_infos;
+			std::span<CommandList*> command_lists;
+			std::span<SemaphoreSubmitInfo> signal_semaphore_infos;
 		};
 
 		struct PresentInfo
 		{
-			uint32_t wait_semaphore_count{ 0u };
-			Semaphore** wait_semaphores{ nullptr };
-			uint32_t swapchain_count{ 0u };
-			Swapchain** swapchains{ nullptr };
+			std::span<Semaphore*> wait_semaphores;
+			std::span<Swapchain*> swapchains;
 			const uint32_t* image_indices{ nullptr };
 		};
 
@@ -95,8 +90,7 @@ namespace edge
 		{
 			Shader* shader{ nullptr };
 			SharedDescriptor* shared_descriptor{ nullptr };
-			Sampler** immutable_samplers{ nullptr };
-			uint32_t immutable_sampler_count{};
+			std::span<Sampler*> immutable_samplers;
 		};
 
 		// Vertex input
@@ -476,8 +470,7 @@ namespace edge
 			PipelineType pipeline_type{}; 
 			RootSignature* root_signature{ nullptr };
 
-			ResourceDescriptor** resource_descriptors{ nullptr };
-			uint32_t resource_descriptors_count{ 0u };
+			std::span<ResourceDescriptor*> resource_descriptors;
 		};
 
 		struct BindingDescription

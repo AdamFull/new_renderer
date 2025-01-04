@@ -109,7 +109,7 @@ namespace edge
 
 				// Add all immutable samplers
 				// TODO: immutable samplers creation
-				for (int32_t i = 0; i < create_info.immutable_sampler_count; ++i)
+				for (int32_t i = 0; i < create_info.immutable_samplers.size(); ++i)
 				{
 					assert(false && "NOT IMPLEMENTED");
 				}

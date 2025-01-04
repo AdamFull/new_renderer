@@ -165,8 +165,7 @@ namespace engine
 
 			edge::gfx::BindDescriptorsInfo bind_info{};
 			bind_info.pipeline_type = pipeline->GetType();
-			bind_info.resource_descriptors = resource_descriptors;
-			bind_info.resource_descriptors_count = resource_descriptor_count;
+			bind_info.resource_descriptors = { resource_descriptors, resource_descriptor_count };
 			bind_info.root_signature = root_signature;
 
 			command_list.BindDescriptors(bind_info);

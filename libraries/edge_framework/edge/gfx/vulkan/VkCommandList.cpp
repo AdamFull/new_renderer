@@ -93,7 +93,7 @@ namespace edge
 				uint32_t first_descriptor_set{ ~0u };
 				uint32_t descriptor_set_count{ 0u };
 				std::array<vk::DescriptorSet, k_max_descriptor_count> descriptor_sets{};
-				for (int32_t i = 0; i < bind_info.resource_descriptors_count; ++i)
+				for (int32_t i = 0; i < bind_info.resource_descriptors.size(); ++i)
 				{
 					auto* resource_descriptor = bind_info.resource_descriptors[i];
 					if (resource_descriptor)
@@ -148,17 +148,17 @@ namespace edge
 				handle.bindIndexBuffer(buffer->GetHandle(), offset, vk_index_type);
 			}
 
-			void VulkanCommandList::BindVertexBuffers(uint32_t buffer_count, Buffer** vertex_buffers, const uint32_t* strides, const uint64_t* offsets)
+			void VulkanCommandList::BindVertexBuffers(std::span<Buffer*> vertex_buffers, std::span<const uint32_t> strides, std::span<const uint64_t> offsets)
 			{
 				std::array<vk::Buffer, 16ull> vk_vertex_buffers{};
 
-				for (int32_t i = 0; i < buffer_count; ++i)
+				for (int32_t i = 0; i < vertex_buffers.size(); ++i)
 				{
 					auto* buffer = static_cast<VulkanBuffer*>(vertex_buffers[i]);
 					vk_vertex_buffers[i] = buffer->GetHandle();
 				}
 
-				handle.bindVertexBuffers(0u, buffer_count, vk_vertex_buffers.data(), offsets);
+				handle.bindVertexBuffers(0u, vertex_buffers.size(), vk_vertex_buffers.data(), offsets.data());
 			}
 
 			void VulkanCommandList::Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count)

@@ -363,16 +363,16 @@ namespace edge
 				return new VulkanQueryPool(*device, create_info);
 			}
 
-			void VulkanContext::WaitForFences(uint32_t fence_count, Fence** fences_array, uint64_t timeout)
+			void VulkanContext::WaitForFences(std::span<Fence*> fences, uint64_t timeout)
 			{
 				std::array<vk::Fence, 16ull> wait_fences{};
 
-				for (int32_t i = 0; i < fence_count; ++i)
+				for (int32_t i = 0; i < fences.size(); ++i)
 				{
-					wait_fences[i] = static_cast<VulkanFence*>(fences_array[i])->GetHandle();
+					wait_fences[i] = static_cast<VulkanFence*>(fences[i])->GetHandle();
 				}
 
-				vk::Result result = Handle(*device).waitForFences(fence_count, wait_fences.data(), VK_TRUE, timeout);
+				vk::Result result = Handle(*device).waitForFences(static_cast<uint32_t>(fences.size()), wait_fences.data(), VK_TRUE, timeout);
 			}
 
 			void VulkanContext::RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment)

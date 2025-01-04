@@ -87,7 +87,7 @@ namespace edge
 				vk_submit_info.pSignalSemaphoreInfos = signal_semaphores.data();
 				vk_submit_info.pCommandBufferInfos = command_buffers.data();
 
-				for (int32_t i = 0; i < submit_info.wait_semaphore_count; ++i)
+				for (int32_t i = 0; i < submit_info.wait_semaphore_infos.size(); ++i)
 				{
 					SemaphoreSubmitInfo& semaphore_info = submit_info.wait_semaphore_infos[i];
 					if (semaphore_info.semaphore)
@@ -99,7 +99,7 @@ namespace edge
 					}
 				}
 
-				for (int32_t i = 0; i < submit_info.command_buffer_count; ++i)
+				for (int32_t i = 0; i < submit_info.command_lists.size(); ++i)
 				{
 					CommandList* command_list = submit_info.command_lists[i];
 					if (command_list)
@@ -109,7 +109,7 @@ namespace edge
 					}
 				}
 
-				for (int32_t i = 0; i < submit_info.signal_semaphore_count; ++i)
+				for (int32_t i = 0; i < submit_info.signal_semaphore_infos.size(); ++i)
 				{
 					SemaphoreSubmitInfo& semaphore_info = submit_info.signal_semaphore_infos[i];
 					if (semaphore_info.semaphore)
@@ -136,7 +136,7 @@ namespace edge
 				vk_present_info.pSwapchains = swapchains.data();
 				vk_present_info.pImageIndices = present_info.image_indices;
 
-				for (int32_t i = 0; i < present_info.wait_semaphore_count; ++i)
+				for (int32_t i = 0; i < present_info.wait_semaphores.size(); ++i)
 				{
 					Semaphore* semaphore = present_info.wait_semaphores[i];
 					if (semaphore)
@@ -145,7 +145,7 @@ namespace edge
 					}
 				}
 
-				for (int32_t i = 0; i < present_info.swapchain_count; ++i)
+				for (int32_t i = 0; i < present_info.swapchains.size(); ++i)
 				{
 					Swapchain* swapchain = present_info.swapchains[i];
 					if (swapchain)

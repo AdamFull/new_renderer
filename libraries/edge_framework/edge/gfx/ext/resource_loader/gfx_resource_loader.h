@@ -30,7 +30,7 @@ namespace edge
 				virtual void BeginBufferUpdate(BufferUpdateInfo& update_info) = 0;
 				virtual void EndBufferUpdate(BufferUpdateInfo& update_info) = 0;
 
-				virtual SemaphoreSubmitInfo Submit(SemaphoreSubmitInfo* wait_infos, uint32_t wait_semaphore_count) = 0;
+				virtual SemaphoreSubmitInfo Submit(std::span<SemaphoreSubmitInfo> wait_infos) = 0;
 
 				virtual Context& GetContext() = 0;
 				virtual Context const& GetContext() const = 0;
