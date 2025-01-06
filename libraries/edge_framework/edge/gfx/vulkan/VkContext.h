@@ -27,39 +27,37 @@ namespace edge
 				VulkanContext(const ContextCreateInfo& create_info);
 				~VulkanContext();
 
-				void Destroy(GFXResource* handle) override;
+				std::unique_ptr<Fence> CreateFence() override;
 
-				Fence* CreateFence() override;
-
-				Semaphore* CreateSemaphore() override;
+				std::unique_ptr<Semaphore> CreateSemaphore() override;
 
 				const Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) override;
 
-				Swapchain* CreateSwapchain(const SwapChainCreateInfo& create_info) override;
+				std::unique_ptr<Swapchain> CreateSwapchain(const SwapChainCreateInfo& create_info) override;
 
-				CommandPool* CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode) override;
+				std::unique_ptr<CommandPool> CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode) override;
 
-				Buffer* CreateBuffer(const BufferCreateInfo& create_info) override;
+				std::unique_ptr<Buffer> CreateBuffer(const BufferCreateInfo& create_info) override;
 
-				Texture* CreateTexture(const TextureCreateInfo& create_info) override;
-				Texture* CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) override;
+				std::unique_ptr<Texture> CreateTexture(const TextureCreateInfo& create_info) override;
+				std::unique_ptr<Texture> CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) override;
 
-				Shader* CreateShader(std::span<const ShaderStageInfo> shader_stages) override;
+				std::unique_ptr<Shader> CreateShader(std::span<const ShaderStageInfo> shader_stages) override;
 
-				RootSignature* CreateRootSignature(const RootSignatureCreateInfo& create_info) override;
+				std::unique_ptr<RootSignature> CreateRootSignature(const RootSignatureCreateInfo& create_info) override;
 
-				Pipeline* CreatePipeline(const GraphicsPipelineCreateInfo& create_info) override;
-				Pipeline* CreatePipeline(const ComputePipelineCreateInfo& create_info) override;
+				std::unique_ptr<Pipeline> CreatePipeline(const GraphicsPipelineCreateInfo& create_info) override;
+				std::unique_ptr<Pipeline> CreatePipeline(const ComputePipelineCreateInfo& create_info) override;
 
-				PipelineCache* CreatePipelineCache(const PipelineCacheCreateInfo& create_info) override;
+				std::unique_ptr<PipelineCache> CreatePipelineCache(const PipelineCacheCreateInfo& create_info) override;
 
-				DescriptorAllocator* CreateDescriptorAllocator() override;
+				std::unique_ptr<DescriptorAllocator> CreateDescriptorAllocator() override;
 
-				SharedDescriptor* CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) override;
+				std::unique_ptr<SharedDescriptor> CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) override;
 
-				Sampler* CreateSampler(const SamplerCreateInfo& create_info) override;
+				std::unique_ptr<Sampler> CreateSampler(const SamplerCreateInfo& create_info) override;
 
-				QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) override;
+				std::unique_ptr<QueryPool> CreateQueryPool(const QueryPoolCreateInfo& create_info) override;
 
 				void WaitForFences(std::span<Fence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
 

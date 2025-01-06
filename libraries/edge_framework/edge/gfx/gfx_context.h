@@ -17,39 +17,37 @@ namespace edge
 		public:
 			virtual ~Context() = default;
 
-			virtual void Destroy(GFXResource* handle) = 0;
+			[[nodiscard]] virtual std::unique_ptr<Fence> CreateFence() = 0;
 
-			virtual Fence* CreateFence() = 0;
+			[[nodiscard]] virtual std::unique_ptr<Semaphore> CreateSemaphore() = 0;
 
-			virtual Semaphore* CreateSemaphore() = 0;
+			[[nodiscard]] virtual const Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) = 0;
 
-			virtual const Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) = 0;
+			[[nodiscard]] virtual std::unique_ptr<Swapchain> CreateSwapchain(const SwapChainCreateInfo& create_info) = 0;
 
-			virtual Swapchain* CreateSwapchain(const SwapChainCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual std::unique_ptr<CommandPool> CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode = CommandPoolResetMode::eAlwaysAllocate) = 0;
 
-			virtual CommandPool* CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode = CommandPoolResetMode::eAlwaysAllocate) = 0;
+			[[nodiscard]] virtual std::unique_ptr<Buffer> CreateBuffer(const BufferCreateInfo& create_info) = 0;
 
-			virtual Buffer* CreateBuffer(const BufferCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual std::unique_ptr<Texture> CreateTexture(const TextureCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual std::unique_ptr<Texture> CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) = 0;
 
-			virtual Texture* CreateTexture(const TextureCreateInfo& create_info) = 0;
-			virtual Texture* CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) = 0;
+			[[nodiscard]] virtual std::unique_ptr<Shader> CreateShader(std::span<const ShaderStageInfo> shader_stages) = 0;
 
-			virtual Shader* CreateShader(std::span<const ShaderStageInfo> shader_stages) = 0;
+			[[nodiscard]] virtual std::unique_ptr<RootSignature> CreateRootSignature(const RootSignatureCreateInfo& create_info) = 0;
 
-			virtual RootSignature* CreateRootSignature(const RootSignatureCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual std::unique_ptr<Pipeline> CreatePipeline(const GraphicsPipelineCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual std::unique_ptr<Pipeline> CreatePipeline(const ComputePipelineCreateInfo& create_info) = 0;
 
-			virtual Pipeline* CreatePipeline(const GraphicsPipelineCreateInfo& create_info) = 0;
-			virtual Pipeline* CreatePipeline(const ComputePipelineCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual std::unique_ptr<PipelineCache> CreatePipelineCache(const PipelineCacheCreateInfo& create_info) = 0;
 
-			virtual PipelineCache* CreatePipelineCache(const PipelineCacheCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual std::unique_ptr<DescriptorAllocator> CreateDescriptorAllocator() = 0;
 
-			virtual DescriptorAllocator* CreateDescriptorAllocator() = 0;
+			[[nodiscard]] virtual std::unique_ptr<SharedDescriptor> CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) = 0;
 
-			virtual SharedDescriptor* CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual std::unique_ptr<Sampler> CreateSampler(const SamplerCreateInfo& create_info) = 0;
 
-			virtual Sampler* CreateSampler(const SamplerCreateInfo& create_info) = 0;
-
-			virtual QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual std::unique_ptr<QueryPool> CreateQueryPool(const QueryPoolCreateInfo& create_info) = 0;
 
 			virtual void WaitForFences(std::span<Fence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) = 0;
 
