@@ -93,8 +93,38 @@ namespace edge
 
 				vk::DeviceCreateInfo create_info({}, queue_create_infos, {}, enabled_extensions, &gpu.GetMutableRequestedFeatures());
 
+#if USE_NSIGHT_AFTERMATH
+				// Initialize Nsight Aftermath for this device.
+				//
+				// * ENABLE_RESOURCE_TRACKING - this will include additional information about the
+				//   resource related to a GPU virtual address seen in case of a crash due to a GPU
+				//   page fault. This includes, for example, information about the size of the
+				//   resource, its format, and an indication if the resource has been deleted.
+				//
+				// * ENABLE_AUTOMATIC_CHECKPOINTS - this will enable automatic checkpoints for
+				//   all draw calls, compute dispatchs, and resource copy operations that capture
+				//   CPU call stacks for those event.
+				//
+				//   Using this option should be considered carefully. It can cause very high CPU overhead.
+				//
+				// * ENABLE_SHADER_DEBUG_INFO - this instructs the shader compiler to
+				//   generate debug information (line tables) for all shaders. Using this option
+				//   should be considered carefully. It may cause considerable shader compilation
+				//   overhead and additional overhead for handling the corresponding shader debug
+				//   information callbacks.
+				//
+
+				vk::DeviceDiagnosticsConfigCreateInfoNV aftermath_info{};
+				aftermath_info.flags =
+					vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableResourceTracking |
+					vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableAutomaticCheckpoints |
+					vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableShaderDebugInfo;
+				aftermath_info.pNext = gpu.GetExtensionFeatureChain();
+				create_info.pNext = &aftermath_info;
+#else
 				// Latest requested feature will have the pNext's all set up for device creation.
 				create_info.pNext = gpu.GetExtensionFeatureChain();
+#endif
 
 				handle = Handle(gpu).createDevice(create_info);
 

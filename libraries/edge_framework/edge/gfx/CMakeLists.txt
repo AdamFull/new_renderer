@@ -8,6 +8,8 @@ set(SPIRV_CROSS_CLI OFF CACHE BOOL "Build the CLI binary. Requires SPIRV_CROSS_S
 set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "Enable SPIRV-Cross tests." FORCE)
 set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "Enable util module support." FORCE)
 
+set(USE_NSIGHT_AFTERMATH ON CACHE BOOL "Enable nsight aftermath support." FORCE)
+
 #TODO: add extensions as plugins
 add_subdirectory("ext/resource_loader")
 add_subdirectory("ext/shader_effect_system")
@@ -15,6 +17,12 @@ add_subdirectory("ext/shader_effect_system")
 file(GLOB GFX_SOURCES FILES *.cpp *.h)
 
 add_library(${PROJECT_NAME} STATIC ${GFX_SOURCES})
+
+if(USE_NSIGHT_AFTERMATH)
+find_package(NsightAftermath REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE NsightAftermath::NsightAftermath)
+target_compile_definitions(${PROJECT_NAME} PUBLIC USE_NSIGHT_AFTERMATH=1)
+endif()
 
 if(ANDROID)
     add_subdirectory(vulkan)

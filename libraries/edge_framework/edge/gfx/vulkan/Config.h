@@ -47,7 +47,11 @@ namespace edge
 
 			static const char* optional_device_extensions[] =
 			{
-				VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
+				VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+#if USE_NSIGHT_AFTERMATH
+				VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME,
+				VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME
+#endif
 			};
 
 			static void EnablePhysicalDeviceFeatures(vk::PhysicalDeviceFeatures& features)

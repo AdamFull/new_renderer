@@ -11,6 +11,9 @@
 #include "../util/Enum.hpp"
 #include "../util/Hash.hpp"
 
+#if USE_NSIGHT_AFTERMATH
+#endif
+
 namespace edge
 {
 	namespace gfx
@@ -168,6 +171,9 @@ namespace edge
 
 		std::unique_ptr<Context> CreateContext(const ContextCreateInfo& create_info)
 		{
+#if USE_NSIGHT_AFTERMATH
+#endif
+
 			switch (create_info.render_api)
 			{
 #if D3D12_SUPPORTED
