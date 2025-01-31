@@ -219,14 +219,19 @@ namespace edge
 				}
 			}
 
-			std::unique_ptr<Fence> VulkanContext::CreateFence()
+			void VulkanContext::Destroy(GFXResource* handle)
 			{
-				return std::make_unique<VulkanFence>(*device);
+				SAFE_DELETE(handle);
 			}
 
-			std::unique_ptr<Semaphore> VulkanContext::CreateSemaphore()
+			Fence* VulkanContext::CreateFence()
 			{
-				return std::make_unique<VulkanSemaphore>(*device);
+				return new VulkanFence(*device);
+			}
+
+			Semaphore* VulkanContext::CreateSemaphore()
+			{
+				return new VulkanSemaphore(*device);
 			}
 
 			const Queue* VulkanContext::RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index)
@@ -258,7 +263,7 @@ namespace edge
 				return requested_queue;
 			}
 
-			std::unique_ptr<Swapchain> VulkanContext::CreateSwapchain(const SwapChainCreateInfo& create_info)
+			Swapchain* VulkanContext::CreateSwapchain(const SwapChainCreateInfo& create_info)
 			{
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 				vk::PresentModeKHR present_mode = (create_info.window->GetProperties().vsync == Window::Vsync::OFF) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
@@ -274,16 +279,16 @@ namespace edge
 					// Recreate swapchain with changed size
 					if (create_info.width != 1u && create_info.height != 1u)
 					{
-						return std::make_unique<VulkanSwapchain>(*old_swapchain, vk::Extent2D{ create_info.width, create_info.height });
+						return new VulkanSwapchain(*old_swapchain, vk::Extent2D{ create_info.width, create_info.height });
 					}
 					// Recreate with new amount of images
 					else if (create_info.image_count != 1u && create_info.image_count != old_swapchain->GetImageCount())
 					{
-						return std::make_unique<VulkanSwapchain>(*old_swapchain, create_info.image_count);
+						return new VulkanSwapchain(*old_swapchain, create_info.image_count);
 					}
 				}
 
-				return std::make_unique<VulkanSwapchain>(*device,
+				return new VulkanSwapchain(*device,
 					surface,
 					present_mode,
 					present_mode_priority_list,
@@ -292,70 +297,70 @@ namespace edge
 					create_info.image_count);
 			}
 
-			std::unique_ptr<CommandPool> VulkanContext::CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode)
+			CommandPool* VulkanContext::CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode)
 			{
 				auto* vkqueue = static_cast<const VulkanQueue*>(queue);
-				return std::make_unique<VulkanCommandPool>(*vkqueue, reset_mode);
+				return new VulkanCommandPool(*vkqueue, reset_mode);
 			}
 
-			std::unique_ptr<Buffer> VulkanContext::CreateBuffer(const BufferCreateInfo& create_info)
+			Buffer* VulkanContext::CreateBuffer(const BufferCreateInfo& create_info)
 			{
-				return std::make_unique<VulkanBuffer>(*allocator, create_info);
+				return new VulkanBuffer(*allocator, create_info);
 			}
 
-			std::unique_ptr<Texture> VulkanContext::CreateTexture(const TextureCreateInfo& create_info)
+			Texture* VulkanContext::CreateTexture(const TextureCreateInfo& create_info)
 			{
-				return std::make_unique<VulkanTexture>(*allocator, create_info);
+				return new VulkanTexture(*allocator, create_info);
 			}
 
-			std::unique_ptr<Texture> VulkanContext::CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index)
+			Texture* VulkanContext::CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index)
 			{
-				return std::make_unique<VulkanTexture>(*allocator, swapchain, image_index);
+				return new VulkanTexture(*allocator, swapchain, image_index);
 			}
 
-			std::unique_ptr<Shader> VulkanContext::CreateShader(std::span<const ShaderStageInfo> shader_stages)
+			Shader* VulkanContext::CreateShader(std::span<const ShaderStageInfo> shader_stages)
 			{
-				return std::make_unique<VulkanShader>(*device, shader_stages);
+				return new VulkanShader(*device, shader_stages);
 			}
 
-			std::unique_ptr<RootSignature> VulkanContext::CreateRootSignature(const RootSignatureCreateInfo& create_info)
+			RootSignature* VulkanContext::CreateRootSignature(const RootSignatureCreateInfo& create_info)
 			{
-				return std::make_unique<VulkanRootSignature>(*device, create_info);
+				return new VulkanRootSignature(*device, create_info);
 			}
 
-			std::unique_ptr<Pipeline> VulkanContext::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
+			Pipeline* VulkanContext::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
 			{
-				return std::make_unique<VulkanGraphicsPipeline>(*device, create_info);
+				return new VulkanGraphicsPipeline(*device, create_info);
 			}
 
-			std::unique_ptr<Pipeline> VulkanContext::CreatePipeline(const ComputePipelineCreateInfo& create_info)
+			Pipeline* VulkanContext::CreatePipeline(const ComputePipelineCreateInfo& create_info)
 			{
-				return std::make_unique<VulkanComputePipeline>(*device, create_info);
+				return new VulkanComputePipeline(*device, create_info);
 			}
 
-			std::unique_ptr<PipelineCache> VulkanContext::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
+			PipelineCache* VulkanContext::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
 			{
-				return std::make_unique<VulkanPipelineCache>(*device, create_info);
+				return new VulkanPipelineCache(*device, create_info);
 			}
 
-			std::unique_ptr<DescriptorAllocator> VulkanContext::CreateDescriptorAllocator()
+			DescriptorAllocator* VulkanContext::CreateDescriptorAllocator()
 			{
-				return std::make_unique<VulkanDescriptorAllocator>(*device);
+				return new VulkanDescriptorAllocator(*device);
 			}
 
-			std::unique_ptr<SharedDescriptor> VulkanContext::CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info)
+			SharedDescriptor* VulkanContext::CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info)
 			{
-				return std::make_unique<VulkanSharedDescriptor>(*device, create_info);
+				return new VulkanSharedDescriptor(*device, create_info);
 			}
 
-			std::unique_ptr<Sampler> VulkanContext::CreateSampler(const SamplerCreateInfo& create_info)
+			Sampler* VulkanContext::CreateSampler(const SamplerCreateInfo& create_info)
 			{
-				return std::make_unique<VulkanSampler>(*device, create_info);
+				return new VulkanSampler(*device, create_info);
 			}
 
-			std::unique_ptr<QueryPool> VulkanContext::CreateQueryPool(const QueryPoolCreateInfo& create_info)
+			QueryPool* VulkanContext::CreateQueryPool(const QueryPoolCreateInfo& create_info)
 			{
-				return std::make_unique<VulkanQueryPool>(*device, create_info);
+				return new VulkanQueryPool(*device, create_info);
 			}
 
 			void VulkanContext::WaitForFences(std::span<Fence*> fences, uint64_t timeout)

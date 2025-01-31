@@ -16,13 +16,18 @@ namespace edge
 
 			}
 
-			std::unique_ptr<Fence> D3D12Context::CreateFence()
+			void D3D12Context::Destroy(GFXResource* handle)
+			{
+				assert(false && "NOT IMPLEMENTED");
+			}
+
+			Fence* D3D12Context::CreateFence()
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<Semaphore> D3D12Context::CreateSemaphore()
+			Semaphore* D3D12Context::CreateSemaphore()
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
@@ -34,85 +39,85 @@ namespace edge
 				return nullptr;
 			}
 
-			std::unique_ptr<Swapchain> D3D12Context::CreateSwapchain(const SwapChainCreateInfo& create_info)
+			Swapchain* D3D12Context::CreateSwapchain(const SwapChainCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<CommandPool> D3D12Context::CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode)
+			CommandPool* D3D12Context::CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<Buffer> D3D12Context::CreateBuffer(const BufferCreateInfo& create_info)
+			Buffer* D3D12Context::CreateBuffer(const BufferCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<Texture> D3D12Context::CreateTexture(const TextureCreateInfo& create_info)
+			Texture* D3D12Context::CreateTexture(const TextureCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<Texture> D3D12Context::CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index)
+			Texture* D3D12Context::CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<Shader> D3D12Context::CreateShader(std::span<const ShaderStageInfo> shader_stages)
+			Shader* D3D12Context::CreateShader(std::span<const ShaderStageInfo> shader_stages)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<RootSignature> D3D12Context::CreateRootSignature(const RootSignatureCreateInfo& create_info)
+			RootSignature* D3D12Context::CreateRootSignature(const RootSignatureCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<Pipeline> D3D12Context::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
+			Pipeline* D3D12Context::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<Pipeline> D3D12Context::CreatePipeline(const ComputePipelineCreateInfo& create_info)
+			Pipeline* D3D12Context::CreatePipeline(const ComputePipelineCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<PipelineCache> D3D12Context::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
+			PipelineCache* D3D12Context::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<DescriptorAllocator> D3D12Context::CreateDescriptorAllocator()
+			DescriptorAllocator* D3D12Context::CreateDescriptorAllocator()
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<SharedDescriptor> D3D12Context::CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info)
+			SharedDescriptor* D3D12Context::CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<Sampler> D3D12Context::CreateSampler(const SamplerCreateInfo& create_info)
+			Sampler* D3D12Context::CreateSampler(const SamplerCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			std::unique_ptr<QueryPool> D3D12Context::CreateQueryPool(const QueryPoolCreateInfo& create_info)
+			QueryPool* D3D12Context::CreateQueryPool(const QueryPoolCreateInfo& create_info)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
