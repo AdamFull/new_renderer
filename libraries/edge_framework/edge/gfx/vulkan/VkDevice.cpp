@@ -119,8 +119,16 @@ namespace edge
 					vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableResourceTracking |
 					vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableAutomaticCheckpoints |
 					vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableShaderDebugInfo;
-				aftermath_info.pNext = gpu.GetExtensionFeatureChain();
-				create_info.pNext = &aftermath_info;
+
+				if (IsEnabled(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME))
+				{
+					aftermath_info.pNext = gpu.GetExtensionFeatureChain();
+					create_info.pNext = &aftermath_info;
+				}
+				else
+				{
+					create_info.pNext = gpu.GetExtensionFeatureChain();
+				}
 #else
 				// Latest requested feature will have the pNext's all set up for device creation.
 				create_info.pNext = gpu.GetExtensionFeatureChain();

@@ -158,6 +158,7 @@ namespace edge
 
 				// Apply required device extensions
 				device_extensions.insert(device_extensions.end(), required_device_extensions, required_device_extensions + std::size(required_device_extensions));
+				device_extensions.insert(device_extensions.end(), optional_device_extensions, optional_device_extensions + std::size(optional_device_extensions));
 
 				// Pick best device from found on device
 				instance->SelectBestDevice(surface, device_extensions);
@@ -488,6 +489,8 @@ namespace edge
 						auto& ext = device.RequestExtensionFeatures<vk::PhysicalDeviceVulkanMemoryModelFeatures>();
 						ext.vulkanMemoryModelAvailabilityVisibilityChains = VK_FALSE;
 					}
+					else if (strcmp(extension_name, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME) == 0)
+						auto& ext = device.RequestExtensionFeatures<vk::PhysicalDeviceDiagnosticsConfigFeaturesNV>();
 					//else if(strcmp(extension_name, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) == 0)
 					//	device.RequestExtensionFeatures(vk::PhysicalDeviceIndirect)
 				}

@@ -110,6 +110,10 @@ target_compile_definitions(vulkan_common
     VK_NO_PROTOTYPES
 )
 
+if(USE_NSIGHT_AFTERMATH)
+    target_link_libraries(${PROJECT_NAME} PUBLIC nsight_aftermath_interface)
+endif()
+
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
     vulkan_common

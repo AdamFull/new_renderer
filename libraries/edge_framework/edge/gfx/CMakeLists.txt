@@ -20,8 +20,11 @@ add_library(${PROJECT_NAME} STATIC ${GFX_SOURCES})
 
 if(USE_NSIGHT_AFTERMATH)
 find_package(NsightAftermath REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE NsightAftermath::NsightAftermath)
-target_compile_definitions(${PROJECT_NAME} PUBLIC USE_NSIGHT_AFTERMATH=1)
+add_library(nsight_aftermath_interface INTERFACE)
+target_compile_definitions(nsight_aftermath_interface INTERFACE USE_NSIGHT_AFTERMATH=1)
+target_link_libraries(nsight_aftermath_interface INTERFACE NsightAftermath::NsightAftermath)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC nsight_aftermath_interface)
 endif()
 
 if(ANDROID)
