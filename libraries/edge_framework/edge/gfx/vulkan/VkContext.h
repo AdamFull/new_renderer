@@ -4,6 +4,10 @@
 
 #include <vulkan/vulkan.hpp>
 
+#if USE_NSIGHT_AFTERMATH
+#include "../gfx_nsight_aftermath.h"
+#endif
+
 #ifdef CreateSemaphore
 #undef CreateSemaphore
 #endif
@@ -84,6 +88,10 @@ namespace edge
 				std::unique_ptr<Device> device;
 
 				std::unique_ptr<Allocator> allocator;
+
+#if USE_NSIGHT_AFTERMATH
+				std::unique_ptr<NsightAftermath> nsight_aftermath;
+#endif
 
 				vk::SampleCountFlagBits required_sample_count{ vk::SampleCountFlagBits::e1 };
 

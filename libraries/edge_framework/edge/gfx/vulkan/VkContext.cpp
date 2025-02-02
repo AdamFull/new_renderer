@@ -37,6 +37,10 @@
 
 #include <algorithm>
 
+#if USE_NSIGHT_AFTERMATH
+#include "VkNsightAftermath.h"
+#endif
+
 
 #ifdef CreateSemaphore
 #undef CreateSemaphore
@@ -61,6 +65,10 @@ namespace edge
 
 			VulkanContext::VulkanContext(const ContextCreateInfo& create_info)
 			{
+#if USE_NSIGHT_AFTERMATH
+				nsight_aftermath = std::make_unique<VkNsightAftermath>();
+#endif
+
 				// Register dispatcher
 				PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
 				VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
@@ -211,6 +219,9 @@ namespace edge
 
 			VulkanContext::~VulkanContext()
 			{
+#if USE_NSIGHT_AFTERMATH
+				nsight_aftermath.reset();
+#endif
 				Handle(*instance).destroySurfaceKHR(surface, allocation_callbacks);
 
 				if (allocation_callbacks)

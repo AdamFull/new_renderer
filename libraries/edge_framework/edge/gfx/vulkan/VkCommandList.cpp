@@ -14,6 +14,10 @@
 #include "../gfx_util.h"
 #include "VkUtil.h"
 
+#if USE_NSIGHT_AFTERMATH
+#include "../gfx_nsight_aftermath.h"
+#endif
+
 namespace edge
 {
 	namespace gfx
