@@ -32,6 +32,10 @@
 #undef MemoryBarrier
 #endif
 
+#if USE_NSIGHT_AFTERMATH
+#include <edge/gfx/gfx_nsight_aftermath.h>
+#endif
+
 #define DISABLE_SHADOWS 1
 //#define SKINNING_TEST 1
 
@@ -305,9 +309,15 @@ namespace engine
 
 			render_context->Begin();
 			render_world->BeginFrame(delta_time);
+#if USE_NSIGHT_AFTERMATH
+			edge::gfx::NsightAftermath::TryBeginFrame();
+#endif
 
 			render_context->Execute(delta_time);
 
+#if USE_NSIGHT_AFTERMATH
+			edge::gfx::NsightAftermath::TryEndFrame();
+#endif
 			render_world->EndFrame();
 			render_context->End();
 		}

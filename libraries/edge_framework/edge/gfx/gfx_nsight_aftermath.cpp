@@ -11,6 +11,8 @@ namespace edge
 {
 	namespace gfx
 	{
+		NsightAftermath* NsightAftermath::self{ nullptr };
+
 		NsightAftermath::NsightAftermath()
 		{
 			GFSDK_Aftermath_Result result = GFSDK_Aftermath_EnableGpuCrashDumps(
@@ -24,12 +26,19 @@ namespace edge
 				this);
 
 			initialized = GFSDK_Aftermath_SUCCEED(result);
+			if (initialized)
+			{
+				self = this;
+			}
 		}
 
 		NsightAftermath::~NsightAftermath()
 		{
 			if (initialized)
 			{
+				initialized = false;
+				self = nullptr;
+
 				GFSDK_Aftermath_DisableGpuCrashDumps();
 			}
 		}
@@ -44,9 +53,25 @@ namespace edge
 			per_frame_markers[frame_index % frame_history_size].clear();
 		}
 
+		void NsightAftermath::TryBeginFrame()
+		{
+			if (self)
+			{
+				self->BeginFrame();
+			}
+		}
+
 		void NsightAftermath::EndFrame()
 		{
 			frame_index++;
+		}
+
+		void NsightAftermath::TryEndFrame()
+		{
+			if (self)
+			{
+				self->EndFrame();
+			}
 		}
 
 		void NsightAftermath::SetMarker(CommandList* cmd_list, const char* name)
@@ -58,8 +83,21 @@ namespace edge
 			SetMarkerImpl(cmd_list, (const void*)marker_id);
 		}
 
+		void NsightAftermath::TrySetMarker(CommandList* cmd_list, const char* name)
+		{
+			if (self)
+			{
+				self->SetMarker(cmd_list, name);
+			}
+		}
+
 		void NsightAftermath::OnGpuCrashDump(const void* pGpuCrashDump, const uint32_t gpuCrashDumpSize)
 		{
+			if (!std::filesystem::exists(base_path_str))
+			{
+				std::filesystem::create_directories(base_path_str);
+			}
+
 			// Create a GPU crash dump decoder object for the GPU crash dump.
 			GFSDK_Aftermath_GpuCrashDump_Decoder decoder = {};
 
@@ -128,6 +166,11 @@ namespace edge
 
 		void NsightAftermath::OnShaderDebugInfo(const void* pShaderDebugInfo, const uint32_t shaderDebugInfoSize)
 		{
+			if (!std::filesystem::exists(base_path_str))
+			{
+				std::filesystem::create_directories(base_path_str);
+			}
+
 			// Get shader debug information identifier
 			GFSDK_Aftermath_ShaderDebugInfoIdentifier identifier = {};
 			GFSDK_Aftermath_Result result = GFSDK_Aftermath_GetShaderDebugInfoIdentifier(GFSDK_Aftermath_Version_API, pShaderDebugInfo, shaderDebugInfoSize, &identifier);

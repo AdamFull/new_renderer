@@ -512,6 +512,10 @@ namespace edge
 				auto& device = command_pool.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.BeginLabel(handle, name, color);
+
+#if USE_NSIGHT_AFTERMATH
+				NsightAftermath::TrySetMarker(this, name.data());
+#endif
 			}
 
 			void VulkanCommandList::InsertMarker(std::string_view name, uint32_t color)
@@ -519,6 +523,10 @@ namespace edge
 				auto& device = command_pool.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.InsertLabel(handle, name, color);
+
+#if USE_NSIGHT_AFTERMATH
+				NsightAftermath::TrySetMarker(this, name.data());
+#endif
 			}
 
 			void VulkanCommandList::EndMarker()

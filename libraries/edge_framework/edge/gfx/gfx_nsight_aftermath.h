@@ -65,12 +65,16 @@ namespace edge
 			bool IsInitialized();
 
 			void BeginFrame();
+			static void TryBeginFrame();
+
 			void EndFrame();
+			static void TryEndFrame();
 
 			virtual void RegisterShaderBinary(std::span<uint8_t> shader_code) = 0;
 			virtual void RegisterShaderDebugBinary(std::span<uint8_t> stripped_shader_code, std::span<uint8_t> full_shader_code) = 0;
 
 			void SetMarker(CommandList* cmd_list, const char* name);
+			static void TrySetMarker(CommandList* cmd_list, const char* name);
 
 		private:
 			void OnGpuCrashDump(const void* pGpuCrashDump, const uint32_t gpuCrashDumpSize);
@@ -103,6 +107,8 @@ namespace edge
 
 			uint32_t frame_index{ 0u };
 			bool initialized{ false };
+
+			static NsightAftermath* self;
 		};
 	}
 }
