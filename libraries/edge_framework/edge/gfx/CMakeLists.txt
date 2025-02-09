@@ -8,7 +8,7 @@ set(SPIRV_CROSS_CLI OFF CACHE BOOL "Build the CLI binary. Requires SPIRV_CROSS_S
 set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "Enable SPIRV-Cross tests." FORCE)
 set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "Enable util module support." FORCE)
 
-set(USE_NSIGHT_AFTERMATH ON CACHE BOOL "Enable nsight aftermath support." FORCE)
+set(USE_NSIGHT_AFTERMATH OFF CACHE BOOL "Enable nsight aftermath support." FORCE)
 
 #TODO: add extensions as plugins
 add_subdirectory("ext/resource_loader")
