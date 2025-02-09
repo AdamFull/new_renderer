@@ -40,12 +40,10 @@ namespace edge
 
 				~ResourceUploaderImpl()
 				{
-					// Clear all allocated buffers if it's exists
-					for (auto& buffer : staging_buffers)
+					for (auto& block : buffer_blocks)
 					{
-						context.Destroy(buffer);
+						context.Destroy(block.buffer);
 					}
-					staging_buffers.clear();
 
 					context.Destroy(command_pool);
 					context.Destroy(signal_semaphore);
@@ -57,12 +55,11 @@ namespace edge
 				ResourceUploaderImpl& operator=(const ResourceUploaderImpl&) = delete;
 				ResourceUploaderImpl& operator=(ResourceUploaderImpl&&) = delete;
 
-				Buffer* RequestBuffer(size_t size)
+				std::tuple<Buffer*, uint64_t> RequestBuffer(uint64_t size)
 				{
-					BufferCreateInfo buffer_create_info{};
-					buffer_create_info.usage = BufferUsageFlag::eStagingBuffer;
-					buffer_create_info.size = size;
-					return staging_buffers.emplace_back(context.CreateBuffer(buffer_create_info));
+					auto& buffer_block = LookUpBlock(size);
+					buffer_block.buffer_offset += size;
+					return { buffer_block.buffer, buffer_block.buffer_offset - size };
 				}
 
 				CommandList& RequestCommandList()
@@ -104,15 +101,40 @@ namespace edge
 					fence->Wait();
 					fence->Reset();
 
-					for (auto& buffer : staging_buffers)
+					for (auto& block : buffer_blocks)
 					{
-						context.Destroy(buffer);
+						block.buffer_offset = 0ull;
 					}
-					staging_buffers.clear();
 
 					command_pool->Reset();
 				}
 			private:
+				struct BufferBlock
+				{
+					Buffer* buffer{ nullptr };
+					uint64_t buffer_offset{ 0ull };
+				};
+
+				BufferBlock& LookUpBlock(uint64_t required_size)
+				{
+					// Lookup for free block with enought memory
+					auto found = std::find_if(buffer_blocks.begin(), buffer_blocks.end(), [required_size](const BufferBlock& block)
+						{
+							return block.buffer->GetSize() - block.buffer_offset > required_size;
+						});
+
+					if (found != buffer_blocks.end())
+					{
+						return *found;
+					}
+
+					BufferCreateInfo buffer_create_info{};
+					buffer_create_info.usage = BufferUsageFlag::eStagingBuffer;
+					buffer_create_info.size = 128 * 1024 * 1024;
+
+					return buffer_blocks.emplace_back(context.CreateBuffer(buffer_create_info), 0ull);
+				}
+
 				Context& context;
 
 				const Queue& queue;
@@ -120,7 +142,7 @@ namespace edge
 				CommandPool* command_pool{ nullptr };
 				CommandList* active_command_list{ nullptr };
 
-				std::vector<Buffer*> staging_buffers;
+				std::vector<BufferBlock> buffer_blocks;
 
 				Semaphore* signal_semaphore{ nullptr };
 				Fence* fence{ nullptr };
@@ -308,8 +330,8 @@ namespace edge
 			class BufferUpdaterImpl : public BufferUpdater
 			{
 			public:
-				BufferUpdaterImpl(Buffer* staging, Buffer* target) :
-					src_buffer{ staging }, dst_buffer{ target }
+				BufferUpdaterImpl(Buffer* staging, Buffer* target, uint64_t offset) :
+					src_buffer{ staging }, dst_buffer{ target }, src_offset{ offset }
 				{
 					mapped_memory = src_buffer->Map();
 				}
@@ -327,7 +349,6 @@ namespace edge
 				{
 					copy_regions.emplace_back(src_offset, dst_offset, data_size);
 					engine::util::Copy(mapped_memory, src_offset, data, data_size, dst_offset);
-					//src_buffer->Update(data, data_size, src_offset);
 					src_offset += data_size;
 				}
 
@@ -444,15 +465,16 @@ namespace edge
 						create_info.usage |= gfx::TextureUsageFlag::eStorage;
 
 						// Create staging buffer for uploading
-						auto* src_buffer = uploader.RequestBuffer(data_size);
+						auto [src_buffer, src_offset] = uploader.RequestBuffer(data_size);
 
 						// Copy image data to staging buffer
-						src_buffer->Update(rawdata, data_size);
+						src_buffer->Update(rawdata, data_size, src_offset);
 						stbi_image_free(rawdata);
 
 						copy_texture.src_buffer = src_buffer;
 
 						auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+						region.buffer_offset = src_offset;
 						region.size_x = width;
 						region.size_y = height;
 					} break;
@@ -491,8 +513,8 @@ namespace edge
 						create_info.format = gfx::FormatFromVk(vk_format);
 
 						// Create staging buffer for uploading
-						auto src_buffer = uploader.RequestBuffer(kTexture->dataSize);
-						src_buffer->Update(kTexture->pData, kTexture->dataSize);
+						auto [src_buffer, src_offset] = uploader.RequestBuffer(kTexture->dataSize);
+						src_buffer->Update(kTexture->pData, kTexture->dataSize, src_offset);
 						copy_texture.src_buffer = src_buffer;
 
 						// Collect image copy regions
@@ -502,6 +524,7 @@ namespace edge
 							for (int32_t level = 0u; level < kTexture->numLevels; level++)
 							{
 								auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+								region.buffer_offset = src_offset;
 								region.layer = layer;
 								region.level = level;
 								region.layer_count = kTexture->numLayers;
@@ -545,8 +568,8 @@ namespace edge
 						create_info.format = gfx::FormatFromVk(kTexture->vkFormat);
 
 						// Create staging buffer for uploading
-						auto src_buffer = uploader.RequestBuffer(kTexture->dataSize);
-						src_buffer->Update(kTexture->pData, kTexture->dataSize);
+						auto [src_buffer, src_offset] = uploader.RequestBuffer(kTexture->dataSize);
+						src_buffer->Update(kTexture->pData, kTexture->dataSize, src_offset);
 						copy_texture.src_buffer = src_buffer;
 
 						// Collect image copy regions
@@ -556,6 +579,7 @@ namespace edge
 							for (int32_t level = 0; level < kTexture->numLevels; level++)
 							{
 								auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+								region.buffer_offset = src_offset;
 								region.layer = layer;
 								region.level = level;
 								region.layer_count = kTexture->numLayers;
@@ -613,11 +637,12 @@ namespace edge
 					copy_texture.dst_texture = texture;
 
 					auto& uploader = GetActiveUploader();
-					auto src_buffer = uploader.RequestBuffer(texture_data.size());
-					src_buffer->Update(texture_data.data(), texture_data.size());
+					auto [src_buffer, src_offset] = uploader.RequestBuffer(texture_data.size());
+					src_buffer->Update(texture_data.data(), texture_data.size(), src_offset);
 					copy_texture.src_buffer = src_buffer;
 
 					auto& copy_region = copy_texture.copy_regions[copy_texture.copy_region_count++];
+					copy_region.buffer_offset = src_offset;
 					copy_region.size_x = create_info.width;
 					copy_region.size_y = create_info.height;
 					copy_region.size_z = create_info.depth;
@@ -671,7 +696,9 @@ namespace edge
 					auto& uploader = GetActiveUploader();
 
 					uint32_t allocation_size = update_info.update_size > 0ull ? update_info.update_size : dst_buffer->GetSize();
-					return new BufferUpdaterImpl(uploader.RequestBuffer(allocation_size), update_info.dst_buffer);
+					auto [src_buffer, src_offset] = uploader.RequestBuffer(allocation_size);
+
+					return new BufferUpdaterImpl(src_buffer, update_info.dst_buffer, src_offset);
 				}
 
 				void EndBufferUpdate(BufferUpdater** updater) override
