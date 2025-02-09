@@ -17,6 +17,24 @@ namespace edge
 				FilesystemWrapper* filesystem_wrapper{ nullptr };
 			};
 
+			//class BufferUpdater
+			//{
+			//public:
+			//	void Update(const void* data, uint64_t data_size, uint64_t dst_offset = 0ull)
+			//	{
+			//		copy_regions.emplace_back(src_offset, dst_offset, data_size);
+			//		src_buffer->Update(data, data_size, src_offset);
+			//		src_offset += data_size;
+			//	}
+			//private:
+			//	Buffer* src_buffer{ nullptr };
+			//	uint64_t src_offset{ 0ull };
+			//
+			//	Buffer* dst_buffer{ nullptr };
+			//
+			//	std::vector<BufferCopyRegion> copy_regions{};
+			//};
+
 			class ResourceLoader
 			{
 			public:

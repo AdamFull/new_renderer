@@ -665,8 +665,7 @@ namespace edge
 						copy_buffer.src_buffer = &src_buffer;
 						copy_buffer.dst_buffer = dst_buffer;
 
-						copy_buffer.regions = update_info.regions;
-						copy_buffer.region_count = update_info.region_count;
+						copy_buffer.regions = std::span<BufferCopyRegion>(update_info.regions.data(), update_info.region_count);
 
 						command_list.CopyBuffer(copy_buffer);
 

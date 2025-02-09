@@ -410,8 +410,7 @@ namespace edge
 			Buffer* src_buffer{ nullptr };
 			Buffer* dst_buffer{ nullptr };
 
-			uint32_t region_count{ 0u };
-			std::array<BufferCopyRegion, 64ull> regions{};
+			std::span<BufferCopyRegion> regions;
 		};
 
 		struct BufferUpdateInfo

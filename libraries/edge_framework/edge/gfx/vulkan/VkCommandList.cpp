@@ -238,7 +238,7 @@ namespace edge
 				auto* dst_buffer = static_cast<VulkanBuffer*>(copy_info.dst_buffer);
 				vk_copy_info.dstBuffer = dst_buffer->GetHandle();
 
-				for (int32_t i = 0; i < copy_info.region_count; ++i)
+				for (int32_t i = 0; i < copy_info.regions.size(); ++i)
 				{
 					auto& region = copy_info.regions[i];
 					auto& vk_region = regions[vk_copy_info.regionCount++];
