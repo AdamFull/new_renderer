@@ -160,10 +160,9 @@ namespace engine
 			buffer_update_info.dst_buffer = *buffer_ptr;
 			buffer_update_info.update_size = data.size();
 
-			resource_loader.BeginBufferUpdate(buffer_update_info);
-			util::Copy(buffer_update_info.map_info.data, data.data(), data.size());
-			buffer_update_info.regions[buffer_update_info.region_count++] = { 0ull, 0ull, data.size() };
-			resource_loader.EndBufferUpdate(buffer_update_info);
+			auto* updater = resource_loader.BeginBufferUpdate(buffer_update_info);
+			updater->Update(data.data(), data.size());
+			resource_loader.EndBufferUpdate(&updater);
 		}
 
 

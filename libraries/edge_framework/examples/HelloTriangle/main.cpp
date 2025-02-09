@@ -310,13 +310,9 @@ public:
 		update_info.dst_buffer = vertex_buffer;
 		update_info.update_size = sizeof(vertices);
 
-		resource_loader->BeginBufferUpdate(update_info);
-
-		memcpy(update_info.map_info.data, &vertices[0], sizeof(vertices));
-		update_info.regions[0].size = sizeof(vertices);
-		update_info.region_count = 1u;
-
-		resource_loader->EndBufferUpdate(update_info);
+		auto* updater = resource_loader->BeginBufferUpdate(update_info);
+		updater->Update(&vertices[0], sizeof(vertices));
+		resource_loader->EndBufferUpdate(&updater);
 
 		return true;
     }

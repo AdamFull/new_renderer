@@ -7,6 +7,7 @@
 #include "../../../util/fs_helper.h"
 #include "../../../util/Logger.h"
 #include "../../../util/Profiler.h"
+#include "../../../util/util.h"
 
 #include "../../native_format/vk_format.h"
 
@@ -56,24 +57,12 @@ namespace edge
 				ResourceUploaderImpl& operator=(const ResourceUploaderImpl&) = delete;
 				ResourceUploaderImpl& operator=(ResourceUploaderImpl&&) = delete;
 
-				Buffer& RequestBuffer(size_t size, size_t* buffer_index = nullptr)
+				Buffer* RequestBuffer(size_t size)
 				{
-					if (buffer_index)
-					{
-						*buffer_index = staging_buffers.size();
-					}
-
 					BufferCreateInfo buffer_create_info{};
 					buffer_create_info.usage = BufferUsageFlag::eStagingBuffer;
 					buffer_create_info.size = size;
-
-					auto& new_buffer = staging_buffers.emplace_back(context.CreateBuffer(buffer_create_info));
-					return *new_buffer;
-				}
-
-				Buffer& GetBuffer(size_t buffer_index)
-				{
-					return *staging_buffers[buffer_index];
+					return staging_buffers.emplace_back(context.CreateBuffer(buffer_create_info));
 				}
 
 				CommandList& RequestCommandList()
@@ -315,6 +304,66 @@ namespace edge
 				std::array<ShaderInstance, 4ull> shader_instances;
 			};
 
+			
+			class BufferUpdaterImpl : public BufferUpdater
+			{
+			public:
+				BufferUpdaterImpl(Buffer* staging, Buffer* target) :
+					src_buffer{ staging }, dst_buffer{ target }
+				{
+					mapped_memory = src_buffer->Map();
+				}
+
+				~BufferUpdaterImpl()
+				{
+					if (mapped_memory)
+					{
+						src_buffer->Unmap();
+						mapped_memory = nullptr;
+					}
+				}
+
+				void Update(const void* data, uint64_t data_size, uint64_t dst_offset) override
+				{
+					copy_regions.emplace_back(src_offset, dst_offset, data_size);
+					engine::util::Copy(mapped_memory, src_offset, data, data_size, dst_offset);
+					//src_buffer->Update(data, data_size, src_offset);
+					src_offset += data_size;
+				}
+
+				void Flush(CommandList& command_list) override
+				{
+					// TODO: Add memory barrier befor copy for dst buffer
+					BufferBarrier buffer_barrier{};
+					buffer_barrier.buffer = dst_buffer;
+					buffer_barrier.src_state = ResourceStateFlag::eCopyDst | ResourceStateFlag::eCopySrc;
+					buffer_barrier.dst_state = ResourceStateFlag::eCopyDst;
+
+					ResourceBarrierInfo barrier_info{};
+					barrier_info.buffer_barriers = &buffer_barrier;
+					barrier_info.buffer_barrier_count = 1u;
+
+					command_list.ResourceBarrier(barrier_info);
+
+					CopyBufferInfo copy_buffer{};
+					copy_buffer.src_buffer = src_buffer;
+					copy_buffer.dst_buffer = dst_buffer;
+
+					copy_buffer.regions = std::span<BufferCopyRegion>(copy_regions);
+
+					command_list.CopyBuffer(copy_buffer);
+
+					mapped_memory = nullptr;
+				}
+			private:
+				uint8_t* mapped_memory{ nullptr };
+				Buffer* src_buffer{ nullptr };
+				uint64_t src_offset{ 0ull };
+
+				Buffer* dst_buffer{ nullptr };
+
+				std::vector<BufferCopyRegion> copy_regions{};
+			};
 
 
 			class ResourceLoaderImpl : public ResourceLoader
@@ -395,13 +444,13 @@ namespace edge
 						create_info.usage |= gfx::TextureUsageFlag::eStorage;
 
 						// Create staging buffer for uploading
-						auto& src_buffer = uploader.RequestBuffer(data_size);
+						auto* src_buffer = uploader.RequestBuffer(data_size);
 
 						// Copy image data to staging buffer
-						src_buffer.Update(rawdata, data_size);
+						src_buffer->Update(rawdata, data_size);
 						stbi_image_free(rawdata);
 
-						copy_texture.src_buffer = &src_buffer;
+						copy_texture.src_buffer = src_buffer;
 
 						auto& region = copy_texture.copy_regions[copy_texture.copy_region_count++];
 						region.size_x = width;
@@ -442,9 +491,9 @@ namespace edge
 						create_info.format = gfx::FormatFromVk(vk_format);
 
 						// Create staging buffer for uploading
-						auto& src_buffer = uploader.RequestBuffer(kTexture->dataSize);
-						src_buffer.Update(kTexture->pData, kTexture->dataSize);
-						copy_texture.src_buffer = &src_buffer;
+						auto src_buffer = uploader.RequestBuffer(kTexture->dataSize);
+						src_buffer->Update(kTexture->pData, kTexture->dataSize);
+						copy_texture.src_buffer = src_buffer;
 
 						// Collect image copy regions
 						auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
@@ -496,9 +545,9 @@ namespace edge
 						create_info.format = gfx::FormatFromVk(kTexture->vkFormat);
 
 						// Create staging buffer for uploading
-						auto& src_buffer = uploader.RequestBuffer(kTexture->dataSize);
-						src_buffer.Update(kTexture->pData, kTexture->dataSize);
-						copy_texture.src_buffer = &src_buffer;
+						auto src_buffer = uploader.RequestBuffer(kTexture->dataSize);
+						src_buffer->Update(kTexture->pData, kTexture->dataSize);
+						copy_texture.src_buffer = src_buffer;
 
 						// Collect image copy regions
 						auto num_layers = kTexture->isCubemap ? kTexture->numFaces : kTexture->numLayers;
@@ -564,9 +613,9 @@ namespace edge
 					copy_texture.dst_texture = texture;
 
 					auto& uploader = GetActiveUploader();
-					auto& src_buffer = uploader.RequestBuffer(texture_data.size());
-					src_buffer.Update(texture_data.data(), texture_data.size());
-					copy_texture.src_buffer = &src_buffer;
+					auto src_buffer = uploader.RequestBuffer(texture_data.size());
+					src_buffer->Update(texture_data.data(), texture_data.size());
+					copy_texture.src_buffer = src_buffer;
 
 					auto& copy_region = copy_texture.copy_regions[copy_texture.copy_region_count++];
 					copy_region.size_x = create_info.width;
@@ -607,73 +656,38 @@ namespace edge
 					return sampler_cache[sampler_hash] = context.CreateSampler(create_info);
 				}
 
-				void BeginBufferUpdate(BufferUpdateInfo& update_info) override
+				BufferUpdater* BeginBufferUpdate(const BufferUpdateInfo& update_info) override
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					BeginCommands();
-
 					Buffer* dst_buffer = update_info.dst_buffer;
-
 					if (!(dst_buffer->GetUsageFlags() & BufferUsageFlag::eGpuOnly))
 					{
-						EDGE_LOGW("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
-						update_info.map_info.data = dst_buffer->Map();
-						update_info.map_info.avaliable_size = dst_buffer->GetSize();
+						EDGE_LOGE("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
+						return nullptr;
 					}
-					else
-					{
-						uint32_t allocation_size = update_info.update_size > 0ull ? update_info.update_size : dst_buffer->GetSize();
 
-						auto& uploader = GetActiveUploader();
-						auto& src_buffer = uploader.RequestBuffer(allocation_size, &update_info.map_info.buffer_index);
+					BeginCommands();
+					auto& uploader = GetActiveUploader();
 
-						update_info.map_info.data = src_buffer.Map();
-						update_info.map_info.avaliable_size = src_buffer.GetSize();
-					}
+					uint32_t allocation_size = update_info.update_size > 0ull ? update_info.update_size : dst_buffer->GetSize();
+					return new BufferUpdaterImpl(uploader.RequestBuffer(allocation_size), update_info.dst_buffer);
 				}
 
-				void EndBufferUpdate(BufferUpdateInfo& update_info) override
+				void EndBufferUpdate(BufferUpdater** updater) override
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					Buffer* dst_buffer = update_info.dst_buffer;
-
-					if (update_info.map_info.avaliable_size == ~0ull)
-					{
-						dst_buffer->Unmap();
-					}
-					else
+					if (*updater)
 					{
 						auto& uploader = GetActiveUploader();
 						auto& command_list = uploader.RequestCommandList();
-						auto& src_buffer = uploader.GetBuffer(update_info.map_info.buffer_index);
 
-						// TODO: Add memory barrier befor copy for dst buffer
-						BufferBarrier buffer_barrier{};
-						buffer_barrier.buffer = dst_buffer;
-						buffer_barrier.src_state = ResourceStateFlag::eCopyDst | ResourceStateFlag::eCopySrc;
-						buffer_barrier.dst_state = ResourceStateFlag::eCopyDst;
+						(*updater)->Flush(command_list);
 
-						ResourceBarrierInfo barrier_info{};
-						barrier_info.buffer_barriers = &buffer_barrier;
-						barrier_info.buffer_barrier_count = 1u;
-
-						command_list.ResourceBarrier(barrier_info);
-
-						CopyBufferInfo copy_buffer{};
-						copy_buffer.src_buffer = &src_buffer;
-						copy_buffer.dst_buffer = dst_buffer;
-
-						copy_buffer.regions = std::span<BufferCopyRegion>(update_info.regions.data(), update_info.region_count);
-
-						command_list.CopyBuffer(copy_buffer);
-
-						update_info.map_info.buffer_index = ~0ull;
+						delete (*updater);
+						*updater = nullptr;
 					}
-
-					update_info.map_info.data = nullptr;
-					update_info.map_info.avaliable_size = 0ull;
 				}
 
 				SemaphoreSubmitInfo Submit(std::span<SemaphoreSubmitInfo> wait_infos) override

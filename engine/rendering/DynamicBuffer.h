@@ -105,26 +105,18 @@ namespace engine
 					edge::gfx::BufferUpdateInfo update_info{};
 					update_info.dst_buffer = buffer;
 					update_info.update_size = std::accumulate(merged_ranges.begin(), merged_ranges.end(), 0, [](uint64_t acc, const DirtyRange& item) { return acc + item.count * sizeof(_Ty); });
-					resource_loader.BeginBufferUpdate(update_info);
+					auto* updater = resource_loader.BeginBufferUpdate(update_info);
 
 					uint64_t src_offset{ 0ull };
 					for (const auto& range : merged_ranges)
 					{
 						auto range_offset = range.first * sizeof(_Ty);
-						auto range_size = range.count * sizeof(_Ty);;
+						auto range_size = range.count * sizeof(_Ty);
 
-						auto& region = update_info.regions[update_info.region_count++];
-						region.src_offset = src_offset;
-						region.dst_offset = range_offset;
-						region.size = range_size;
-					
-						uint8_t* range_start = reinterpret_cast<uint8_t*>(&memory[range.first]);
-						util::Copy(update_info.map_info.data, src_offset, memory.data(), range_size, range_offset);
-					
-						src_offset += range_size;
+						updater->Update(memory.data(), range_size, range_offset);
 					}
 					
-					resource_loader.EndBufferUpdate(update_info);
+					resource_loader.EndBufferUpdate(&updater);
 					dirty_ranges.clear();
 				}
 			}

@@ -417,16 +417,6 @@ namespace edge
 		{
 			Buffer* dst_buffer{ nullptr };
 			uint64_t update_size{ 0ull };
-
-			std::array<BufferCopyRegion, 64ull> regions{};
-			uint32_t region_count{};
-
-			struct
-			{
-				uint8_t* data{ nullptr };
-				uint64_t avaliable_size{ 0ull };
-				size_t buffer_index{ ~0ull };
-			} map_info;
 		};
 
 		struct TextureCopyRegion
