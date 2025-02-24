@@ -23,7 +23,7 @@ namespace edge
 
 			virtual Semaphore* CreateSemaphore() = 0;
 
-			virtual const Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) = 0;
+			virtual const Queue* RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) = 0;
 
 			virtual Swapchain* CreateSwapchain(const SwapChainCreateInfo& create_info) = 0;
 

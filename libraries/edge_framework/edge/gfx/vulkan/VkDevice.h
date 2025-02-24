@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 
-#include "VkQueue.h"
+#include "VkQueueFamilyManager.h"
 
 namespace edge
 {
@@ -36,11 +36,7 @@ namespace edge
 
 				PhysicalDevice const& GetGpu() const;
 
-				VulkanQueue const& GetQueue(uint32_t queue_family_index, uint32_t queue_index) const;
-
-				VulkanQueue const& GetQueueByFlags(vk::QueueFlags queue_flags, uint32_t queue_index) const;
-
-				VulkanQueue const& GetQueueByPresent(uint32_t queue_index) const;
+				VulkanQueue const& GetQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) const;
 
 				size_t GetQueueCount() const;
 
@@ -69,7 +65,7 @@ namespace edge
 
 				std::vector<const char*> enabled_extensions{};
 
-				std::vector<std::vector<VulkanQueue>> queues;
+				std::vector<QueueFamilyManager> queue_families;
 			};
 		}
 	}

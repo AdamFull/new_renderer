@@ -85,7 +85,7 @@ namespace engine
 			window{ *window }
 		{
 			// Select queue that can present
-			queue = context.RequestQueue(edge::gfx::QueueTypeFlag::ePresent);
+			queue = context.RequestQueue(edge::gfx::QueueTypeFlag::ePresent | edge::gfx::QueueTypeFlag::eGraphics);
 			
 			edge::gfx::SwapChainCreateInfo swapchain_ci{};
 			swapchain_ci.window = window;

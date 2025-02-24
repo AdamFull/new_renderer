@@ -17,59 +17,41 @@ namespace edge
 	{
 		namespace vulkan
 		{
-			VulkanQueue::VulkanQueue(Device& device, uint32_t family_index, vk::QueueFamilyProperties properties, vk::Bool32 can_present, uint32_t index) :
-				VulkanResource{ nullptr, device.GetAllocationCallbacks() },
-				device{ device },
-				family_index{ family_index },
-				index{ index },
-				can_present{ can_present },
-				properties{ properties }
+			VulkanQueue::VulkanQueue(QueueFamilyManager* family_manager, vk::Queue queue) :
+				VulkanResource{ queue, family_manager->GetDevice().GetAllocationCallbacks() },
+				family_manager{ family_manager }
 			{
-				handle = Handle(device).getQueue(family_index, index);
 			}
 
 			VulkanQueue::VulkanQueue(VulkanQueue&& other) :
 				VulkanResource{ std::move(other) },
-				device(other.device),
-				family_index(std::exchange(other.family_index, {})),
-				index(std::exchange(other.index, 0)),
-				can_present(std::exchange(other.can_present, false)),
-				properties(std::exchange(other.properties, {}))
+				family_manager{ std::exchange(other.family_manager, nullptr) }
 			{
 			}
 
-			const Device& VulkanQueue::GetDevice() const
+			QueueFamilyManager const& VulkanQueue::GetFamily() const
 			{
-				return device;
+				return *family_manager;
 			}
 
-			Device& VulkanQueue::GetDevice()
+			void VulkanQueue::SetFamily(QueueFamilyManager* family)
 			{
-				return device;
+				family_manager = family;
 			}
 
-			uint32_t VulkanQueue::GetFamilyIndex() const
+			bool VulkanQueue::IsUsed() const
 			{
-				return family_index;
+				return used;
 			}
 
-			uint32_t VulkanQueue::GetIndex() const
+			void VulkanQueue::SetUsed(bool value) const
 			{
-				return index;
-			}
-
-			const vk::QueueFamilyProperties& VulkanQueue::GetProperties() const
-			{
-				return properties;
-			}
-
-			vk::Bool32 VulkanQueue::SupportPresent() const
-			{
-				return can_present;
+				used = value;
 			}
 
 			void VulkanQueue::SetResourceName(std::string_view name)
 			{
+				auto& device = family_manager->GetDevice();
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);
 			}

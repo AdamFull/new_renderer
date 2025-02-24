@@ -33,7 +33,7 @@ namespace edge
 				return nullptr;
 			}
 
-			const Queue* D3D12Context::RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index)
+			const Queue* D3D12Context::RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags)
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;

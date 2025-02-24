@@ -246,33 +246,9 @@ namespace edge
 				return new VulkanSemaphore(*device);
 			}
 
-			const Queue* VulkanContext::RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index)
+			const Queue* VulkanContext::RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue)
 			{
-				const Queue* requested_queue{ nullptr };
-				if (queue_type_flags & QueueTypeFlag::ePresent)
-				{
-					requested_queue = &device->GetQueueByPresent(queue_index);
-				}
-				else
-				{
-					vk::QueueFlags queue_flags{};
-					if (queue_type_flags & QueueTypeFlag::eGraphics)
-					{
-						queue_flags |= vk::QueueFlagBits::eGraphics;
-					}
-					if (queue_type_flags & QueueTypeFlag::eCompute)
-					{
-						queue_flags |= vk::QueueFlagBits::eCompute;
-					}
-					if (queue_type_flags & QueueTypeFlag::eTransfer)
-					{
-						queue_flags |= vk::QueueFlagBits::eTransfer;
-					}
-
-					requested_queue = &device->GetQueueByFlags(queue_flags, queue_index);
-				}
-
-				return requested_queue;
+				return &device->GetQueue(include_queue, exclude_queue);
 			}
 
 			Swapchain* VulkanContext::CreateSwapchain(const SwapChainCreateInfo& create_info)

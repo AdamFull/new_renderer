@@ -141,18 +141,11 @@ namespace edge
 				// Need to load volk for all the not-yet Vulkan-Hpp calls
 				volkLoadDevice(handle);
 
-				queues.resize(queue_family_properties.size());
-
 				for (uint32_t queue_family_index = 0U; queue_family_index < queue_family_properties.size(); ++queue_family_index)
 				{
 					vk::QueueFamilyProperties const& queue_family_property = queue_family_properties[queue_family_index];
-
 					vk::Bool32 present_supported = Handle(gpu).getSurfaceSupportKHR(queue_family_index, surface);
-
-					for (uint32_t queue_index = 0U; queue_index < queue_family_property.queueCount; ++queue_index)
-					{
-						queues[queue_family_index].emplace_back(*this, queue_family_index, queue_family_property, present_supported, queue_index);
-					}
+					queue_families.emplace_back(*this, queue_family_index, queue_family_property, present_supported);
 				}
 			}
 
@@ -169,40 +162,14 @@ namespace edge
 				return gpu;
 			}
 
-			VulkanQueue const& Device::GetQueue(uint32_t queue_family_index, uint32_t queue_index) const
+			VulkanQueue const& Device::GetQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) const
 			{
-				return queues[queue_family_index][queue_index];
-			}
-
-			VulkanQueue const& Device::GetQueueByFlags(vk::QueueFlags required_queue_flags, uint32_t queue_index) const
-			{
-				for (size_t queue_family_index = 0U; queue_family_index < queues.size(); ++queue_family_index)
+				for (auto const& family : queue_families)
 				{
-					VulkanQueue const& first_queue = queues[queue_family_index][0];
-
-					vk::QueueFlags queue_flags = first_queue.GetProperties().queueFlags;
-					uint32_t queue_count = first_queue.GetProperties().queueCount;
-
-					if (((queue_flags & required_queue_flags) == required_queue_flags) && queue_index < queue_count)
+					uint32_t queue_index{ 0u };
+					if (family.LookAtQueue(include_flags, exclude_flags, queue_index))
 					{
-						return queues[queue_family_index][queue_index];
-					}
-				}
-
-				throw std::runtime_error("Queue not found");
-			}
-
-			VulkanQueue const& Device::GetQueueByPresent(uint32_t queue_index) const
-			{
-				for (uint32_t queue_family_index = 0U; queue_family_index < queues.size(); ++queue_family_index)
-				{
-					VulkanQueue const& first_queue = queues[queue_family_index][0];
-
-					uint32_t queue_count = first_queue.GetProperties().queueCount;
-
-					if (first_queue.SupportPresent() && queue_index < queue_count)
-					{
-						return queues[queue_family_index][queue_index];
+						return family.GetQueue(queue_index);
 					}
 				}
 
@@ -211,24 +178,12 @@ namespace edge
 
 			size_t Device::GetQueueCount() const
 			{
-				return queues.size();
+				return queue_families.size();
 			}
 
 			VulkanQueue const& Device::GetSuitableGraphicsQueue() const
 			{
-				for (size_t queue_family_index = 0U; queue_family_index < queues.size(); ++queue_family_index)
-				{
-					VulkanQueue const& first_queue = queues[queue_family_index][0];
-
-					uint32_t queue_count = first_queue.GetProperties().queueCount;
-
-					if (first_queue.SupportPresent() && 0 < queue_count)
-					{
-						return queues[queue_family_index][0];
-					}
-				}
-
-				return GetQueueByFlags(vk::QueueFlagBits::eGraphics, 0);
+				return GetQueue(QueueTypeFlag::eGraphics | QueueTypeFlag::ePresent, 0);
 			}
 
 			bool Device::IsExtensionSupported(const char* extension) const

@@ -394,7 +394,7 @@ namespace edge
 					context{ *create_info.context },
 					fs{ *create_info.filesystem_wrapper }
 				{
-					queue = context.RequestQueue(QueueTypeFlag::eGraphics, 1u);
+					queue = context.RequestQueue(QueueTypeFlag::eGraphics);
 
 					//assert(k_max_upload_frames > upload_frame_count);
 

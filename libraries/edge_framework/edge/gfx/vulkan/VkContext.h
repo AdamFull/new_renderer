@@ -37,7 +37,7 @@ namespace edge
 
 				Semaphore* CreateSemaphore() override;
 
-				const Queue* RequestQueue(QueueTypeFlags queue_type_flags, uint32_t queue_index = 0u) override;
+				const Queue* RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) override;
 
 				Swapchain* CreateSwapchain(const SwapChainCreateInfo& create_info) override;
 

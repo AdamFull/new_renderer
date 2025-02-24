@@ -10,8 +10,8 @@ namespace edge
 		{
 			VulkanCommandPool::VulkanCommandPool(const VulkanQueue& queue, CommandPoolResetMode reset_mode) :
 				VulkanResource{ nullptr, queue.GetAllocationCallbacks() },
-				device{ queue.GetDevice() },
-				queue_family_index{ queue.GetFamilyIndex() },
+				device{ queue.GetFamily().GetDevice() },
+				queue_family_index{ queue.GetFamily().GetFamilyIndex() },
 				reset_mode{ reset_mode }
 			{
 				vk::CommandPoolCreateInfo create_info{};
