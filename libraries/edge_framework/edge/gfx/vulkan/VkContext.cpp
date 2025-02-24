@@ -246,9 +246,9 @@ namespace edge
 				return new VulkanSemaphore(*device);
 			}
 
-			const Queue* VulkanContext::RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue)
+			Queue* VulkanContext::RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue)
 			{
-				return &device->GetQueue(include_queue, exclude_queue);
+				return device->RequestQueue(include_queue, exclude_queue);
 			}
 
 			Swapchain* VulkanContext::CreateSwapchain(const SwapChainCreateInfo& create_info)

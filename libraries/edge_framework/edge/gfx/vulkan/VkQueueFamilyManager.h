@@ -25,9 +25,7 @@ namespace edge
 				Device const& GetDevice() const;
 				Device& GetDevice();
 
-				VulkanQueue const& GetQueue(uint32_t index) const;
-
-				bool LookAtQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags, uint32_t& queue_index) const;
+				VulkanQueue* LookUpQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags);
 
 				uint32_t GetFamilyIndex() const;
 				QueueTypeFlags GetFlags() const;

@@ -162,28 +162,20 @@ namespace edge
 				return gpu;
 			}
 
-			VulkanQueue const& Device::GetQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) const
+			VulkanQueue* Device::RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags)
 			{
-				for (auto const& family : queue_families)
+				for (auto& family : queue_families)
 				{
-					uint32_t queue_index{ 0u };
-					if (family.LookAtQueue(include_flags, exclude_flags, queue_index))
-					{
-						return family.GetQueue(queue_index);
-					}
+					if (auto* queue = family.LookUpQueue(include_flags, exclude_flags))
+						return queue;
 				}
 
-				throw std::runtime_error("Queue not found");
+				return nullptr;
 			}
 
 			size_t Device::GetQueueCount() const
 			{
 				return queue_families.size();
-			}
-
-			VulkanQueue const& Device::GetSuitableGraphicsQueue() const
-			{
-				return GetQueue(QueueTypeFlag::eGraphics | QueueTypeFlag::ePresent, 0);
 			}
 
 			bool Device::IsExtensionSupported(const char* extension) const

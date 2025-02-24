@@ -44,7 +44,7 @@ namespace edge
 				return used;
 			}
 
-			void VulkanQueue::SetUsed(bool value) const
+			void VulkanQueue::SetUsed(bool value)
 			{
 				used = value;
 			}

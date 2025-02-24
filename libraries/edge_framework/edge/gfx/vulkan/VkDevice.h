@@ -36,15 +36,9 @@ namespace edge
 
 				PhysicalDevice const& GetGpu() const;
 
-				VulkanQueue const& GetQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) const;
+				VulkanQueue* RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags);
 
 				size_t GetQueueCount() const;
-
-				/**
-				 * @brief Finds a suitable graphics queue to submit to
-				 * @return The first present supported queue, otherwise just any graphics queue
-				 */
-				VulkanQueue const& GetSuitableGraphicsQueue() const;
 
 				bool IsExtensionSupported(const char* extension) const;
 
@@ -65,7 +59,7 @@ namespace edge
 
 				std::vector<const char*> enabled_extensions{};
 
-				std::vector<QueueFamilyManager> queue_families;
+				std::vector<QueueFamilyManager> queue_families{};
 			};
 		}
 	}

@@ -27,7 +27,7 @@ namespace edge
 				void SetFamily(QueueFamilyManager* family);
 
 				bool IsUsed() const;
-				void SetUsed(bool value) const;
+				void SetUsed(bool value);
 
 				void SetResourceName(std::string_view name) override;
 
@@ -37,7 +37,7 @@ namespace edge
 			private:
 				QueueFamilyManager* family_manager{ nullptr };
 
-				mutable bool used{ false };
+				bool used{ false };
 			};
 		}
 	}

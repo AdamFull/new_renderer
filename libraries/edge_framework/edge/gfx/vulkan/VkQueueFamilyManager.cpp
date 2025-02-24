@@ -54,32 +54,24 @@ namespace edge
 				return *device;
 			}
 
-			VulkanQueue const& QueueFamilyManager::GetQueue(uint32_t index) const
-			{
-				return queues[index];
-			}
-
-			bool QueueFamilyManager::LookAtQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags, uint32_t& queue_index) const
+			VulkanQueue* QueueFamilyManager::LookUpQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags)
 			{
 				bool is_contain_include_flags = (flags & include_flags) == include_flags;
 				bool is_contain_exclude_flags = (flags & exclude_flags) != 0;
 
 				if (is_contain_include_flags && !is_contain_exclude_flags)
 				{
-					queue_index = 0u;
-					for (const auto& queue : queues)
+					for (auto& queue : queues)
 					{
 						if (!queue.IsUsed())
 						{
 							queue.SetUsed(true);
-							return true;
+							return &queue;
 						}
-
-						++queue_index;
 					}
 				}
 
-				return false;
+				return nullptr;
 			}
 
 			uint32_t QueueFamilyManager::GetFamilyIndex() const
