@@ -7,7 +7,7 @@ namespace engine
 {
 	namespace sfx
 	{
-		std::unique_ptr<Context> CreateContext(const ContextCreateInfo& create_info)
+		std::unique_ptr<IContext> CreateContext(const ContextCreateInfo& create_info)
 		{
 			switch (create_info.audio_api)
 			{

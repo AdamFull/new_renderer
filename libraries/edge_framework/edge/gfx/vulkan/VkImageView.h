@@ -22,11 +22,33 @@ namespace edge
 				ImageView& operator=(const ImageView&) = delete;
 				ImageView& operator=(ImageView&&) = delete;
 
-				vk::Format GetFormat() const;
-				vk::ImageViewType GetType() const;
-				vk::ImageSubresourceLayers GetSubresourceLayers() const;
-				vk::ImageSubresourceRange GetSubresourceRange() const;
-				vk::ImageAspectFlags GetAspectMask() const;
+				auto GetFormat() const noexcept -> vk::Format
+				{
+					return create_info.format;
+				}
+
+				auto GetType() const noexcept -> vk::ImageViewType
+				{
+					return create_info.viewType;
+				}
+
+				auto GetSubresourceLayers() const noexcept -> vk::ImageSubresourceLayers
+				{
+					return vk::ImageSubresourceLayers(create_info.subresourceRange.aspectMask,
+						create_info.subresourceRange.baseMipLevel,
+						create_info.subresourceRange.baseArrayLayer,
+						create_info.subresourceRange.layerCount);
+				}
+
+				auto GetSubresourceRange() const noexcept -> vk::ImageSubresourceRange
+				{
+					return create_info.subresourceRange;
+				}
+
+				auto GetAspectMask() const noexcept -> vk::ImageAspectFlags
+				{
+					return create_info.subresourceRange.aspectMask;
+				}
 			private:
 				Device& device;
 

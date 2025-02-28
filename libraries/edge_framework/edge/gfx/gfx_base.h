@@ -7,22 +7,22 @@ namespace edge
 {
 	namespace gfx
 	{
-		class GFXResource
+		class IGFXResource
 		{
 		public:
-			virtual ~GFXResource() = default;
+			virtual ~IGFXResource() = default;
 
-			virtual void SetResourceName(std::string_view name) = 0;
+			virtual void SetResourceName(std::string_view name) const noexcept = 0;
 
-			virtual ResourceType GetResourceType() = 0;
+			[[nodiscard]] virtual auto GetResourceType() const noexcept -> ResourceType = 0;
 		};
 
-		class RenderResource : public GFXResource
+		class IRenderResource : public IGFXResource
 		{
 		public:
-			virtual ~RenderResource() = default;
+			~IRenderResource() override = default;
 
-			ResourceStateFlags GetResourceState() const
+			[[nodiscard]] auto GetResourceState() const noexcept -> ResourceStateFlags 
 			{
 				return state;
 			}
@@ -30,12 +30,12 @@ namespace edge
 			ResourceStateFlags state{ ResourceStateFlag::eUndefined };
 		};
 
-		class Fence : public GFXResource
+		class IFence : public IGFXResource
 		{
 		public:
-			virtual ~Fence() = default;
+			~IFence() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final 
 			{
 				return ResourceType::eFence;
 			}
@@ -44,78 +44,78 @@ namespace edge
 			virtual void Reset() = 0;
 		};
 
-		class Semaphore : public GFXResource
+		class ISemaphore : public IGFXResource
 		{
 		public:
-			virtual ~Semaphore() = default;
+			~ISemaphore() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eSemaphore;
 			}
 		};
 
-		class Queue : public GFXResource
+		class IQueue : public IGFXResource
 		{
 		public:
-			virtual ~Queue() = default;
+			~IQueue() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eQueue;
 			}
 
-			virtual void Submit(const SubmitInfo& submit_info, Fence* fence) const = 0;
+			virtual void Submit(const SubmitInfo& submit_info, IFence* fence) const = 0;
 			virtual void Present(const PresentInfo& present_info) const = 0;
 			virtual void WaitIdle() const = 0;
 		};
 
-		class Swapchain : public GFXResource
+		class ISwapchain : public IGFXResource
 		{
 		public:
-			virtual ~Swapchain() = default;
+			~ISwapchain() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eSwapchain;
 			}
 
-			virtual uint32_t GetImageCount() const = 0;
-			virtual Format GetImageFormat() const = 0;
+			[[nodiscard]] virtual auto GetImageCount() const noexcept -> uint32_t = 0;
+			[[nodiscard]] virtual auto GetImageFormat() const noexcept -> Format = 0;
 
-			virtual const uint32_t& GetWidth() const = 0;
-			virtual const uint32_t& GetHeight() const = 0;
-
+			[[nodiscard]] virtual auto GetWidth() const noexcept -> uint32_t const& = 0;
+			[[nodiscard]] virtual auto GetHeight() const noexcept -> uint32_t const& = 0;
+				
 			virtual void GetSurfaceExtent(uint32_t& width, uint32_t& height) = 0;
 
-			virtual bool AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) = 0;
+			[[nodiscard]] virtual auto AcquireNextImage(ISemaphore* signal_semaphore, IFence* fence, uint32_t* image_index) -> bool = 0;
 		};
 
-		class Buffer : public RenderResource
+		class IBuffer : public IRenderResource
 		{
 		public:
-			virtual ~Buffer() = default;
+			~IBuffer() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eBuffer;
 			}
 
-			virtual uint8_t* Map() = 0;
-			virtual void Unmap() = 0;
+			[[nodiscard]] virtual auto Map() -> uint8_t* = 0;
+			virtual void Unmap() noexcept = 0;
 
-			virtual uint64_t Update(const void* data, uint64_t size, uint64_t offset = 0ull) = 0;
+			[[nodiscard]] virtual auto Update(const void* data, uint64_t size, uint64_t offset = 0ull) -> uint64_t = 0;
 
-			virtual uint64_t GetSize() const = 0;
-			virtual uint64_t GetAddress() const = 0;
+			[[nodiscard]] virtual auto GetSize() const noexcept -> uint64_t = 0;
+			[[nodiscard]] virtual auto GetAddress() const -> uint64_t = 0;
 
-			virtual BufferUsageFlags GetUsageFlags() const = 0;
+			[[nodiscard]] virtual auto GetUsageFlags() const noexcept -> BufferUsageFlags = 0;
 		};
 
 		class BufferSuballocation final
 		{
 		public:
-			BufferSuballocation(Buffer& buffer, uint64_t offset, uint64_t size) :
+			BufferSuballocation(IBuffer& buffer, uint64_t offset, uint64_t size) :
 				buffer{ buffer },
 				offset{ offset },
 				size{ size }
@@ -148,32 +148,32 @@ namespace edge
 				buffer.Update(data, data_size, offset);
 			}
 
-			Buffer& GetBuffer()
+			[[nodiscard]] auto GetBuffer() noexcept -> IBuffer&
 			{
 				return buffer;
 			}
 
-			uint64_t GetSize() const
+			[[nodiscard]] auto GetSize() const noexcept -> uint64_t
 			{
 				return size;
 			}
 
-			uint64_t GetOffset() const
+			[[nodiscard]] auto GetOffset() const noexcept -> uint64_t
 			{
 				return offset;
 			}
 		private:
-			Buffer& buffer;
+			IBuffer& buffer;
 			uint64_t size{};
 			uint64_t offset{};
 		};
 
-		class CommandList : public GFXResource
+		class ICommandList : public IGFXResource
 		{
 		public:
-			virtual ~CommandList() = default;
+			~ICommandList() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eCommandList;
 			}
@@ -184,98 +184,98 @@ namespace edge
 			virtual void End() = 0;
 
 			// Dynamic states
-			virtual void SetViewport(float x, float y, float width, float height, float min_depth, float max_depth) = 0;
-			virtual void SerScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;
+			virtual void SetViewport(float x, float y, float width, float height, float min_depth, float max_depth) const = 0;
+			virtual void SerScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const = 0;
 
-			virtual void BindPipeline(Pipeline* pipeline) = 0;
-			virtual void BindDescriptors(const BindDescriptorsInfo& bind_info) = 0;
-			virtual void PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data) = 0;
+			virtual void BindPipeline(IPipeline* pipeline) const = 0;
+			virtual void BindDescriptors(const BindDescriptorsInfo& bind_info) const = 0;
+			virtual void PushConstants(IShader* shader, IRootSignature* root_signature, std::span<const char> constant_data) const = 0;
 
-			virtual void BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset) = 0;
-			virtual void BindVertexBuffers(std::span<Buffer*> vertex_buffers, std::span<const uint32_t> strides, std::span<const uint64_t> offsets) = 0;
+			virtual void BindIndexBuffer(IBuffer* index_buffer, IndexType index_type, uint64_t offset) const = 0;
+			virtual void BindVertexBuffers(std::span<IBuffer*> vertex_buffers, std::span<const uint32_t> strides, std::span<const uint64_t> offsets) const = 0;
 
-			virtual void Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) = 0;
-			virtual void DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) = 0;
-			virtual void DrawIndirect(const IndirectDrawCommand& draw_command) = 0;
+			virtual void Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) const = 0;
+			virtual void DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) const = 0;
+			virtual void DrawIndirect(const IndirectDrawCommand& draw_command) const = 0;
 
-			//virtual void WriteTimestamp(QueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag) = 0;
+			//virtual void WriteTimestamp(IQueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag) = 0;
 
-			virtual void Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) = 0;
-			virtual void DispatchIndirect(Buffer* argument_buffer, uint64_t argument_offset = 0ull) = 0;
+			virtual void Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) const = 0;
+			virtual void DispatchIndirect(IBuffer* argument_buffer, uint64_t argument_offset = 0ull) const = 0;
 
-			virtual void CopyBuffer(const CopyBufferInfo& copy_info) = 0;
-			virtual void CopyTexture(const CopyTextureInfo& copy_info) = 0;
+			virtual void CopyBuffer(const CopyBufferInfo& copy_info) const = 0;
+			virtual void CopyTexture(const CopyTextureInfo& copy_info) const = 0;
 
-			virtual void ResourceBarrier(const ResourceBarrierInfo& barrier) = 0;
+			virtual void ResourceBarrier(const ResourceBarrierInfo& barrier) const = 0;
 
-			virtual void ResetQuery(QueryPool* query_pool, uint32_t first_query, uint32_t query_count) = 0;
-			virtual void BeginQuery(QueryPool* query_pool, uint32_t query) = 0;
-			virtual void EndQuery(QueryPool* query_pool, uint32_t query) = 0;
+			virtual void ResetQuery(IQueryPool* query_pool, uint32_t first_query, uint32_t query_count) const = 0;
+			virtual void BeginQuery(IQueryPool* query_pool, uint32_t query) const = 0;
+			virtual void EndQuery(IQueryPool* query_pool, uint32_t query) const = 0;
 
-			virtual void BeginRendering(const RenderingInfo& rendering_info) = 0;
-			virtual void EndRendering() = 0;
+			virtual void BeginRendering(const RenderingInfo& rendering_info) const = 0;
+			virtual void EndRendering() const = 0;
 
-			virtual void BeginMarker(std::string_view name, uint32_t color) = 0;
-			virtual void InsertMarker(std::string_view name, uint32_t color) = 0;
-			virtual void EndMarker() = 0;
+			virtual void BeginMarker(std::string_view name, uint32_t color) const = 0;
+			virtual void InsertMarker(std::string_view name, uint32_t color) const = 0;
+			virtual void EndMarker() const = 0;
 		};
 
-		class CommandPool : public GFXResource
+		class ICommandPool : public IGFXResource
 		{
 		public:
-			virtual ~CommandPool() = default;
+			~ICommandPool() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eCommandPool;
 			}
 
-			virtual CommandList* Allocate(bool secondary = false) = 0;
-			virtual void Reset() = 0;
+			[[nodiscard]] virtual auto Allocate(bool secondary = false) -> ICommandList* = 0;
+			virtual void Reset() noexcept = 0;
 		};
 
-		class Texture : public RenderResource
+		class ITexture : public IRenderResource
 		{
 		public:
-			virtual ~Texture() = default;
+			~ITexture() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eTexture;
 			}
 
-			virtual uint32_t GetWidth() const = 0;
-			virtual uint32_t GetHeight() const = 0;
-			virtual uint32_t GetDepth() const = 0;
+			[[nodiscard]] virtual auto GetWidth() const noexcept -> uint32_t = 0;
+			[[nodiscard]] virtual auto GetHeight() const noexcept -> uint32_t = 0;
+			[[nodiscard]] virtual auto GetDepth() const noexcept -> uint32_t = 0;
 
-			virtual uint32_t GetMipLevelCount() const = 0;
-			virtual uint32_t GetArrayLayerCount() const = 0;
+			[[nodiscard]] virtual auto GetMipLevelCount() const noexcept -> uint32_t = 0;
+			[[nodiscard]] virtual auto GetArrayLayerCount() const noexcept -> uint32_t = 0;
 
-			virtual Format GetFormat() const = 0;
+			[[nodiscard]] virtual auto GetFormat() const noexcept -> Format = 0;
 		};
 
-		class Sampler : public GFXResource
+		class ISampler : public IGFXResource
 		{
 		public:
-			virtual ~Sampler() = default;
+			~ISampler() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eSampler;
 			}
 		};
 
-		class Shader : public GFXResource
+		class IShader : public IGFXResource
 		{
 		public:
-			virtual ~Shader() = default;
+			~IShader() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eShader;
 			}
 
-			ShaderReflection const& GetReflection() const
+			[[nodiscard]] auto GetReflection() const noexcept -> ShaderReflection const&
 			{
 				return reflection;
 			}
@@ -284,44 +284,44 @@ namespace edge
 			ShaderReflection reflection{};
 		};
 
-		class ShaderEffect
+		class IShaderEffect
 		{
 		public:
-			virtual ~ShaderEffect() = default;
+			virtual ~IShaderEffect() = default;
 
-			virtual Shader* GetShader() = 0;
+			[[nodiscard]] virtual auto GetShader() noexcept -> IShader* = 0;
 		};
 
-		class RootSignature : public GFXResource
+		class IRootSignature : public IGFXResource
 		{
 		public:
-			virtual ~RootSignature() = default;
+			~IRootSignature() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eRootSignature;
 			}
 		};
 
-		class Pipeline : public GFXResource
+		class IPipeline : public IGFXResource
 		{
 		public:
-			virtual ~Pipeline() = default;
+			~IPipeline() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::ePipeline;
 			}
 
-			virtual PipelineType GetType() const = 0;
+			[[nodiscard]] virtual auto GetType() const noexcept -> PipelineType = 0;
 		};
 
-		class PipelineCache : public GFXResource
+		class IPipelineCache : public IGFXResource
 		{
 		public:
-			virtual ~PipelineCache() = default;
+			~IPipelineCache() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::ePipelineCache;
 			}
@@ -329,12 +329,12 @@ namespace edge
 			virtual void GetData(size_t& data_size, void* data_ptr) = 0;
 		};
 
-		class ResourceDescriptor : public GFXResource
+		class IResourceDescriptor : public IGFXResource
 		{
 		public:
-			virtual ~ResourceDescriptor() = default;
+			~IResourceDescriptor() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eResourceDescriptor;
 			}
@@ -345,41 +345,41 @@ namespace edge
 			virtual void Flush() = 0;
 		};
 
-		class DescriptorAllocator : public GFXResource
+		class IDescriptorAllocator : public IGFXResource
 		{
 		public:
-			virtual ~DescriptorAllocator() = default;
+			~IDescriptorAllocator() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eDescriptorAllocator;
 			}
 
 			virtual void Reset() = 0;
-			virtual ResourceDescriptor* AllocateDescriptors(RootSignature* root_signature) = 0;
+			[[nodiscard]] virtual auto AllocateDescriptors(IRootSignature* root_signature) -> IResourceDescriptor* = 0;
 		};
 
-		class SharedDescriptor : public GFXResource
+		class ISharedDescriptor : public IGFXResource
 		{
 		public:
-			virtual ~SharedDescriptor() = default;
+			~ISharedDescriptor() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
-				return ResourceType::eDescriptorAllocator;
+				return ResourceType::eSharedDescriptor;
 			}
 
 			virtual void Reset() = 0;
-			virtual ResourceDescriptor* GetLatestDescriptors() = 0;
-			virtual ResourceDescriptor* RequestDescriptors() = 0;
+			[[nodiscard]] virtual auto GetLatestDescriptors() const noexcept -> IResourceDescriptor* = 0;
+			[[nodiscard]] virtual auto RequestDescriptors() -> IResourceDescriptor* = 0;
 		};
 
-		class QueryPool : public GFXResource
+		class IQueryPool : public IGFXResource
 		{
 		public:
-			virtual ~QueryPool() = default;
+			~IQueryPool() override = default;
 
-			ResourceType GetResourceType() override
+			[[nodiscard]] auto GetResourceType() const noexcept -> ResourceType override final
 			{
 				return ResourceType::eQueryPool;
 			}

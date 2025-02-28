@@ -244,12 +244,12 @@ namespace engine
 			
 		}
 
-		uint32_t Renderer::AddRenderResource(std::string_view path, edge::gfx::Sampler* sampler)
+		uint32_t Renderer::AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler)
 		{
 			return render_context->AddResource(path, sampler);
 		}
 
-		uint32_t Renderer::AddRenderResource(const TextureResourceCreateInfo& create_info, edge::gfx::Sampler* sampler)
+		uint32_t Renderer::AddRenderResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler)
 		{
 			return render_context->AddResource(create_info, sampler);
 		}
@@ -333,7 +333,7 @@ namespace engine
 			return *resource_loader;
 		}
 
-		edge::gfx::Context& Renderer::GetContext()
+		edge::gfx::IContext& Renderer::GetContext()
 		{
 			return *gfx_context;
 		}
@@ -414,7 +414,7 @@ namespace engine
 
 			// Create default samplers
 
-			edge::gfx::Sampler* nearest_sampler{ nullptr };
+			edge::gfx::ISampler* nearest_sampler{ nullptr };
 			{
 				edge::gfx::SamplerCreateInfo create_info{};
 				create_info.min_filter = edge::gfx::Filter::eNearest;
@@ -424,7 +424,7 @@ namespace engine
 				nearest_sampler = resource_loader->GetSampler(create_info);
 			}
 
-			edge::gfx::Sampler* linear_sampler{ nullptr };
+			edge::gfx::ISampler* linear_sampler{ nullptr };
 			{
 				edge::gfx::SamplerCreateInfo create_info{};
 				create_info.min_filter = edge::gfx::Filter::eLinear;
@@ -434,7 +434,7 @@ namespace engine
 				linear_sampler = resource_loader->GetSampler(create_info);
 			}
 
-			edge::gfx::Sampler* shadow_sampler{ nullptr };
+			edge::gfx::ISampler* shadow_sampler{ nullptr };
 			{
 				edge::gfx::SamplerCreateInfo create_info{};
 				create_info.min_filter = edge::gfx::Filter::eLinear;
@@ -484,7 +484,7 @@ namespace engine
 				create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 				create_info.resizable = false;
 
-				edge::gfx::Sampler* special_sampler{ nullptr };
+				edge::gfx::ISampler* special_sampler{ nullptr };
 				{
 					edge::gfx::SamplerCreateInfo create_info_s{};
 					create_info_s.min_filter = edge::gfx::Filter::eLinear;
@@ -732,7 +732,7 @@ namespace engine
 
 				create_info.draw_callback = [this, 
 					brdf_lut_target
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 
@@ -757,7 +757,7 @@ namespace engine
 				create_info.draw_callback = [this, 
 					irradiance_cube_target, 
 					casual_day_4k_cube
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 
@@ -787,7 +787,7 @@ namespace engine
 				create_info.draw_callback = [this,
 					prefiltered_cube_target, 
 					casual_day_4k_cube
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 
@@ -840,7 +840,7 @@ namespace engine
 
 				create_info.draw_callback = [this,
 					indirect_count_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 
@@ -871,7 +871,7 @@ namespace engine
 
 				create_info.draw_callback = [this,
 					alive_bitset_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 
@@ -907,7 +907,7 @@ namespace engine
 				create_info.draw_callback = [this,
 					alive_bitset_buffer,
 					alive_offsets_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -949,7 +949,7 @@ namespace engine
 					indirect_count_buffer,
 					alive_bitset_buffer,
 					alive_offsets_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1014,7 +1014,7 @@ namespace engine
 					alive_commands_buffer,
 					indirect_draw_commands,
 					indirect_count_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1123,7 +1123,7 @@ namespace engine
 					alive_commands_buffer,
 					indirect_draw_commands,
 					indirect_count_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1232,7 +1232,7 @@ namespace engine
 					alive_commands_buffer,
 					indirect_draw_commands,
 					indirect_count_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1341,7 +1341,7 @@ namespace engine
 					alive_commands_buffer,
 					indirect_draw_commands,
 					indirect_count_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1428,7 +1428,7 @@ namespace engine
 					cascaded_shadows_target,
 					directional_shadows_target,
 					omni_shadows_target
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 
@@ -1493,7 +1493,7 @@ namespace engine
 				create_info.draw_callback = [this,
 					motion_vectors_target,
 					zbuffer_depth_target
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1520,7 +1520,7 @@ namespace engine
 				create_info.draw_callback = [this,
 					input_target,
 					hdr0_history
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1552,7 +1552,7 @@ namespace engine
 						input_target,
 						output_target,
 						enabled = &postprocess.fxaa.enable
-					](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 						{
 							EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1581,7 +1581,7 @@ namespace engine
 						input_target,
 						output_target,
 						motion_vectors_target
-					](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 						{
 							EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1615,7 +1615,7 @@ namespace engine
 						create_info.draw_callback = [this,
 							input_target,
 							hdr0_div2
-						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 							{
 								EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1640,7 +1640,7 @@ namespace engine
 							output_target,
 							hdr0_div2,
 							zbuffer_depth_target
-						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 							{
 								EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1677,7 +1677,7 @@ namespace engine
 						create_info.draw_callback = [this,
 							input_target,
 							hdr0_div2
-						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 							{
 								EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1701,7 +1701,7 @@ namespace engine
 							create_info.draw_callback = [this,
 								hdr0_div2,
 								bloom_target
-							](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+							](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 								{
 									EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1725,7 +1725,7 @@ namespace engine
 			
 							create_info.draw_callback = [this,
 								bloom_target
-							](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+							](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 								{
 									EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1760,7 +1760,7 @@ namespace engine
 			
 						create_info.draw_callback = [this,
 							bloom_target
-						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 							{
 								EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1797,7 +1797,7 @@ namespace engine
 							output_target,
 							bloom_target,
 							dirt_mask_texture
-						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 							{
 								EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1835,7 +1835,7 @@ namespace engine
 						create_info.draw_callback = [this,
 							input_target,
 							histogram_buffer
-						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 							{
 								EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1866,7 +1866,7 @@ namespace engine
 							avg_brightness_target,
 							histogram_buffer,
 							input_target
-						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 							{
 								EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1903,7 +1903,7 @@ namespace engine
 							input_target,
 							output_target,
 							avg_brightness_target
-						](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 							{
 								EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -1941,7 +1941,7 @@ namespace engine
 			
 				create_info.draw_callback = [this, 
 					final_target
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 			
@@ -2072,7 +2072,7 @@ namespace engine
 				create_info.draw_callback = [this,
 					&geometry_buffer,
 					debug_text_buffer
-				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 
@@ -2146,7 +2146,7 @@ namespace engine
 					create_info.draw_callback = [this, 
 						&geometry_buffer,
 						imgui_font_texture
-					](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 						{
 							EDGE_PROFILE_ZONE_SCOPED;
 

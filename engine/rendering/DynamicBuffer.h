@@ -63,7 +63,7 @@ namespace engine
 				return memory.data() + offset;
 			}
 
-			edge::gfx::Buffer* GetBuffer()
+			edge::gfx::IBuffer* GetBuffer()
 			{
 				return buffer;
 			}
@@ -121,12 +121,12 @@ namespace engine
 				}
 			}
 		private:
-			edge::gfx::Context& context;
+			edge::gfx::IContext& context;
 			edge::gfx::ext::ResourceLoader& resource_loader;
 
 			edge::gfx::BufferUsageFlags usage_flags{};
 
-			edge::gfx::Buffer* buffer{ nullptr };
+			edge::gfx::IBuffer* buffer{ nullptr };
 			std::vector<_Ty> memory{};
 
 			std::vector<DirtyRange> dirty_ranges{};

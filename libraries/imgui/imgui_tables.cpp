@@ -15,7 +15,7 @@ Index of this file:
 // [SECTION] Tables: Drawing
 // [SECTION] Tables: Sorting
 // [SECTION] Tables: Headers
-// [SECTION] Tables: Context Menu
+// [SECTION] Tables: IContext Menu
 // [SECTION] Tables: Settings (.ini data)
 // [SECTION] Tables: Garbage Collection
 // [SECTION] Tables: Debugging
@@ -1340,7 +1340,7 @@ void    ImGui::EndTable()
     if (table->IsInsideRow)
         TableEndRow(table);
 
-    // Context menu in columns body
+    // IContext menu in columns body
     if (flags & ImGuiTableFlags_ContextMenuInBody)
         if (table->HoveredColumnBody != -1 && !IsAnyItemHovered() && IsMouseReleased(ImGuiMouseButton_Right))
             TableOpenContextMenu((int)table->HoveredColumnBody);
@@ -3358,7 +3358,7 @@ void ImGui::TableAngledHeadersRowEx(ImGuiID row_id, float angle, float max_label
 }
 
 //-------------------------------------------------------------------------
-// [SECTION] Tables: Context Menu
+// [SECTION] Tables: IContext Menu
 //-------------------------------------------------------------------------
 // - TableOpenContextMenu() [Internal]
 // - TableBeginContextMenuPopup() [Internal]

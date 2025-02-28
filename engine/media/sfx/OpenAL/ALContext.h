@@ -11,7 +11,7 @@ namespace engine
 	{
 		namespace openal
 		{
-			class OpenALContext final : public Context
+			class OpenALContext final : public IContext
 			{
 			public:
 				OpenALContext();

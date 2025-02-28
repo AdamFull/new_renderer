@@ -115,25 +115,34 @@ namespace edge
 
 				Instance& operator=(Instance&&) = delete;
 
-				const std::vector<const char*>& GetExtensions();
+				auto GetExtensions() const noexcept -> std::vector<const char*> const&
+				{
+					return enabled_extensions;
+				}
 
 				/**
 				 * @brief Just returns vulkan api version that was used on init
 				 * @returns Vulkan api version
 				 */
-				uint32_t GetApiVersion() const;
+				auto GetApiVersion() const noexcept -> uint32_t
+				{
+					return api_version;
+				}
 
 				/**
 				 * @brief Tries to find the first available discrete GPU
 				 * @returns All physical devices found on
 				 */
-				const std::vector<std::unique_ptr<PhysicalDevice>>& GetAllFoundGpu() const;
+				auto GetAllFoundGpu() const noexcept -> std::vector<std::unique_ptr<PhysicalDevice>> const&
+				{
+					return gpus;
+				}
 
 				/**
 				 * @brief Returns physical device that was selected in method SelectBestDevice
 				 * @returns Best physical device
 				 */
-				PhysicalDevice& GetBestDevice() const;
+				auto GetBestDevice() const -> PhysicalDevice&;
 
 				/**
 				 * @brief Tries to find the first available discrete GPU that can render to the given surface and support
@@ -146,7 +155,7 @@ namespace edge
 				 * @brief Checks if the given extension is enabled in the vk::Instance
 				 * @param extension An extension to check
 				 */
-				bool IsEnabled(const char* extension) const;
+				auto IsEnabled(const char* extension) const noexcept -> bool;
 
 			private:
 				/**

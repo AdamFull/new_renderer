@@ -328,7 +328,7 @@ namespace engine
 		//	std::vector<Material> materials{};
 		//	std::vector<Mesh> meshes{};
 		//	std::vector<Node> nodes{};
-		//	std::vector<Sampler> samplers{};
+		//	std::vector<ISampler> samplers{};
 		//	std::vector<Scene> scenes{};
 		//	std::vector<Skin> skins{};
 		//	std::vector<Texture> textures{};

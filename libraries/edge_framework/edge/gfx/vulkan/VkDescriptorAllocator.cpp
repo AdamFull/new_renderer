@@ -35,7 +35,7 @@ namespace edge
 				}
 			}
 
-			void VulkanDescriptorAllocator::SetResourceName(std::string_view name)
+			void VulkanDescriptorAllocator::SetResourceName(std::string_view name) const noexcept
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}
@@ -64,7 +64,7 @@ namespace edge
 				allocated_descriptors.clear();
 			}
 
-			ResourceDescriptor* VulkanDescriptorAllocator::AllocateDescriptors(RootSignature* root_signature)
+			auto VulkanDescriptorAllocator::AllocateDescriptors(IRootSignature* root_signature) -> IResourceDescriptor*
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 
@@ -88,7 +88,7 @@ namespace edge
 				return new_resource_descriptor;
 			}
 
-			DescriptorSet& VulkanDescriptorAllocator::Allocate(DescriptorSetLayout& layout)
+			auto VulkanDescriptorAllocator::Allocate(DescriptorSetLayout& layout) -> DescriptorSet&
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 

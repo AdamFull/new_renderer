@@ -28,7 +28,10 @@ namespace edge
 				[[nodiscard]] vk::Image CreateImage(Allocation& allocation, vk::ImageCreateInfo const& create_info);
 				void DestroyImage(Allocation& allocation, vk::Image& image);
 
-				Device& GetDevice();
+				[[nodiscard]] auto GetDevice() noexcept -> Device&
+				{
+					return device;
+				}
 
 			protected:
 				void PostCreate(Allocation& allocation, vma::AllocationInfo const& allocation_info);
@@ -49,11 +52,18 @@ namespace edge
 				Allocation& operator=(const Allocation&) = delete;
 				Allocation& operator=(Allocation&&) = default;
 
-				const uint8_t* GetData() const;
-				vk::DeviceMemory GetMemory() const;
+				[[nodiscard]] auto GetData() const -> uint8_t const*;
+				[[nodiscard]] auto GetMemory() const ->vk::DeviceMemory;
 
-				Device const& GetDevice() const;
-				Device& GetDevice();
+				auto GetDevice() const noexcept -> Device const&
+				{
+					return allocator.GetDevice();
+				}
+
+				auto GetDevice() noexcept -> Device&
+				{
+					return allocator.GetDevice();
+				}
 
 				/**
 				 * @brief Flushes memory if it is HOST_VISIBLE and not HOST_COHERENT
@@ -64,13 +74,16 @@ namespace edge
 				 * @brief Returns true if the memory is mapped, false otherwise
 				 * @return mapping status
 				 */
-				bool IsMapped() const;
+				auto IsMapped() const noexcept -> bool
+				{
+					return mapped_data != nullptr;
+				}
 
 				/**
 				 * @brief Maps vulkan memory if it isn't already mapped to an host visible address
 				 * @return Pointer to host visible memory
 				 */
-				uint8_t* MapMemory();
+				[[modiscard]] auto MapMemory() -> uint8_t*;
 
 				/**
 				 * @brief Unmaps vulkan memory from the host visible address
@@ -87,9 +100,15 @@ namespace edge
 					return !allocation;
 				}
 
-				vma::MemoryUsage GetUsage();
+				auto GetUsage() const noexcept -> vma::MemoryUsage
+				{
+					return alloc_create_info.usage;
+				}
 
-				Allocator& GetAllocator();
+				auto GetAllocator() noexcept -> Allocator&
+				{
+					return allocator;
+				}
 			protected:
 				void Clear();
 			protected:

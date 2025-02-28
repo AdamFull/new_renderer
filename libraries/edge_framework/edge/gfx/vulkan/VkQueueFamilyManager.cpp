@@ -44,17 +44,7 @@ namespace edge
 				}
 			}
 
-			Device const& QueueFamilyManager::GetDevice() const
-			{
-				return *device;
-			}
-
-			Device& QueueFamilyManager::GetDevice()
-			{
-				return *device;
-			}
-
-			VulkanQueue* QueueFamilyManager::LookUpQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags)
+			auto QueueFamilyManager::LookUpQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) noexcept -> VulkanQueue*
 			{
 				bool is_contain_include_flags = (flags & include_flags) == include_flags;
 				bool is_contain_exclude_flags = (flags & exclude_flags) != 0;
@@ -72,16 +62,6 @@ namespace edge
 				}
 
 				return nullptr;
-			}
-
-			uint32_t QueueFamilyManager::GetFamilyIndex() const
-			{
-				return family_index;
-			}
-
-			QueueTypeFlags QueueFamilyManager::GetFlags() const
-			{
-				return flags;
 			}
 		}
 	}

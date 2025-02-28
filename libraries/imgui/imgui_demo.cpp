@@ -4679,10 +4679,10 @@ static void ShowDemoWindowPopups()
         ImGui::TreePop();
     }
 
-    IMGUI_DEMO_MARKER("Popups/Context menus");
-    if (ImGui::TreeNode("Context menus"))
+    IMGUI_DEMO_MARKER("Popups/IContext menus");
+    if (ImGui::TreeNode("IContext menus"))
     {
-        HelpMarker("\"Context\" functions are simple helpers to associate a Popup to a given Item or Window identifier.");
+        HelpMarker("\"IContext\" functions are simple helpers to associate a Popup to a given Item or Window identifier.");
 
         // BeginPopupContextItem() is a helper to provide common/simple popup behavior of essentially doing:
         //     if (id == 0)
@@ -6354,8 +6354,8 @@ static void ShowDemoWindowTables()
     // while playing it nice with context menus provided by TableHeadersRow()/TableHeader()
     if (open_action != -1)
         ImGui::SetNextItemOpen(open_action != 0);
-    IMGUI_DEMO_MARKER("Tables/Context menus");
-    if (ImGui::TreeNode("Context menus"))
+    IMGUI_DEMO_MARKER("Tables/IContext menus");
+    if (ImGui::TreeNode("IContext menus"))
     {
         HelpMarker(
             "By default, right-clicking over a TableHeadersRow()/TableHeader() line will open the default context-menu.\n"
@@ -6366,7 +6366,7 @@ static void ShowDemoWindowTables()
         ImGui::CheckboxFlags("ImGuiTableFlags_ContextMenuInBody", &flags1, ImGuiTableFlags_ContextMenuInBody);
         PopStyleCompact();
 
-        // Context Menus: first example
+        // IContext Menus: first example
         // [1.1] Right-click on the TableHeadersRow() line to open the default table context menu.
         // [1.2] Right-click in columns also open the default table context menu (if ImGuiTableFlags_ContextMenuInBody is set)
         const int COLUMNS_COUNT = 3;
@@ -6392,7 +6392,7 @@ static void ShowDemoWindowTables()
             ImGui::EndTable();
         }
 
-        // Context Menus: second example
+        // IContext Menus: second example
         // [2.1] Right-click on the TableHeadersRow() line to open the default table context menu.
         // [2.2] Right-click on the ".." to open a custom popup
         // [2.3] Right-click in columns to open another custom popup
@@ -9378,7 +9378,7 @@ static void ShowExampleAppCustomRendering(bool* p_open)
                 scrolling.y += io.MouseDelta.y;
             }
 
-            // Context menu (under default mouse threshold)
+            // IContext menu (under default mouse threshold)
             ImVec2 drag_delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
             if (opt_enable_context_menu && drag_delta.x == 0.0f && drag_delta.y == 0.0f)
                 ImGui::OpenPopupOnItemClick("context", ImGuiPopupFlags_MouseButtonRight);
@@ -10321,7 +10321,7 @@ struct ExampleAssetsBrowser
             clipper.End();
             ImGui::PopStyleVar(); // ImGuiStyleVar_ItemSpacing
 
-            // Context menu
+            // IContext menu
             if (ImGui::BeginPopupContextWindow())
             {
                 ImGui::Text("Selection: %d items", Selection.Size);

@@ -47,8 +47,8 @@ namespace easygltf
 	// Node validation
 	 bool validateNode(size_t id, const Node& node, const std::unique_ptr<IDebugMessenger>& messenger);
 
-	// Sampler validation
-	bool validateSampler(size_t id, const Sampler& sampler, const std::unique_ptr<IDebugMessenger>& messenger);
+	// ISampler validation
+	bool validateSampler(size_t id, const ISampler& sampler, const std::unique_ptr<IDebugMessenger>& messenger);
 
 	// Scene validation
 	bool validateScene(size_t id, const Scene& scene, const std::unique_ptr<IDebugMessenger>& messenger);

@@ -154,11 +154,6 @@ namespace edge
 				}
 			}
 
-			Device& Allocator::GetDevice()
-			{
-				return device;
-			}
-
 			void Allocator::PostCreate(Allocation& allocation, vma::AllocationInfo const& allocation_info)
 			{
 				vk::MemoryPropertyFlags memory_properties;
@@ -191,27 +186,12 @@ namespace edge
 				return alloc_info.deviceMemory;
 			}
 
-			Device const& Allocation::GetDevice() const
-			{
-				return allocator.GetDevice();
-			}
-
-			Device& Allocation::GetDevice()
-			{
-				return allocator.GetDevice();
-			}
-
 			void Allocation::Flush(vk::DeviceSize offset, vk::DeviceSize size)
 			{
 				if (!coherent)
 				{
 					Handle(allocator).flushAllocation(allocation, offset, size);
 				}
-			}
-
-			bool Allocation::IsMapped() const
-			{
-				return mapped_data != nullptr;
 			}
 
 			uint8_t* Allocation::MapMemory()
@@ -244,16 +224,6 @@ namespace edge
 				mapped_data = nullptr;
 				persistent = false;
 				alloc_create_info = vma::AllocationCreateInfo{};
-			}
-
-			vma::MemoryUsage Allocation::GetUsage()
-			{
-				return alloc_create_info.usage;
-			}
-
-			Allocator& Allocation::GetAllocator()
-			{
-				return allocator;
 			}
 		}
 	}

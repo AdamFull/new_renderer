@@ -73,8 +73,8 @@ namespace easygltf
 	void to_json(nlohmann::json& json, const Node& type);
 	void from_json(const nlohmann::json& json, Node& type);
 
-	void to_json(nlohmann::json& json, const Sampler& type);
-	void from_json(const nlohmann::json& json, Sampler& type);
+	void to_json(nlohmann::json& json, const ISampler& type);
+	void from_json(const nlohmann::json& json, ISampler& type);
 
 	void to_json(nlohmann::json& json, const Scene& type);
 	void from_json(const nlohmann::json& json, Scene& type);

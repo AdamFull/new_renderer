@@ -59,7 +59,7 @@ namespace edge
 
 			}
 
-			void VulkanShader::SetResourceName(std::string_view name)
+			void VulkanShader::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				for (auto it = shader_modules.Begin(); it != shader_modules.End(); ++it)
@@ -67,11 +67,6 @@ namespace edge
 					auto& stage_ci = (*it)->GetStageCreateInfo();
 					debug_utils.SetDebugName(stage_ci.module, std::format("{}[{}]", name, vk::to_string(stage_ci.stage)));
 				}
-			}
-
-			const StaticArray<std::unique_ptr<ShaderModule>, 6ull>& VulkanShader::GetModules() const
-			{
-				return shader_modules;
 			}
 
 			bool HasSubstring(const std::string& str, const std::string& target)

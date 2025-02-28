@@ -12,7 +12,7 @@ namespace edge
 			class DebugUtils;
 			class VulkanQueue;
 
-			class VulkanCommandPool final : public CommandPool, public VulkanResource<vk::CommandPool>
+			class VulkanCommandPool final : public ICommandPool, public VulkanResource<vk::CommandPool>
 			{
 			public:
 				VulkanCommandPool(const VulkanQueue& queue, CommandPoolResetMode reset_mode);
@@ -21,20 +21,20 @@ namespace edge
 				VulkanCommandPool(VulkanCommandPool&& other);
 				~VulkanCommandPool();
 
-				VulkanCommandPool& operator=(const CommandPool&) = delete;
-				VulkanCommandPool& operator=(CommandPool&&) = delete;
+				VulkanCommandPool& operator=(const ICommandPool&) = delete;
+				VulkanCommandPool& operator=(ICommandPool&&) = delete;
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 
-				VulkanCommandList* Allocate(bool secondary) override;
-				void Reset() override;
+				[[nodiscard]] auto Allocate(bool secondary) -> VulkanCommandList* override;
+				void Reset() noexcept override;
 
-				vk::CommandBuffer AllocateCommandBuffer(vk::CommandBufferLevel level);
+				[[nodiscard]] auto AllocateCommandBuffer(vk::CommandBufferLevel level) -> vk::CommandBuffer;
 				void FreeCommandBuffer(vk::CommandBuffer& command_buffer);
 
-				CommandPoolResetMode GetResetMode() const;
+				auto GetResetMode() const noexcept -> CommandPoolResetMode;
 
-				Device const& GetDevice() const;
+				auto GetDevice() const noexcept -> Device const&;
 			protected:
 				void FreeCommandBuffers();
 				void ResetCommandBuffers();

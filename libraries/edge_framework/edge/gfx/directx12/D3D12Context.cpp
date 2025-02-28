@@ -16,129 +16,129 @@ namespace edge
 
 			}
 
-			void D3D12Context::Destroy(GFXResource* handle)
+			void D3D12Context::Destroy(IGFXResource* handle) const
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}
 
-			Fence* D3D12Context::CreateFence()
-			{
-				assert(false && "NOT IMPLEMENTED");
-				return nullptr;
-			}
-
-			Semaphore* D3D12Context::CreateSemaphore()
+			auto D3D12Context::CreateFence() const -> IFence*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			const Queue* D3D12Context::RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags)
+			auto D3D12Context::CreateSemaphore() const -> ISemaphore*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			Swapchain* D3D12Context::CreateSwapchain(const SwapChainCreateInfo& create_info)
+			auto D3D12Context::RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) const -> IQueue*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			CommandPool* D3D12Context::CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode)
+			auto D3D12Context::CreateSwapchain(const SwapChainCreateInfo& create_info) const -> ISwapchain*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			Buffer* D3D12Context::CreateBuffer(const BufferCreateInfo& create_info)
+			auto D3D12Context::CreateCommandPool(const IQueue* queue, CommandPoolResetMode reset_mode) const -> ICommandPool*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			Texture* D3D12Context::CreateTexture(const TextureCreateInfo& create_info)
+			auto D3D12Context::CreateBuffer(const BufferCreateInfo& create_info) const -> IBuffer*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			Texture* D3D12Context::CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index)
+			auto D3D12Context::CreateTexture(const TextureCreateInfo& create_info) const -> ITexture*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			Shader* D3D12Context::CreateShader(std::span<const ShaderStageInfo> shader_stages)
+			auto D3D12Context::CreateSwapchainTexture(ISwapchain* swapchain, uint32_t image_index) const -> ITexture*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			RootSignature* D3D12Context::CreateRootSignature(const RootSignatureCreateInfo& create_info)
+			auto D3D12Context::CreateShader(std::span<const ShaderStageInfo> shader_stages) const -> IShader*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			Pipeline* D3D12Context::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
+			auto D3D12Context::CreateRootSignature(const RootSignatureCreateInfo& create_info) const -> IRootSignature*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			Pipeline* D3D12Context::CreatePipeline(const ComputePipelineCreateInfo& create_info)
+			auto D3D12Context::CreatePipeline(const GraphicsPipelineCreateInfo& create_info) const -> IPipeline*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			PipelineCache* D3D12Context::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
+			auto D3D12Context::CreatePipeline(const ComputePipelineCreateInfo& create_info) const -> IPipeline*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			DescriptorAllocator* D3D12Context::CreateDescriptorAllocator()
+			auto D3D12Context::CreatePipelineCache(const PipelineCacheCreateInfo& create_info) const -> IPipelineCache*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			SharedDescriptor* D3D12Context::CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info)
+			auto D3D12Context::CreateDescriptorAllocator() const -> IDescriptorAllocator*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			Sampler* D3D12Context::CreateSampler(const SamplerCreateInfo& create_info)
+			auto D3D12Context::CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) const -> ISharedDescriptor*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			QueryPool* D3D12Context::CreateQueryPool(const QueryPoolCreateInfo& create_info)
+			auto D3D12Context::CreateSampler(const SamplerCreateInfo& create_info) const -> ISampler*
 			{
 				assert(false && "NOT IMPLEMENTED");
 				return nullptr;
 			}
 
-			void D3D12Context::WaitForFences(std::span<Fence*> fences, uint64_t timeout)
+			auto D3D12Context::CreateQueryPool(const QueryPoolCreateInfo& create_info) const -> IQueryPool*
+			{
+				assert(false && "NOT IMPLEMENTED");
+				return nullptr;
+			}
+
+			void D3D12Context::WaitForFences(std::span<IFence*> fences, uint64_t timeout) const
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}
 
-			void D3D12Context::RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment)
+			void D3D12Context::RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) const
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}
 
-			void D3D12Context::RequestTimestampFrequency(float* frequency)
+			void D3D12Context::RequestTimestampFrequency(float* frequency) const
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}
 
-			void D3D12Context::RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory)
+			void D3D12Context::RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) const
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}

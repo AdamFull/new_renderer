@@ -56,31 +56,6 @@ namespace edge
 			{
 				Handle(device).destroyDescriptorSetLayout(handle, allocation_callbacks);
 			}
-
-			const DescriptorSetLayout::LayoutBindingArray& DescriptorSetLayout::GetBindings() const
-			{
-				return layout_bindings;
-			}
-
-			uint32_t DescriptorSetLayout::GetBindingCount() const
-			{
-				return binding_count;
-			}
-
-			vk::DescriptorSetLayoutBinding& DescriptorSetLayout::GetLayoutBinding(uint32_t binding_index)
-			{
-				return layout_bindings[binding_index].binding;
-			}
-
-			vk::DescriptorBindingFlagsEXT& DescriptorSetLayout::GetLayoutBindingFlags(uint32_t binding_index)
-			{
-				return layout_bindings[binding_index].flags;
-			}
-
-			const PoolSizes& DescriptorSetLayout::GetRequiredDescriptorCount() const
-			{
-				return pool_sizes;
-			}
 		}
 	}
 }

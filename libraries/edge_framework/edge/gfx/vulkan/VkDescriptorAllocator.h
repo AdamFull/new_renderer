@@ -14,7 +14,7 @@ namespace edge
 			class DescriptorSet;
 			class VulkanResourceDescriptor;
 
-			class VulkanDescriptorAllocator final : public DescriptorAllocator
+			class VulkanDescriptorAllocator final : public IDescriptorAllocator
 			{
 			public:
 				VulkanDescriptorAllocator(Device& device, uint32_t grow_factor = 2u);
@@ -25,12 +25,12 @@ namespace edge
 				VulkanDescriptorAllocator& operator=(const VulkanDescriptorAllocator&) = delete;
 				VulkanDescriptorAllocator& operator=(VulkanDescriptorAllocator&&) = delete;
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 
 				void Reset() override;
-				ResourceDescriptor* AllocateDescriptors(RootSignature* root_signature) override;
+				auto AllocateDescriptors(IRootSignature* root_signature) -> IResourceDescriptor* override;
 			private:
-				DescriptorSet& Allocate(DescriptorSetLayout& layout);
+				auto Allocate(DescriptorSetLayout& layout) -> DescriptorSet&;
 			private:
 				Device& device;
 

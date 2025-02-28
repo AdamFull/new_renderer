@@ -71,7 +71,7 @@ namespace engine
 			virtual void BeginFrame(float delta_time) = 0;
 			virtual void EndFrame() = 0;
 
-			virtual edge::gfx::Buffer* GetDrawBuffer() = 0;
+			virtual edge::gfx::IBuffer* GetDrawBuffer() = 0;
 			virtual uint32_t GetDrawCount() const = 0;
 
 			virtual uint32_t GetMeshCount() const = 0;

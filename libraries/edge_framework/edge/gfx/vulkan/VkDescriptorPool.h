@@ -29,11 +29,15 @@ namespace edge
 				DescriptorPool& operator=(DescriptorPool&&) = delete;
 
 				void Reset();
-				DescriptorSet& Allocate(DescriptorSetLayout& layout, std::string_view debug_name = "");
-				vk::Result Free(DescriptorSet& descriptor_set);
+				auto Allocate(DescriptorSetLayout& layout, std::string_view debug_name = "") -> DescriptorSet&;
+				auto Free(DescriptorSet& descriptor_set) -> vk::Result;
 
-				bool IsExpired() const;
-				CanAllocateResult CanAllocate(DescriptorSetLayout& layout);
+				auto IsExpired() const noexcept -> bool
+				{
+					return countdown_count < 0;
+				}
+
+				auto CanAllocate(DescriptorSetLayout& layout) noexcept -> CanAllocateResult;
 			private:
 				Device& device;
 

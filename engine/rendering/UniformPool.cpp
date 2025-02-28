@@ -11,7 +11,7 @@ namespace engine
 	{
 		constexpr int32_t k_max_frames_idle{ 300 };
 
-		UniformPoolFrame::UniformPoolFrame(edge::gfx::Context& context, uint64_t whole_size) :
+		UniformPoolFrame::UniformPoolFrame(edge::gfx::IContext& context, uint64_t whole_size) :
 			context{ context },
 			expired_countdown{ k_max_frames_idle }
 		{
@@ -62,7 +62,7 @@ namespace engine
 		}
 
 
-		UniformPool::UniformPool(edge::gfx::Context& context, uint64_t frame_size) :
+		UniformPool::UniformPool(edge::gfx::IContext& context, uint64_t frame_size) :
 			context{ context },
 			frame_size{ frame_size }
 		{

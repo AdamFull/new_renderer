@@ -98,7 +98,7 @@ namespace engine
 			}
 		}
 
-		void GeometryBuffer::BindIndexBuffer(edge::gfx::CommandList& command_list)
+		void GeometryBuffer::BindIndexBuffer(edge::gfx::ICommandList& command_list)
 		{
 			if (index_data.buffer)
 			{
@@ -106,7 +106,7 @@ namespace engine
 			}
 		}
 
-		void GeometryBuffer::Bind(edge::gfx::CommandList& command_list)
+		void GeometryBuffer::Bind(edge::gfx::ICommandList& command_list)
 		{
 			BindIndexBuffer(command_list);
 			BindVertexBuffers(command_list);
@@ -128,11 +128,11 @@ namespace engine
 			return vertex_layout;
 		}
 
-		void GeometryBuffer::TryFlushBuffer(edge::gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage)
+		void GeometryBuffer::TryFlushBuffer(edge::gfx::IBuffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage)
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			edge::gfx::Context& context = resource_loader.GetContext();
+			edge::gfx::IContext& context = resource_loader.GetContext();
 
 			if (!*buffer_ptr)
 			{
@@ -209,7 +209,7 @@ namespace engine
 			}
 		}
 
-		void InterleavedGeometryBuffer::BindVertexBuffers(edge::gfx::CommandList& command_list)
+		void InterleavedGeometryBuffer::BindVertexBuffers(edge::gfx::ICommandList& command_list)
 		{
 			const uint32_t stride{ 0u };
 			uint64_t offset{ 0ull };
@@ -296,10 +296,10 @@ namespace engine
 			}
 		}
 
-		void DeinterleavedGeometryBuffer::BindVertexBuffers(edge::gfx::CommandList& command_list)
+		void DeinterleavedGeometryBuffer::BindVertexBuffers(edge::gfx::ICommandList& command_list)
 		{
 			uint32_t buffer_count{ 0u };
-			std::array<edge::gfx::Buffer*, k_max_attribure_description> vertex_buffers{};
+			std::array<edge::gfx::IBuffer*, k_max_attribure_description> vertex_buffers{};
 			std::array<uint32_t, k_max_attribure_description> strides{};
 			std::array<uint64_t, k_max_attribure_description> offsets{};
 

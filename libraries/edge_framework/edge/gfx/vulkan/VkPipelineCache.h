@@ -11,7 +11,7 @@ namespace edge
 		{
 			class Device;
 
-			class VulkanPipelineCache : public PipelineCache, public VulkanResource<vk::PipelineCache>
+			class VulkanPipelineCache final : public IPipelineCache, public VulkanResource<vk::PipelineCache>
 			{
 			public:
 				VulkanPipelineCache(Device& device, const PipelineCacheCreateInfo& create_info);
@@ -23,7 +23,7 @@ namespace edge
 				VulkanPipelineCache& operator=(const VulkanPipelineCache&) = delete;
 				VulkanPipelineCache& operator=(VulkanPipelineCache&&) = delete;
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 
 				void GetData(size_t& data_size, void* data_ptr) override;
 			private:

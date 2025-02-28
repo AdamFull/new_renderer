@@ -12,7 +12,7 @@ namespace edge
 			class Device;
 			class DebugUtils;
 
-			class VulkanPipeline : public Pipeline, public VulkanResource<vk::Pipeline>
+			class VulkanPipeline : public IPipeline, public VulkanResource<vk::Pipeline>
 			{
 			public:
 				VulkanPipeline(Device& device);
@@ -23,7 +23,7 @@ namespace edge
 				VulkanPipeline& operator=(const VulkanPipeline&) = delete;
 				VulkanPipeline& operator=(VulkanPipeline&&) = delete;
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override final;
 			protected:
 				Device& device;
 			};
@@ -35,7 +35,10 @@ namespace edge
 				VulkanComputePipeline(VulkanComputePipeline&& other);
 				~VulkanComputePipeline() = default;
 
-				PipelineType GetType() const override;
+				[[nodescard]] auto GetType() const noexcept -> PipelineType override
+				{
+					return PipelineType::eCompute;
+				}
 			};
 
 			class VulkanGraphicsPipeline final : public VulkanPipeline
@@ -45,7 +48,10 @@ namespace edge
 				VulkanGraphicsPipeline(VulkanGraphicsPipeline&& other);
 				~VulkanGraphicsPipeline() = default;
 
-				PipelineType GetType() const override;
+				[[nodescard]] auto GetType() const noexcept -> PipelineType override
+				{
+					return PipelineType::eGraphics;
+				}
 			};
 		}
 	}

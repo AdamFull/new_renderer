@@ -11,7 +11,7 @@ namespace engine
 	{
 		namespace xa2
 		{
-			class XAudio2Context final : public Context
+			class XAudio2Context final : public IContext
 			{
 			public:
 				XAudio2Context();

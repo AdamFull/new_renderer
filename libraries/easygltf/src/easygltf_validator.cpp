@@ -377,7 +377,7 @@ bool easygltf::validateNode(size_t id, const Node& node, const std::unique_ptr<I
 }
 
 // Validate sampler
-bool easygltf::validateSampler(size_t id, const Sampler& sampler, const std::unique_ptr<IDebugMessenger>& messenger)
+bool easygltf::validateSampler(size_t id, const ISampler& sampler, const std::unique_ptr<IDebugMessenger>& messenger)
 {
 	bool isValidWrapS =
 		sampler.wrapS == base::enumerators::texture_wrap::repeat ||
@@ -386,7 +386,7 @@ bool easygltf::validateSampler(size_t id, const Sampler& sampler, const std::uni
 
 	if (!isValidWrapS)
 	{
-		messenger->message(DebugMessageType::error, std::format(validation_error_invalid_value, "Sampler", id, "wrapS", sampler.wrapS));
+		messenger->message(DebugMessageType::error, std::format(validation_error_invalid_value, "ISampler", id, "wrapS", sampler.wrapS));
 		return false;
 	}
 
@@ -397,7 +397,7 @@ bool easygltf::validateSampler(size_t id, const Sampler& sampler, const std::uni
 
 	if (!isValidWrapT)
 	{
-		messenger->message(DebugMessageType::error, std::format(validation_error_invalid_value, "Sampler", id, "wrapT", sampler.wrapT));
+		messenger->message(DebugMessageType::error, std::format(validation_error_invalid_value, "ISampler", id, "wrapT", sampler.wrapT));
 		return false;
 	}
 

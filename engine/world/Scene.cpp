@@ -233,7 +233,7 @@ namespace engine
 			return gfx_address_mode;
 		}
 
-		edge::gfx::SamplerCreateInfo GetSamplerCreateInfo(const easygltf::Sampler& sampler)
+		edge::gfx::SamplerCreateInfo GetSamplerCreateInfo(const easygltf::ISampler& sampler)
 		{
 			edge::gfx::SamplerCreateInfo create_info{};
 
@@ -301,7 +301,7 @@ namespace engine
 				auto& sampler = root.samplers[texture.sampler];
 
 				auto sampler_create_info = GetSamplerCreateInfo(sampler);
-				edge::gfx::Sampler* texture_sampler = resource_loader.GetSampler(sampler_create_info);
+				edge::gfx::ISampler* texture_sampler = resource_loader.GetSampler(sampler_create_info);
 
 				// TODO: add ability to override format and sampler params
 				// TODO: find format from materials

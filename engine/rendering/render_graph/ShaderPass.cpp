@@ -70,7 +70,7 @@ namespace engine
 		}
 
 
-		void ShaderPass::Execute(edge::gfx::CommandList& command_list, float delta_time)
+		void ShaderPass::Execute(edge::gfx::ICommandList& command_list, float delta_time)
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
@@ -120,7 +120,7 @@ namespace engine
 			return GetUniformBlock(edge::murmur_hash(name));
 		}
 		
-		void ShaderPass::BindResources(edge::gfx::CommandList& command_list)
+		void ShaderPass::BindResources(edge::gfx::ICommandList& command_list)
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
@@ -155,7 +155,7 @@ namespace engine
 			// Upload all resources
 			resource_descriptor->Flush();
 
-			edge::gfx::ResourceDescriptor* resource_descriptors[]{ resource_descriptor, nullptr };
+			edge::gfx::IResourceDescriptor* resource_descriptors[]{ resource_descriptor, nullptr };
 			uint32_t resource_descriptor_count{ 1u };
 
 			if (shared_descriptor)
@@ -173,7 +173,7 @@ namespace engine
 			resource_descriptor = nullptr;
 		}
 
-		void ShaderPass::PushConstantRanges(edge::gfx::CommandList& command_list)
+		void ShaderPass::PushConstantRanges(edge::gfx::ICommandList& command_list)
 		{
 			auto* shader = shader_effect->GetShader();
 
@@ -320,7 +320,7 @@ namespace engine
 			ResourceDependency(render_resource_id, subresource_index, edge::gfx::AccessTypeFlag::eWrite);
 		}
 
-		void ShaderPass::ResolveDependencies(edge::gfx::CommandList& command_list)
+		void ShaderPass::ResolveDependencies(edge::gfx::ICommandList& command_list)
 		{
 			// Flush resource barriers
 			command_list.ResourceBarrier(resource_barriers);
@@ -396,7 +396,7 @@ namespace engine
 			BindResource(binding_point, resource_index, subresource_index);
 		}
 
-		void ShaderPass::DispatchForTarget(edge::gfx::CommandList& command_list, uint32_t target_it, bool divide_by_locals)
+		void ShaderPass::DispatchForTarget(edge::gfx::ICommandList& command_list, uint32_t target_it, bool divide_by_locals)
 		{
 			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 
@@ -411,7 +411,7 @@ namespace engine
 			command_list.Dispatch(group_x, group_y, group_z);
 		}
 
-		void ShaderPass::FinalizeTarget(edge::gfx::CommandList& command_list, uint32_t binding_point, uint32_t target)
+		void ShaderPass::FinalizeTarget(edge::gfx::ICommandList& command_list, uint32_t binding_point, uint32_t target)
 		{
 			ReadResource(binding_point, target, ~0u);
 			ResolveDependencies(command_list);

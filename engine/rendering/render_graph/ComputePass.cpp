@@ -18,7 +18,7 @@ namespace engine
 			pipeline = context.CreatePipeline(pipeline_ci);
 		}
 
-		void ComputePass::_Execute(edge::gfx::CommandList& command_list, float delta_time)
+		void ComputePass::_Execute(edge::gfx::ICommandList& command_list, float delta_time)
 		{
 			if (draw_callback)
 			{

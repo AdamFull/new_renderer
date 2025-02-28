@@ -231,27 +231,27 @@ namespace edge
 				}
 			}
 
-			void VulkanContext::Destroy(GFXResource* handle)
+			void VulkanContext::Destroy(IGFXResource* handle) const
 			{
 				SAFE_DELETE(handle);
 			}
 
-			Fence* VulkanContext::CreateFence()
+			auto VulkanContext::CreateFence() const -> IFence*
 			{
 				return new VulkanFence(*device);
 			}
 
-			Semaphore* VulkanContext::CreateSemaphore()
+			auto VulkanContext::CreateSemaphore() const -> ISemaphore*
 			{
 				return new VulkanSemaphore(*device);
 			}
 
-			Queue* VulkanContext::RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue)
+			auto VulkanContext::RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue) const -> IQueue*
 			{
 				return device->RequestQueue(include_queue, exclude_queue);
 			}
 
-			Swapchain* VulkanContext::CreateSwapchain(const SwapChainCreateInfo& create_info)
+			auto VulkanContext::CreateSwapchain(const SwapChainCreateInfo& create_info) const -> ISwapchain*
 			{
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 				vk::PresentModeKHR present_mode = (create_info.window->GetProperties().vsync == Window::Vsync::OFF) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
@@ -285,73 +285,73 @@ namespace edge
 					create_info.image_count);
 			}
 
-			CommandPool* VulkanContext::CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode)
+			auto VulkanContext::CreateCommandPool(const IQueue* queue, CommandPoolResetMode reset_mode) const -> ICommandPool*
 			{
 				auto* vkqueue = static_cast<const VulkanQueue*>(queue);
 				return new VulkanCommandPool(*vkqueue, reset_mode);
 			}
 
-			Buffer* VulkanContext::CreateBuffer(const BufferCreateInfo& create_info)
+			auto VulkanContext::CreateBuffer(const BufferCreateInfo& create_info) const -> IBuffer*
 			{
 				return new VulkanBuffer(*allocator, create_info);
 			}
 
-			Texture* VulkanContext::CreateTexture(const TextureCreateInfo& create_info)
+			auto VulkanContext::CreateTexture(const TextureCreateInfo& create_info) const -> ITexture*
 			{
 				return new VulkanTexture(*allocator, create_info);
 			}
 
-			Texture* VulkanContext::CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index)
+			auto VulkanContext::CreateSwapchainTexture(ISwapchain* swapchain, uint32_t image_index) const -> ITexture*
 			{
 				return new VulkanTexture(*allocator, swapchain, image_index);
 			}
 
-			Shader* VulkanContext::CreateShader(std::span<const ShaderStageInfo> shader_stages)
+			auto VulkanContext::CreateShader(std::span<const ShaderStageInfo> shader_stages) const -> IShader*
 			{
 				return new VulkanShader(*device, shader_stages);
 			}
 
-			RootSignature* VulkanContext::CreateRootSignature(const RootSignatureCreateInfo& create_info)
+			auto VulkanContext::CreateRootSignature(const RootSignatureCreateInfo& create_info) const -> IRootSignature*
 			{
 				return new VulkanRootSignature(*device, create_info);
 			}
 
-			Pipeline* VulkanContext::CreatePipeline(const GraphicsPipelineCreateInfo& create_info)
+			auto VulkanContext::CreatePipeline(const GraphicsPipelineCreateInfo& create_info) const -> IPipeline*
 			{
 				return new VulkanGraphicsPipeline(*device, create_info);
 			}
 
-			Pipeline* VulkanContext::CreatePipeline(const ComputePipelineCreateInfo& create_info)
+			auto VulkanContext::CreatePipeline(const ComputePipelineCreateInfo& create_info) const -> IPipeline*
 			{
 				return new VulkanComputePipeline(*device, create_info);
 			}
 
-			PipelineCache* VulkanContext::CreatePipelineCache(const PipelineCacheCreateInfo& create_info)
+			auto VulkanContext::CreatePipelineCache(const PipelineCacheCreateInfo& create_info) const -> IPipelineCache*
 			{
 				return new VulkanPipelineCache(*device, create_info);
 			}
 
-			DescriptorAllocator* VulkanContext::CreateDescriptorAllocator()
+			auto VulkanContext::CreateDescriptorAllocator() const -> IDescriptorAllocator*
 			{
 				return new VulkanDescriptorAllocator(*device);
 			}
 
-			SharedDescriptor* VulkanContext::CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info)
+			auto VulkanContext::CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) const -> ISharedDescriptor*
 			{
 				return new VulkanSharedDescriptor(*device, create_info);
 			}
 
-			Sampler* VulkanContext::CreateSampler(const SamplerCreateInfo& create_info)
+			auto VulkanContext::CreateSampler(const SamplerCreateInfo& create_info) const -> ISampler*
 			{
 				return new VulkanSampler(*device, create_info);
 			}
 
-			QueryPool* VulkanContext::CreateQueryPool(const QueryPoolCreateInfo& create_info)
+			auto VulkanContext::CreateQueryPool(const QueryPoolCreateInfo& create_info) const -> IQueryPool*
 			{
 				return new VulkanQueryPool(*device, create_info);
 			}
 
-			void VulkanContext::WaitForFences(std::span<Fence*> fences, uint64_t timeout)
+			void VulkanContext::WaitForFences(std::span<IFence*> fences, uint64_t timeout) const
 			{
 				std::array<vk::Fence, 16ull> wait_fences{};
 
@@ -363,7 +363,7 @@ namespace edge
 				vk::Result result = Handle(*device).waitForFences(static_cast<uint32_t>(fences.size()), wait_fences.data(), VK_TRUE, timeout);
 			}
 
-			void VulkanContext::RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment)
+			void VulkanContext::RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) const
 			{
 				alignment = 1ull;
 
@@ -391,14 +391,14 @@ namespace edge
 				}
 			}
 
-			void VulkanContext::RequestTimestampFrequency(float* frequency)
+			void VulkanContext::RequestTimestampFrequency(float* frequency) const
 			{
 				auto& physical = instance->GetBestDevice();
 				auto& properties = physical.GetProperties();
 				*frequency = properties.limits.timestampPeriod;
 			}
 
-			void VulkanContext::RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory)
+			void VulkanContext::RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) const
 			{
 				vk::MemoryHeapFlags memory_flags{ vk::MemoryHeapFlagBits::eDeviceLocal };
 				vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget_props{};

@@ -27,17 +27,52 @@ namespace edge
 				 * @brief Maps vulkan memory to an host visible address
 				 * @return Pointer to host visible memory
 				 */
-				uint8_t* Map();
+				[[nodiscard]] auto Map() -> uint8_t*;
 
-				vk::ImageType GetType() const;
-				const vk::Extent3D& GetExtent() const;
-				vk::Format GetFormat() const;
-				vk::SampleCountFlagBits GetSampleCount() const;
-				vk::ImageUsageFlags GetUsage() const;
-				vk::ImageTiling GetTiling() const;
-				vk::ImageSubresource GetSubresource() const;
-				uint32_t GetMipLevelCount() const;
-				uint32_t GetArrayLayerCount() const;
+				auto GetType() const noexcept -> vk::ImageType
+				{
+					return create_info.imageType;
+				}
+
+				auto GetExtent() const noexcept -> vk::Extent3D const&
+				{
+					return create_info.extent;
+				}
+
+				auto GetFormat() const noexcept -> vk::Format
+				{
+					return create_info.format;
+				}
+
+				auto GetSampleCount() const noexcept -> vk::SampleCountFlagBits
+				{
+					return create_info.samples;
+				}
+
+				auto GetUsage() const noexcept -> vk::ImageUsageFlags
+				{
+					return create_info.usage;
+				}
+
+				auto GetTiling() const noexcept -> vk::ImageTiling
+				{
+					return create_info.tiling;
+				}
+
+				auto GetSubresource() const noexcept -> vk::ImageSubresource const&
+				{
+					return subresource;
+				}
+
+				auto GetMipLevelCount() const noexcept -> uint32_t
+				{
+					return create_info.mipLevels;
+				}
+
+				auto GetArrayLayerCount() const noexcept -> uint32_t
+				{
+					return create_info.arrayLayers;
+				}
 			private:
 				void InitializeCreateInfo(const TextureCreateInfo& texture_create_info);
 			private:

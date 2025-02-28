@@ -34,20 +34,26 @@ namespace edge
 				Device& operator=(const Device&) = delete;
 				Device& operator=(Device&&) = delete;
 
-				PhysicalDevice const& GetGpu() const;
+				auto GetGpu() const noexcept -> PhysicalDevice const&
+				{
+					return gpu;
+				}
 
-				VulkanQueue* RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags);
+				[[nodiscard]] auto RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) -> VulkanQueue*;
 
-				size_t GetQueueCount() const;
+				auto GetQueueCount() const -> size_t
+				{
+					return queue_families.size();
+				}
 
-				bool IsExtensionSupported(const char* extension) const;
+				auto IsExtensionSupported(const char* extension) const noexcept -> bool;
 
-				bool IsEnabled(std::string const& extension) const;
+				auto IsEnabled(std::string const& extension) const noexcept -> bool;
 
-				uint32_t GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const;
+				auto GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const -> uint32_t;
 
-				void SetDebugUtils(DebugUtils* debug_utils);
-				DebugUtils const& GetDebugUtils() const;
+				void SetDebugUtils(DebugUtils* debug_utils) noexcept;
+				auto GetDebugUtils() const noexcept -> DebugUtils const&;
 
 			private:
 				DebugUtils* debug_utils{ nullptr };

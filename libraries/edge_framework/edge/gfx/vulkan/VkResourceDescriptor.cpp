@@ -38,17 +38,7 @@ namespace edge
 				set_count++;
 			}
 
-			uint32_t VulkanResourceDescriptor::GetFirstSet() const
-			{
-				return first_set;
-			}
-
-			uint32_t VulkanResourceDescriptor::GetSetCount() const
-			{
-				return set_count;
-			}
-
-			void VulkanResourceDescriptor::SetResourceName(std::string_view name)
+			void VulkanResourceDescriptor::SetResourceName(std::string_view name) const noexcept
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}
@@ -108,11 +98,6 @@ namespace edge
 				EDGE_PROFILE_ZONE_SCOPED;
 
 				Handle(device).updateDescriptorSets(write_descriptor_sets.size(), write_descriptor_sets.data(), 0, nullptr);
-			}
-
-			const std::array<vk::DescriptorSet, k_max_descriptor_count>& VulkanResourceDescriptor::GetDescriptorSets()
-			{
-				return descriptor_sets;
 			}
 		}
 	}

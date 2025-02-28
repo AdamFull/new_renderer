@@ -166,7 +166,7 @@ namespace edge
 			return hash;
 		}
 
-		std::unique_ptr<Context> CreateContext(const ContextCreateInfo& create_info)
+		std::unique_ptr<IContext> CreateContext(const ContextCreateInfo& create_info)
 		{
 			switch (create_info.render_api)
 			{

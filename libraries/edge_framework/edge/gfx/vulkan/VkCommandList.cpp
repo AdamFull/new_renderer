@@ -45,7 +45,7 @@ namespace edge
 				command_pool.FreeCommandBuffer(handle);
 			}
 
-			void VulkanCommandList::SetResourceName(std::string_view name)
+			void VulkanCommandList::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& device = command_pool.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();
@@ -71,26 +71,26 @@ namespace edge
 				handle.end();
 			}
 
-			void VulkanCommandList::SetViewport(float x, float y, float width, float height, float min_depth, float max_depth)
+			void VulkanCommandList::SetViewport(float x, float y, float width, float height, float min_depth, float max_depth) const
 			{
 				vk::Viewport viewport{ x, y, width, height, min_depth, max_depth };
 				handle.setViewport(0u, 1u, &viewport);
 			}
 
-			void VulkanCommandList::SerScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+			void VulkanCommandList::SerScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const
 			{
 				vk::Rect2D scissor{ { static_cast<int32_t>(x), static_cast<int32_t>(y) }, { width, height } };
 				handle.setScissor(0u, 1u, &scissor);
 			}
 
-			void VulkanCommandList::BindPipeline(Pipeline* pipeline)
+			void VulkanCommandList::BindPipeline(IPipeline* pipeline) const
 			{
 				auto* vk_pipeline = static_cast<VulkanPipeline*>(pipeline);
 				auto bind_point = PipelineTypeToVk(vk_pipeline->GetType());
 				handle.bindPipeline(bind_point, vk_pipeline->GetHandle());
 			}
 
-			void VulkanCommandList::BindDescriptors(const BindDescriptorsInfo& bind_info)
+			void VulkanCommandList::BindDescriptors(const BindDescriptorsInfo& bind_info) const
 			{
 				auto* vk_root_signature = static_cast<VulkanRootSignature*>(bind_info.root_signature);
 
@@ -127,7 +127,7 @@ namespace edge
 					0u, nullptr);
 			}
 
-			void VulkanCommandList::PushConstants(Shader* shader, RootSignature* root_signature, std::span<const char> constant_data)
+			void VulkanCommandList::PushConstants(IShader* shader, IRootSignature* root_signature, std::span<const char> constant_data) const
 			{
 				auto* vk_root_signature = static_cast<VulkanRootSignature*>(root_signature);
 				auto& pipeline_layout = vk_root_signature->GetPipelineLayout();
@@ -136,7 +136,7 @@ namespace edge
 				handle.pushConstants(pipeline_layout.GetHandle(), ShaderStageFlagsToVk(reflection.constants.stages), 0u, constant_data.size(), constant_data.data());
 			}
 
-			void VulkanCommandList::BindIndexBuffer(Buffer* index_buffer, IndexType index_type, uint64_t offset)
+			void VulkanCommandList::BindIndexBuffer(IBuffer* index_buffer, IndexType index_type, uint64_t offset) const
 			{
 				vk::IndexType vk_index_type{ vk::IndexType::eUint32 };
 
@@ -152,7 +152,7 @@ namespace edge
 				handle.bindIndexBuffer(buffer->GetHandle(), offset, vk_index_type);
 			}
 
-			void VulkanCommandList::BindVertexBuffers(std::span<Buffer*> vertex_buffers, std::span<const uint32_t> strides, std::span<const uint64_t> offsets)
+			void VulkanCommandList::BindVertexBuffers(std::span<IBuffer*> vertex_buffers, std::span<const uint32_t> strides, std::span<const uint64_t> offsets) const
 			{
 				std::array<vk::Buffer, 16ull> vk_vertex_buffers{};
 
@@ -165,17 +165,17 @@ namespace edge
 				handle.bindVertexBuffers(0u, vertex_buffers.size(), vk_vertex_buffers.data(), offsets.data());
 			}
 
-			void VulkanCommandList::Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count)
+			void VulkanCommandList::Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) const
 			{
 				handle.draw(vertex_count, instance_count, first_vertex, first_instance);
 			}
 
-			void VulkanCommandList::DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
+			void VulkanCommandList::DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) const
 			{
 				handle.drawIndexed(index_count, instance_count, first_index, first_vertex, first_instance);
 			}
 
-			void VulkanCommandList::DrawIndirect(const IndirectDrawCommand& draw_command)
+			void VulkanCommandList::DrawIndirect(const IndirectDrawCommand& draw_command) const
 			{
 				auto* argument_buffer = static_cast<VulkanBuffer*>(draw_command.argument_buffer);
 				auto* count_buffer = static_cast<VulkanBuffer*>(draw_command.count_buffer);
@@ -210,24 +210,24 @@ namespace edge
 				}
 			}
 
-			//void VulkanCommandList::WriteTimestamp(QueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag)
+			//void VulkanCommandList::WriteTimestamp(IQueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag)
 			//{
 			//	auto* pool = static_cast<VulkanQueryPool*>(query_pool);
 			//	handle.writeTimestamp2KHR(StageFlagsToVk(stage_flag), pool->GetHandle(), pool_index);
 			//}
 
-			void VulkanCommandList::Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z)
+			void VulkanCommandList::Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) const
 			{
 				handle.dispatch(group_x, group_y, group_z);
 			}
 
-			void VulkanCommandList::DispatchIndirect(Buffer* argument_buffer, uint64_t argument_offset)
+			void VulkanCommandList::DispatchIndirect(IBuffer* argument_buffer, uint64_t argument_offset) const
 			{
 				auto* vk_buffer = static_cast<VulkanBuffer*>(argument_buffer);
 				handle.dispatchIndirect(vk_buffer->GetHandle(), argument_offset);
 			}
 
-			void VulkanCommandList::CopyBuffer(const CopyBufferInfo& copy_info)
+			void VulkanCommandList::CopyBuffer(const CopyBufferInfo& copy_info) const
 			{
 				std::array<vk::BufferCopy2KHR, 64ull> regions{};
 				vk::CopyBufferInfo2KHR vk_copy_info{};
@@ -250,7 +250,7 @@ namespace edge
 				handle.copyBuffer2KHR(vk_copy_info);
 			}
 
-			void VulkanCommandList::CopyTexture(const CopyTextureInfo& copy_info)
+			void VulkanCommandList::CopyTexture(const CopyTextureInfo& copy_info) const
 			{
 				std::array<vk::BufferImageCopy2KHR, 64ull> regions{};
 				vk::CopyBufferToImageInfo2KHR vk_copy_info{};
@@ -290,7 +290,7 @@ namespace edge
 				handle.copyBufferToImage2KHR(vk_copy_info);
 			}
 
-			void VulkanCommandList::ResourceBarrier(const ResourceBarrierInfo& barrier)
+			void VulkanCommandList::ResourceBarrier(const ResourceBarrierInfo& barrier) const
 			{
 				std::array<vk::MemoryBarrier2KHR, 64ll> memory_barriers{};
 				std::array<vk::BufferMemoryBarrier2KHR, 64ll> buffer_barriers{};
@@ -385,13 +385,13 @@ namespace edge
 				handle.pipelineBarrier2KHR(vk_barrier);
 			}
 
-			void VulkanCommandList::ResetQuery(QueryPool* query_pool, uint32_t first_query, uint32_t query_count)
+			void VulkanCommandList::ResetQuery(IQueryPool* query_pool, uint32_t first_query, uint32_t query_count) const
 			{
 				auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
 				handle.resetQueryPool(vk_query_pool->GetHandle(), first_query, query_count);
 			}
 
-			void VulkanCommandList::BeginQuery(QueryPool* query_pool, uint32_t query)
+			void VulkanCommandList::BeginQuery(IQueryPool* query_pool, uint32_t query) const
 			{
 				auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
 				
@@ -413,7 +413,7 @@ namespace edge
 				}
 			}
 
-			void VulkanCommandList::EndQuery(QueryPool* query_pool, uint32_t query)
+			void VulkanCommandList::EndQuery(IQueryPool* query_pool, uint32_t query) const
 			{
 				auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
 
@@ -435,7 +435,7 @@ namespace edge
 				}
 			}
 
-			void VulkanCommandList::BeginRendering(const RenderingInfo& rendering_info)
+			void VulkanCommandList::BeginRendering(const RenderingInfo& rendering_info) const
 			{
 				vk::RenderingInfoKHR begin_rendering_info{};
 				begin_rendering_info.renderArea.offset.x = rendering_info.offset_x;
@@ -502,12 +502,12 @@ namespace edge
 				handle.beginRenderingKHR(begin_rendering_info);
 			}
 
-			void VulkanCommandList::EndRendering()
+			void VulkanCommandList::EndRendering() const
 			{
 				handle.endRenderingKHR();
 			}
 
-			void VulkanCommandList::BeginMarker(std::string_view name, uint32_t color)
+			void VulkanCommandList::BeginMarker(std::string_view name, uint32_t color) const
 			{
 				auto& device = command_pool.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();
@@ -518,7 +518,7 @@ namespace edge
 #endif
 			}
 
-			void VulkanCommandList::InsertMarker(std::string_view name, uint32_t color)
+			void VulkanCommandList::InsertMarker(std::string_view name, uint32_t color) const
 			{
 				auto& device = command_pool.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();
@@ -529,7 +529,7 @@ namespace edge
 #endif
 			}
 
-			void VulkanCommandList::EndMarker()
+			void VulkanCommandList::EndMarker() const
 			{
 				auto& device = command_pool.GetDevice();
 				auto& debug_utils = device.GetDebugUtils();

@@ -38,21 +38,33 @@ namespace edge
 				/**
 				 * @return The version of the driver
 				 */
-				DriverVersion GetDriverVersion() const;
+				auto GetDriverVersion() const noexcept -> DriverVersion;
 
 				/**
 				 * @brief Used at logical device creation to pass the extensions feature chain to vkCreateDevice
 				 * @returns A void pointer to the start of the extension linked list
 				 */
-				void* GetExtensionFeatureChain() const;
+				auto GetExtensionFeatureChain() const noexcept -> void*
+				{
+					return last_requested_extension_feature;
+				}
 
-				bool IsExtensionSupported(const char* requested_extension) const;
+				auto IsExtensionSupported(const char* requested_extension) const noexcept -> bool;
 
-				const vk::PhysicalDeviceFeatures& GetFeatures() const;
+				auto GetFeatures() const noexcept -> vk::PhysicalDeviceFeatures const&
+				{
+					return features;
+				}
 
-				Instance& GetInstance() const;
+				auto GetInstance() const noexcept -> Instance&
+				{
+					return instance;
+				}
 
-				const vk::PhysicalDeviceMemoryProperties& GetMemoryProperties() const;
+				auto GetMemoryProperties() const noexcept -> vk::PhysicalDeviceMemoryProperties const&
+				{
+					return memory_properties;
+				}
 
 				/**
 				 * @brief Checks that a given memory type is supported by the GPU
@@ -61,15 +73,27 @@ namespace edge
 				 * @param memory_type_found True if found, false if not found
 				 * @returns The memory type index of the found memory type
 				 */
-				uint32_t GetMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memory_type_found = nullptr) const;
+				auto GetMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memory_type_found = nullptr) const noexcept -> uint32_t;
 
-				const vk::PhysicalDeviceProperties& GetProperties() const;
+				const vk::PhysicalDeviceProperties& GetProperties() const
+				{
+					return properties;
+				}
 
-				const std::vector<vk::QueueFamilyProperties>& GetQueueFamilyProperties() const;
+				auto GetQueueFamilyProperties() const noexcept -> std::vector<vk::QueueFamilyProperties> const&
+				{
+					return queue_family_properties;
+				}
 
-				const vk::PhysicalDeviceFeatures GetRequestedFeatures() const;
+				auto GetRequestedFeatures() const noexcept -> const vk::PhysicalDeviceFeatures&
+				{
+					return requested_features;
+				}
 
-				vk::PhysicalDeviceFeatures& GetMutableRequestedFeatures();
+				auto GetMutableRequestedFeatures() noexcept -> vk::PhysicalDeviceFeatures&
+				{
+					return requested_features;
+				}
 
 				/**
 				 * @brief Requests a third party extension to be used by the framework

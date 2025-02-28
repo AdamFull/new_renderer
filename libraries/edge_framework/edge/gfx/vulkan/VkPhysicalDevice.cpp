@@ -46,7 +46,7 @@ namespace edge
 				}
 			}
 
-			DriverVersion PhysicalDevice::GetDriverVersion() const
+			auto PhysicalDevice::GetDriverVersion() const noexcept -> DriverVersion
 			{
 				DriverVersion version;
 
@@ -74,33 +74,13 @@ namespace edge
 				return version;
 			}
 
-			void* PhysicalDevice::GetExtensionFeatureChain() const
-			{
-				return last_requested_extension_feature;
-			}
-
-			bool PhysicalDevice::IsExtensionSupported(const char* requested_extension) const
+			auto PhysicalDevice::IsExtensionSupported(const char* requested_extension) const noexcept -> bool
 			{
 				return std::find_if(device_extensions.begin(), device_extensions.end(),
 					[requested_extension](auto& device_extension) { return std::strcmp(device_extension.extensionName, requested_extension) == 0; }) != device_extensions.end();
 			}
 
-			const vk::PhysicalDeviceFeatures& PhysicalDevice::GetFeatures() const
-			{
-				return features;
-			}
-
-			Instance& PhysicalDevice::GetInstance() const
-			{
-				return instance;
-			}
-
-			const vk::PhysicalDeviceMemoryProperties& PhysicalDevice::GetMemoryProperties() const
-			{
-				return memory_properties;
-			}
-
-			uint32_t PhysicalDevice::GetMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memory_type_found) const
+			auto PhysicalDevice::GetMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memory_type_found) const noexcept -> uint32_t
 			{
 				for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++)
 				{
@@ -127,26 +107,6 @@ namespace edge
 				{
 					throw std::runtime_error("Could not find a matching memory type");
 				}
-			}
-
-			const vk::PhysicalDeviceProperties& PhysicalDevice::GetProperties() const
-			{
-				return properties;
-			}
-
-			const std::vector<vk::QueueFamilyProperties>& PhysicalDevice::GetQueueFamilyProperties() const
-			{
-				return queue_family_properties;
-			}
-
-			const vk::PhysicalDeviceFeatures PhysicalDevice::GetRequestedFeatures() const
-			{
-				return requested_features;
-			}
-
-			vk::PhysicalDeviceFeatures& PhysicalDevice::GetMutableRequestedFeatures()
-			{
-				return requested_features;
 			}
 		}
 	}

@@ -29,34 +29,14 @@ namespace edge
 			{
 			}
 
-			QueueFamilyManager const& VulkanQueue::GetFamily() const
-			{
-				return *family_manager;
-			}
-
-			void VulkanQueue::SetFamily(QueueFamilyManager* family)
-			{
-				family_manager = family;
-			}
-
-			bool VulkanQueue::IsUsed() const
-			{
-				return used;
-			}
-
-			void VulkanQueue::SetUsed(bool value)
-			{
-				used = value;
-			}
-
-			void VulkanQueue::SetResourceName(std::string_view name)
+			void VulkanQueue::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& device = family_manager->GetDevice();
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);
 			}
 
-			void VulkanQueue::Submit(const SubmitInfo& submit_info, Fence* fence) const
+			void VulkanQueue::Submit(const SubmitInfo& submit_info, IFence* fence) const
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 
@@ -83,7 +63,7 @@ namespace edge
 
 				for (int32_t i = 0; i < submit_info.command_lists.size(); ++i)
 				{
-					CommandList* command_list = submit_info.command_lists[i];
+					ICommandList* command_list = submit_info.command_lists[i];
 					if (command_list)
 					{
 						auto& submit_info = command_buffers[vk_submit_info.commandBufferInfoCount++];
@@ -120,7 +100,7 @@ namespace edge
 
 				for (int32_t i = 0; i < present_info.wait_semaphores.size(); ++i)
 				{
-					Semaphore* semaphore = present_info.wait_semaphores[i];
+					ISemaphore* semaphore = present_info.wait_semaphores[i];
 					if (semaphore)
 					{
 						wait_semaphores[vk_present_info.waitSemaphoreCount++] = static_cast<VulkanSemaphore*>(semaphore)->GetHandle();
@@ -129,7 +109,7 @@ namespace edge
 
 				for (int32_t i = 0; i < present_info.swapchains.size(); ++i)
 				{
-					Swapchain* swapchain = present_info.swapchains[i];
+					ISwapchain* swapchain = present_info.swapchains[i];
 					if (swapchain)
 					{
 						auto* vk_swapchain = static_cast<VulkanSwapchain*>(swapchain);

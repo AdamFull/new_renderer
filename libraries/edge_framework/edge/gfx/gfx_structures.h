@@ -19,26 +19,26 @@ namespace edge
 		
 		static constexpr uint32_t k_max_attachment_count{ 8u };
 
-		class Context;
-		class GFXResource;
-		class Fence;
-		class Semaphore;
-		class Queue;
-		class Swapchain;
-		class Buffer;
-		class CommandList;
-		class CommandPool;
-		class Texture;
-		class Sampler;
-		class Shader;
-		class ShaderEffect;
-		class RootSignature;
-		class Pipeline;
-		class PipelineCache;
-		class DescriptorAllocator;
-		class ResourceDescriptor;
-		class SharedDescriptor;
-		class QueryPool;
+		class IContext;
+		class IGFXResource;
+		class IFence;
+		class ISemaphore;
+		class IQueue;
+		class ISwapchain;
+		class IBuffer;
+		class ICommandList;
+		class ICommandPool;
+		class ITexture;
+		class ISampler;
+		class IShader;
+		class IShaderEffect;
+		class IRootSignature;
+		class IPipeline;
+		class IPipelineCache;
+		class IDescriptorAllocator;
+		class IResourceDescriptor;
+		class ISharedDescriptor;
+		class IQueryPool;
 
 		/**
 		* Base structures
@@ -52,7 +52,7 @@ namespace edge
 
 		struct SemaphoreSubmitInfo
 		{
-			Semaphore* semaphore{ nullptr };
+			ISemaphore* semaphore{ nullptr };
 			uint64_t value{ 0ull };
 			StageFlags stage;
 		};
@@ -60,14 +60,14 @@ namespace edge
 		struct SubmitInfo
 		{
 			std::span<SemaphoreSubmitInfo> wait_semaphore_infos;
-			std::span<CommandList*> command_lists;
+			std::span<ICommandList*> command_lists;
 			std::span<SemaphoreSubmitInfo> signal_semaphore_infos;
 		};
 
 		struct PresentInfo
 		{
-			std::span<Semaphore*> wait_semaphores;
-			std::span<Swapchain*> swapchains;
+			std::span<ISemaphore*> wait_semaphores;
+			std::span<ISwapchain*> swapchains;
 			const uint32_t* image_indices{ nullptr };
 		};
 
@@ -80,9 +80,9 @@ namespace edge
 
 		struct RootSignatureCreateInfo
 		{
-			Shader* shader{ nullptr };
-			SharedDescriptor* shared_descriptor{ nullptr };
-			std::span<Sampler*> immutable_samplers;
+			IShader* shader{ nullptr };
+			ISharedDescriptor* shared_descriptor{ nullptr };
+			std::span<ISampler*> immutable_samplers;
 		};
 
 		// Vertex input
@@ -200,9 +200,9 @@ namespace edge
 
 		struct GraphicsPipelineCreateInfo
 		{
-			Shader* shader{ nullptr };
-			RootSignature* root_signature{ nullptr };
-			PipelineCache* pipeline_cache{ nullptr };
+			IShader* shader{ nullptr };
+			IRootSignature* root_signature{ nullptr };
+			IPipelineCache* pipeline_cache{ nullptr };
 
 			PipelineState pipeline_state{};
 
@@ -215,9 +215,9 @@ namespace edge
 
 		struct ComputePipelineCreateInfo
 		{
-			Shader* shader{ nullptr };
-			RootSignature* root_signature{ nullptr };
-			PipelineCache* pipeline_cache{ nullptr };
+			IShader* shader{ nullptr };
+			IRootSignature* root_signature{ nullptr };
+			IPipelineCache* pipeline_cache{ nullptr };
 		};
 
 		struct ClearColor
@@ -248,7 +248,7 @@ namespace edge
 
 		struct Attachment
 		{
-			Texture* texture{ nullptr };
+			ITexture* texture{ nullptr };
 			ResourceStateFlags texture_state{};
 
 			LoadOp load_op{ LoadOp::eLoad };
@@ -282,7 +282,7 @@ namespace edge
 		struct SwapChainCreateInfo
 		{
 			const Window* window{ nullptr };
-			Swapchain* old_swapchain{ nullptr };
+			ISwapchain* old_swapchain{ nullptr };
 
 			uint32_t image_count{ 1u };
 			uint32_t width{ 1u };
@@ -352,7 +352,7 @@ namespace edge
 
 		struct BufferBarrier
 		{
-			Buffer* buffer{ nullptr };
+			IBuffer* buffer{ nullptr };
 			ResourceStateFlags src_state{};
 			ResourceStateFlags dst_state{};
 			BufferRangeInfo range{};
@@ -360,7 +360,7 @@ namespace edge
 
 		struct TextureBarrier
 		{
-			Texture* texture{ nullptr };
+			ITexture* texture{ nullptr };
 			uint32_t subresource_index{ ~0u };
 
 			ResourceStateFlags src_state{};
@@ -389,12 +389,12 @@ namespace edge
 		{
 			bool indexed_draw{ false };
 
-			Buffer* argument_buffer{ nullptr };
+			IBuffer* argument_buffer{ nullptr };
 			uint64_t argument_offset{ 0ull };
 			uint32_t draw_count{ 0u };
 			uint32_t command_stride{ 0u };
 
-			Buffer* count_buffer{ nullptr };
+			IBuffer* count_buffer{ nullptr };
 			uint64_t count_offset{ 0ull };
 		};
 
@@ -407,15 +407,15 @@ namespace edge
 
 		struct CopyBufferInfo
 		{
-			Buffer* src_buffer{ nullptr };
-			Buffer* dst_buffer{ nullptr };
+			IBuffer* src_buffer{ nullptr };
+			IBuffer* dst_buffer{ nullptr };
 
 			std::span<BufferCopyRegion> regions;
 		};
 
 		struct BufferUpdateInfo
 		{
-			Buffer* dst_buffer{ nullptr };
+			IBuffer* dst_buffer{ nullptr };
 			uint64_t update_size{ 0ull };
 		};
 
@@ -439,8 +439,8 @@ namespace edge
 
 		struct CopyTextureInfo
 		{
-			Buffer* src_buffer{ nullptr };
-			Texture* dst_texture{ nullptr };
+			IBuffer* src_buffer{ nullptr };
+			ITexture* dst_texture{ nullptr };
 
 			std::array<TextureCopyRegion, 64ull> copy_regions{};
 			uint32_t copy_region_count{ 0u };
@@ -449,9 +449,9 @@ namespace edge
 		struct BindDescriptorsInfo
 		{
 			PipelineType pipeline_type{}; 
-			RootSignature* root_signature{ nullptr };
+			IRootSignature* root_signature{ nullptr };
 
-			std::span<ResourceDescriptor*> resource_descriptors;
+			std::span<IResourceDescriptor*> resource_descriptors;
 		};
 
 		struct BindingDescription
@@ -471,7 +471,7 @@ namespace edge
 		{
 			DescriptorType type{};
 
-			Buffer* buffer{ nullptr };
+			IBuffer* buffer{ nullptr };
 
 			uint32_t set{ 0u };
 			uint32_t binding{ 0u };
@@ -484,8 +484,8 @@ namespace edge
 		{
 			DescriptorType type{};
 
-			Texture* texture{ nullptr };
-			Sampler* sampler{ nullptr };
+			ITexture* texture{ nullptr };
+			ISampler* sampler{ nullptr };
 			uint32_t subresource_index{ ~0u };
 			ResourceStateFlags resource_state{};
 

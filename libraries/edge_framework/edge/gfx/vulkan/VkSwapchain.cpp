@@ -27,7 +27,7 @@ namespace edge
 
 				if (request_extent.width < 1 || request_extent.height < 1)
 				{
-					EDGE_LOGW("(Swapchain) Image extent ({}, {}) not supported. Selecting ({}, {}).",
+					EDGE_LOGW("(ISwapchain) Image extent ({}, {}) not supported. Selecting ({}, {}).",
 						request_extent.width, request_extent.height,
 						current_extent.width, current_extent.height);
 					return current_extent;
@@ -53,12 +53,12 @@ namespace edge
 					// If nothing found, always default to FIFO
 					vk::PresentModeKHR const chosen_present_mode = (chosen_present_mode_it != present_mode_priority_list.end()) ? *chosen_present_mode_it : vk::PresentModeKHR::eFifo;
 
-					EDGE_LOGW("(Swapchain) Present mode '{}' not supported. Selecting '{}'.", vk::to_string(request_present_mode), vk::to_string(chosen_present_mode));
+					EDGE_LOGW("(ISwapchain) Present mode '{}' not supported. Selecting '{}'.", vk::to_string(request_present_mode), vk::to_string(chosen_present_mode));
 					return chosen_present_mode;
 				}
 				else
 				{
-					EDGE_LOGI("(Swapchain) Present mode selected: {}", to_string(request_present_mode));
+					EDGE_LOGI("(ISwapchain) Present mode selected: {}", to_string(request_present_mode));
 					return request_present_mode;
 				}
 			}
@@ -78,14 +78,14 @@ namespace edge
 					// If nothing found, default to the first available format
 					vk::SurfaceFormatKHR const& chosen_surface_format = (chosen_surface_format_it != surface_format_priority_list.end()) ? *chosen_surface_format_it : available_surface_formats[0];
 
-					EDGE_LOGW("(Swapchain) Surface format ({}) not supported. Selecting ({}).",
+					EDGE_LOGW("(ISwapchain) Surface format ({}) not supported. Selecting ({}).",
 						vk::to_string(requested_surface_format.format) + ", " + vk::to_string(requested_surface_format.colorSpace),
 						vk::to_string(chosen_surface_format.format) + ", " + vk::to_string(chosen_surface_format.colorSpace));
 					return chosen_surface_format;
 				}
 				else
 				{
-					EDGE_LOGI("(Swapchain) Surface format selected: {}", vk::to_string(requested_surface_format.format) + ", " + vk::to_string(requested_surface_format.colorSpace));
+					EDGE_LOGI("(ISwapchain) Surface format selected: {}", vk::to_string(requested_surface_format.format) + ", " + vk::to_string(requested_surface_format.colorSpace));
 					return requested_surface_format;
 				}
 			}
@@ -97,7 +97,7 @@ namespace edge
 					return request_transform;
 				}
 
-				EDGE_LOGW("(Swapchain) Surface transform '{}' not supported. Selecting '{}'.", vk::to_string(request_transform), vk::to_string(current_transform));
+				EDGE_LOGW("(ISwapchain) Surface transform '{}' not supported. Selecting '{}'.", vk::to_string(request_transform), vk::to_string(current_transform));
 				return current_transform;
 			}
 
@@ -120,7 +120,7 @@ namespace edge
 				}
 				else
 				{
-					EDGE_LOGW("(Swapchain) Composite alpha '{}' not supported. Selecting '{}.", vk::to_string(request_composite_alpha), vk::to_string(*chosen_composite_alpha_it));
+					EDGE_LOGW("(ISwapchain) Composite alpha '{}' not supported. Selecting '{}.", vk::to_string(request_composite_alpha), vk::to_string(*chosen_composite_alpha_it));
 					return *chosen_composite_alpha_it;
 				}
 			}
@@ -141,7 +141,7 @@ namespace edge
 					}
 					else
 					{
-						EDGE_LOGW("(Swapchain) Image usage ({}) requested but not supported.", vk::to_string(flag));
+						EDGE_LOGW("(ISwapchain) Image usage ({}) requested but not supported.", vk::to_string(flag));
 					}
 				}
 
@@ -170,7 +170,7 @@ namespace edge
 					{
 						usage_list += to_string(image_usage) + " ";
 					}
-					EDGE_LOGI("(Swapchain) Image usage flags: {}", usage_list);
+					EDGE_LOGI("(ISwapchain) Image usage flags: {}", usage_list);
 				}
 
 				return validated_image_usage_flags;
@@ -314,23 +314,13 @@ namespace edge
 				image_usage_flags{ std::move(other.image_usage_flags) }
 			{}
 
-			bool VulkanSwapchain::IsValid() const
-			{
-				return !!handle;
-			}
-
-			Device const& VulkanSwapchain::GetDevice() const
-			{
-				return device;
-			}
-
-			void VulkanSwapchain::SetResourceName(std::string_view name)
+			void VulkanSwapchain::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);
 			}
 
-			bool VulkanSwapchain::AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index)
+			auto VulkanSwapchain::AcquireNextImage(ISemaphore* signal_semaphore, IFence* fence, uint32_t* image_index) -> bool
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 
@@ -361,62 +351,22 @@ namespace edge
 				return result == vk::Result::eSuccess;
 			}
 
-			const vk::Extent2D& VulkanSwapchain::GetExtent() const
-			{
-				return create_info.imageExtent;
-			}
-
-			vk::Format VulkanSwapchain::GetFormat() const
-			{
-				return create_info.imageFormat;
-			}
-
-			vk::Image& VulkanSwapchain::GetImage(uint32_t index)
-			{
-				return images[index];
-			}
-
-			const std::vector<vk::Image>& VulkanSwapchain::GetImages() const
-			{
-				return images;
-			}
-
-			vk::SurfaceTransformFlagBitsKHR VulkanSwapchain::GetTransform() const
-			{
-				return create_info.preTransform;
-			}
-
-			vk::SurfaceKHR VulkanSwapchain::GetSurface() const
-			{
-				return surface;
-			}
-
-			vk::ImageUsageFlags VulkanSwapchain::GetUsage() const
-			{
-				return create_info.imageUsage;
-			}
-
-			vk::PresentModeKHR VulkanSwapchain::GetPresentMode() const
-			{
-				return create_info.presentMode;
-			}
-
-			uint32_t VulkanSwapchain::GetImageCount() const
+			auto VulkanSwapchain::GetImageCount() const noexcept -> uint32_t
 			{
 				return create_info.minImageCount;
 			}
 
-			Format VulkanSwapchain::GetImageFormat() const
+			auto VulkanSwapchain::GetImageFormat() const noexcept -> Format
 			{
 				return FormatFromVk(static_cast<uint32_t>(create_info.imageFormat));
 			}
 
-			const uint32_t& VulkanSwapchain::GetWidth() const
+			auto VulkanSwapchain::GetWidth() const noexcept -> uint32_t const&
 			{
 				return create_info.imageExtent.width;
 			}
 
-			const uint32_t& VulkanSwapchain::GetHeight() const
+			auto VulkanSwapchain::GetHeight() const noexcept -> uint32_t const&
 			{
 				return create_info.imageExtent.height;
 			}

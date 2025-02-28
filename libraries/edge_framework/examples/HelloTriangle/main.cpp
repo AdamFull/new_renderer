@@ -120,7 +120,7 @@ private:
 
 struct RenderFrame
 {
-	RenderFrame(edge::gfx::Context& context, edge::gfx::Swapchain* swapchain, const edge::gfx::Queue* queue, uint32_t frame_index) :
+	RenderFrame(edge::gfx::IContext& context, edge::gfx::ISwapchain* swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index) :
 		context{ context }
 	{
 		backbuffer = context.CreateSwapchainTexture(swapchain, frame_index);
@@ -150,7 +150,7 @@ struct RenderFrame
 		context.Destroy(fence);
 	}
 
-	void UpdateBackbuffer(edge::gfx::Swapchain* swapchain, uint32_t frame_index)
+	void UpdateBackbuffer(edge::gfx::ISwapchain* swapchain, uint32_t frame_index)
 	{
 		context.Destroy(backbuffer);
 		backbuffer = context.CreateSwapchainTexture(swapchain, frame_index);
@@ -162,16 +162,16 @@ struct RenderFrame
 		command_pool->Reset();
 	}
 
-	edge::gfx::Texture* backbuffer{ nullptr };
-	edge::gfx::CommandPool* command_pool{ nullptr };
-	edge::gfx::DescriptorAllocator* descriptor_allocator{ nullptr };
-	edge::gfx::Semaphore* image_avaliable{ nullptr };
-	edge::gfx::Semaphore* render_finished{ nullptr };
-	edge::gfx::Semaphore* upload_avaliable{ nullptr };
-	edge::gfx::Fence* fence{ nullptr };
+	edge::gfx::ITexture* backbuffer{ nullptr };
+	edge::gfx::ICommandPool* command_pool{ nullptr };
+	edge::gfx::IDescriptorAllocator* descriptor_allocator{ nullptr };
+	edge::gfx::ISemaphore* image_avaliable{ nullptr };
+	edge::gfx::ISemaphore* render_finished{ nullptr };
+	edge::gfx::ISemaphore* upload_avaliable{ nullptr };
+	edge::gfx::IFence* fence{ nullptr };
 
 private:
-	edge::gfx::Context& context;
+	edge::gfx::IContext& context;
 };
 
 
@@ -516,7 +516,7 @@ private:
 		// which might not be due to a surface resize
 		if (surface_width != current_width || surface_height != current_height || force_update)
 		{
-			EDGE_PROFILE_ZONE_SCOPED_NAMED("Swapchain update");
+			EDGE_PROFILE_ZONE_SCOPED_NAMED("ISwapchain update");
 			// Recreate swapchain
 			queue->WaitIdle();
 			UpdateSwapchain(surface_width, surface_height);
@@ -529,25 +529,25 @@ private:
 		return false;
 	}
 private:
-    std::unique_ptr<edge::gfx::Context> gfx_context{};
+    std::unique_ptr<edge::gfx::IContext> gfx_context{};
     std::unique_ptr<edge::gfx::FilesystemWrapper> gfx_fs_wrapper{};
     std::unique_ptr<edge::gfx::ext::ResourceLoader> resource_loader{};
 
 	edge::Window* window{ nullptr };
 
-	const edge::gfx::Queue* queue;
+	const edge::gfx::IQueue* queue;
 
-	edge::gfx::Swapchain* swapchain{ nullptr };
+	edge::gfx::ISwapchain* swapchain{ nullptr };
 	std::array<std::unique_ptr<RenderFrame>, 8ull> render_frames{};
 
 	uint32_t active_frame_index{ 0u };
-	edge::gfx::Semaphore* acquired_semaphore{ nullptr };
+	edge::gfx::ISemaphore* acquired_semaphore{ nullptr };
 
-	edge::gfx::Shader* shader{ nullptr };
-	edge::gfx::RootSignature* root_sign{ nullptr };
-	edge::gfx::Pipeline* pipeline{ nullptr };
+	edge::gfx::IShader* shader{ nullptr };
+	edge::gfx::IRootSignature* root_sign{ nullptr };
+	edge::gfx::IPipeline* pipeline{ nullptr };
 
-	edge::gfx::Buffer* vertex_buffer{ nullptr };
+	edge::gfx::IBuffer* vertex_buffer{ nullptr };
 };
 
 int RuntimeMain(const edge::RuntimeContext& context)

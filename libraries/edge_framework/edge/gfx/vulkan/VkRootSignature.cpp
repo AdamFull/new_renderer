@@ -128,20 +128,10 @@ namespace edge
 			{
 			}
 
-			void VulkanRootSignature::SetResourceName(std::string_view name)
+			void VulkanRootSignature::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(pipeline_layout->GetHandle(), name);
-			}
-
-			PipelineLayout& VulkanRootSignature::GetPipelineLayout()
-			{
-				return *pipeline_layout;
-			}
-
-			const std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count>& VulkanRootSignature::GetDescriptorSetLayouts()
-			{
-				return descriptor_set_layouts;
 			}
 		}
 	}

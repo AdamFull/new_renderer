@@ -9,11 +9,11 @@ namespace edge
 	{
 		namespace vulkan
 		{
-			class VulkanTexture final : public Texture
+			class VulkanTexture final : public ITexture
 			{
 			public:
 				VulkanTexture(Allocator& allocator, const TextureCreateInfo& create_info);
-				VulkanTexture(Allocator& allocator, Swapchain* swapchain, uint32_t image_index);
+				VulkanTexture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index);
 
 				VulkanTexture(const VulkanTexture&) = delete;
 				VulkanTexture(VulkanTexture&& other);
@@ -22,22 +22,40 @@ namespace edge
 				VulkanTexture& operator=(const VulkanTexture&) = delete;
 				VulkanTexture& operator=(VulkanTexture&&) = delete;
 
-				Image& GetImage();
-				Image const& GetImage() const;
+				[[nodiscard]] auto GetImage() noexcept -> Image&;
+				[[nodiscard]] auto GetImage() const noexcept -> Image const&;
 
-				ImageView& GetSubresource(uint32_t subresource = ~0u);
-				ImageView const& GetSubresource(uint32_t subresource = ~0u) const;
+				[[nodiscard]] auto GetSubresource(uint32_t subresource = ~0u) -> ImageView&;
+				[[nodiscard]] auto GetSubresource(uint32_t subresource = ~0u) const ->ImageView const&;
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 
-				uint32_t GetWidth() const override;
-				uint32_t GetHeight() const override;
-				uint32_t GetDepth() const override;
+				[[nodiscard]] auto GetWidth() const noexcept -> uint32_t override
+				{
+					return image->GetExtent().width;
+				}
 
-				uint32_t GetMipLevelCount() const override;
-				uint32_t GetArrayLayerCount() const override;
+				[[nodiscard]] auto GetHeight() const noexcept -> uint32_t override
+				{
+					return image->GetExtent().height;
+				}
 
-				Format GetFormat() const override;
+				[[nodiscard]] auto GetDepth() const noexcept -> uint32_t override
+				{
+					return image->GetExtent().depth;
+				}
+
+				[[nodiscard]] auto GetMipLevelCount() const noexcept -> uint32_t override
+				{
+					return image->GetMipLevelCount();
+				}
+
+				[[nodiscard]] auto GetArrayLayerCount() const noexcept -> uint32_t override
+				{
+					return image->GetArrayLayerCount();
+				}
+
+				[[nodiscard]] auto GetFormat() const noexcept -> Format override;
 			private:
 				Device& device;
 

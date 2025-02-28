@@ -86,34 +86,6 @@ namespace edge
 			{
 				Handle(device).destroyImageView(handle, allocation_callbacks);
 			}
-
-			vk::Format ImageView::GetFormat() const
-			{
-				return create_info.format;
-			}
-
-			vk::ImageViewType ImageView::GetType() const
-			{
-				return create_info.viewType;
-			}
-
-			vk::ImageSubresourceLayers ImageView::GetSubresourceLayers() const
-			{
-				return vk::ImageSubresourceLayers(create_info.subresourceRange.aspectMask,
-					create_info.subresourceRange.baseMipLevel,
-					create_info.subresourceRange.baseArrayLayer,
-					create_info.subresourceRange.layerCount);
-			}
-
-			vk::ImageSubresourceRange ImageView::GetSubresourceRange() const
-			{
-				return create_info.subresourceRange;
-			}
-
-			vk::ImageAspectFlags ImageView::GetAspectMask() const
-			{
-				return create_info.subresourceRange.aspectMask;
-			}
 		}
 	}
 }

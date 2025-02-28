@@ -19,7 +19,7 @@ namespace edge
 				void RegisterShaderBinary(std::span<uint8_t> shader_code) override;
 				void RegisterShaderDebugBinary(std::span<uint8_t> stripped_shader_code, std::span<uint8_t> full_shader_code) override;
 			private:
-				void SetMarkerImpl(CommandList* cmd_list, const void* data_index) override;
+				void SetMarkerImpl(ICommandList* cmd_list, const void* data_index) override;
 			};
 		}
 	}

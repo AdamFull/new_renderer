@@ -52,51 +52,6 @@ namespace edge
 				return MapMemory();
 			}
 
-			vk::ImageType Image::GetType() const
-			{
-				return create_info.imageType;
-			}
-
-			const vk::Extent3D& Image::GetExtent() const
-			{
-				return create_info.extent;
-			}
-
-			vk::Format Image::GetFormat() const
-			{
-				return create_info.format;
-			}
-
-			vk::SampleCountFlagBits Image::GetSampleCount() const
-			{
-				return create_info.samples;
-			}
-
-			vk::ImageUsageFlags Image::GetUsage() const
-			{
-				return create_info.usage;
-			}
-
-			vk::ImageTiling Image::GetTiling() const
-			{
-				return create_info.tiling;
-			}
-
-			vk::ImageSubresource Image::GetSubresource() const
-			{
-				return subresource;
-			}
-
-			uint32_t Image::GetMipLevelCount() const
-			{
-				return create_info.mipLevels;
-			}
-
-			uint32_t Image::GetArrayLayerCount() const
-			{
-				return create_info.arrayLayers;
-			}
-
 			void Image::InitializeCreateInfo(const TextureCreateInfo& texture_create_info)
 			{
 				alloc_create_info.usage = vma::MemoryUsage::eUnknown;

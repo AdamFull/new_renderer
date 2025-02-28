@@ -6,10 +6,10 @@ namespace engine
 {
 	namespace sfx
 	{
-		class Context
+		class IContext
 		{
 		public:
-			virtual ~Context() = default;
+			virtual ~IContext() = default;
 
 			virtual void Destroy(SFXResource* handle) = 0;
 
@@ -20,6 +20,6 @@ namespace engine
 			virtual [[nodiscard]] Listener* CreateListener() = 0;
 		};
 
-		std::unique_ptr<Context> CreateContext(const ContextCreateInfo& create_info);
+		std::unique_ptr<IContext> CreateContext(const ContextCreateInfo& create_info);
 	}
 }

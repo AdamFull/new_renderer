@@ -22,8 +22,8 @@ namespace engine
 			Renderer(edge::Window* window, edge::filesystem::IVirtualFileSystemInterface* vfs);
 			~Renderer();
 
-			uint32_t AddRenderResource(std::string_view path, edge::gfx::Sampler* sampler = nullptr) override;
-			uint32_t AddRenderResource(const TextureResourceCreateInfo& create_info, edge::gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) override;
+			uint32_t AddRenderResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) override;
 
 			uint32_t AddRenderResource(const edge::gfx::BufferCreateInfo& create_info) override;
 
@@ -37,7 +37,7 @@ namespace engine
 			edge::gfx::ext::ShaderEffectSystem& GetShaderEffectSystem() override;
 			edge::gfx::ext::ShaderEffectSystem const& GetShaderEffectSystem() const override;
 
-			edge::gfx::Context& GetContext() override;
+			edge::gfx::IContext& GetContext() override;
 
 			uint32_t RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			uint32_t RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
@@ -53,7 +53,7 @@ namespace engine
 		private:
 			std::unique_ptr<edge::gfx::FilesystemWrapper> fs;
 
-			std::unique_ptr<edge::gfx::Context> gfx_context{};
+			std::unique_ptr<edge::gfx::IContext> gfx_context{};
 			std::unique_ptr<edge::gfx::ext::ResourceLoader> resource_loader{};
 			std::unique_ptr<edge::gfx::ext::ShaderEffectSystem> shader_effect_system{};
 			std::unique_ptr<ExecutionContext> render_context{};

@@ -22,13 +22,27 @@ namespace edge
 				QueueFamilyManager& operator=(const QueueFamilyManager&) = delete;
 				QueueFamilyManager& operator=(QueueFamilyManager&&) = delete;
 
-				Device const& GetDevice() const;
-				Device& GetDevice();
+				auto GetDevice() const noexcept -> Device const&
+				{
+					return *device;
+				}
 
-				VulkanQueue* LookUpQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags);
+				auto GetDevice() noexcept -> Device&
+				{
+					return *device;
+				}
 
-				uint32_t GetFamilyIndex() const;
-				QueueTypeFlags GetFlags() const;
+				[[nodiscard]] auto LookUpQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) noexcept -> VulkanQueue*;
+
+				auto GetFamilyIndex() const noexcept -> uint32_t
+				{
+					return family_index;
+				}
+
+				auto GetFlags() const noexcept -> QueueTypeFlags
+				{
+					return flags;
+				}
 			private:
 				Device* device{ nullptr };
 

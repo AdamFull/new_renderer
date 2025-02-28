@@ -42,14 +42,14 @@ namespace engine
 		struct VertexData
 		{
 			uint32_t count{ 0u };
-			edge::gfx::Buffer* buffer{ nullptr };
+			edge::gfx::IBuffer* buffer{ nullptr };
 			std::vector<uint8_t> data{};
 		};
 
 		struct IndexData
 		{
 			uint32_t count{ 0u };
-			edge::gfx::Buffer* buffer{ nullptr };
+			edge::gfx::IBuffer* buffer{ nullptr };
 			edge::gfx::IndexType type{};
 			std::vector<uint8_t> data{};
 		};
@@ -87,11 +87,11 @@ namespace engine
 
 			virtual void Flush();
 
-			void BindIndexBuffer(edge::gfx::CommandList& command_list);
+			void BindIndexBuffer(edge::gfx::ICommandList& command_list);
 
-			virtual void BindVertexBuffers(edge::gfx::CommandList& command_list) = 0;
+			virtual void BindVertexBuffers(edge::gfx::ICommandList& command_list) = 0;
 
-			void Bind(edge::gfx::CommandList& command_list);
+			void Bind(edge::gfx::ICommandList& command_list);
 
 			virtual uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) = 0;
 
@@ -105,7 +105,7 @@ namespace engine
 
 			edge::gfx::VertexLayout const& GetVertexLayout() const;
 		protected:
-			void TryFlushBuffer(edge::gfx::Buffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage);
+			void TryFlushBuffer(edge::gfx::IBuffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage);
 		protected:
 			edge::gfx::ext::ResourceLoader& resource_loader;
 			edge::gfx::VertexLayout vertex_layout{};

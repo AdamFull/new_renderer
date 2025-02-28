@@ -73,8 +73,8 @@ namespace edge
 			virtual void RegisterShaderBinary(std::span<uint8_t> shader_code) = 0;
 			virtual void RegisterShaderDebugBinary(std::span<uint8_t> stripped_shader_code, std::span<uint8_t> full_shader_code) = 0;
 
-			void SetMarker(CommandList* cmd_list, const char* name);
-			static void TrySetMarker(CommandList* cmd_list, const char* name);
+			void SetMarker(ICommandList* cmd_list, const char* name);
+			static void TrySetMarker(ICommandList* cmd_list, const char* name);
 
 		private:
 			void OnGpuCrashDump(const void* pGpuCrashDump, const uint32_t gpuCrashDumpSize);
@@ -96,7 +96,7 @@ namespace edge
 			static void ShaderSourceDebugInfoLookupCallback(const GFSDK_Aftermath_ShaderDebugName* pShaderDebugName, PFN_GFSDK_Aftermath_SetData setShaderBinary, void* pUserData);
 
 		protected:
-			virtual void SetMarkerImpl(CommandList* cmd_list, const void* data_index) = 0;
+			virtual void SetMarkerImpl(ICommandList* cmd_list, const void* data_index) = 0;
 
 			std::unordered_map<GFSDK_Aftermath_ShaderDebugInfoIdentifier, std::vector<uint8_t>> shader_debug_data{};
 			std::unordered_map<GFSDK_Aftermath_ShaderBinaryHash, std::span<uint8_t>> shader_binary_map{};

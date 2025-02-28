@@ -157,12 +157,7 @@ namespace edge
 				}
 			}
 
-			PhysicalDevice const& Device::GetGpu() const
-			{
-				return gpu;
-			}
-
-			VulkanQueue* Device::RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags)
+			auto Device::RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) -> VulkanQueue*
 			{
 				for (auto& family : queue_families)
 				{
@@ -173,23 +168,18 @@ namespace edge
 				return nullptr;
 			}
 
-			size_t Device::GetQueueCount() const
-			{
-				return queue_families.size();
-			}
-
-			bool Device::IsExtensionSupported(const char* extension) const
+			auto Device::IsExtensionSupported(const char* extension) const noexcept -> bool
 			{
 				return gpu.IsExtensionSupported(extension);
 			}
 
-			bool Device::IsEnabled(std::string const& extension) const
+			auto Device::IsEnabled(std::string const& extension) const noexcept -> bool
 			{
 				return std::find_if(enabled_extensions.begin(), enabled_extensions.end(),
 					[extension](const char* enabled_extension) { return extension == enabled_extension; }) != enabled_extensions.end();
 			}
 
-			uint32_t Device::GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const
+			auto Device::GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const -> uint32_t
 			{
 				const auto& queue_family_properties = gpu.GetQueueFamilyProperties();
 
@@ -236,12 +226,12 @@ namespace edge
 				throw std::runtime_error("Could not find a matching queue family index");
 			}
 
-			void Device::SetDebugUtils(DebugUtils* debug_utils)
+			void Device::SetDebugUtils(DebugUtils* debug_utils) noexcept
 			{
 				this->debug_utils = debug_utils;
 			}
 
-			DebugUtils const& Device::GetDebugUtils() const
+			auto Device::GetDebugUtils() const noexcept -> DebugUtils const&
 			{
 				return *debug_utils;
 			}

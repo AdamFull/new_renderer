@@ -24,11 +24,11 @@ namespace engine
 
 		struct PassCreateInfo
 		{
-			edge::gfx::ShaderEffect* shader{ nullptr };
-			edge::gfx::PipelineCache* pipeline_cache{ nullptr };
-			edge::gfx::SharedDescriptor* shared_descriptor{ nullptr };
+			edge::gfx::IShaderEffect* shader{ nullptr };
+			edge::gfx::IPipelineCache* pipeline_cache{ nullptr };
+			edge::gfx::ISharedDescriptor* shared_descriptor{ nullptr };
 
-			std::function<void(ShaderPass&, edge::gfx::CommandList&, float)> draw_callback{};
+			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
 
 			std::string debug_name{};
@@ -51,10 +51,10 @@ namespace engine
 			uint32_t binding_point{ ~0u };
 			uint32_t subresource{ ~0u };
 
-			edge::gfx::Texture* texture{ nullptr };
-			edge::gfx::Sampler* sampler{ nullptr };
+			edge::gfx::ITexture* texture{ nullptr };
+			edge::gfx::ISampler* sampler{ nullptr };
 
-			edge::gfx::Buffer* buffer{ nullptr };
+			edge::gfx::IBuffer* buffer{ nullptr };
 		};
 
 		class UniformHandle
@@ -162,7 +162,7 @@ namespace engine
 			ShaderPass(ExecutionContext& execution_context, const PassCreateInfo& create_info);
 			virtual ~ShaderPass();
 
-			void Execute(edge::gfx::CommandList& command_list, float delta_time) override;
+			void Execute(edge::gfx::ICommandList& command_list, float delta_time) override;
 
 			UniformHandle& GetUniformBlock(uint32_t name_hash);
 			UniformHandle& GetUniformBlock(const char* name);
@@ -174,52 +174,52 @@ namespace engine
 			void WriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index);
 			void WriteResource(uint32_t render_resource_id, uint32_t subresource_index);
 
-			void ResolveDependencies(edge::gfx::CommandList& command_list);
+			void ResolveDependencies(edge::gfx::ICommandList& command_list);
 
 			void BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 			void BindReadResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 			void BindWriteResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 
-			void DispatchForTarget(edge::gfx::CommandList& command_list, uint32_t target_it, bool divide_by_locals);
-			void FinalizeTarget(edge::gfx::CommandList& command_list, uint32_t binding_point, uint32_t target);
+			void DispatchForTarget(edge::gfx::ICommandList& command_list, uint32_t target_it, bool divide_by_locals);
+			void FinalizeTarget(edge::gfx::ICommandList& command_list, uint32_t binding_point, uint32_t target);
 
-			virtual void Begin(edge::gfx::CommandList& command_list) = 0;
-			virtual void End(edge::gfx::CommandList& command_list) = 0;
+			virtual void Begin(edge::gfx::ICommandList& command_list) = 0;
+			virtual void End(edge::gfx::ICommandList& command_list) = 0;
 
 			virtual ShaderPassType GetPassType() = 0;
 
 			bool CanExecute() const;
-			void BindResources(edge::gfx::CommandList& command_list);
-			void PushConstantRanges(edge::gfx::CommandList& command_list);
+			void BindResources(edge::gfx::ICommandList& command_list);
+			void PushConstantRanges(edge::gfx::ICommandList& command_list);
 			void DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z);
 
 		protected:
 			void ResourceDependency(uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
 			void ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
 			void CollectProfileData();
-			virtual void _Execute(edge::gfx::CommandList& command_list, float delta_time) = 0;
+			virtual void _Execute(edge::gfx::ICommandList& command_list, float delta_time) = 0;
 		protected:
 			ExecutionContext& execution_context;
-			edge::gfx::Context& context;
+			edge::gfx::IContext& context;
 
 			std::string debug_name{};
 			bool one_time{ false };
 			bool can_execute{ true };
 
-			std::function<void(ShaderPass&, edge::gfx::CommandList&, float)> draw_callback{};
+			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
 
-			edge::gfx::SharedDescriptor* shared_descriptor{ nullptr };
-			edge::gfx::ResourceDescriptor* resource_descriptor{ nullptr };
+			edge::gfx::ISharedDescriptor* shared_descriptor{ nullptr };
+			edge::gfx::IResourceDescriptor* resource_descriptor{ nullptr };
 
 			std::vector<UniformHandle> uniform_handles;
 			std::unique_ptr<UniformHandle> constant_block;
 
-			edge::gfx::ShaderEffect* shader_effect{ nullptr };
-			edge::gfx::RootSignature* root_signature{ nullptr };
-			edge::gfx::Pipeline* pipeline{ nullptr };
+			edge::gfx::IShaderEffect* shader_effect{ nullptr };
+			edge::gfx::IRootSignature* root_signature{ nullptr };
+			edge::gfx::IPipeline* pipeline{ nullptr };
 
-			edge::gfx::QueryPool* timestamp_query{ nullptr };
+			edge::gfx::IQueryPool* timestamp_query{ nullptr };
 			uint64_t execution_time{ 0ull };
 			float timestamp_frequency{ 0.f };
 			float pass_delta_time{ 0.f };

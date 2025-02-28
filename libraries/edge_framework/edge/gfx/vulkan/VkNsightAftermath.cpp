@@ -40,7 +40,7 @@ namespace edge
 				shader_full_binary_map[debugName] = full_shader_code;
 			}
 
-			void VkNsightAftermath::SetMarkerImpl(CommandList* cmd_list, const void* data_idx)
+			void VkNsightAftermath::SetMarkerImpl(ICommandList* cmd_list, const void* data_idx)
 			{
 				auto* vk_cmd_list = static_cast<VulkanCommandList*>(cmd_list);
 				auto& handle = vk_cmd_list->GetHandle();

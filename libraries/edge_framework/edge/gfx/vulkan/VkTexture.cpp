@@ -29,7 +29,7 @@ namespace edge
 				}
 			}
 
-			VulkanTexture::VulkanTexture(Allocator& allocator, Swapchain* swapchain, uint32_t image_index) :
+			VulkanTexture::VulkanTexture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index) :
 				device{ allocator.GetDevice() }
 			{
 				VulkanSwapchain* vk_swapchain = static_cast<VulkanSwapchain*>(swapchain);
@@ -56,17 +56,17 @@ namespace edge
 			{
 			}
 
-			Image& VulkanTexture::GetImage()
+			auto VulkanTexture::GetImage() noexcept -> Image&
 			{
 				return *image;
 			}
 
-			Image const& VulkanTexture::GetImage() const
+			auto VulkanTexture::GetImage() const noexcept -> Image const&
 			{
 				return *image;
 			}
 
-			ImageView& VulkanTexture::GetSubresource(uint32_t subresource)
+			auto VulkanTexture::GetSubresource(uint32_t subresource) -> ImageView&
 			{
 				if (subresource == ~0u)
 					return *srv;
@@ -74,7 +74,7 @@ namespace edge
 				return *subresources[subresource];
 			}
 
-			void VulkanTexture::SetResourceName(std::string_view name)
+			void VulkanTexture::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 
@@ -89,7 +89,7 @@ namespace edge
 				}
 			}
 
-			ImageView const& VulkanTexture::GetSubresource(uint32_t subresource) const
+			auto VulkanTexture::GetSubresource(uint32_t subresource) const -> ImageView const&
 			{
 				if (subresource == ~0u)
 					return *srv;
@@ -97,32 +97,7 @@ namespace edge
 				return *subresources[subresource];
 			}
 
-			uint32_t VulkanTexture::GetWidth() const
-			{
-				return image->GetExtent().width;
-			}
-
-			uint32_t VulkanTexture::GetHeight() const
-			{
-				return image->GetExtent().height;
-			}
-
-			uint32_t VulkanTexture::GetDepth() const
-			{
-				return image->GetExtent().depth;
-			}
-
-			uint32_t VulkanTexture::GetMipLevelCount() const
-			{
-				return image->GetMipLevelCount();
-			}
-
-			uint32_t VulkanTexture::GetArrayLayerCount() const
-			{
-				return image->GetArrayLayerCount();
-			}
-
-			Format VulkanTexture::GetFormat() const
+			auto VulkanTexture::GetFormat() const noexcept -> Format
 			{
 				return FormatFromVk(static_cast<uint32_t>(image->GetFormat()));
 			}

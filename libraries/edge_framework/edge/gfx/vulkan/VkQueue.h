@@ -12,7 +12,7 @@ namespace edge
 			class Device;
 			class QueueFamilyManager;
 
-			class VulkanQueue : public Queue, public VulkanResource<vk::Queue>
+			class VulkanQueue final : public IQueue, public VulkanResource<vk::Queue>
 			{
 			public:
 				VulkanQueue(QueueFamilyManager* family_manager, vk::Queue queue);
@@ -23,15 +23,29 @@ namespace edge
 				VulkanQueue& operator=(const VulkanQueue&) = delete;
 				VulkanQueue& operator=(VulkanQueue&&) = delete;
 
-				QueueFamilyManager const& GetFamily() const;
-				void SetFamily(QueueFamilyManager* family);
+				auto GetFamily() const noexcept -> QueueFamilyManager const&
+				{
+					return *family_manager;
+				}
 
-				bool IsUsed() const;
-				void SetUsed(bool value);
+				void SetFamily(QueueFamilyManager* family) noexcept
+				{
+					family_manager = family;
+				}
 
-				void SetResourceName(std::string_view name) override;
+				auto IsUsed() const noexcept -> bool
+				{
+					return used;
+				}
 
-				void Submit(const SubmitInfo& submit_info, Fence* fence) const override;
+				void SetUsed(bool value) noexcept
+				{
+					used = value;
+				}
+
+				void SetResourceName(std::string_view name) const noexcept override;
+
+				void Submit(const SubmitInfo& submit_info, IFence* fence) const override;
 				void Present(const PresentInfo& present_info) const override;
 				void WaitIdle() const override;
 			private:

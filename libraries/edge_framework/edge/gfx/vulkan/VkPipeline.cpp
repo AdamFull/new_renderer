@@ -31,7 +31,7 @@ namespace edge
 				Handle(device).destroyPipeline(handle, allocation_callbacks);
 			}
 
-			void VulkanPipeline::SetResourceName(std::string_view name)
+			void VulkanPipeline::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);
@@ -62,11 +62,6 @@ namespace edge
 				VulkanPipeline{ std::move(other) }
 			{
 
-			}
-
-			PipelineType VulkanComputePipeline::GetType() const
-			{
-				return PipelineType::eCompute;
 			}
 
 
@@ -221,11 +216,6 @@ namespace edge
 			VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanGraphicsPipeline&& other) :
 				VulkanPipeline{ std::move(other) }
 			{
-			}
-
-			PipelineType VulkanGraphicsPipeline::GetType() const
-			{
-				return PipelineType::eGraphics;
 			}
 		}
 	}

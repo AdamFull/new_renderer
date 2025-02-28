@@ -30,7 +30,7 @@ namespace edge
 			{
 			}
 
-			void VulkanPipelineCache::SetResourceName(std::string_view name)
+			void VulkanPipelineCache::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

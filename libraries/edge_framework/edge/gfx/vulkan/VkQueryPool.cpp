@@ -38,7 +38,7 @@ namespace edge
 				Handle(device).destroyQueryPool(handle, allocation_callbacks);
 			}
 
-			void VulkanQueryPool::SetResourceName(std::string_view name)
+			void VulkanQueryPool::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);
@@ -90,16 +90,6 @@ namespace edge
 					assert(false && "NOT IMPLEMENTED");
 					break;
 				}
-			}
-
-			uint32_t VulkanQueryPool::GetQueryCount() const
-			{
-				return max_query_count;
-			}
-
-			vk::QueryType VulkanQueryPool::GetQueryType() const
-			{
-				return query_type;
 			}
 		}
 	}

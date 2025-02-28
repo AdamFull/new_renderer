@@ -1374,8 +1374,8 @@ namespace easygltf
         }
     }
 
-    // ----------------- Sampler -----------------
-    void to_json(nlohmann::json& json, const Sampler& type)
+    // ----------------- ISampler -----------------
+    void to_json(nlohmann::json& json, const ISampler& type)
     {
         json = nlohmann::json::object();
 
@@ -1388,7 +1388,7 @@ namespace easygltf
         parsing::serialize_extensions_and_extras(json, type);
     }
 
-    void from_json(const nlohmann::json& json, Sampler& type)
+    void from_json(const nlohmann::json& json, ISampler& type)
     {
         utl::parse_from("name", json, type.name);
         utl::parse_from("minFilter", json, type.minFilter);

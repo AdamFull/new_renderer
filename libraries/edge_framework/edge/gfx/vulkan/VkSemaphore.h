@@ -11,7 +11,7 @@ namespace edge
 		{
 			class Device;
 
-			class VulkanSemaphore : public Semaphore, public VulkanResource<vk::Semaphore>
+			class VulkanSemaphore final : public ISemaphore, public VulkanResource<vk::Semaphore>
 			{
 			public:
 				VulkanSemaphore(Device& device);
@@ -22,7 +22,7 @@ namespace edge
 				VulkanSemaphore& operator=(const VulkanSemaphore&) = delete;
 				VulkanSemaphore& operator=(VulkanSemaphore&&) = default;
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 			private:
 				Device& device;
 			};

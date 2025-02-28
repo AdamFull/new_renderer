@@ -61,13 +61,13 @@ namespace edge
 				vkdevice.destroyCommandPool(handle, allocation_callbacks);
 			}
 
-			void VulkanCommandPool::SetResourceName(std::string_view name)
+			void VulkanCommandPool::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);
 			}
 
-			VulkanCommandList* VulkanCommandPool::Allocate(bool secondary)
+			auto VulkanCommandPool::Allocate(bool secondary) -> VulkanCommandList*
 			{
 				std::vector<std::unique_ptr<VulkanCommandList>>& buffers =
 					secondary ? secondary_command_buffers : primary_command_buffers;
@@ -86,7 +86,7 @@ namespace edge
 			}
 
 
-			void VulkanCommandPool::Reset()
+			void VulkanCommandPool::Reset() noexcept
 			{
 				switch (reset_mode)
 				{
@@ -113,7 +113,7 @@ namespace edge
 				FreeCommandBuffers();
 			}
 
-			vk::CommandBuffer VulkanCommandPool::AllocateCommandBuffer(vk::CommandBufferLevel level)
+			auto VulkanCommandPool::AllocateCommandBuffer(vk::CommandBufferLevel level) -> vk::CommandBuffer
 			{
 				vk::CommandBufferAllocateInfo allocate_info(handle, level, 1);
 
@@ -128,12 +128,12 @@ namespace edge
 				free_command_buffer_list.emplace_back(command_buffer);
 			}
 
-			CommandPoolResetMode VulkanCommandPool::GetResetMode() const
+			auto VulkanCommandPool::GetResetMode() const noexcept -> CommandPoolResetMode
 			{
 				return reset_mode;
 			}
 
-			Device const& VulkanCommandPool::GetDevice() const
+			auto VulkanCommandPool::GetDevice() const noexcept -> Device const&
 			{
 				return device;
 			}

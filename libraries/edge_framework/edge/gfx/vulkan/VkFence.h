@@ -11,13 +11,13 @@ namespace edge
 		{
 			class Device;
 
-			class VulkanFence : public Fence, public VulkanResource<vk::Fence>
+			class VulkanFence final : public IFence, public VulkanResource<vk::Fence>
 			{
 			public:
 				VulkanFence(Device& device);
 				~VulkanFence();
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 
 				void Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
 				void Reset() override;

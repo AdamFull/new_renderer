@@ -16,11 +16,11 @@ namespace engine
 
 			ShaderPassType GetPassType() override;
 
-			void Begin(edge::gfx::CommandList& command_list) override;
-			void End(edge::gfx::CommandList& command_list) override;
+			void Begin(edge::gfx::ICommandList& command_list) override;
+			void End(edge::gfx::ICommandList& command_list) override;
 
 		protected:
-			void _Execute(edge::gfx::CommandList& command_list, float delta_time) override;
+			void _Execute(edge::gfx::ICommandList& command_list, float delta_time) override;
 
 		private:
 			edge::gfx::RenderingInfo rendering_info{};

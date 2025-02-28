@@ -25,7 +25,7 @@ namespace edge
 				Handle(device).destroyFence(handle, allocation_callbacks);
 			}
 
-			void VulkanFence::SetResourceName(std::string_view name)
+			void VulkanFence::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

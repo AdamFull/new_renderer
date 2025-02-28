@@ -27,7 +27,7 @@ namespace edge
 			class ResourceUploaderImpl
 			{
 			public:
-				ResourceUploaderImpl(Context& context, const Queue& queue) :
+				ResourceUploaderImpl(IContext& context, const IQueue& queue) :
 					context{ context }, queue{ queue }
 				{
 					command_pool = context.CreateCommandPool(&queue);
@@ -55,14 +55,14 @@ namespace edge
 				ResourceUploaderImpl& operator=(const ResourceUploaderImpl&) = delete;
 				ResourceUploaderImpl& operator=(ResourceUploaderImpl&&) = delete;
 
-				std::tuple<Buffer*, uint64_t> RequestBuffer(uint64_t size)
+				std::tuple<IBuffer*, uint64_t> RequestBuffer(uint64_t size)
 				{
 					auto& buffer_block = LookUpBlock(size);
 					buffer_block.buffer_offset += size;
 					return { buffer_block.buffer, buffer_block.buffer_offset - size };
 				}
 
-				CommandList& RequestCommandList()
+				ICommandList& RequestCommandList()
 				{
 					if (!active_command_list)
 					{
@@ -111,7 +111,7 @@ namespace edge
 			private:
 				struct BufferBlock
 				{
-					Buffer* buffer{ nullptr };
+					IBuffer* buffer{ nullptr };
 					uint64_t buffer_offset{ 0ull };
 				};
 
@@ -135,17 +135,17 @@ namespace edge
 					return buffer_blocks.emplace_back(context.CreateBuffer(buffer_create_info), 0ull);
 				}
 
-				Context& context;
+				IContext& context;
 
-				const Queue& queue;
+				const IQueue& queue;
 
-				CommandPool* command_pool{ nullptr };
-				CommandList* active_command_list{ nullptr };
+				ICommandPool* command_pool{ nullptr };
+				ICommandList* active_command_list{ nullptr };
 
 				std::vector<BufferBlock> buffer_blocks;
 
-				Semaphore* signal_semaphore{ nullptr };
-				Fence* fence{ nullptr };
+				ISemaphore* signal_semaphore{ nullptr };
+				IFence* fence{ nullptr };
 			};
 
 			// Helper class for generate mip maps
@@ -217,9 +217,9 @@ namespace edge
 					context.Destroy(descriptor_allocator);
 				}
 
-				ResourceStateFlags WriteCommands(CommandList& command_list, Texture& texture)
+				ResourceStateFlags WriteCommands(ICommandList& command_list, ITexture& texture)
 				{
-					// Texture should be in copy dest state
+					// ITexture should be in copy dest state
 					ResourceStateFlags resource_state{ ResourceStateFlag::eCopyDst };
 
 					TextureBarrier texture_barrier{};
@@ -243,7 +243,7 @@ namespace edge
 
 						auto& generator = shader_instances[mip_count - 1];
 
-						ResourceDescriptor* descriptor = descriptor_allocator->AllocateDescriptors(generator.root_signature);
+						IResourceDescriptor* descriptor = descriptor_allocator->AllocateDescriptors(generator.root_signature);
 
 						command_list.BindPipeline(generator.pipeline);
 
@@ -310,18 +310,18 @@ namespace edge
 					descriptor_allocator->Reset();
 				}
 			private:
-				Context& context;
+				IContext& context;
 
 				struct ShaderInstance
 				{
-					Shader* shader{ nullptr };
-					RootSignature* root_signature{ nullptr };
-					Pipeline* pipeline{ nullptr };
+					IShader* shader{ nullptr };
+					IRootSignature* root_signature{ nullptr };
+					IPipeline* pipeline{ nullptr };
 				};
 
-				Sampler* linear_sampler{ nullptr };
+				ISampler* linear_sampler{ nullptr };
 
-				DescriptorAllocator* descriptor_allocator{ nullptr };
+				IDescriptorAllocator* descriptor_allocator{ nullptr };
 
 				std::array<ShaderInstance, 4ull> shader_instances;
 			};
@@ -330,7 +330,7 @@ namespace edge
 			class BufferUpdaterImpl : public BufferUpdater
 			{
 			public:
-				BufferUpdaterImpl(Buffer* staging, Buffer* target, uint64_t offset) :
+				BufferUpdaterImpl(IBuffer* staging, IBuffer* target, uint64_t offset) :
 					src_buffer{ staging }, dst_buffer{ target }, src_offset{ offset }
 				{
 					mapped_memory = src_buffer->Map();
@@ -352,7 +352,7 @@ namespace edge
 					src_offset += data_size;
 				}
 
-				void Flush(CommandList& command_list) override
+				void Flush(ICommandList& command_list) override
 				{
 					// TODO: Add memory barrier befor copy for dst buffer
 					BufferBarrier buffer_barrier{};
@@ -378,10 +378,10 @@ namespace edge
 				}
 			private:
 				uint8_t* mapped_memory{ nullptr };
-				Buffer* src_buffer{ nullptr };
+				IBuffer* src_buffer{ nullptr };
 				uint64_t src_offset{ 0ull };
 
-				Buffer* dst_buffer{ nullptr };
+				IBuffer* dst_buffer{ nullptr };
 
 				std::vector<BufferCopyRegion> copy_regions{};
 			};
@@ -415,7 +415,7 @@ namespace edge
 					}
 				}
 
-				Texture* LoadTexture(std::string_view texture_path) override
+				ITexture* LoadTexture(std::string_view texture_path) override
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
@@ -595,7 +595,7 @@ namespace edge
 					} break;
 					}
 
-					Texture* texture = context.CreateTexture(create_info);
+					ITexture* texture = context.CreateTexture(create_info);
 					copy_texture.dst_texture = texture;
 
 					auto& command_list = uploader.RequestCommandList();
@@ -627,11 +627,11 @@ namespace edge
 					return texture;
 				}
 
-				Texture* LoadTexture(const TextureCreateInfo& create_info, std::span<uint8_t> texture_data) override
+				ITexture* LoadTexture(const TextureCreateInfo& create_info, std::span<uint8_t> texture_data) override
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					Texture* texture = context.CreateTexture(create_info);
+					ITexture* texture = context.CreateTexture(create_info);
 
 					CopyTextureInfo copy_texture{};
 					copy_texture.dst_texture = texture;
@@ -672,7 +672,7 @@ namespace edge
 					return texture;
 				}
 
-				Sampler* GetSampler(const SamplerCreateInfo& create_info) override
+				ISampler* GetSampler(const SamplerCreateInfo& create_info) override
 				{
 					uint32_t sampler_hash = Hash(create_info);
 					if (auto found = sampler_cache.find(sampler_hash); found != sampler_cache.end())
@@ -685,7 +685,7 @@ namespace edge
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					Buffer* dst_buffer = update_info.dst_buffer;
+					IBuffer* dst_buffer = update_info.dst_buffer;
 					if (!(dst_buffer->GetUsageFlags() & BufferUsageFlag::eGpuOnly))
 					{
 						EDGE_LOGE("This buffer can be updated from the CPU, no additional memory needs to be allocated.");
@@ -740,12 +740,12 @@ namespace edge
 					return {};
 				}
 
-				Context& GetContext() override
+				IContext& GetContext() override
 				{
 					return context;
 				}
 
-				Context const& GetContext() const override
+				IContext const& GetContext() const override
 				{
 					return context;
 				}
@@ -773,10 +773,10 @@ namespace edge
 					}
 				}
 			private:
-				Context& context;
+				IContext& context;
 				FilesystemWrapper& fs;
 
-				const gfx::Queue* queue{ nullptr };
+				const gfx::IQueue* queue{ nullptr };
 
 				std::array<std::unique_ptr<ResourceUploaderImpl>, 8ull> uploaders{};
 				uint32_t uploader_count{ 1u };
@@ -784,7 +784,7 @@ namespace edge
 
 				bool is_writing_commands{ false };
 
-				std::unordered_map<uint32_t, Sampler*> sampler_cache{};
+				std::unordered_map<uint32_t, ISampler*> sampler_cache{};
 
 				std::unique_ptr<MipGeneratorImpl> mip_generator;
 			};

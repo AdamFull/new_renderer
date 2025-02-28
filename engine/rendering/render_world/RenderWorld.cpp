@@ -508,7 +508,7 @@ namespace engine
 			spot_shadow_count = 0;
 		}
 
-		edge::gfx::Buffer* RenderWorld::GetDrawBuffer()
+		edge::gfx::IBuffer* RenderWorld::GetDrawBuffer()
 		{
 			return draw_descriptions->GetBuffer();
 		}

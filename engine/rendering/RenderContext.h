@@ -40,9 +40,9 @@ namespace engine
 			RenderContext& operator=(RenderContext&&) = delete;
 
 			uint32_t AddResource() override;
-			uint32_t AddResource(std::string_view path, edge::gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) override;
 			uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) override;
-			uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::Sampler* sampler = nullptr) override;
+			uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) override;
 			uint32_t AddResource(const edge::gfx::BufferCreateInfo& create_info) override;
 
 			void SetResourceName(uint32_t resource_index, std::string_view name) override;
@@ -60,21 +60,21 @@ namespace engine
 			void Begin() override;
 			void End() override;
 
-			edge::gfx::Context& GetContext() override;
-			edge::gfx::Context const& GetContext() const override;
+			edge::gfx::IContext& GetContext() override;
+			edge::gfx::IContext const& GetContext() const override;
 
-			edge::gfx::Texture* GetTexture(uint32_t resource_index) override;
-			edge::gfx::Texture* GetTexture(const RenderResource& render_resource) override;
+			edge::gfx::ITexture* GetTexture(uint32_t resource_index) override;
+			edge::gfx::ITexture* GetTexture(const RenderResource& render_resource) override;
 
-			edge::gfx::Sampler* GetSampler(uint32_t resource_index) override;
-			edge::gfx::Sampler* GetSampler(const RenderResource& render_resource) override;
+			edge::gfx::ISampler* GetSampler(uint32_t resource_index) override;
+			edge::gfx::ISampler* GetSampler(const RenderResource& render_resource) override;
 
-			edge::gfx::Buffer* GetBuffer(uint32_t resource_index) override;
-			edge::gfx::Buffer* GetBuffer(const RenderResource& render_resource) override;
+			edge::gfx::IBuffer* GetBuffer(uint32_t resource_index) override;
+			edge::gfx::IBuffer* GetBuffer(const RenderResource& render_resource) override;
 
 			edge::gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) override;
-			edge::gfx::CommandList& GetCurrentCommandList() override;
-			edge::gfx::DescriptorAllocator& GetCurrentDescriptorAllocator() override;
+			edge::gfx::ICommandList& GetCurrentCommandList() override;
+			edge::gfx::IDescriptorAllocator& GetCurrentDescriptorAllocator() override;
 		protected:
 			void UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data);
 
@@ -89,14 +89,14 @@ namespace engine
 			void UpdateRenderTargets();
 			void UpdateResources();
 		private:
-			edge::gfx::Context& context;
+			edge::gfx::IContext& context;
 			edge::gfx::ext::ResourceLoader& resource_loader;
 			edge::gfx::ext::ShaderEffectSystem& shader_effect_system;
 
 			const edge::Window& window;
-			const edge::gfx::Queue* queue;
+			const edge::gfx::IQueue* queue;
 
-			edge::gfx::Swapchain* swapchain{ nullptr };
+			edge::gfx::ISwapchain* swapchain{ nullptr };
 			//vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
 
 			RenderFrame* current_frame{ nullptr };
@@ -106,23 +106,23 @@ namespace engine
 			uint32_t active_frame_index{ 0u };
 			bool frame_active{ false };
 
-			edge::gfx::Semaphore* acquired_semaphore{ nullptr };
-			edge::gfx::Semaphore* previous_frame_semaphore{ nullptr };
-			edge::gfx::CommandList* current_command_list{ nullptr };
+			edge::gfx::ISemaphore* acquired_semaphore{ nullptr };
+			edge::gfx::ISemaphore* previous_frame_semaphore{ nullptr };
+			edge::gfx::ICommandList* current_command_list{ nullptr };
 
 			std::vector<std::unique_ptr<ExecutionNode>> graph_nodes{};
 			std::vector<RenderResource> render_resources{};
 
-			edge::gfx::Sampler* default_sampler{ nullptr };
+			edge::gfx::ISampler* default_sampler{ nullptr };
 
 			// Performance counters
-			edge::gfx::QueryPool* timestamp_query{ nullptr };
+			edge::gfx::IQueryPool* timestamp_query{ nullptr };
 			float timestamp_frequency{ 0.f };
 			float gpu_delta_time{ 0.f };
 
 			// Shared descriptors
-			edge::gfx::SharedDescriptor* shared_descriptor{ nullptr };
-			edge::gfx::ResourceDescriptor* global_resource_descriptor{ nullptr };
+			edge::gfx::ISharedDescriptor* shared_descriptor{ nullptr };
+			edge::gfx::IResourceDescriptor* global_resource_descriptor{ nullptr };
 			std::unique_ptr<UniformPool> global_uniform_pool{};
 
 			ResourceContainer<TextureObject> static_textures{};

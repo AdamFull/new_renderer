@@ -30,7 +30,7 @@ namespace edge
 				vk::PipelineShaderStageCreateInfo stage_create_info{};
 			};
 
-			class VulkanShader final : public Shader
+			class VulkanShader final : public IShader
 			{
 			public:
 				VulkanShader(Device& device, std::span<const ShaderStageInfo> shader_stages);
@@ -41,9 +41,12 @@ namespace edge
 				VulkanShader& operator=(const VulkanShader&) = delete;
 				VulkanShader& operator=(VulkanShader&&) = delete;
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 
-				const StaticArray<std::unique_ptr<ShaderModule>, 6ull>& GetModules() const;
+				auto GetModules() const noexcept -> StaticArray<std::unique_ptr<ShaderModule>, 6ull> const&
+				{
+					return shader_modules;
+				}
 			private:
 				void AddReflectionStage(const ShaderStageInfo& create_info);
 			private:

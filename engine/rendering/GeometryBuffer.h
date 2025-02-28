@@ -17,7 +17,7 @@ namespace engine
 
 			void Flush() override;
 
-			void BindVertexBuffers(edge::gfx::CommandList& command_list) override;
+			void BindVertexBuffers(edge::gfx::ICommandList& command_list) override;
 
 			uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) override;
 
@@ -36,7 +36,7 @@ namespace engine
 
 			void Flush() override;
 
-			void BindVertexBuffers(edge::gfx::CommandList& command_list) override;
+			void BindVertexBuffers(edge::gfx::ICommandList& command_list) override;
 
 			virtual uint64_t GetBufferAddress(VertexAttributeFlag flag = {}) override;
 

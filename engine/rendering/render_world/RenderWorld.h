@@ -52,7 +52,7 @@ namespace engine
 			void BeginFrame(float delta_time) override;
 			void EndFrame() override;
 
-			edge::gfx::Buffer* GetDrawBuffer() override;
+			edge::gfx::IBuffer* GetDrawBuffer() override;
 			uint32_t GetDrawCount() const override;
 
 			uint32_t GetMeshCount() const override;

@@ -84,7 +84,7 @@ namespace engine
 			// Shader name in shader cache
 			std::string shader_name{};
 
-			std::function<void(ShaderPass&, edge::gfx::CommandList&, float)> draw_callback{};
+			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
 
 			// Means that this pass will be executed only one time
@@ -126,8 +126,8 @@ namespace engine
 
 		struct TextureObject
 		{
-			edge::gfx::Texture* texture{ nullptr };
-			edge::gfx::Sampler* sampler{ nullptr };
+			edge::gfx::ITexture* texture{ nullptr };
+			edge::gfx::ISampler* sampler{ nullptr };
 
 			edge::gfx::TextureUsageFlags usage{};
 			bool resizable{ false };
@@ -137,7 +137,7 @@ namespace engine
 
 		struct BufferObject
 		{
-			edge::gfx::Buffer* buffer{ nullptr };
+			edge::gfx::IBuffer* buffer{ nullptr };
 		};
 
 		class ExecutionNode
@@ -145,7 +145,7 @@ namespace engine
 		public:
 			virtual ~ExecutionNode() = default;
 
-			virtual void Execute(edge::gfx::CommandList& command_list, float delta_time) = 0;
+			virtual void Execute(edge::gfx::ICommandList& command_list, float delta_time) = 0;
 		};
 
 		class ExecutionContext
@@ -154,9 +154,9 @@ namespace engine
 			virtual ~ExecutionContext() = default;
 
 			virtual uint32_t AddResource() = 0;
-			virtual uint32_t AddResource(std::string_view path, edge::gfx::Sampler* sampler = nullptr) = 0;
+			virtual uint32_t AddResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
-			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::Sampler* sampler = nullptr) = 0;
+			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(const edge::gfx::BufferCreateInfo& create_info) = 0;
 
 			virtual void SetResourceName(uint32_t resource_index, std::string_view name) = 0;
@@ -176,21 +176,21 @@ namespace engine
 			virtual void Begin() = 0;
 			virtual void End() = 0;
 
-			virtual edge::gfx::Context& GetContext() = 0;
-			virtual edge::gfx::Context const& GetContext() const = 0;
+			virtual edge::gfx::IContext& GetContext() = 0;
+			virtual edge::gfx::IContext const& GetContext() const = 0;
 
-			virtual edge::gfx::Texture* GetTexture(uint32_t resource_index) = 0;
-			virtual edge::gfx::Texture* GetTexture(const RenderResource& render_resource) = 0;
+			virtual edge::gfx::ITexture* GetTexture(uint32_t resource_index) = 0;
+			virtual edge::gfx::ITexture* GetTexture(const RenderResource& render_resource) = 0;
 
-			virtual edge::gfx::Sampler* GetSampler(uint32_t resource_index) = 0;
-			virtual edge::gfx::Sampler* GetSampler(const RenderResource& render_resource) = 0;
+			virtual edge::gfx::ISampler* GetSampler(uint32_t resource_index) = 0;
+			virtual edge::gfx::ISampler* GetSampler(const RenderResource& render_resource) = 0;
 
-			virtual edge::gfx::Buffer* GetBuffer(uint32_t resource_index) = 0;
-			virtual edge::gfx::Buffer* GetBuffer(const RenderResource& render_resource) = 0;
+			virtual edge::gfx::IBuffer* GetBuffer(uint32_t resource_index) = 0;
+			virtual edge::gfx::IBuffer* GetBuffer(const RenderResource& render_resource) = 0;
 
 			virtual edge::gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) = 0;
-			virtual edge::gfx::CommandList& GetCurrentCommandList() = 0;
-			virtual edge::gfx::DescriptorAllocator& GetCurrentDescriptorAllocator() = 0;
+			virtual edge::gfx::ICommandList& GetCurrentCommandList() = 0;
+			virtual edge::gfx::IDescriptorAllocator& GetCurrentDescriptorAllocator() = 0;
 		};
 	}
 }

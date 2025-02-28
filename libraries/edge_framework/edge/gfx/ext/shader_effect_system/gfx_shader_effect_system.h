@@ -7,13 +7,13 @@ namespace edge
 {
 	namespace gfx
 	{
-		class Context;
+		class IContext;
 
 		namespace ext
 		{
 			struct ShaderEffectSystemCreateInfo
 			{
-				Context* context{ nullptr };
+				IContext* context{ nullptr };
 				FilesystemWrapper* filesystem_wrapper{ nullptr };
 
 				std::string_view effect_database_compile_config_path{ "" };
@@ -25,10 +25,10 @@ namespace edge
 			public:
 				virtual ~ShaderEffectSystem() = default;
 
-				virtual ShaderEffect& LoadEffect(std::string_view effect_name) = 0;
+				virtual IShaderEffect& LoadEffect(std::string_view effect_name) = 0;
 
-				virtual Context& GetContext() = 0;
-				virtual Context const& GetContext() const = 0;
+				virtual IContext& GetContext() = 0;
+				virtual IContext const& GetContext() const = 0;
 			};
 
 			std::unique_ptr<ShaderEffectSystem> CreateShaderEffectSystem(const ShaderEffectSystemCreateInfo& create_info);

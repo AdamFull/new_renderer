@@ -41,7 +41,7 @@ namespace edge
 			};
 
 
-			class VulkanRootSignature final : public RootSignature
+			class VulkanRootSignature final : public IRootSignature
 			{
 			public:
 				friend class VulkanDescriptorAllocator;
@@ -56,10 +56,18 @@ namespace edge
 				VulkanRootSignature& operator=(const VulkanRootSignature&) = delete;
 				VulkanRootSignature& operator=(VulkanRootSignature&&) = delete;
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 
-				PipelineLayout& GetPipelineLayout();
-				const std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count>& GetDescriptorSetLayouts();
+				[[nodiscard]] auto GetPipelineLayout() noexcept -> PipelineLayout&
+				{
+					return *pipeline_layout;
+				}
+
+				[[nodiscard]] auto GetDescriptorSetLayouts() const noexcept ->
+					std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count> const&
+				{
+					return descriptor_set_layouts;
+				}
 			private:
 				Device& device;
 

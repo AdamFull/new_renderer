@@ -48,7 +48,7 @@ namespace edge
 				Handle(device).destroySampler(handle, allocation_callbacks);
 			}
 
-			void VulkanSampler::SetResourceName(std::string_view name)
+			void VulkanSampler::SetResourceName(std::string_view name) const noexcept
 			{
 				auto& debug_utils = device.GetDebugUtils();
 				debug_utils.SetDebugName(handle, name);

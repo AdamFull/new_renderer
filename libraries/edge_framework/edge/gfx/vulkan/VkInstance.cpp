@@ -538,22 +538,7 @@ namespace edge
 				}
 			}
 
-			const std::vector<const char*>& Instance::GetExtensions()
-			{
-				return enabled_extensions;
-			}
-
-			uint32_t Instance::GetApiVersion() const
-			{
-				return api_version;
-			}
-
-			const std::vector<std::unique_ptr<PhysicalDevice>>& Instance::GetAllFoundGpu() const
-			{
-				return gpus;
-			}
-
-			PhysicalDevice& Instance::GetBestDevice() const
+			auto Instance::GetBestDevice() const -> PhysicalDevice&
 			{
 				if (selected_gpu_index < 0)
 				{
@@ -639,7 +624,7 @@ namespace edge
 				}
 			}
 
-			bool Instance::IsEnabled(const char* extension) const
+			auto Instance::IsEnabled(const char* extension) const noexcept -> bool
 			{
 				return std::find_if(enabled_extensions.begin(), enabled_extensions.end(), [extension](const char* enabled_extension) { return strcmp(extension, enabled_extension) == 0; }) != enabled_extensions.end();
 			}

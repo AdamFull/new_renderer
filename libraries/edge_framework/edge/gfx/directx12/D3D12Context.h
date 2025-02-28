@@ -8,51 +8,51 @@ namespace edge
 	{
 		namespace d3d12
 		{
-			class D3D12Context final : public Context
+			class D3D12Context final : public IContext
 			{
 			public:
 				D3D12Context(const ContextCreateInfo& create_info);
 				~D3D12Context();
 
-				void Destroy(GFXResource* handle) override;
+				void Destroy(IGFXResource* handle) const override;
 
-				Fence* CreateFence() override;
+				[[nodiscard]] auto CreateFence() const->IFence* override;
 
-				Semaphore* CreateSemaphore() override;
+				[[nodiscard]] auto CreateSemaphore() const->ISemaphore* override;
 
-				const Queue* RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) override;
+				[[nodiscard]] auto RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const-> IQueue* override;
 
-				Swapchain* CreateSwapchain(const SwapChainCreateInfo& create_info) override;
+				[[nodiscard]] auto CreateSwapchain(const SwapChainCreateInfo& create_info) const->ISwapchain* override;
 
-				CommandPool* CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode) override;
+				[[nodiscard]] auto CreateCommandPool(const IQueue* queue, CommandPoolResetMode reset_mode) const->ICommandPool* override;
 
-				Buffer* CreateBuffer(const BufferCreateInfo& create_info) override;
+				[[nodiscard]] auto CreateBuffer(const BufferCreateInfo& create_info) const-> IBuffer* override;
 
-				Texture* CreateTexture(const TextureCreateInfo& create_info) override;
-				Texture* CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) override;
+				[[nodiscard]] auto CreateTexture(const TextureCreateInfo& create_info) const-> ITexture* override;
+				[[nodiscard]] auto CreateSwapchainTexture(ISwapchain* swapchain, uint32_t image_index) const-> ITexture* override;
 
-				Shader* CreateShader(std::span<const ShaderStageInfo> shader_stages) override;
+				[[nodiscard]] auto CreateShader(std::span<const ShaderStageInfo> shader_stages) const-> IShader* override;
 
-				RootSignature* CreateRootSignature(const RootSignatureCreateInfo& create_info) override;
+				[[nodiscard]] auto CreateRootSignature(const RootSignatureCreateInfo& create_info) const->IRootSignature* override;
 
-				Pipeline* CreatePipeline(const GraphicsPipelineCreateInfo& create_info) override;
-				Pipeline* CreatePipeline(const ComputePipelineCreateInfo& create_info) override;
+				[[nodiscard]] auto CreatePipeline(const GraphicsPipelineCreateInfo& create_info) const->IPipeline* override;
+				[[nodiscard]] auto CreatePipeline(const ComputePipelineCreateInfo& create_info) const->IPipeline* override;
 
-				PipelineCache* CreatePipelineCache(const PipelineCacheCreateInfo& create_info) override;
+				[[nodiscard]] auto CreatePipelineCache(const PipelineCacheCreateInfo& create_info) const->IPipelineCache* override;
 
-				DescriptorAllocator* CreateDescriptorAllocator() override;
+				[[nodiscard]] auto CreateDescriptorAllocator() const->IDescriptorAllocator* override;
 
-				SharedDescriptor* CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) override;
+				[[nodiscard]] auto CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) const->ISharedDescriptor* override;
 
-				Sampler* CreateSampler(const SamplerCreateInfo& create_info) override;
+				[[nodiscard]] auto CreateSampler(const SamplerCreateInfo& create_info) const->ISampler* override;
 
-				QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) override;
+				[[nodiscard]] auto CreateQueryPool(const QueryPoolCreateInfo& create_info) const->IQueryPool* override;
 
-				void WaitForFences(std::span<Fence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
+				void WaitForFences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const override;
 
-				void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) override;
-				void RequestTimestampFrequency(float* frequency) override;
-				void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) override;
+				void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) const override;
+				void RequestTimestampFrequency(float* frequency) const override;
+				void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) const override;
 			};
 		}
 	}

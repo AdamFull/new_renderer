@@ -12,7 +12,7 @@ namespace edge
 			class DescriptorPool;
 			class VulkanResourceDescriptor;
 
-			class VulkanSharedDescriptor final : public SharedDescriptor
+			class VulkanSharedDescriptor final : public ISharedDescriptor
 			{
 			public:
 				VulkanSharedDescriptor(Device& device, const SharedDescriptorCreateInfo& create_info);
@@ -25,17 +25,24 @@ namespace edge
 				VulkanSharedDescriptor& operator=(const VulkanSharedDescriptor&) = delete;
 				VulkanSharedDescriptor& operator=(VulkanSharedDescriptor&&) = delete;
 
-				DescriptorSetLayout& GetDescriptorSetLayout();
+				[[nodiscard]] auto GetDescriptorSetLayout() const noexcept -> DescriptorSetLayout&
+				{
+					return *descriptor_set_layout;
+				}
 
 				//DescriptorSet& GetDescriptorSet();
 
-				uint32_t GetFirstSet() const;
+				[[nodiscard]] uint32_t GetFirstSet() const noexcept
+				{
+					return first_set;
+				}
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 
 				void Reset() override;
-				ResourceDescriptor* GetLatestDescriptors() override;
-				ResourceDescriptor* RequestDescriptors() override;
+				[[nodiscard]] auto GetLatestDescriptors() const noexcept -> IResourceDescriptor* override;
+
+				[[nodiscard]] auto RequestDescriptors() -> IResourceDescriptor* override;
 			private:
 				Device& device;
 

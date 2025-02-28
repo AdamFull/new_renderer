@@ -13,7 +13,7 @@ namespace edge
 		{
 			class Device;
 
-			class VulkanResourceDescriptor final : public ResourceDescriptor
+			class VulkanResourceDescriptor final : public IResourceDescriptor
 			{
 			public:
 				VulkanResourceDescriptor(Device& device);
@@ -28,17 +28,27 @@ namespace edge
 
 				void UpdateDescriptorSet(uint32_t set, DescriptorSet& descriptor_set);
 
-				uint32_t GetFirstSet() const;
-				uint32_t GetSetCount() const;
+				auto GetFirstSet() const noexcept -> uint32_t
+				{
+					return first_set;
+				}
 
-				void SetResourceName(std::string_view name) override;
+				auto GetSetCount() const noexcept -> uint32_t
+				{
+					return set_count;
+				}
+
+				void SetResourceName(std::string_view name) const noexcept override;
 
 				void BindTexture(TextureDescriptor& texture_descriptor) override;
 				void BindBuffer(BufferDescriptor& buffer_descriptor) override;
 
 				void Flush() override;
 
-				const std::array<vk::DescriptorSet, k_max_descriptor_count>& GetDescriptorSets();
+				[[nodiscard]] auto GetDescriptorSets() const noexcept -> std::array<vk::DescriptorSet, k_max_descriptor_count> const&
+				{
+					return descriptor_sets;
+				}
 
 			private:
 				Device& device;

@@ -55,22 +55,7 @@ namespace edge
 
 			}
 
-			DescriptorSetLayout& VulkanSharedDescriptor::GetDescriptorSetLayout()
-			{
-				return *descriptor_set_layout;
-			}
-
-			//DescriptorSet& VulkanSharedDescriptor::GetDescriptorSet()
-			//{
-			//
-			//}
-
-			uint32_t VulkanSharedDescriptor::GetFirstSet() const
-			{
-				return first_set;
-			}
-
-			void VulkanSharedDescriptor::SetResourceName(std::string_view name)
+			void VulkanSharedDescriptor::SetResourceName(std::string_view name) const noexcept
 			{
 				assert(false && "NOT IMPLEMENTED");
 			}
@@ -89,12 +74,12 @@ namespace edge
 				allocated_resource_descriptors.clear();
 			}
 
-			ResourceDescriptor* VulkanSharedDescriptor::GetLatestDescriptors()
+			auto VulkanSharedDescriptor::GetLatestDescriptors() const noexcept -> IResourceDescriptor*
 			{
 				return allocated_resource_descriptors.back();
 			}
 
-			ResourceDescriptor* VulkanSharedDescriptor::RequestDescriptors()
+			auto VulkanSharedDescriptor::RequestDescriptors() -> IResourceDescriptor*
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 

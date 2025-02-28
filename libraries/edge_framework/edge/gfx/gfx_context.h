@@ -12,52 +12,52 @@ namespace edge
 	namespace gfx
 	{
 		// TODO: may be return pointers here and add release function also
-		class Context
+		class IContext
 		{
 		public:
-			virtual ~Context() = default;
+			virtual ~IContext() = default;
 
-			virtual void Destroy(GFXResource* handle) = 0;
+			virtual void Destroy(IGFXResource* handle) const = 0;
 
-			virtual Fence* CreateFence() = 0;
+			[[nodiscard]] virtual auto CreateFence() const -> IFence* = 0;
 
-			virtual Semaphore* CreateSemaphore() = 0;
+			[[nodiscard]] virtual auto CreateSemaphore() const -> ISemaphore* = 0;
 
-			virtual const Queue* RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) = 0;
+			[[nodiscard]] virtual auto RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const -> IQueue const* = 0;
 
-			virtual Swapchain* CreateSwapchain(const SwapChainCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual auto CreateSwapchain(const SwapChainCreateInfo& create_info) const -> ISwapchain* = 0;
 
-			virtual CommandPool* CreateCommandPool(const Queue* queue, CommandPoolResetMode reset_mode = CommandPoolResetMode::eAlwaysAllocate) = 0;
+			[[nodiscard]] virtual auto CreateCommandPool(const IQueue* queue, CommandPoolResetMode reset_mode = CommandPoolResetMode::eAlwaysAllocate) const -> ICommandPool* = 0;
 
-			virtual Buffer* CreateBuffer(const BufferCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual auto CreateBuffer(const BufferCreateInfo& create_info) const -> IBuffer* = 0;
 
-			virtual Texture* CreateTexture(const TextureCreateInfo& create_info) = 0;
-			virtual Texture* CreateSwapchainTexture(Swapchain* swapchain, uint32_t image_index) = 0;
+			[[nodiscard]] virtual auto CreateTexture(const TextureCreateInfo& create_info) const -> ITexture* = 0;
+			[[nodiscard]] virtual auto CreateSwapchainTexture(ISwapchain* swapchain, uint32_t image_index) const -> ITexture* = 0;
 
-			virtual Shader* CreateShader(std::span<const ShaderStageInfo> shader_stages) = 0;
+			[[nodiscard]] virtual auto CreateShader(std::span<const ShaderStageInfo> shader_stages) const -> IShader* = 0;
 
-			virtual RootSignature* CreateRootSignature(const RootSignatureCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual auto CreateRootSignature(const RootSignatureCreateInfo& create_info) const -> IRootSignature* = 0;
 
-			virtual Pipeline* CreatePipeline(const GraphicsPipelineCreateInfo& create_info) = 0;
-			virtual Pipeline* CreatePipeline(const ComputePipelineCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual auto CreatePipeline(const GraphicsPipelineCreateInfo& create_info) const -> IPipeline* = 0;
+			[[nodiscard]] virtual auto CreatePipeline(const ComputePipelineCreateInfo& create_info) const -> IPipeline* = 0;
 
-			virtual PipelineCache* CreatePipelineCache(const PipelineCacheCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual auto CreatePipelineCache(const PipelineCacheCreateInfo& create_info) const -> IPipelineCache* = 0;
 
-			virtual DescriptorAllocator* CreateDescriptorAllocator() = 0;
+			[[nodiscard]] virtual auto CreateDescriptorAllocator() const -> IDescriptorAllocator* = 0;
 
-			virtual SharedDescriptor* CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual auto CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) const -> ISharedDescriptor* = 0;
 
-			virtual Sampler* CreateSampler(const SamplerCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual auto CreateSampler(const SamplerCreateInfo& create_info) const ->ISampler* = 0;
 
-			virtual QueryPool* CreateQueryPool(const QueryPoolCreateInfo& create_info) = 0;
+			[[nodiscard]] virtual auto CreateQueryPool(const QueryPoolCreateInfo& create_info) const -> IQueryPool* = 0;
 
-			virtual void WaitForFences(std::span<Fence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) = 0;
+			virtual void WaitForFences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const = 0;
 
-			virtual void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) = 0;
-			virtual void RequestTimestampFrequency(float* frequency) = 0;
-			virtual void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) = 0;
+			virtual void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) const = 0;
+			virtual void RequestTimestampFrequency(float* frequency) const = 0;
+			virtual void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) const = 0;
 		};
 
-		std::unique_ptr<Context> CreateContext(const ContextCreateInfo& create_info);
+		std::unique_ptr<IContext> CreateContext(const ContextCreateInfo& create_info);
 	}
 }

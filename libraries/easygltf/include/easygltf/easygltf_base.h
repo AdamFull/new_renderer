@@ -1397,7 +1397,7 @@ namespace easygltf
 	};
 
 	// https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/sampler.schema.json
-	struct Sampler : public Default
+	struct ISampler : public Default
 	{
 		std::string name{};
 		int32_t minFilter{ base::constants::not_set };
@@ -1405,7 +1405,7 @@ namespace easygltf
 		int32_t wrapS{ base::enumerators::texture_wrap::repeat };
 		int32_t wrapT{ base::enumerators::texture_wrap::repeat };
 
-		bool operator==(const Sampler& other) const
+		bool operator==(const ISampler& other) const
 		{
 			return
 				this->name == other.name && this->minFilter == other.minFilter &&
@@ -1491,7 +1491,7 @@ namespace easygltf
 		std::vector<Material> materials{};
 		std::vector<Mesh> meshes{};
 		std::vector<Node> nodes{};
-		std::vector<Sampler> samplers{};
+		std::vector<ISampler> samplers{};
 		std::vector<Scene> scenes{};
 		std::vector<Skin> skins{};
 		std::vector<Texture> textures{};

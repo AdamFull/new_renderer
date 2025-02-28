@@ -24,14 +24,14 @@ namespace engine
 			virtual edge::gfx::ext::ShaderEffectSystem& GetShaderEffectSystem() = 0;
 			virtual edge::gfx::ext::ShaderEffectSystem const& GetShaderEffectSystem() const = 0;
 
-			virtual uint32_t AddRenderResource(std::string_view path, edge::gfx::Sampler* sampler = nullptr) = 0;
-			virtual uint32_t AddRenderResource(const TextureResourceCreateInfo& create_info, edge::gfx::Sampler* sampler = nullptr) = 0;
+			virtual uint32_t AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) = 0;
+			virtual uint32_t AddRenderResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) = 0;
 
 			virtual uint32_t AddRenderResource(const edge::gfx::BufferCreateInfo& create_info) = 0;
 
 			virtual void AddMaterial(const shlib::Material& material) = 0;
 
-			virtual edge::gfx::Context& GetContext() = 0;
+			virtual edge::gfx::IContext& GetContext() = 0;
 
 			virtual uint32_t RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
 			virtual uint32_t RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;

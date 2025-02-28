@@ -48,17 +48,17 @@ namespace engine
 			return ShaderPassType::eGraphics;
 		}
 
-		void RenderPass::Begin(edge::gfx::CommandList& command_list)
+		void RenderPass::Begin(edge::gfx::ICommandList& command_list)
 		{
 			command_list.BeginRendering(rendering_info);
 		}
 
-		void RenderPass::End(edge::gfx::CommandList& command_list)
+		void RenderPass::End(edge::gfx::ICommandList& command_list)
 		{
 			command_list.EndRendering();
 		}
 
-		void RenderPass::_Execute(edge::gfx::CommandList& command_list, float delta_time)
+		void RenderPass::_Execute(edge::gfx::ICommandList& command_list, float delta_time)
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 

@@ -134,7 +134,7 @@ namespace edge
 				std::copy(initial_sizes.begin(), initial_sizes.end(), avaliable_sizes.begin());
 			}
 
-			DescriptorSet& DescriptorPool::Allocate(DescriptorSetLayout& layout, std::string_view debug_name)
+			auto DescriptorPool::Allocate(DescriptorSetLayout& layout, std::string_view debug_name) -> DescriptorSet&
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 
@@ -159,7 +159,7 @@ namespace edge
 				return allocated_descriptors.emplace_back(descriptor_set, required_descriptor_count);
 			}
 
-			vk::Result DescriptorPool::Free(DescriptorSet& descriptor_set)
+			auto DescriptorPool::Free(DescriptorSet& descriptor_set) -> vk::Result
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 
@@ -182,12 +182,7 @@ namespace edge
 				return vk::Result::eIncomplete;
 			}
 
-			bool DescriptorPool::IsExpired() const
-			{
-				return countdown_count < 0;
-			}
-
-			CanAllocateResult DescriptorPool::CanAllocate(DescriptorSetLayout& layout)
+			auto DescriptorPool::CanAllocate(DescriptorSetLayout& layout) noexcept -> CanAllocateResult
 			{
 				auto& required_descriptor_count = layout.GetRequiredDescriptorCount();
 

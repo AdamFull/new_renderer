@@ -10,7 +10,7 @@ namespace edge
 	{
 		namespace vulkan
 		{
-			class VulkanBuffer final : public Buffer, public Allocation, public VulkanResource<vk::Buffer>
+			class VulkanBuffer final : public IBuffer, public Allocation, public VulkanResource<vk::Buffer>
 			{
 			public:
 				VulkanBuffer(const VulkanBuffer&) = delete;
@@ -21,25 +21,25 @@ namespace edge
 				VulkanBuffer(Allocator& allocator, const BufferCreateInfo& create_info);
 				~VulkanBuffer();
 
-				void SetResourceName(std::string_view name) override;
+				void SetResourceName(std::string_view name) const noexcept override;
 
 				/**
 				 * @brief Maps vulkan memory if it isn't already mapped to an host visible address
 				 * @return Pointer to host visible memory
 				 */
-				uint8_t* Map() override;
+				[[nodiscard]] auto Map() -> uint8_t* override;
 
 				/**
 				 * @brief Unmaps vulkan memory from the host visible address
 				 */
-				void Unmap() override;
+				void Unmap() noexcept override;
 
-				uint64_t Update(const void* data, uint64_t size, uint64_t offset = 0ull) override;
+				[[nodiscard]] auto Update(const void* data, uint64_t size, uint64_t offset = 0ull) -> uint64_t override;
 
-				uint64_t GetSize() const override;
-				uint64_t GetAddress() const override;
+				[[nodiscard]] auto GetSize() const noexcept -> uint64_t override;
+				[[nodiscard]] auto GetAddress() const ->uint64_t override;
 
-				BufferUsageFlags GetUsageFlags() const override;
+				[[nodiscard]] auto GetUsageFlags() const noexcept ->BufferUsageFlags override;
 			private:
 				BufferUsageFlags usage_flags{};
 				vk::DeviceSize size{ 0ull };

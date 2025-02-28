@@ -27,10 +27,10 @@ namespace edge
 				return -1;
 			}
 
-			class ShaderEffectImpl final : public ShaderEffect
+			class ShaderEffectImpl final : public IShaderEffect
 			{
 			public:
-				ShaderEffectImpl(Context& context, ShaderEffectCreateInfo create_info) :
+				ShaderEffectImpl(IContext& context, ShaderEffectCreateInfo create_info) :
 					context{ context }
 				{
 					if (create_info.shader_stages.empty())
@@ -56,14 +56,14 @@ namespace edge
 					context.Destroy(shader);
 				}
 
-				Shader* GetShader() override
+				[[nodiscard]] auto GetShader() noexcept -> IShader* override
 				{
 					return shader;
 				}
 			private:
-				Context& context;
+				IContext& context;
 
-				Shader* shader{ nullptr };
+				IShader* shader{ nullptr };
 			};
 
 
@@ -88,9 +88,9 @@ namespace edge
 
 				}
 
-				ShaderEffect& LoadEffect(std::string_view effect_name) override
+				IShaderEffect& LoadEffect(std::string_view effect_name) override
 				{
-					static std::unique_ptr<ShaderEffect> empty_effect = std::make_unique<ShaderEffectImpl>(context, ShaderEffectCreateInfo{});
+					static std::unique_ptr<IShaderEffect> empty_effect = std::make_unique<ShaderEffectImpl>(context, ShaderEffectCreateInfo{});
 
 					// At first try to find effect, may be it's already loaded
 					auto effect_key = GetUniqueHashName(effect_name);
@@ -106,24 +106,24 @@ namespace edge
 					return *(new_effect.first->second);
 				}
 
-				Context& GetContext() override
+				IContext& GetContext() override
 				{
 					return context;
 				}
 
-				Context const& GetContext() const override
+				IContext const& GetContext() const override
 				{
 					return context;
 				}
 
 			private:
-				Context& context;
+				IContext& context;
 				FilesystemWrapper& fs;
 
 				std::unique_ptr<ShaderEffectCompiler> effect_compiler;
 
-				std::unordered_map<uint32_t, Sampler*> sampler_cache{};
-				std::unordered_map<uint32_t, std::unique_ptr<ShaderEffect>> effect_cache{};
+				std::unordered_map<uint32_t, ISampler*> sampler_cache{};
+				std::unordered_map<uint32_t, std::unique_ptr<IShaderEffect>> effect_cache{};
 			};
 
 

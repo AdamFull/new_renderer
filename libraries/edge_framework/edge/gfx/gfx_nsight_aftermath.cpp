@@ -74,7 +74,7 @@ namespace edge
 			}
 		}
 
-		void NsightAftermath::SetMarker(CommandList* cmd_list, const char* name)
+		void NsightAftermath::SetMarker(ICommandList* cmd_list, const char* name)
 		{
 			uint32_t marker_map_index = frame_index % frame_history_size;
 			auto& current_frame_marker_map = per_frame_markers[marker_map_index];
@@ -83,7 +83,7 @@ namespace edge
 			SetMarkerImpl(cmd_list, (const void*)marker_id);
 		}
 
-		void NsightAftermath::TrySetMarker(CommandList* cmd_list, const char* name)
+		void NsightAftermath::TrySetMarker(ICommandList* cmd_list, const char* name)
 		{
 			if (self)
 			{

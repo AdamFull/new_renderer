@@ -9,7 +9,7 @@ Index of this file:
 
 // [SECTION] Header mess
 // [SECTION] Forward declarations
-// [SECTION] Context pointer
+// [SECTION] IContext pointer
 // [SECTION] STB libraries includes
 // [SECTION] Macros
 // [SECTION] Generic helpers
@@ -196,7 +196,7 @@ typedef int ImGuiWindowRefreshFlags;    // -> enum ImGuiWindowRefreshFlags_ // F
 typedef void (*ImGuiErrorLogCallback)(void* user_data, const char* fmt, ...);
 
 //-----------------------------------------------------------------------------
-// [SECTION] Context pointer
+// [SECTION] IContext pointer
 // See implementation of this variable in imgui.cpp for comments and details.
 //-----------------------------------------------------------------------------
 

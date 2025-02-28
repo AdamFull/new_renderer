@@ -48,13 +48,30 @@ namespace edge
 				DescriptorSetLayout& operator=(const DescriptorSetLayout&) = delete;
 				DescriptorSetLayout& operator=(DescriptorSetLayout&&) = delete;
 
-				const LayoutBindingArray& GetBindings() const;
-				uint32_t GetBindingCount() const;
+				auto GetBindings() const noexcept -> LayoutBindingArray const&
+				{
+					return layout_bindings;
+				}
 
-				vk::DescriptorSetLayoutBinding& GetLayoutBinding(uint32_t binding_index);
-				vk::DescriptorBindingFlagsEXT& GetLayoutBindingFlags(uint32_t binding_index);
+				auto GetBindingCount() const noexcept -> uint32_t
+				{
+					return binding_count;
+				}
 
-				const PoolSizes& GetRequiredDescriptorCount() const;
+				auto GetLayoutBinding(uint32_t binding_index) const noexcept -> vk::DescriptorSetLayoutBinding const&
+				{
+					return layout_bindings[binding_index].binding;
+				}
+
+				auto GetLayoutBindingFlags(uint32_t binding_index) const noexcept -> vk::DescriptorBindingFlagsEXT const&
+				{
+					return layout_bindings[binding_index].flags;
+				}
+
+				auto GetRequiredDescriptorCount() const noexcept -> PoolSizes const&
+				{
+					return pool_sizes;
+				}
 			private:
 				Device& device;
 

@@ -90,24 +90,24 @@ namespace edge
                 allocator.DestroyBuffer(*this, handle);
             }
 
-            void VulkanBuffer::SetResourceName(std::string_view name)
+            void VulkanBuffer::SetResourceName(std::string_view name) const noexcept
             {
                 auto& device = allocator.GetDevice();
                 auto& debug_utils = device.GetDebugUtils();
                 debug_utils.SetDebugName(handle, name);
             }
 
-            uint8_t* VulkanBuffer::Map()
+            auto VulkanBuffer::Map() -> uint8_t*
             {
                 return MapMemory();
             }
 
-            void VulkanBuffer::Unmap()
+            void VulkanBuffer::Unmap() noexcept
             {
                 UnmapMemory();
             }
 
-            uint64_t VulkanBuffer::Update(const void* data, uint64_t size, uint64_t offset)
+            auto VulkanBuffer::Update(const void* data, uint64_t size, uint64_t offset) -> uint64_t
             {
                 if (persistent)
                 {
@@ -124,18 +124,18 @@ namespace edge
                 return size;
             }
 
-            uint64_t VulkanBuffer::GetSize() const
+            auto VulkanBuffer::GetSize() const noexcept -> uint64_t
             {
                 return size;
             }
 
-            uint64_t VulkanBuffer::GetAddress() const
+            auto VulkanBuffer::GetAddress() const -> uint64_t
             {
                 auto& device = allocator.GetDevice();
                 return Handle(device).getBufferAddressKHR(handle);
             }
 
-            BufferUsageFlags VulkanBuffer::GetUsageFlags() const
+            auto VulkanBuffer::GetUsageFlags() const noexcept -> BufferUsageFlags
             {
                 return usage_flags;
             }
