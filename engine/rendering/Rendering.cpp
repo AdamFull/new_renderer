@@ -15,6 +15,7 @@
 #include "GeometryBuffer.h"
 
 #include <embed/shaders/includes/shlib.h>
+#include <embed/shaders/includes/debug_text.h>
 
 #include <edge/util/Logger.h>
 
@@ -347,32 +348,34 @@ namespace engine
 			return *shader_effect_system;
 		}
 
-		GeometryBuffer& Renderer::RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
+		uint32_t Renderer::RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
 		{
 			uint32_t hash = Hash(create_info);
 
 			if (auto found = interleaved_geometry_buffers.find(hash); found != interleaved_geometry_buffers.end())
 			{
-				return *geometry_buffers[found->second];
+				return found->second;
 			}
 
 			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<InterleavedGeometryBuffer>(*resource_loader, create_info));
-			interleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
-			return *new_geometry_buffer;
+			return interleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
 		}
 
-		GeometryBuffer& Renderer::RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
+		uint32_t Renderer::RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
 		{
 			uint32_t hash = Hash(create_info);
-
 			if (auto found = deinterleaved_geometry_buffers.find(hash); found != deinterleaved_geometry_buffers.end())
 			{
-				return *geometry_buffers[found->second];
+				return found->second;
 			}
 
 			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(*resource_loader, create_info));
-			deinterleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
-			return *new_geometry_buffer;
+			return deinterleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
+		}
+
+		GeometryBuffer& Renderer::LookUpGeometryBuffer(uint32_t geometry_buffer_id)
+		{
+			return *geometry_buffers[geometry_buffer_id];
 		}
 
 		ExecutionContext& Renderer::GetRenderContext()
@@ -1974,7 +1977,8 @@ namespace engine
 					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eColor, edge::gfx::Format::eR8G8B8A8Unorm);
 					geometry_buffer_ci.index_description.type = edge::gfx::IndexType::eUint16;
 
-					auto& geometry_buffer = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
+					auto geometry_buffer_id = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
+					auto& geometry_buffer = LookUpGeometryBuffer(geometry_buffer_id);
 
 					RenderShaderPassCreateInfo create_info{};
 					create_info.shader_name = "testing:debug_draw";
@@ -1982,6 +1986,118 @@ namespace engine
 					create_info.pipeline_state.vertex_layout = geometry_buffer.GetVertexLayout();
 					create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
 				}
+			}
+
+			// Debug text
+			{
+				GeometryBufferCreateInfo geometry_buffer_ci{};
+				geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, edge::gfx::Format::eR32G32Sfloat);
+				geometry_buffer_ci.index_description.type = edge::gfx::IndexType::eUint16;
+
+				glm::vec2 vertex_positions[] =
+				{
+					{0, 16},
+					{0, 0},
+					{8 * 4, 0},
+					{8 * 4, 16}
+				};
+
+				uint16_t indices[] =
+				{
+					0, 1, 2,
+					0, 2, 3,
+				};
+
+				auto geometry_buffer_id = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
+				auto& geometry_buffer = LookUpGeometryBuffer(geometry_buffer_id);
+				geometry_buffer.AddVertexStreamData(vertex_positions, 4, sizeof(glm::vec2));
+				geometry_buffer.AddIndexStreamData(indices, 6, sizeof(uint16_t));
+
+				RenderShaderPassCreateInfo create_info{};
+				create_info.shader_name = "testing:debug_text";
+				create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
+				create_info.pipeline_state.vertex_layout = geometry_buffer.GetVertexLayout();
+				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+
+				create_info.pipeline_state.color_blending_state.attachment_count = 1;
+				auto& blending = create_info.pipeline_state.color_blending_state.attachments[0];
+				blending.enable = true;
+				blending.src_color = edge::gfx::BlendFactor::eSrcAlpha;
+				blending.dst_color = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
+				blending.src_alpha = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
+				blending.dst_alpha = edge::gfx::BlendFactor::eZero;
+
+
+				uint32_t debug_text_buffer{ ~0u };
+				{
+					edge::gfx::BufferCreateInfo create_info{};
+					create_info.size = sizeof(shlib::DebugTextData) * 512;
+					create_info.usage = edge::gfx::BufferUsageFlag::eStorageBufferCPU;
+
+					debug_text_buffer = render_context->AddResource(create_info);
+					render_context->SetResourceName(debug_text_buffer, "debug_text_buffer");
+				}
+
+				
+
+				auto debug_text_maker = [](const glm::u16vec2& pos, const char* text, std::vector<shlib::DebugTextData>& out)
+					{
+						int32_t text_len = strlen(text);
+						int32_t word_count = (text_len + 4) / 4;
+
+						for (int32_t word_idx = 0; word_idx < word_count; ++word_idx)
+						{
+							int32_t word_offset = word_idx * 4;
+							int32_t char_remain = text_len - word_offset;
+
+							uint32_t word{ 0 };
+							memcpy(&word, text + word_offset, char_remain < 4 ? char_remain : 4);
+
+							out.push_back({
+									.word = word,
+									.pos = {8 * 4 * word_idx * 2.f + pos.x, pos.y},
+									.scale = 2.f,
+									.fg_color = {255, 255, 255, 255},
+									.bg_color = {0, 0, 0, 0}
+								});
+						}
+					};
+
+				static std::vector<shlib::DebugTextData> text_data{};
+				debug_text_maker({ 100, 100 }, "Hello World!", text_data);
+
+				auto* text_buffer = render_context->GetBuffer(debug_text_buffer);
+				text_buffer->Update(text_data.data(), text_data.size() * sizeof(shlib::DebugTextData));
+
+				create_info.draw_callback = [this,
+					&geometry_buffer,
+					debug_text_buffer
+				](ShaderPass& self, edge::gfx::CommandList& command_list, float delta_time)
+					{
+						EDGE_PROFILE_ZONE_SCOPED;
+
+						auto* backbuffer = render_context->GetTexture(backbuffer_resource);
+						glm::vec2 viewport_resolution{ backbuffer->GetWidth(), backbuffer->GetHeight() };
+
+						command_list.SetViewport(0.f, 0.f, viewport_resolution.x, viewport_resolution.y, 0.f, 1.f);
+
+						// Bind vertex and index buffers
+						geometry_buffer.Bind(command_list); 
+
+						auto* text_buffer = render_context->GetBuffer(debug_text_buffer);
+
+						auto& constants = self.GetConstantBlock();
+						constants.Set(edge::murmur_hash("word_data"), text_buffer->GetAddress());
+						constants.Set(edge::murmur_hash("inv_viewport_resolution"), 1.f / viewport_resolution);
+						self.PushConstantRanges(command_list);
+						self.ResolveDependencies(command_list);
+
+						self.Begin(command_list);
+						command_list.DrawIndexed(6, 0, text_data.size(), 0, 0);
+						self.End(command_list);
+					};
+
+				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
 			// ImGui renderer
@@ -2010,7 +2126,8 @@ namespace engine
 					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eColor, edge::gfx::Format::eR8G8B8A8Unorm);
 					geometry_buffer_ci.index_description.type = edge::gfx::IndexType::eUint16;
 
-					auto& geometry_buffer = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
+					auto geometry_buffer_id = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
+					auto& geometry_buffer = LookUpGeometryBuffer(geometry_buffer_id);
 
 					RenderShaderPassCreateInfo create_info{};
 					create_info.shader_name = "testing:imgui";

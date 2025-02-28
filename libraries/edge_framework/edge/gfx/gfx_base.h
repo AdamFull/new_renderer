@@ -17,6 +17,19 @@ namespace edge
 			virtual ResourceType GetResourceType() = 0;
 		};
 
+		class RenderResource : public GFXResource
+		{
+		public:
+			virtual ~RenderResource() = default;
+
+			ResourceStateFlags GetResourceState() const
+			{
+				return state;
+			}
+		protected:
+			ResourceStateFlags state{ ResourceStateFlag::eUndefined };
+		};
+
 		class Fence : public GFXResource
 		{
 		public:
@@ -78,7 +91,7 @@ namespace edge
 			virtual bool AcquireNextImage(Semaphore* signal_semaphore, Fence* fence, uint32_t* image_index) = 0;
 		};
 
-		class Buffer : public GFXResource
+		class Buffer : public RenderResource
 		{
 		public:
 			virtual ~Buffer() = default;
@@ -221,7 +234,7 @@ namespace edge
 			virtual void Reset() = 0;
 		};
 
-		class Texture : public GFXResource
+		class Texture : public RenderResource
 		{
 		public:
 			virtual ~Texture() = default;

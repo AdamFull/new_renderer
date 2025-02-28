@@ -13,6 +13,7 @@ set(USE_NSIGHT_AFTERMATH OFF CACHE BOOL "Enable nsight aftermath support." FORCE
 #TODO: add extensions as plugins
 add_subdirectory("ext/resource_loader")
 add_subdirectory("ext/shader_effect_system")
+add_subdirectory("ext/printf")
 
 file(GLOB GFX_SOURCES FILES *.cpp *.h)
 
@@ -86,4 +87,5 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
     edge_gfx_ext_resource_loader
     edge_gfx_ext_shader_effect_system
+    edge_gfx_ext_printf
 )

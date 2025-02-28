@@ -33,8 +33,9 @@ namespace engine
 
 			virtual edge::gfx::Context& GetContext() = 0;
 
-			virtual GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
-			virtual GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
+			virtual uint32_t RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
+			virtual uint32_t RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
+			virtual GeometryBuffer& LookUpGeometryBuffer(uint32_t geometry_buffer_id) = 0;
 
 
 			virtual ExecutionContext& GetRenderContext() = 0;

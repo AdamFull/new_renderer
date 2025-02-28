@@ -547,7 +547,8 @@ namespace engine
 
 				// Load vertices
 				render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
-				auto& geometry_buffer = renderer.RequestDeinterleavedGeometryBuffer(geometry_ci);
+				auto geometry_buffer_id = renderer.RequestDeinterleavedGeometryBuffer(geometry_ci);
+				auto& geometry_buffer = renderer.LookUpGeometryBuffer(geometry_buffer_id);
 
 				shlib::BoundingBox bb{};
 				VertexData vertex_data{};

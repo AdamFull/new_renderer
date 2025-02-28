@@ -1,0 +1,19 @@
+{
+  "name": "debug_text",
+  "shaders": [
+    {
+      "source": "debug_text.vert",
+      "type": "Vertex"
+    },
+    {
+      "source": "debug_text.frag",
+      "type": "Fragment"
+    }
+  ],
+  "compile": {
+    "shader_model": 6,
+    "permutate": [
+      []
+    ]
+  }
+}

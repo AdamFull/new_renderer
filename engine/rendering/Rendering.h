@@ -39,8 +39,9 @@ namespace engine
 
 			edge::gfx::Context& GetContext() override;
 
-			GeometryBuffer& RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
-			GeometryBuffer& RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
+			uint32_t RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
+			uint32_t RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
+			GeometryBuffer& LookUpGeometryBuffer(uint32_t geometry_buffer_id) override;
 
 			ExecutionContext& GetRenderContext() override;
 			ExecutionContext const& GetRenderContext() const override;
