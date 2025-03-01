@@ -19,7 +19,7 @@ namespace edge
 	{
 	}
 
-	int32_t Runtime::Initialize()
+	auto Runtime::Initialize() -> int32_t
 	{
 		CreateWindow(window_properties);
 
@@ -39,7 +39,7 @@ namespace edge
 		return 0;
 	}
 
-	int32_t Runtime::MainLoop()
+	auto Runtime::MainLoop() -> int32_t
 	{
 		int32_t exit_code = ExitCode::Success;
 		while ((exit_code == ExitCode::Success) && !window->ShouldClose() && !close_requested)
@@ -50,7 +50,7 @@ namespace edge
 		return exit_code;
 	}
 
-	int32_t Runtime::MainLoopFrame()
+	auto Runtime::MainLoopFrame() -> int32_t
 	{
 		EDGE_PROFILE_ZONE_SCOPED;
 
@@ -187,42 +187,12 @@ namespace edge
 		}
 	}
 
-	Window& Runtime::GetWindow()
-	{
-		return *window;
-	}
-
-	Application& Runtime::GetApp() const
-	{
-		return *app;
-	}
-
-	Application& Runtime::GetApp()
-	{
-		return *app;
-	}
-
 	void Runtime::SetLastError(const std::string& error)
 	{
 
 	}
 
-	void Runtime::SetFocus(bool _focused)
-	{
-		focused = _focused;
-	}
-
-	void Runtime::RequestApplication(ApplicationCreateInfo* app_ci)
-	{
-		app_create_info = app_ci;
-	}
-
-	bool Runtime::AppRequested()
-	{
-		return app_create_info != nullptr;
-	}
-
-	bool Runtime::StartApp()
+	auto Runtime::StartApp() -> bool
 	{
 		auto* app_ci = app_create_info;
 		app_create_info = nullptr;
@@ -261,16 +231,6 @@ namespace edge
 		OnAppStart(app_ci->name);
 
 		return true;
-	}
-
-	void Runtime::ForceRender(bool should_always_render)
-	{
-		always_render = should_always_render;
-	}
-
-	void Runtime::DisableInputProcessing()
-	{
-		process_input_events = false;
 	}
 
 	void Runtime::SetWindowProperties(const Window::OptionalProperties& properties)

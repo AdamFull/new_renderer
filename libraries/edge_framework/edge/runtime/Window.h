@@ -72,17 +72,20 @@ namespace edge
 		 * @brief Gets current platform native surface
 		 * @returns A pointer to native surface handle
 		 */
-		virtual NativeSurface* GetNativeSurface();
+		[[nodiscard]] auto GetNativeSurface() const noexcept -> NativeSurface*
+		{
+			return native_surface;
+		}
 
 		/**
 		 * @brief Checks if the window should be closed
 		 */
-		virtual bool ShouldClose() = 0;
+		[[nodiscard]] virtual auto ShouldClose() const noexcept -> bool = 0;
 
 		/**
 		 * @brief Handles the processing of all underlying window events
 		 */
-		virtual void ProcessEvents();
+		virtual void ProcessEvents() {}
 
 		/**
 		 * @brief Requests to close the window
@@ -92,18 +95,21 @@ namespace edge
 		/**
 		 * @return The dot-per-inch scale factor
 		 */
-		virtual float GetDpiFactor() const = 0;
+		[[nodiscard]] virtual auto GetDpiFactor() const noexcept -> float = 0;
 
 		/**
 		 * @return The scale factor for systems with heterogeneous window and pixel coordinates
 		 */
-		virtual float GetContentScaleFactor() const;
+		[[nodiscard]] virtual auto GetContentScaleFactor() const noexcept -> float
+		{
+			return 1.0f;
+		}
 
 		/**
 		 * @brief Windows title setter
 		 * @param new_title New window title
 		 */
-		virtual void SetTitle(std::string_view new_title) = 0;
+		virtual void SetTitle(std::string_view new_title) const = 0;
 
 		/**
 		 * @brief Attempt to Resize the window - not guaranteed to change
@@ -111,13 +117,19 @@ namespace edge
 		 * @param extent The preferred window extent
 		 * @return Extent The new window extent
 		 */
-		Extent Resize(const Extent& extent);
+		[[nodiscard]] auto Resize(const Extent& extent) noexcept -> Extent;
 
-		virtual std::vector<const char*> GetRequiredSurfaceExtensions() const = 0;
+		[[nodiscard]] virtual auto GetRequiredSurfaceExtensions() const ->std::vector<const char*> = 0;
 
-		const Extent& GetExtent() const;
+		[[nodiscard]] auto GetExtent() const noexcept -> Extent const&
+		{
+			return properties.extent;
+		}
 
-		Mode GetWindowMode() const;
+		[[nodiscard]] auto GetWindowMode() const noexcept -> Mode
+		{
+			return properties.mode;
+		}
 
 		inline const Properties& GetProperties() const
 		{

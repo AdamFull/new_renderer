@@ -18,19 +18,19 @@ namespace edge
 
 		virtual ~GlfwWindow();
 
-		bool ShouldClose() override;
+		[[nodiscard]] auto ShouldClose() const noexcept -> bool override;
 
 		void ProcessEvents() override;
 
 		void Close() override;
 
-		float GetDpiFactor() const override;
+		[[nodiscard]] auto GetDpiFactor() const noexcept -> float override;
 
-		void SetTitle(const std::string_view new_title) override;
+		void SetTitle(const std::string_view new_title) const override;
 
-		float GetContentScaleFactor() const override;
+		[[nodiscard]] auto GetContentScaleFactor() const noexcept -> float override;
 
-		std::vector<const char*> GetRequiredSurfaceExtensions() const override;
+		[[nodiscard]] auto GetRequiredSurfaceExtensions() const -> std::vector<const char*> override;
 	protected:
 		static void WindowCloseCallback(GLFWwindow* window);
 		static void WindowSizeCallback(GLFWwindow* window, int width, int height);

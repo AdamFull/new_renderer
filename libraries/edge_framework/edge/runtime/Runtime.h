@@ -31,13 +31,13 @@ namespace edge
 		 * @brief Initialize the platform
 		 * @return An exit code representing the outcome of initialization
 		 */
-		virtual int32_t Initialize();
+		virtual auto Initialize() -> int32_t;
 
 		/**
 		 * @brief Handles the main update and render loop
 		 * @return An exit code representing the outcome of the loop
 		 */
-		int32_t MainLoop();
+		auto MainLoop() -> int32_t;
 
 		/**
 		 * @brief Handles the update and render of a frame.
@@ -45,7 +45,7 @@ namespace edge
 		 * frame-looping mechanism, typically tied to platform screen refeshes.
 		 * @return An exit code representing the outcome of the loop
 		 */
-		int32_t MainLoopFrame();
+		auto MainLoopFrame() -> int32_t;
 
 		/**
 		 * @brief Runs the application for one frame
@@ -67,23 +67,50 @@ namespace edge
 
 		virtual void OnInputEvent(const InputEvent& input_event);
 
-		Window& GetWindow();
+		auto GetWindow() const noexcept -> Window&
+		{
+			return *window;
+		}
 
-		Application& GetApp() const;
-		Application& GetApp();
+		auto GetApp() const noexcept -> Application&
+		{
+			return *app;
+		}
+
+		auto GetApp() noexcept -> Application&
+		{
+			return *app;
+		}
 
 		void SetLastError(const std::string& error);
 
-		void SetFocus(bool focused);
+		void SetFocus(bool focused) noexcept
+		{
+			this->focused = focused;
+		}
 
-		void RequestApplication(ApplicationCreateInfo* app_ci);
-		bool AppRequested();
-		bool StartApp();
+		void RequestApplication(ApplicationCreateInfo* app_ci) noexcept
+		{
+			app_create_info = app_ci;
+		}
+
+		auto AppRequested() const noexcept -> bool
+		{
+			return app_create_info != nullptr;
+		}
+
+		auto StartApp() -> bool;
 
 		// Force the application to always render even if it is not in focus
-		void ForceRender(bool should_always_render);
+		void ForceRender(bool should_always_render) noexcept
+		{
+			always_render = should_always_render;
+		}
 
-		void DisableInputProcessing();
+		void DisableInputProcessing() noexcept
+		{
+			process_input_events = false;
+		}
 
 		void SetWindowProperties(const Window::OptionalProperties& properties);
 	protected:

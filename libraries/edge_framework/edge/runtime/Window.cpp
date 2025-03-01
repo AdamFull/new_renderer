@@ -7,16 +7,7 @@ namespace edge
 	{
 	}
 
-	NativeSurface* Window::GetNativeSurface()
-	{
-		return native_surface;
-	}
-
-	void Window::ProcessEvents()
-	{
-	}
-
-	Window::Extent Window::Resize(const Extent& new_extent)
+	auto Window::Resize(const Extent& new_extent) noexcept -> Window::Extent
 	{
 		if (properties.resizable)
 		{
@@ -25,20 +16,5 @@ namespace edge
 		}
 
 		return properties.extent;
-	}
-
-	const Window::Extent& Window::GetExtent() const
-	{
-		return properties.extent;
-	}
-
-	float Window::GetContentScaleFactor() const
-	{
-		return 1.0f;
-	}
-
-	Window::Mode Window::GetWindowMode() const
-	{
-		return properties.mode;
 	}
 }

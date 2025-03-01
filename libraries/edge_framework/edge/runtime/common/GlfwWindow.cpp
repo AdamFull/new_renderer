@@ -345,7 +345,7 @@ namespace edge
 		glfwTerminate();
 	}
 
-	bool GlfwWindow::ShouldClose()
+	bool GlfwWindow::ShouldClose() const noexcept
 	{
 		return glfwWindowShouldClose(handle);
 	}
@@ -362,7 +362,7 @@ namespace edge
 
 	/// @brief It calculates the dpi factor using the density from GLFW physical size
 	/// <a href="https://www.glfw.org/docs/latest/monitor_guide.html#monitor_size">GLFW docs for dpi</a>
-	float GlfwWindow::GetDpiFactor() const
+	auto GlfwWindow::GetDpiFactor() const noexcept -> float
 	{
 		auto primary_monitor = glfwGetPrimaryMonitor();
 		auto vidmode = glfwGetVideoMode(primary_monitor);
@@ -379,12 +379,12 @@ namespace edge
 		return dpi_factor;
 	}
 
-	void GlfwWindow::SetTitle(std::string_view new_title)
+	void GlfwWindow::SetTitle(std::string_view new_title) const
 	{
 		glfwSetWindowTitle(handle, new_title.data());
 	}
 
-	float GlfwWindow::GetContentScaleFactor() const
+	auto GlfwWindow::GetContentScaleFactor() const noexcept -> float
 	{
 		int fb_width, fb_height;
 		glfwGetFramebufferSize(handle, &fb_width, &fb_height);
@@ -397,7 +397,7 @@ namespace edge
 		return static_cast<float>(fb_width) / win_width;
 	}
 
-	std::vector<const char*> GlfwWindow::GetRequiredSurfaceExtensions() const
+	auto GlfwWindow::GetRequiredSurfaceExtensions() const -> std::vector<const char*>
 	{
 		uint32_t glfw_extension_count{ 0 };
 		const char** names = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
