@@ -32,7 +32,7 @@ namespace edge
 			 *
 			 * @return True if a file is open, false otherwise.
 			 */
-			virtual bool IsOpen() const = 0;
+			[[nodiscard]] virtual auto IsOpen() const noexcept -> bool = 0;
 
 			/**
 			 * @brief Write a character to the file.
@@ -40,7 +40,7 @@ namespace edge
 			 * @param character The character to write to the file.
 			 * @return The written character cast to an int, or EOF on error.
 			 */
-			virtual int32_t Putc(int32_t character) = 0;
+			[[nodiscard]] virtual auto Putc(int32_t character) -> int32_t = 0;
 
 			/**
 			 * @brief Write a sequence of elements to the file from a buffer.
@@ -50,14 +50,14 @@ namespace edge
 			 * @param elemCount The number of elements to write.
 			 * @return The total number of elements successfully written.
 			 */
-			virtual std::size_t Write(const void* buffer, std::size_t elemSize, std::size_t elemCount) = 0;
+			[[nodiscard]] virtual auto Write(const void* buffer, std::size_t elemSize, std::size_t elemCount) -> std::size_t = 0;
 
 			/**
 			 * @brief Get the current position of the file pointer.
 			 *
 			 * @return The current position of the file pointer.
 			 */
-			virtual long Tell() = 0;
+			[[nodiscard]] virtual auto Tell() -> long = 0;
 
 			/**
 			 * @brief Set the position of the file pointer.
@@ -66,14 +66,14 @@ namespace edge
 			 * @param origin The position from where offset is added.
 			 * @return 0 if successful, otherwise a non-zero value.
 			 */
-			virtual int32_t Seek(long offset, int32_t origin) = 0;
+			[[nodiscard]] virtual auto Seek(long offset, int32_t origin) -> int32_t = 0;
 
 			/**
 			 * @brief Flush the buffer of the file.
 			 *
 			 * @return Zero if the buffer was successfully flushed. A non-zero value indicates an error.
 			 */
-			virtual int32_t Flush() = 0;
+			[[nodiscard]] virtual auto Flush() -> int32_t = 0;
 		};
 	}
 }

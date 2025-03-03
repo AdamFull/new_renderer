@@ -52,14 +52,14 @@ namespace edge
              *
              * @return True if a file is open, false otherwise.
              */
-            bool IsOpen() const override;
+            [[nodiscard]] auto IsOpen() const -> bool override;
 
             /**
              * @brief Read a character from the file.
              *
              * @return The character read cast to an int, or EOF if the end of the file is reached.
              */
-            int32_t Getc() override;
+            [[nodiscard]] auto Getc() -> int32_t override;
 
             /**
              * @brief Read a sequence of elements from the file into a buffer.
@@ -69,7 +69,7 @@ namespace edge
              * @param elemCount The number of elements to read.
              * @return The total number of elements successfully read.
              */
-            std::size_t Read(void* buffer, std::size_t elemSize, std::size_t elemCount) override;
+            [[nodiscard]] auto Read(void* buffer, std::size_t elemSize, std::size_t elemCount) -> std::size_t override;
 
             /**
              * @brief Unget a character from the file.
@@ -77,14 +77,14 @@ namespace edge
              * @param character The character to unget.
              * @return The ungotten character cast to an int, or EOF on error.
              */
-            int32_t Ungetc(int32_t character) override;
+            [[nodiscard]] auto Ungetc(int32_t character) -> int32_t override;
 
             /**
              * @brief Get the current position of the file pointer.
              *
              * @return The current position of the file pointer.
              */
-            long Tell() override;
+            [[nodiscard]] auto Tell() -> long override;
 
             /**
              * @brief Set the position of the file pointer.
@@ -93,14 +93,14 @@ namespace edge
              * @param origin The position from where offset is added.
              * @return 0 if successful, otherwise a non-zero value.
              */
-            int32_t Seek(long offset, int32_t origin) override;
+            [[nodiscard]] auto Seek(long offset, int32_t origin) -> int32_t override;
 
             /**
              * @brief Check if the end of the file has been reached.
              *
              * @return A non-zero value if the end of the file has been reached, otherwise 0.
              */
-            int32_t Eof() const override;
+            [[nodiscard]] auto Eof() const -> int32_t override;
 
         private:
             /**

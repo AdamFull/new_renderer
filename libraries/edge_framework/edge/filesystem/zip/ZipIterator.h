@@ -50,7 +50,7 @@ namespace edge
              *
              * @return A constant reference to the item's string representation.
              */
-            const std::string& _OperatorDereferencing() const override;
+            [[nodiscard]] auto _OperatorDereferencing() const noexcept -> std::string const& override;
 
             /**
              * @brief Compare the directory iterators for inequality.
@@ -58,7 +58,7 @@ namespace edge
              * @param other A pointer to the IDirectoryIteratorInterface to compare.
              * @return True if the iterators are not equal, false otherwise.
              */
-            bool _OperatorNotEqual(const IDirectoryIteratorInterface*) const override;
+            [[nodiscard]] auto _OperatorNotEqual(const IDirectoryIteratorInterface*) const noexcept -> bool override;
 
         protected:
             /**

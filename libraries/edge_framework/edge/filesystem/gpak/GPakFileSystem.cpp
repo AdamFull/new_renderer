@@ -78,10 +78,5 @@ namespace edge
 		{
 			return std::make_unique<GPakIterator>(m_pHandle, path, recursive);
 		}
-
-		EFilesystemModeFlags GPakFileSystem::GetFilesystemMode() const
-		{
-			return static_cast<uint32_t>(EFilesystemModeFlagBits::eRead);
-		}
 	}
 }

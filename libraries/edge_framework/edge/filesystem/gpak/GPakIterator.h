@@ -49,7 +49,10 @@ namespace edge
              *
              * @return A constant reference to the item's string representation.
              */
-            const std::string& _OperatorDereferencing() const override;
+            [[nodiscard]] auto _OperatorDereferencing() const noexcept -> const std::string & override
+            {
+                return m_srCurrentPath;
+            }
 
             /**
              * @brief Compare the directory iterators for inequality.
@@ -57,7 +60,14 @@ namespace edge
              * @param other A pointer to the IDirectoryIteratorInterface to compare.
              * @return True if the iterators are not equal, false otherwise.
              */
-            bool _OperatorNotEqual(const IDirectoryIteratorInterface*) const override;
+            [[nodiscard]] auto _OperatorNotEqual(const IDirectoryIteratorInterface* other) const noexcept -> bool override
+            {
+                if (!other->it_)
+                    return m_pCurrentDir != nullptr;
+
+                const auto* other_it = dynamic_cast<const GPakIterator*>(other->it_.get());
+                return m_pCurrentDir != other_it->m_pCurrentDir;
+            }
         protected:
             filesystem_tree_iterator* m_pIterator{ nullptr };
             filesystem_tree_node* m_pCurrentDir{ nullptr };

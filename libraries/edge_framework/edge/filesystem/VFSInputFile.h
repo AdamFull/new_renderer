@@ -37,25 +37,25 @@ namespace edge
 			 * @brief Checks if the input file is open.
 			 * @return true if the input file is open, false otherwise.
 			 */
-			bool IsOpen() override;
+			[[nodiscard]] auto IsOpen() -> bool override;
 
 			/**
 			 * @brief Reads a single character from the input file.
 			 * @return The character read or EOF if the end of the file is reached.
 			 */
-			int Get() override;
+			[[nodiscard]] auto Get() -> int override;
 
 			/**
 			 * @brief Reads a line of characters from the input file.
 			 * @return The string containing the line read.
 			 */
-			std::string GetLine() override;
+			[[nodiscard]] auto GetLine() -> std::string override;
 
 			/**
 			 * @brief Retrieves the number of characters read during the last unformatted input operation.
 			 * @return The number of characters read.
 			 */
-			std::size_t Gcount() const override;
+			[[nodiscard]] auto Gcount() const ->std::size_t override;
 
 			/**
 			 * @brief Ignores a specified number of characters or until a specified delimiter is encountered.
@@ -63,13 +63,13 @@ namespace edge
 			 * @param delimiter The delimiter character (default is EOF).
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Ignore(std::size_t count = 1, int delimiter = EOF) override;
+			[[nodiscard]] auto Ignore(std::size_t count = 1, int delimiter = EOF) -> VFSInFile & override;
 
 			/**
 			 * @brief Peeks at the next character in the input file without extracting it.
 			 * @return The next character in the input file or EOF if the end of the file is reached.
 			 */
-			int Peek() const override;
+			[[nodiscard]] auto Peek() const -> int override;
 
 			/**
 			 * @brief Reads a specified number of characters from the input file into a buffer.
@@ -77,47 +77,47 @@ namespace edge
 			 * @param count The number of characters to read.
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Read(char* buffer, std::size_t count) override;
+			[[nodiscard]] auto Read(char* buffer, std::size_t count) -> VFSInFile & override;
 
 			/**
 			 * @brief Reads characters from the input file into a buffer.
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Read(std::string& buffer) override;
+			[[nodiscard]] auto Read(std::string& buffer) -> VFSInFile & override;
 
 			/**
 			 * @brief Reads characters from the input file into a buffer.
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Read(std::vector<uint8_t>& buffer) override;
+			[[nodiscard]] auto Read(std::vector<uint8_t>& buffer) -> VFSInFile & override;
 
 			/**
 			 * @brief Reads characters from the input file into a buffer.
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Read(std::vector<uint32_t>& buffer) override;
+			[[nodiscard]] auto Read(std::vector<uint32_t>& buffer) -> VFSInFile & override;
 
 			/**
 			 * @brief Puts the last character read back into the input file.
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Unget() override;
+			[[nodiscard]] auto Unget() -> VFSInFile & override;
 
 			/**
 			 * @brief Retrieves the current input position indicator.
 			 * @return The current position in the input file as a std::streampos.
 			 */
-			std::streampos Tellg() override;
+			[[nodiscard]] auto Tellg() -> std::streampos override;
 
 			/**
 			 * @brief Sets the input position indicator to the specified position.
 			 * @param pos The new position in the input file as a std::streampos.
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Seekg(std::streampos pos) override;
+			[[nodiscard]] auto Seekg(std::streampos pos) -> VFSInFile & override;
 
 			/**
 			 * @brief Sets the input position indicator to the specified position.
@@ -125,13 +125,13 @@ namespace edge
 			 * @param origin The origin in the input file as a C FILE seek pos.
 			 * @return A reference to the VFSInFile object.
 			 */
-			VFSInFile& Seekg(std::streampos pos, int32_t origin) override;
+			[[nodiscard]] auto Seekg(std::streampos pos, int32_t origin) -> VFSInFile & override;
 
 			/**
 			 * @brief Checks if the end-of-file (EOF) has been reached.
 			 * @return true if the end-of-file is reached, false otherwise.
 			 */
-			bool Eof() const override;
+			[[nodiscard]] auto Eof() const -> bool override;
 
 		private:
 			std::unique_ptr<IInputFileInterface> m_pFileInterface{ nullptr };

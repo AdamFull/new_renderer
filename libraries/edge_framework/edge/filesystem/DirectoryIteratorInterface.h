@@ -31,7 +31,7 @@ namespace edge
              *
              * @return A constant reference to the item's string representation.
              */
-            virtual const std::string& _OperatorDereferencing() const = 0;
+            virtual auto _OperatorDereferencing() const noexcept -> std::string const& = 0;
 
             /**
              * @brief Compare the directory iterators for inequality.
@@ -39,7 +39,7 @@ namespace edge
              * @param other A pointer to the IDirectoryIteratorInterface to compare.
              * @return True if the iterators are not equal, false otherwise.
              */
-            virtual bool _OperatorNotEqual(const IDirectoryIteratorInterface*) const = 0;
+            virtual auto _OperatorNotEqual(const IDirectoryIteratorInterface*) const noexcept -> bool = 0;
         };
 
 
@@ -53,28 +53,28 @@ namespace edge
             *
             * @return A reference to the iterator pointing to the beginning of the directory.
             */
-            virtual IDirectoryIteratorInterface& Begin() = 0;
+            [[nodiscard]] virtual auto Begin() -> IDirectoryIteratorInterface & = 0;
 
             /**
              * @brief Get the iterator pointing to the end of the directory.
              *
              * @return A reference to the iterator pointing to the end of the directory.
              */
-            virtual IDirectoryIteratorInterface& End() = 0;
+            [[nodiscard]] virtual auto End() -> IDirectoryIteratorInterface & = 0;
 
             /**
              * @brief Move to the next item in the directory.
              *
              * @return A reference to the updated iterator.
              */
-            virtual IDirectoryIteratorInterface& operator++() = 0;
+            [[nodiscard]] virtual auto operator++() ->IDirectoryIteratorInterface & = 0;
 
             /**
              * @brief Get the current item in the directory.
              *
              * @return A constant reference to the item's string representation.
              */
-            virtual const std::string& operator*() = 0;
+            [[nodiscard]] virtual auto operator*() -> std::string const& = 0;
 
             /**
              * @brief Compare the directory iterators for inequality.
@@ -82,7 +82,7 @@ namespace edge
              * @param other A reference to the DirectoryIterator to compare.
              * @return True if the iterators are not equal, false otherwise.
              */
-            virtual bool operator!=(const IDirectoryIteratorInterface& other) const = 0;
+            [[nodiscard]] virtual auto operator!=(const IDirectoryIteratorInterface& other) const -> bool = 0;
 
             /**
              * @brief Unique_ptr to an IDirectoryIterator object.

@@ -40,7 +40,10 @@ namespace edge
              *
              * @return True if the file is open, false otherwise.
              */
-            bool IsOpen() const override;
+            [[nodiscard]] auto IsOpen() const noexcept -> bool override
+            {
+                return m_pFilePtr;
+            }
 
             /**
              * @brief Write a character to the file.
@@ -48,7 +51,7 @@ namespace edge
              * @param character The character to be written.
              * @return The character written or EOF if an error occurs.
              */
-            int32_t Putc(int32_t character) override;
+            [[nodiscard]] auto Putc(int32_t character) -> int32_t override;
 
             /**
              * @brief Write data from the buffer to the file.
@@ -58,14 +61,14 @@ namespace edge
              * @param elemCount The number of elements to be written.
              * @return The number of elements successfully written.
              */
-            std::size_t Write(const void* buffer, std::size_t elemSize, std::size_t elemCount) override;
+            [[nodiscard]] auto Write(const void* buffer, std::size_t elemSize, std::size_t elemCount) -> std::size_t override;
 
             /**
              * @brief Get the current file position indicator.
              *
              * @return The current file position indicator, or -1L if an error occurs.
              */
-            long Tell() override;
+            [[nodiscard]] auto Tell() -> long override;
 
             /**
              * @brief Set the file position indicator to the specified offset relative to the given origin.
@@ -74,14 +77,14 @@ namespace edge
              * @param origin The position used as a reference for the offset. It can be SEEK_SET, SEEK_CUR, or SEEK_END.
              * @return Zero if successful, or a non-zero value if an error occurs.
              */
-            int32_t Seek(long offset, int32_t origin) override;
+            [[nodiscard]] auto Seek(long offset, int32_t origin) -> int32_t override;
 
             /**
              * @brief Flush the output buffer to the file.
              *
              * @return Zero if the buffer is successfully flushed, or EOF if an error occurs.
              */
-            int32_t Flush() override;
+            [[nodiscard]] auto Flush() -> int32_t override;
         private:
             /**
              * @brief A pointer to the FILE structure.

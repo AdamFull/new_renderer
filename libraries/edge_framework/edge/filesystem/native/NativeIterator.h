@@ -67,7 +67,7 @@ namespace edge
              *
              * @return A reference to a string representing the current entry's relative path.
              */
-            const std::string& _OperatorDereferencing() const override { return path_; }
+            [[nodiscard]] auto _OperatorDereferencing() const noexcept -> std::string const& override { return path_; }
 
             /**
              * @brief Compare this iterator with another IDirectoryIteratorInterface.
@@ -75,7 +75,7 @@ namespace edge
              * @param other A pointer to the IDirectoryIteratorInterface to be compared with.
              * @return True if the iterators are not equal, false otherwise.
              */
-            bool _OperatorNotEqual(const IDirectoryIteratorInterface* other) const override
+            [[nodiscard]] auto _OperatorNotEqual(const IDirectoryIteratorInterface* other) const noexcept -> bool override
             {
                 if (!other->it_)
                     return it_ != _Ty();

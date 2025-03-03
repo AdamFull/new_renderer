@@ -106,10 +106,5 @@ namespace edge
 
 			return iterator;
 		}
-
-		EFilesystemModeFlags NativeFileSystem::GetFilesystemMode() const
-		{
-			return static_cast<uint32_t>(EFilesystemModeFlagBits::eRead) | static_cast<uint32_t>(EFilesystemModeFlagBits::eWrite);
-		}
 	}
 }

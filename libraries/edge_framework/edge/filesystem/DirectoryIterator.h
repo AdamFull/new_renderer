@@ -36,28 +36,28 @@ namespace edge
              *
              * @return A reference to the iterator pointing to the beginning of the directory.
              */
-            DirectoryIterator& Begin() override;
+            [[nodiscard]] auto Begin() -> DirectoryIterator & override;
 
             /**
              * @brief Get the iterator pointing to the end of the directory.
              *
              * @return A reference to the iterator pointing to the end of the directory.
              */
-            DirectoryIterator& End() override;
+            [[nodiscard]] auto End() -> DirectoryIterator & override;
 
             /**
              * @brief Move to the next item in the directory.
              *
              * @return A reference to the updated iterator.
              */
-            DirectoryIterator& operator++() override;
+            [[nodiscard]] auto operator++() -> DirectoryIterator & override;
 
             /**
              * @brief Get the current item in the directory.
              *
              * @return A constant reference to the item's string representation.
              */
-            const std::string& operator*() override;
+            [[nodiscard]] auto operator*() -> std::string const& override;
 
             /**
              * @brief Compare the directory iterators for inequality.

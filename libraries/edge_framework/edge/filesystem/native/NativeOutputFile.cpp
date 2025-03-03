@@ -28,11 +28,6 @@ namespace edge
 			}
 		}
 
-		bool NativeOutputFile::IsOpen() const
-		{
-			return m_pFilePtr;
-		}
-
 		int32_t NativeOutputFile::Putc(int32_t character)
 		{
 			return m_pFilePtr ? std::fputc(character, m_pFilePtr) : -1;

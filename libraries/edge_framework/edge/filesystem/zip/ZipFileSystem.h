@@ -37,7 +37,7 @@ namespace edge
 			 * @param fspath A string representing the file system path of the new ZIP archive.
 			 * @return True if the archive is successfully created, false otherwise.
 			 */
-			bool Create(std::string_view fspath) override;
+			[[nodiscard]] auto Create(std::string_view fspath) -> bool override;
 
 			/**
 			 * @brief This function is not supported by the ZipFileSystem.
@@ -47,12 +47,12 @@ namespace edge
 			/**
 			 * @brief This function is not supported by the ZipFileSystem.
 			 */
-			bool CreateDirectories(std::string_view path) override { return false; }
+			[[nodiscard]] auto CreateDirectories(std::string_view path) -> bool override { return false; }
 
 			/**
 			 * @brief This function is not supported by the ZipFileSystem.
 			 */
-			bool CreateDirectory(std::string_view path) override { return false; }
+			[[nodiscard]] auto CreateDirectory(std::string_view path) -> bool  override { return false; }
 
 			/**
 		 * @brief Check if an entry exists at the specified path within the ZIP archive.
@@ -60,7 +60,7 @@ namespace edge
 		 * @param path A string representing the path of the entry.
 		 * @return True if the entry exists, false otherwise.
 		 */
-			bool Exists(std::string_view path) override;
+			[[nodiscard]] auto Exists(std::string_view path) -> bool override;
 
 			/**
 			 * @brief Get the size of a file at the specified path within the ZIP archive.
@@ -68,7 +68,7 @@ namespace edge
 			 * @param path A string representing the path of the file.
 			 * @return The size of the file in bytes.
 			 */
-			size_t FileSize(std::string_view path) override;
+			[[nodiscard]] auto FileSize(std::string_view path) -> size_t override;
 
 			/**
 			 * @brief Check if a directory exists at the specified path within the ZIP archive.
@@ -76,7 +76,7 @@ namespace edge
 			 * @param path A string representing the path of the directory.
 			 * @return True if the directory exists, false otherwise.
 			 */
-			bool IsDirectory(std::string_view path) override;
+			[[nodiscard]] auto IsDirectory(std::string_view path) -> bool override;
 
 			/**
 			 * @brief Check if a file exists at the specified path within the ZIP archive.
@@ -84,12 +84,12 @@ namespace edge
 			 * @param path A string representing the path of the file.
 			 * @return True if the file exists, false otherwise.
 			 */
-			bool IsFile(std::string_view path) override;
+			[[nodiscard]] auto IsFile(std::string_view path) -> bool override;
 
 			/**
 			 * @brief This function is not supported by the ZipFileSystem.
 			 */
-			bool Remove(std::string_view path) override { return false; }
+			[[nodiscard]] auto Remove(std::string_view path) override { return false; }
 
 			/**
 			 * @brief This function is not supported by the ZipFileSystem.
@@ -99,7 +99,7 @@ namespace edge
 			/**
 			 * @brief This function is not supported by the ZipFileSystem.
 			 */
-			std::unique_ptr<IOutputFileInterface> CreateFile(std::string_view path) override { return nullptr; }
+			[[nodiscard]] auto CreateFile(std::string_view path) -> std::unique_ptr<IOutputFileInterface> override { return nullptr; }
 
 			/**
 			 * @brief Open a file at the specified path within the ZIP archive.
@@ -107,7 +107,7 @@ namespace edge
 			 * @param path A string representing the path of the file.
 			 * @return A unique_ptr to an IInputFileInterface if the file is successfully opened, nullptr otherwise.
 			 */
-			std::unique_ptr<IInputFileInterface> OpenFile(std::string_view path) override;
+			[[nodiscard]] auto OpenFile(std::string_view path) -> std::unique_ptr<IInputFileInterface> override;
 
 			/**
 			 * @brief Create a directory iterator for the specified path within the ZIP archive.
@@ -120,7 +120,7 @@ namespace edge
 			 * @param recursive A boolean flag indicating whether to traverse subdirectories.
 			 * @return A unique_ptr to an IDirectoryIterator for the specified path.
 			 */
-			std::unique_ptr<IDirectoryIterator> Walk(std::string_view path, bool recursive) override;
+			[[nodiscard]] auto Walk(std::string_view path, bool recursive) -> std::unique_ptr<IDirectoryIterator> override;
 
 		protected:
 			/**
@@ -128,7 +128,10 @@ namespace edge
 			 *
 			 * @return The file system mode flags.
 			 */
-			EFilesystemModeFlags GetFilesystemMode() const override;
+			[[nodiscard]] auto GetFilesystemMode() const noexcept -> EFilesystemModeFlags override
+			{
+				return static_cast<uint32_t>(EFilesystemModeFlagBits::eRead);
+			}
 
 		private:
 			/**

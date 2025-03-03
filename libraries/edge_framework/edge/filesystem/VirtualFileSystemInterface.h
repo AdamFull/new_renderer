@@ -23,31 +23,31 @@ namespace edge
 
             virtual void Copy(std::string_view from, std::string_view to) = 0;
 
-            virtual bool CreateDirectories(std::string_view path) = 0;
-            virtual bool CreateDirectory(std::string_view path) = 0;
+            [[nodiscard]] virtual auto CreateDirectories(std::string_view path) -> bool = 0;
+            [[nodiscard]] virtual auto CreateDirectory(std::string_view path) -> bool = 0;
 
-            virtual bool Exists(std::string_view path) = 0;
+            [[nodiscard]] virtual auto Exists(std::string_view path) -> bool = 0;
 
-            virtual size_t FileSize(std::string_view path) = 0;
+            [[nodiscard]] virtual auto FileSize(std::string_view path) -> size_t = 0;
 
-            virtual bool IsDirectory(std::string_view path) = 0;
-            virtual bool IsFile(std::string_view path) = 0;
+            [[nodiscard]] virtual auto IsDirectory(std::string_view path) -> bool = 0;
+            [[nodiscard]] virtual auto IsFile(std::string_view path) -> bool = 0;
 
-            virtual bool Remove(std::string_view path) = 0;
+            [[nodiscard]] virtual auto Remove(std::string_view path) -> bool = 0;
             virtual void Rename(std::string_view original, std::string_view newfile) = 0;
 
-            virtual std::unique_ptr<IVFSOutputFileInterface> CreateFile(std::string_view path) = 0;
-            virtual std::unique_ptr<IVFSInputFileInterface> OpenFile(std::string_view path) = 0;
+            [[nodiscard]] virtual auto CreateFile(std::string_view path) -> std::unique_ptr<IVFSOutputFileInterface> = 0;
+            [[nodiscard]] virtual auto OpenFile(std::string_view path) -> std::unique_ptr<IVFSInputFileInterface> = 0;
 
-            virtual std::unique_ptr<IDirectoryIteratorInterface> Walk(std::string_view path, bool recursive) = 0;
+            [[nodiscard]] virtual auto Walk(std::string_view path, bool recursive) -> std::unique_ptr<IDirectoryIteratorInterface> = 0;
 
-            virtual bool ReadFile(std::string_view path, char* data, size_t size) = 0;
-            virtual bool ReadFile(std::string_view path, std::string& data) = 0;
-            virtual bool ReadFile(std::string_view path, std::vector<uint8_t>& data) = 0;
-            virtual bool ReadFile(std::string_view path, std::vector<uint32_t>& data) = 0;
+            [[nodiscard]] virtual auto ReadFile(std::string_view path, char* data, size_t size) -> bool = 0;
+            [[nodiscard]] virtual auto ReadFile(std::string_view path, std::string& data) -> bool = 0;
+            [[nodiscard]] virtual auto ReadFile(std::string_view path, std::vector<uint8_t>& data) -> bool = 0;
+            [[nodiscard]] virtual auto ReadFile(std::string_view path, std::vector<uint32_t>& data) -> bool = 0;
 
-            virtual bool WriteFile(std::string_view path, const std::string& data) = 0;
-            virtual bool WriteFile(std::string_view path, const std::vector<uint8_t>& binary) = 0;
+            [[nodiscard]] virtual auto WriteFile(std::string_view path, const std::string& data) -> bool = 0;
+            [[nodiscard]] virtual auto WriteFile(std::string_view path, const std::vector<uint8_t>& binary) -> bool = 0;
 
             template<class _Ty>
             bool ReadJson(std::string_view path, _Ty& type)

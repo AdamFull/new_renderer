@@ -54,7 +54,7 @@ namespace edge
 			 * @param fspath The file system path.
 			 * @return true if the file system is initialized successfully, false otherwise.
 			 */
-			virtual bool Create(std::string_view fspath) = 0;
+			[[nodiscard]] virtual auto Create(std::string_view fspath) -> bool = 0;
 
 			/**
 			 * @brief Copies a file or directory from the source to the destination path.
@@ -68,49 +68,49 @@ namespace edge
 			 * @param path The directory path to be created.
 			 * @return true if the directories were created or already exist, false otherwise.
 			 */
-			virtual bool CreateDirectories(std::string_view path) = 0;
+			[[nodiscard]] virtual auto CreateDirectories(std::string_view path) -> bool = 0;
 
 			/**
 			 * @brief Creates a single directory at the specified path, if it does not exist.
 			 * @param path The directory path to be created.
 			 * @return true if the directory was created or already exists, false otherwise.
 			 */
-			virtual bool CreateDirectory(std::string_view path) = 0;
+			[[nodiscard]] virtual auto CreateDirectory(std::string_view path) -> bool = 0;
 
 			/**
 			 * @brief Checks whether the specified path exists.
 			 * @param path The path to be checked.
 			 * @return true if the path exists, false otherwise.
 			 */
-			virtual bool Exists(std::string_view path) = 0;
+			[[nodiscard]] virtual auto Exists(std::string_view path) -> bool = 0;
 
 			/**
 			 * @brief Retrieves the size of a file at the specified path.
 			 * @param path The file path.
 			 * @return The size of the file in bytes.
 			 */
-			virtual size_t FileSize(std::string_view path) = 0;
+			[[nodiscard]] virtual auto FileSize(std::string_view path) -> size_t = 0;
 
 			/**
 			 * @brief Checks whether the specified path is a directory.
 			 * @param path The path to be checked.
 			 * @return true if the path is a directory, false otherwise.
 			 */
-			virtual bool IsDirectory(std::string_view path) = 0;
+			[[nodiscard]] virtual auto IsDirectory(std::string_view path) -> bool = 0;
 
 			/**
 			 * @brief Checks whether the specified path is a file.
 			 * @param path The path to be checked.
 			 * @return true if the path is a file, false otherwise.
 			 */
-			virtual bool IsFile(std::string_view path) = 0;
+			[[nodiscard]] virtual auto IsFile(std::string_view path) -> bool = 0;
 
 			/**
 			 * @brief Removes a file or an empty directory at the specified path.
 			 * @param path The path to be removed.
 			 * @return true if the path was successfully removed, false otherwise.
 			 */
-			virtual bool Remove(std::string_view path) = 0;
+			[[nodiscard]] virtual auto Remove(std::string_view path) -> bool = 0;
 
 			/**
 			 * @brief Renames a file or a directory at the specified original path to a new path.
@@ -124,14 +124,14 @@ namespace edge
 			 * @param path The file path.
 			 * @return A unique_ptr to the IOutputFileInterface object representing the created file.
 			 */
-			virtual std::unique_ptr<IOutputFileInterface> CreateFile(std::string_view path) = 0;
+			[[nodiscard]] virtual auto CreateFile(std::string_view path) -> std::unique_ptr<IOutputFileInterface> = 0;
 
 			/**
 			 * @brief Opens an existing file with read mode (rb) at the specified path.
 			 * @param path The file path.
 			 * @return A unique_ptr to the IInputFileInterface object representing the opened file.
 			 */
-			virtual std::unique_ptr<IInputFileInterface> OpenFile(std::string_view path) = 0;
+			[[nodiscard]] virtual auto OpenFile(std::string_view path) -> std::unique_ptr<IInputFileInterface> = 0;
 
 			/**
 			 * @brief Creates a recursive directory iterator for the specified path.
@@ -139,13 +139,13 @@ namespace edge
 			 * @param recursive true if the iteration should be recursive, false otherwise.
 			 * @return A unique_ptr to the IDirectory
 			 */
-			virtual std::unique_ptr<IDirectoryIterator> Walk(std::string_view path, bool recursive) = 0;
+			[[nodiscard]] virtual auto Walk(std::string_view path, bool recursive) -> std::unique_ptr<IDirectoryIterator> = 0;
 
 			/**
 			 * @brief Gets the file system mode flags.
 			 * @return A combination of EFilesystemModeFlagBits as EFilesystemModeFlags.
 			 */
-			virtual EFilesystemModeFlags GetFilesystemMode() const = 0;
+			[[nodiscard]] virtual auto GetFilesystemMode() const noexcept -> EFilesystemModeFlags = 0;
 		};
 	}
 }

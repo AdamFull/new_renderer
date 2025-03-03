@@ -45,19 +45,5 @@ namespace edge
 				free(pathBuf);
 			}
 		}
-
-		const std::string& GPakIterator::_OperatorDereferencing() const
-		{
-			return m_srCurrentPath;
-		}
-
-		bool GPakIterator::_OperatorNotEqual(const IDirectoryIteratorInterface* other) const
-		{
-			if (!other->it_)
-				return m_pCurrentDir != nullptr;
-
-			const auto* other_it = dynamic_cast<const GPakIterator*>(other->it_.get());
-			return m_pCurrentDir != other_it->m_pCurrentDir;
-		}
 	}
 }

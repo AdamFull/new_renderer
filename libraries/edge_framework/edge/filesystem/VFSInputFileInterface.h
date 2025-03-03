@@ -18,25 +18,25 @@ namespace edge
 			 * @brief Checks if the input file is open.
 			 * @return true if the input file is open, false otherwise.
 			 */
-			virtual bool IsOpen() = 0;
+			[[nodiscard]] virtual auto IsOpen() -> bool = 0;
 
 			/**
 			 * @brief Reads a single character from the input file.
 			 * @return The character read or EOF if the end of the file is reached.
 			 */
-			virtual int Get() = 0;
+			[[nodiscard]] virtual auto Get() -> int = 0;
 
 			/**
 			 * @brief Reads a line of characters from the input file.
 			 * @return The string containing the line read.
 			 */
-			virtual std::string GetLine() = 0;
+			[[nodiscard]] virtual auto GetLine() -> std::string = 0;
 
 			/**
 			 * @brief Retrieves the number of characters read during the last unformatted input operation.
 			 * @return The number of characters read.
 			 */
-			virtual std::size_t Gcount() const = 0;
+			[[nodiscard]] virtual auto Gcount() const ->std::size_t = 0;
 
 			/**
 			 * @brief Ignores a specified number of characters or until a specified delimiter is encountered.
@@ -44,13 +44,13 @@ namespace edge
 			 * @param delimiter The delimiter character (default is EOF).
 			 * @return A reference to the IVFSInputFileInterface object.
 			 */
-			virtual IVFSInputFileInterface& Ignore(std::size_t count, int delimiter) = 0;
+			[[nodiscard]] virtual auto Ignore(std::size_t count, int delimiter) -> IVFSInputFileInterface & = 0;
 
 			/**
 			 * @brief Peeks at the next character in the input file without extracting it.
 			 * @return The next character in the input file or EOF if the end of the file is reached.
 			 */
-			virtual int Peek() const = 0;
+			[[nodiscard]] virtual auto Peek() const -> int = 0;
 
 			/**
 			 * @brief Reads a specified number of characters from the input file into a buffer.
@@ -58,47 +58,47 @@ namespace edge
 			 * @param count The number of characters to read.
 			 * @return A reference to the IVFSInputFileInterface object.
 			 */
-			virtual IVFSInputFileInterface& Read(char* buffer, std::size_t count) = 0;
+			[[nodiscard]] virtual auto Read(char* buffer, std::size_t count) -> IVFSInputFileInterface & = 0;
 
 			/**
 			 * @brief Reads characters from the input file into a buffer.
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the IVFSInputFileInterface object.
 			 */
-			virtual IVFSInputFileInterface& Read(std::string& buffer) = 0;
+			[[nodiscard]] virtual auto Read(std::string& buffer) -> IVFSInputFileInterface & = 0;
 
 			/**
 			 * @brief Reads characters from the input file into a buffer.
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the IVFSInputFileInterface object.
 			 */
-			virtual IVFSInputFileInterface& Read(std::vector<uint8_t>& buffer) = 0;
+			[[nodiscard]] virtual auto Read(std::vector<uint8_t>& buffer) -> IVFSInputFileInterface & = 0;
 
 			/**
 			 * @brief Reads characters from the input file into a buffer.
 			 * @param buffer The buffer to store the characters read.
 			 * @return A reference to the IVFSInputFileInterface object.
 			 */
-			virtual IVFSInputFileInterface& Read(std::vector<uint32_t>& buffer) = 0;
+			[[nodiscard]] virtual auto Read(std::vector<uint32_t>& buffer) -> IVFSInputFileInterface & = 0;
 
 			/**
 			 * @brief Puts the last character read back into the input file.
 			 * @return A reference to the IVFSInputFileInterface object.
 			 */
-			virtual IVFSInputFileInterface& Unget() = 0;
+			[[nodiscard]] virtual auto Unget() -> IVFSInputFileInterface & = 0;
 
 			/**
 			 * @brief Retrieves the current input position indicator.
 			 * @return The current position in the input file as a std::streampos.
 			 */
-			virtual std::streampos Tellg() = 0;
+			[[nodiscard]] virtual auto Tellg() -> std::streampos = 0;
 
 			/**
 			 * @brief Sets the input position indicator to the specified position.
 			 * @param pos The new position in the input file as a std::streampos.
 			 * @return A reference to the IVFSInputFileInterface object.
 			 */
-			virtual IVFSInputFileInterface& Seekg(std::streampos pos) = 0;
+			[[nodiscard]] virtual auto Seekg(std::streampos pos) -> IVFSInputFileInterface & = 0;
 
 			/**
 			 * @brief Sets the input position indicator to the specified position.
@@ -106,13 +106,13 @@ namespace edge
 			 * @param origin The origin in the input file as a C FILE seek pos.
 			 * @return A reference to the IVFSInputFileInterface object.
 			 */
-			virtual IVFSInputFileInterface& Seekg(std::streampos pos, int32_t origin) = 0;
+			[[nodiscard]] virtual auto Seekg(std::streampos pos, int32_t origin) -> IVFSInputFileInterface & = 0;
 
 			/**
 			 * @brief Checks if the end-of-file (EOF) has been reached.
 			 * @return true if the end-of-file is reached, false otherwise.
 			 */
-			virtual bool Eof() const = 0;
+			[[nodiscard]] virtual auto Eof() const -> bool = 0;
 
 			/**
 			 * @brief Stream input operator for reading from a VFSInFile to an output stream.
