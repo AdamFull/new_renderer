@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 
 namespace edge
 {
-	std::unique_ptr<Runtime> CreateApplicationContext(const RuntimeContext& context)
+	std::unique_ptr<Runtime> CreateApplicationContext(const IRuntimeContext& context)
 	{
 #if defined(PLATFORM_WINDOWS)
 		return std::make_unique<win32::WindowsRuntime>(context);

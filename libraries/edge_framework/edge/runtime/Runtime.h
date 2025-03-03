@@ -11,7 +11,7 @@
 
 namespace edge
 {
-	class RuntimeContext;
+	class IRuntimeContext;
 
 	enum ExitCode
 	{
@@ -23,7 +23,7 @@ namespace edge
 	class Runtime
 	{
 	public:
-		Runtime(const RuntimeContext& context);
+		Runtime(const IRuntimeContext& context);
 
 		virtual ~Runtime() = default;
 

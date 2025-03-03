@@ -9,7 +9,7 @@ namespace edge
 		class WindowsRuntime final : public Runtime
 		{
 		public:
-			WindowsRuntime(const RuntimeContext& context);
+			WindowsRuntime(const IRuntimeContext& context);
 			virtual ~WindowsRuntime() = default;
 
 		protected:

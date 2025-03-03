@@ -9,7 +9,7 @@ namespace edge
 {
 	namespace win32
 	{
-		WindowsRuntime::WindowsRuntime(const RuntimeContext& context) :
+		WindowsRuntime::WindowsRuntime(const IRuntimeContext& context) :
 			Runtime(context)
 		{
 

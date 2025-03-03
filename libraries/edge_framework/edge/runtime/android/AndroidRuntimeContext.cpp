@@ -7,7 +7,7 @@ namespace edge
 	namespace android
 	{
 		AndroidRuntimeContext::AndroidRuntimeContext(android_app* app) :
-			RuntimeContext{}, app{ app }
+			IRuntimeContext{}, app{ app }
 		{
 			// TODO: get data here
 		}

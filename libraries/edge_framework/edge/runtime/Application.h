@@ -36,30 +36,33 @@ namespace edge
 		/**
 		* @brief Prepares the application for execution
 		*/
-		virtual bool Prepare(const ApplicationOptions& options);
+		virtual auto Prepare(const ApplicationOptions& options) -> bool;
 
 		/**
 		 * @brief Updates the application 50 times per second
 		 * @param delta_time Fixed time tick
 		 */
-		virtual void FixedUpdate(float delta_time);
+		virtual void FixedUpdate(float delta_time) {}
 
 		/**
 		 * @brief Updates the application
 		 * @param delta_time The time since the last update
 		 */
-		virtual void Update(float delta_time);
+		virtual void Update(float delta_time) {}
 
 		/**
 		 * @brief Handles cleaning up the application
 		 */
-		virtual void Finish();
+		virtual void Finish() {}
 
-		virtual bool OnResize(uint32_t width, uint32_t height);
+		virtual auto OnResize(uint32_t width, uint32_t height) -> bool
+		{
+			return true;
+		}
 
-		virtual void OnInputEvent(const InputEvent& input_event);
+		virtual void OnInputEvent(const InputEvent& input_event) {}
 
-		inline bool ShouldClose() const
+		inline auto ShouldClose() const noexcept -> bool
 		{
 			return requested_close;
 		}
@@ -71,8 +74,15 @@ namespace edge
 			requested_close = true;
 		}
 
-		void SetName(std::string_view name);
-		const std::string& GetName() const;
+		void SetName(std::string_view _name)
+		{
+			name = _name;
+		}
+
+		auto GetName() const noexcept -> std::string const&
+		{
+			return name;
+		}
 
 	protected:
 		Window* window;

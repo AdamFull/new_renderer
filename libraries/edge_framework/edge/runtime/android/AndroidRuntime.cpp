@@ -260,8 +260,8 @@ namespace edge
 			return false;
 		}
 
-		AndroidRuntime::AndroidRuntime(const RuntimeContext& context) :
-			Runtime(context)
+		AndroidRuntime::AndroidRuntime(const IRuntimeContext& context) :
+			IRuntime(context)
 		{
 			ctx = static_cast<const AndroidRuntimeContext*>(&context);
 		}

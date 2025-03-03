@@ -11,11 +11,23 @@ namespace edge
 		class WindowsNativeSurface : public NativeSurface
 		{
 		public:
-			WindowsNativeSurface(HINSTANCE hinst, HWND hwnd);
+			WindowsNativeSurface(HINSTANCE hinst, HWND hwnd) :
+				hinst{ hinst },
+				hwnd{ hwnd }
+			{
+			}
+
 			~WindowsNativeSurface() = default;
 
-			HINSTANCE& GetHandleInstance();
-			HWND& GetHandle();
+			auto GetHandleInstance() noexcept -> HINSTANCE&
+			{
+				return hinst;
+			}
+
+			auto GetHandle() noexcept -> HWND&
+			{
+				return hwnd;
+			}
 		private:
 			HINSTANCE hinst;
 			HWND hwnd;

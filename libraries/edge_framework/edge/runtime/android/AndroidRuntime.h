@@ -13,7 +13,7 @@ namespace edge
 		class AndroidRuntime final : public Runtime
 		{
 		public:
-			AndroidRuntime(const RuntimeContext& context);
+			AndroidRuntime(const IRuntimeContext& context);
 			virtual ~AndroidRuntime() = default;
 
 			int32_t Initialize() override;

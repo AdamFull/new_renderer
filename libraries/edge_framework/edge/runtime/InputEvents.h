@@ -17,9 +17,16 @@ namespace edge
 	class InputEvent
 	{
 	public:
-		InputEvent(EventSource source);
+		InputEvent(EventSource source) :
+			source{ source }
+		{
 
-		EventSource GetSource() const;
+		}
+
+		[[nodiscard]] auto GetSource() const noexcept -> EventSource
+		{
+			return source;
+		}
 
 	private:
 		EventSource source;
@@ -150,10 +157,22 @@ namespace edge
 	class KeyInputEvent final : public InputEvent
 	{
 	public:
-		KeyInputEvent(KeyCode code, KeyAction action);
+		KeyInputEvent(KeyCode code, KeyAction action) :
+			InputEvent{ EventSource::Keyboard },
+			code{ code },
+			action{ action }
+		{
+		}
 
-		KeyCode GetCode() const;
-		KeyAction GetAction() const;
+		[[nodiscard]] auto GetCode() const noexcept -> KeyCode
+		{
+			return code;
+		}
+
+		[[nodiscard]] auto GetAction() const noexcept -> KeyAction
+		{
+			return action;
+		}
 
 	private:
 		KeyCode code;
@@ -163,9 +182,16 @@ namespace edge
 	class CharacterInputEvent final : public InputEvent
 	{
 	public:
-		CharacterInputEvent(uint32_t charcode);
+		CharacterInputEvent(uint32_t charcode) :
+			InputEvent{ EventSource::Character },
+			character_code{ charcode }
+		{
+		}
 
-		uint32_t GetCharacterCode() const;
+		[[nodiscard]] auto GetCharacterCode() const noexcept -> uint32_t
+		{
+			return character_code;
+		}
 	private:
 		uint32_t character_code;
 	};
@@ -182,17 +208,46 @@ namespace edge
 	class MouseButtonInputEvent final : public InputEvent
 	{
 	public:
-		MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y, float max_x, float max_y);
+		MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y, float max_x, float max_y) :
+			InputEvent{ EventSource::Mouse },
+			button{ button },
+			action{ action },
+			value_x{ value_x },
+			value_y{ value_y },
+			max_x{ max_x },
+			max_y{ max_y }
+		{
+		}
 
-		KeyCode GetButton() const;
+		[[nodiscard]] auto GetButton() const noexcept -> KeyCode
+		{
+			return button;
+		}
 
-		MouseAction GetAction() const;
+		[[nodiscard]] auto GetAction() const noexcept -> MouseAction
+		{
+			return action;
+		}
 
-		float GetValueX() const;
-		float GetValueY() const;
+		[[nodiscard]] auto GetValueX() const noexcept -> float
+		{
+			return value_x;
+		}
 
-		float GetMaxX() const;
-		float GetMaxY() const;
+		[[nodiscard]] auto GetValueY() const noexcept -> float
+		{
+			return value_y;
+		}
+
+		[[nodiscard]] auto GetMaxX() const noexcept -> float
+		{
+			return max_x;
+		}
+
+		[[nodiscard]] auto GetMaxY() const noexcept -> float
+		{
+			return max_y;
+		}
 
 	private:
 		KeyCode button;
@@ -217,17 +272,40 @@ namespace edge
 	class TouchInputEvent final : public InputEvent
 	{
 	public:
-		TouchInputEvent(int32_t pointer_id, size_t pointer_count, TouchAction action, float pos_x, float pos_y);
+		TouchInputEvent(int32_t pointer_id, size_t pointer_count, TouchAction action, float pos_x, float pos_y) :
+			InputEvent{ EventSource::Touchscreen },
+			action{ action },
+			pointer_id{ pointer_id },
+			touch_points{ touch_points },
+			pos_x{ pos_x },
+			pos_y{ pos_y }
+		{
+		}
 
-		TouchAction GetAction() const;
+		[[nodiscard]] auto GetAction() const noexcept -> TouchAction
+		{
+			return action;
+		}
 
-		int32_t GetPointerId() const;
+		[[nodiscard]] auto GetPointerId() const noexcept -> int32_t
+		{
+			return pointer_id;
+		}
 
-		size_t GetTouchPoints() const;
+		[[nodiscard]] auto GetTouchPoints() const noexcept -> std::size_t
+		{
+			return touch_points;
+		}
 
-		float GetPosX() const;
+		[[nodiscard]] auto GetPosX() const noexcept -> float
+		{
+			return pos_x;
+		}
 
-		float GetPosY() const;
+		[[nodiscard]] auto GetPosY() const noexcept -> float
+		{
+			return pos_y;
+		}
 
 	private:
 		TouchAction action;

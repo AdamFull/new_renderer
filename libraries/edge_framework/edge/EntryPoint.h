@@ -4,4 +4,4 @@
 
 #include "runtime/RuntimeContext.h"
 
-int RuntimeMain(const edge::RuntimeContext&);
+int RuntimeMain(const edge::IRuntimeContext&);

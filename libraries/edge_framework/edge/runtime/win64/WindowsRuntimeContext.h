@@ -12,7 +12,7 @@ namespace edge
 {
 	namespace win32
 	{
-		class WindowsRuntimeContext final : public RuntimeContext
+		class WindowsRuntimeContext final : public IRuntimeContext
 		{
 		public:
 			WindowsRuntimeContext(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow);

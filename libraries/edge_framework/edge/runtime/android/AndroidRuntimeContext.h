@@ -8,7 +8,7 @@ namespace edge
 {
 	namespace android
 	{
-		class AndroidRuntimeContext final : public RuntimeContext
+		class AndroidRuntimeContext final : public IRuntimeContext
 		{
 		public:
 			AndroidRuntimeContext(android_app* app);

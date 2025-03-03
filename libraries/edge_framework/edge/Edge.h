@@ -5,5 +5,5 @@
 
 namespace edge
 {
-	std::unique_ptr<Runtime> CreateApplicationContext(const RuntimeContext& context);
+	std::unique_ptr<Runtime> CreateApplicationContext(const IRuntimeContext& context);
 }

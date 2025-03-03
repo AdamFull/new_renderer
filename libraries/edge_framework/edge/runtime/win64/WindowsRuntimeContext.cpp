@@ -7,7 +7,7 @@ namespace edge
 	namespace win32
 	{
 		WindowsRuntimeContext::WindowsRuntimeContext(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow) :
-			RuntimeContext{}
+			IRuntimeContext{}
 		{
 			// Attempt to attach to the parent process console if it exists
 			if (!AttachConsole(ATTACH_PARENT_PROCESS))

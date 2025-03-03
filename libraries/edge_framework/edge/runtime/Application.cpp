@@ -4,7 +4,7 @@
 
 namespace edge
 {
-	bool Application::Prepare(const ApplicationOptions& options)
+	auto Application::Prepare(const ApplicationOptions& options) -> bool
 	{
 		assert(options.window != nullptr && "Window must be valid");
 
@@ -16,40 +16,5 @@ namespace edge
 		window = options.window;
 
 		return true;
-	}
-
-	void Application::FixedUpdate(float delta_time)
-	{
-
-	}
-
-	void Application::Update(float delta_time)
-	{
-
-	}
-
-	void Application::Finish()
-	{
-
-	}
-
-	bool Application::OnResize(uint32_t width, uint32_t height)
-	{
-		return true;
-	}
-
-	void Application::OnInputEvent(const InputEvent& input_event)
-	{
-
-	}
-
-	void Application::SetName(std::string_view _name)
-	{
-		name = _name;
-	}
-
-	const std::string& Application::GetName() const
-	{
-		return name;
 	}
 }

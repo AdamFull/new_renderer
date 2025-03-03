@@ -2,9 +2,9 @@
 
 namespace edge
 {
-	class RuntimeContext
+	class IRuntimeContext
 	{
 	public:
-		virtual ~RuntimeContext() = default;
+		virtual ~IRuntimeContext() = default;
 	};
 }

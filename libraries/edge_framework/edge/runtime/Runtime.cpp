@@ -15,7 +15,7 @@
 
 namespace edge
 {
-	Runtime::Runtime(const RuntimeContext& context)
+	Runtime::Runtime(const IRuntimeContext& context)
 	{
 	}
 
