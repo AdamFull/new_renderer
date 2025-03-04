@@ -36,7 +36,7 @@ namespace edge
 				debug_utils.SetDebugName(handle, name);
 			}
 
-			void VulkanPipelineCache::GetData(size_t& data_size, void* data_ptr)
+			void VulkanPipelineCache::GetData(size_t& data_size, void* data_ptr) const
 			{
 				vk::Result result = Handle(device).getPipelineCacheData(handle, &data_size, data_ptr);
 			}

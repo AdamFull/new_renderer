@@ -12,7 +12,7 @@ namespace edge
 		public:
 			virtual ~IGFXResource() = default;
 
-			virtual void SetResourceName(std::string_view name) const noexcept = 0;
+			virtual auto SetResourceName(std::string_view name) const noexcept -> void = 0;
 
 			[[nodiscard]] virtual auto GetResourceType() const noexcept -> ResourceType = 0;
 		};
@@ -25,6 +25,11 @@ namespace edge
 			[[nodiscard]] auto GetResourceState() const noexcept -> ResourceStateFlags 
 			{
 				return state;
+			}
+
+			auto SetResourceState(ResourceStateFlags new_state) noexcept -> void
+			{
+				state = new_state;
 			}
 		protected:
 			ResourceStateFlags state{ ResourceStateFlag::eUndefined };
@@ -40,8 +45,8 @@ namespace edge
 				return ResourceType::eFence;
 			}
 
-			virtual void Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) = 0;
-			virtual void Reset() = 0;
+			virtual auto Wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) -> void = 0;
+			virtual auto Reset() -> void = 0;
 		};
 
 		class ISemaphore : public IGFXResource
@@ -65,9 +70,9 @@ namespace edge
 				return ResourceType::eQueue;
 			}
 
-			virtual void Submit(const SubmitInfo& submit_info, IFence* fence) const = 0;
-			virtual void Present(const PresentInfo& present_info) const = 0;
-			virtual void WaitIdle() const = 0;
+			virtual auto Submit(const SubmitInfo& submit_info, IFence* fence) const -> void = 0;
+			virtual auto Present(const PresentInfo& present_info) const -> void = 0;
+			virtual auto WaitIdle() const -> void = 0;
 		};
 
 		class ISwapchain : public IGFXResource
@@ -86,7 +91,7 @@ namespace edge
 			[[nodiscard]] virtual auto GetWidth() const noexcept -> uint32_t const& = 0;
 			[[nodiscard]] virtual auto GetHeight() const noexcept -> uint32_t const& = 0;
 				
-			virtual void GetSurfaceExtent(uint32_t& width, uint32_t& height) = 0;
+			virtual auto GetSurfaceExtent(uint32_t& width, uint32_t& height) -> void = 0;
 
 			[[nodiscard]] virtual auto AcquireNextImage(ISemaphore* signal_semaphore, IFence* fence, uint32_t* image_index) -> bool = 0;
 		};
@@ -102,7 +107,7 @@ namespace edge
 			}
 
 			[[nodiscard]] virtual auto Map() -> uint8_t* = 0;
-			virtual void Unmap() noexcept = 0;
+			virtual auto Unmap() noexcept -> void = 0;
 
 			[[nodiscard]] virtual auto Update(const void* data, uint64_t size, uint64_t offset = 0ull) -> uint64_t = 0;
 
@@ -137,12 +142,12 @@ namespace edge
 			BufferSuballocation& operator=(BufferSuballocation&&) = delete;
 
 			template<typename _Ty>
-			void Update(std::span<_Ty> data)
+			auto Update(std::span<_Ty> data) -> void
 			{
 				Update(data.data(), data.size() * sizeof(_Ty));
 			}
 
-			void Update(const void* data, uint64_t data_size)
+			auto Update(const void* data, uint64_t data_size) -> void
 			{
 				assert(data_size <= size);
 				buffer.Update(data, data_size, offset);
@@ -178,46 +183,46 @@ namespace edge
 				return ResourceType::eCommandList;
 			}
 
-			virtual void Reset(CommandPoolResetMode reset_mode) = 0;
+			virtual auto Reset(CommandPoolResetMode reset_mode) -> void = 0;
 
-			virtual void Begin() = 0;
-			virtual void End() = 0;
+			virtual auto Begin() -> void = 0;
+			virtual auto End() -> void = 0;
 
 			// Dynamic states
-			virtual void SetViewport(float x, float y, float width, float height, float min_depth, float max_depth) const = 0;
-			virtual void SerScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const = 0;
+			virtual auto SetViewport(float x, float y, float width, float height, float min_depth, float max_depth) const  -> void = 0;
+			virtual auto SerScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height) const  -> void = 0;
 
-			virtual void BindPipeline(IPipeline* pipeline) const = 0;
-			virtual void BindDescriptors(const BindDescriptorsInfo& bind_info) const = 0;
-			virtual void PushConstants(IShader* shader, IRootSignature* root_signature, std::span<const char> constant_data) const = 0;
+			virtual auto BindPipeline(IPipeline* pipeline) const -> void = 0;
+			virtual auto BindDescriptors(const BindDescriptorsInfo& bind_info) const -> void = 0;
+			virtual auto PushConstants(IShader* shader, IRootSignature* root_signature, std::span<const char> constant_data) const -> void = 0;
 
-			virtual void BindIndexBuffer(IBuffer* index_buffer, IndexType index_type, uint64_t offset) const = 0;
-			virtual void BindVertexBuffers(std::span<IBuffer*> vertex_buffers, std::span<const uint32_t> strides, std::span<const uint64_t> offsets) const = 0;
+			virtual auto BindIndexBuffer(IBuffer* index_buffer, IndexType index_type, uint64_t offset) const -> void = 0;
+			virtual auto BindVertexBuffers(std::span<IBuffer*> vertex_buffers, std::span<const uint32_t> strides, std::span<const uint64_t> offsets) const -> void = 0;
 
-			virtual void Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) const = 0;
-			virtual void DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) const = 0;
-			virtual void DrawIndirect(const IndirectDrawCommand& draw_command) const = 0;
+			virtual auto Draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) const -> void = 0;
+			virtual auto DrawIndexed(uint32_t index_count, uint32_t first_index, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) const -> void = 0;
+			virtual auto DrawIndirect(const IndirectDrawCommand& draw_command) const  -> void = 0;
 
 			//virtual void WriteTimestamp(IQueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag) = 0;
 
-			virtual void Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) const = 0;
-			virtual void DispatchIndirect(IBuffer* argument_buffer, uint64_t argument_offset = 0ull) const = 0;
+			virtual auto Dispatch(uint32_t group_x, uint32_t group_y, uint32_t group_z) const -> void = 0;
+			virtual auto DispatchIndirect(IBuffer* argument_buffer, uint64_t argument_offset = 0ull) const -> void = 0;
 
-			virtual void CopyBuffer(const CopyBufferInfo& copy_info) const = 0;
-			virtual void CopyTexture(const CopyTextureInfo& copy_info) const = 0;
+			virtual auto CopyBuffer(const CopyBufferInfo& copy_info) const -> void = 0;
+			virtual auto CopyTexture(const CopyTextureInfo& copy_info) const -> void = 0;
 
-			virtual void ResourceBarrier(const ResourceBarrierInfo& barrier) const = 0;
+			virtual auto ResourceBarrier(const ResourceBarrierInfo& barrier) const -> void = 0;
 
-			virtual void ResetQuery(IQueryPool* query_pool, uint32_t first_query, uint32_t query_count) const = 0;
-			virtual void BeginQuery(IQueryPool* query_pool, uint32_t query) const = 0;
-			virtual void EndQuery(IQueryPool* query_pool, uint32_t query) const = 0;
+			virtual auto ResetQuery(IQueryPool* query_pool, uint32_t first_query, uint32_t query_count) const -> void = 0;
+			virtual auto BeginQuery(IQueryPool* query_pool, uint32_t query) const -> void = 0;
+			virtual auto EndQuery(IQueryPool* query_pool, uint32_t query) const -> void = 0;
 
-			virtual void BeginRendering(const RenderingInfo& rendering_info) const = 0;
-			virtual void EndRendering() const = 0;
+			virtual auto BeginRendering(const RenderingInfo& rendering_info) const -> void = 0;
+			virtual auto EndRendering() const -> void = 0;
 
-			virtual void BeginMarker(std::string_view name, uint32_t color) const = 0;
-			virtual void InsertMarker(std::string_view name, uint32_t color) const = 0;
-			virtual void EndMarker() const = 0;
+			virtual auto BeginMarker(std::string_view name, uint32_t color) const -> void = 0;
+			virtual auto InsertMarker(std::string_view name, uint32_t color) const -> void = 0;
+			virtual auto EndMarker() const -> void = 0;
 		};
 
 		class ICommandPool : public IGFXResource
@@ -231,7 +236,7 @@ namespace edge
 			}
 
 			[[nodiscard]] virtual auto Allocate(bool secondary = false) -> ICommandList* = 0;
-			virtual void Reset() noexcept = 0;
+			virtual auto Reset() noexcept -> void = 0;
 		};
 
 		class ITexture : public IRenderResource
@@ -326,7 +331,7 @@ namespace edge
 				return ResourceType::ePipelineCache;
 			}
 
-			virtual void GetData(size_t& data_size, void* data_ptr) = 0;
+			virtual auto GetData(size_t& data_size, void* data_ptr) const -> void = 0;
 		};
 
 		class IResourceDescriptor : public IGFXResource
@@ -339,10 +344,10 @@ namespace edge
 				return ResourceType::eResourceDescriptor;
 			}
 
-			virtual void BindTexture(TextureDescriptor& texture_descriptor) = 0;
-			virtual void BindBuffer(BufferDescriptor& buffer_descriptor) = 0;
+			virtual auto BindTexture(TextureDescriptor& texture_descriptor) -> void = 0;
+			virtual auto BindBuffer(BufferDescriptor& buffer_descriptor) -> void = 0;
 
-			virtual void Flush() = 0;
+			virtual auto Flush() -> void = 0;
 		};
 
 		class IDescriptorAllocator : public IGFXResource
@@ -384,9 +389,9 @@ namespace edge
 				return ResourceType::eQueryPool;
 			}
 
-			virtual void Reset(uint32_t start_query, uint32_t query_count = 0u) = 0;
-			virtual void GetData(uint32_t query_index, void* data) = 0;
-			virtual void GetData(uint64_t first_query, uint32_t query_count, void* data) = 0;
+			virtual auto Reset(uint32_t start_query, uint32_t query_count = 0u) -> void = 0;
+			virtual auto GetData(uint32_t query_index, void* data) const -> void = 0;
+			virtual auto GetData(uint64_t first_query, uint32_t query_count, void* data) const -> void = 0;
 		};
 	}
 }

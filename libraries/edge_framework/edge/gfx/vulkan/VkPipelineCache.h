@@ -25,7 +25,7 @@ namespace edge
 
 				void SetResourceName(std::string_view name) const noexcept override;
 
-				void GetData(size_t& data_size, void* data_ptr) override;
+				void GetData(size_t& data_size, void* data_ptr) const override;
 			private:
 				Device& device;
 			};

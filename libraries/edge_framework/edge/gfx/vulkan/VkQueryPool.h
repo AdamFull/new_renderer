@@ -25,8 +25,8 @@ namespace edge
 				void SetResourceName(std::string_view name) const noexcept override;
 
 				void Reset(uint32_t start_query, uint32_t query_count) override;
-				void GetData(uint32_t query_index, void* data) override;
-				void GetData(uint64_t first_query, uint32_t query_count, void* data) override;
+				void GetData(uint32_t query_index, void* data) const override;
+				void GetData(uint64_t first_query, uint32_t query_count, void* data) const override;
 
 				auto GetQueryCount() const noexcept -> uint32_t
 				{

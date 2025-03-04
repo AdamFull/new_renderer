@@ -49,7 +49,7 @@ namespace edge
 				Handle(device).resetQueryPool(handle, start_query, query_count ? query_count : max_query_count);
 			}
 
-			void VulkanQueryPool::GetData(uint32_t query_index, void* data)
+			void VulkanQueryPool::GetData(uint32_t query_index, void* data) const
 			{
 				switch (query_type)
 				{
@@ -71,7 +71,7 @@ namespace edge
 				}
 			}
 
-			void VulkanQueryPool::GetData(uint64_t first_query, uint32_t query_count, void* data)
+			void VulkanQueryPool::GetData(uint64_t first_query, uint32_t query_count, void* data) const
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 
