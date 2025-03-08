@@ -1,6 +1,7 @@
 #include "Rendering.h"
 
 #include <edge/gfx/gfx_context.h>
+#include <edge/gfx/gfx_resource_loader.h>
 #include <edge/gfx/ext/shader_effect_system/gfx_shader_effect_system.h>
 
 #include "RenderContext.h"
@@ -219,10 +220,11 @@ namespace engine
 			// Create filesystem wrapper
 			fs = std::make_unique<VFSWrapper>(*vfs);
 
-			edge::gfx::ext::ResourceLoaderCreateInfo loader_create_info{};
-			loader_create_info.context = gfx_context.get();
-			loader_create_info.filesystem_wrapper = fs.get();
-			resource_loader = edge::gfx::ext::CreateResourceLoader(loader_create_info);
+			edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
+			resource_updater_init.gfx_context = gfx_context.get();
+			resource_updater_init.filesystem = vfs;
+
+			edge::gfx::ResourceUpdater::Create(resource_updater_init);
 
 			edge::gfx::ext::ShaderEffectSystemCreateInfo effect_system_create_info{};
 			effect_system_create_info.context = gfx_context.get();
@@ -241,7 +243,7 @@ namespace engine
 
 		Renderer::~Renderer()
 		{
-			
+			edge::gfx::ResourceUpdater::Shutdown();
 		}
 
 		uint32_t Renderer::AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler)
@@ -323,16 +325,6 @@ namespace engine
 			render_context->End();
 		}
 
-		edge::gfx::ext::ResourceLoader& Renderer::GetResourceLoader()
-		{
-			return *resource_loader;
-		}
-
-		edge::gfx::ext::ResourceLoader const& Renderer::GetResourceLoader() const
-		{
-			return *resource_loader;
-		}
-
 		edge::gfx::IContext& Renderer::GetContext()
 		{
 			return *gfx_context;
@@ -357,7 +349,7 @@ namespace engine
 				return found->second;
 			}
 
-			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<InterleavedGeometryBuffer>(*resource_loader, create_info));
+			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<InterleavedGeometryBuffer>(*gfx_context, create_info));
 			return interleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
 		}
 
@@ -369,7 +361,7 @@ namespace engine
 				return found->second;
 			}
 
-			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(*resource_loader, create_info));
+			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(*gfx_context, create_info));
 			return deinterleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
 		}
 
@@ -421,7 +413,8 @@ namespace engine
 				create_info.mag_filter = edge::gfx::Filter::eNearest;
 				create_info.mip_map_mode = edge::gfx::Filter::eNearest;
 
-				nearest_sampler = resource_loader->GetSampler(create_info);
+				// TODO: need to cache samplers
+				nearest_sampler = gfx_context->CreateSampler(create_info);
 			}
 
 			edge::gfx::ISampler* linear_sampler{ nullptr };
@@ -431,7 +424,8 @@ namespace engine
 				create_info.mag_filter = edge::gfx::Filter::eLinear;
 				create_info.mip_map_mode = edge::gfx::Filter::eLinear;
 
-				linear_sampler = resource_loader->GetSampler(create_info);
+				// TODO: need to cache samplers
+				linear_sampler = gfx_context->CreateSampler(create_info);
 			}
 
 			edge::gfx::ISampler* shadow_sampler{ nullptr };
@@ -442,7 +436,8 @@ namespace engine
 				create_info.mip_map_mode = edge::gfx::Filter::eLinear;
 				create_info.depth_compare = edge::gfx::CompareOp::eLess;
 
-				shadow_sampler = resource_loader->GetSampler(create_info);
+				// TODO: need to cache samplers
+				shadow_sampler = gfx_context->CreateSampler(create_info);
 			}
 
 			// Load some static textures
@@ -493,7 +488,8 @@ namespace engine
 					create_info_s.min_lod = 0.f;
 					create_info_s.max_lod = static_cast<float>(create_info.levels);
 
-					special_sampler = resource_loader->GetSampler(create_info_s);
+					// TODO: need to cache samplers
+					special_sampler = gfx_context->CreateSampler(create_info_s);
 				}
 
 				prefiltered_cube_target = render_context->AddResource(create_info, special_sampler);

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <edge/gfx/gfx_context.h>
-#include <edge/gfx/ext/resource_loader/gfx_resource_loader.h>
+#include <edge/gfx/gfx_resource_loader.h>
 
 #include <edge/util/util.h>
 
@@ -19,9 +19,8 @@ namespace engine
 				uint32_t count;
 			};
 
-			DynamicBuffer(edge::gfx::ext::ResourceLoader& resource_loader, uint64_t capacity = 64u, edge::gfx::BufferUsageFlags flags = {}) :
-				resource_loader{ resource_loader },
-				context{ resource_loader.GetContext() },
+			DynamicBuffer(edge::gfx::IContext& gfx_context, uint64_t capacity = 64u, edge::gfx::BufferUsageFlags flags = {}) :
+				context{ gfx_context },
 				usage_flags{ flags }
 			{
 				edge::gfx::BufferCreateInfo create_info{};
@@ -102,10 +101,8 @@ namespace engine
 							merged_ranges.emplace_back(dirty_ranges[i]);
 					}
 
-					edge::gfx::BufferUpdateInfo update_info{};
-					update_info.dst_buffer = buffer;
-					update_info.update_size = std::accumulate(merged_ranges.begin(), merged_ranges.end(), 0, [](uint64_t acc, const DirtyRange& item) { return acc + item.count * sizeof(_Ty); });
-					auto* updater = resource_loader.BeginBufferUpdate(update_info);
+					auto upload_size = std::accumulate(merged_ranges.begin(), merged_ranges.end(), 0, [](uint64_t acc, const DirtyRange& item) { return acc + item.count * sizeof(_Ty); });
+					auto updater = edge::gfx::ResourceUpdater::GetBufferUpdater(buffer, upload_size);
 
 					uint64_t src_offset{ 0ull };
 					for (const auto& range : merged_ranges)
@@ -113,16 +110,20 @@ namespace engine
 						auto range_offset = range.first * sizeof(_Ty);
 						auto range_size = range.count * sizeof(_Ty);
 
-						updater->Update(memory.data(), range_size, range_offset);
+						auto* data_ptr = (const uint8_t*)memory.data();
+
+						updater.InsertRegion(std::span<const uint8_t>(data_ptr + range_offset, range_size), range_offset);
+
+						src_offset += range_size;
 					}
 					
-					resource_loader.EndBufferUpdate(&updater);
+					edge::gfx::ResourceStateFlags resource_state{};
+					edge::gfx::ResourceUpdater::SubmitBufferUpdater(updater, resource_state);
 					dirty_ranges.clear();
 				}
 			}
 		private:
 			edge::gfx::IContext& context;
-			edge::gfx::ext::ResourceLoader& resource_loader;
 
 			edge::gfx::BufferUsageFlags usage_flags{};
 

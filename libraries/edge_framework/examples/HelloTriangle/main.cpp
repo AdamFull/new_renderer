@@ -3,7 +3,7 @@
 #include <edge/util/Profiler.h>
 
 #include <edge/gfx/gfx_context.h>
-#include <edge/gfx/ext/resource_loader/gfx_resource_loader.h>
+#include <edge/gfx/gfx_resource_loader.h>
 
 #include <regex>
 
@@ -198,6 +198,8 @@ public:
 		}
 
 		gfx_context->Destroy(swapchain);
+
+		edge::gfx::ResourceUpdater::Shutdown();
 	}
 
     bool Prepare(const edge::ApplicationOptions& options) override
@@ -215,12 +217,11 @@ public:
         // Create filesystem wrapper
         gfx_fs_wrapper = std::make_unique<VFSWrapper>(*options.filesystem);
 
-        edge::gfx::ext::ResourceLoaderCreateInfo loader_create_info{};
-        loader_create_info.context = gfx_context.get();
-        loader_create_info.filesystem_wrapper = gfx_fs_wrapper.get();
+		edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
+		resource_updater_init.gfx_context = gfx_context.get();
+		resource_updater_init.filesystem = options.filesystem;
 
-		// You can also implement your own resource loader
-        resource_loader = edge::gfx::ext::CreateResourceLoader(loader_create_info);
+		edge::gfx::ResourceUpdater::Create(resource_updater_init);
 
 		// Init everything we need for rendering
 		queue = gfx_context->RequestQueue(edge::gfx::QueueTypeFlag::ePresent);
@@ -306,13 +307,8 @@ public:
 		vertex_buffer = gfx_context->CreateBuffer(vertex_buffer_ci);
 
 		// Upload vertex data in to buffer
-		edge::gfx::BufferUpdateInfo update_info{};
-		update_info.dst_buffer = vertex_buffer;
-		update_info.update_size = sizeof(vertices);
-
-		auto* updater = resource_loader->BeginBufferUpdate(update_info);
-		updater->Update(&vertices[0], sizeof(vertices));
-		resource_loader->EndBufferUpdate(&updater);
+		edge::gfx::ResourceStateFlags resource_state{};
+		edge::gfx::ResourceUpdater::UpdateBuffer(vertex_buffer, resource_state, { (const uint8_t*)(&vertices[0]), sizeof(vertices) });
 
 		return true;
     }
@@ -364,11 +360,20 @@ public:
 		texture_translation.src_state = edge::gfx::ResourceStateFlag::eUndefined;
 		texture_translation.dst_state = edge::gfx::ResourceStateFlag::eColorAttachmentWrite;
 
+		edge::gfx::BufferBarrier vertex_buffer_barrier{};
+		vertex_buffer_barrier.buffer = vertex_buffer;
+		vertex_buffer_barrier.src_state = edge::gfx::ResourceStateFlag::eCopyDst;
+		vertex_buffer_barrier.dst_state = edge::gfx::ResourceStateFlag::eVertexRead;
+		vertex_buffer_barrier.range.size = vertex_buffer->GetSize();
+
 		edge::gfx::ResourceBarrierInfo barrier{};
 		barrier.texture_barriers = &texture_translation;
 		barrier.texture_barrier_count = 1u;
+		barrier.buffer_barriers = &vertex_buffer_barrier;
+		barrier.buffer_barrier_count = 1;
 
 		command_list->ResourceBarrier(barrier);
+		barrier.buffer_barrier_count = 0;
 
 		command_list->BindPipeline(pipeline);
 
@@ -399,7 +404,8 @@ public:
 		command_list->ResourceBarrier(barrier);
 
 		// Submit resource uploader queue
-		edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore = resource_loader->Submit({});
+		edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
+		edge::gfx::ResourceUpdater::Flush(upload_wait_semaphore, {});
 
 		// Here is frame finished
 		command_list->End();
@@ -531,7 +537,6 @@ private:
 private:
     std::unique_ptr<edge::gfx::IContext> gfx_context{};
     std::unique_ptr<edge::gfx::FilesystemWrapper> gfx_fs_wrapper{};
-    std::unique_ptr<edge::gfx::ext::ResourceLoader> resource_loader{};
 
 	edge::Window* window{ nullptr };
 

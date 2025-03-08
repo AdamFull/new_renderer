@@ -31,9 +31,6 @@ namespace engine
 
 			void Render(float delta_time) override;
 
-			edge::gfx::ext::ResourceLoader& GetResourceLoader() override;
-			edge::gfx::ext::ResourceLoader const& GetResourceLoader() const override;
-
 			edge::gfx::ext::ShaderEffectSystem& GetShaderEffectSystem() override;
 			edge::gfx::ext::ShaderEffectSystem const& GetShaderEffectSystem() const override;
 
@@ -54,7 +51,6 @@ namespace engine
 			std::unique_ptr<edge::gfx::FilesystemWrapper> fs;
 
 			std::unique_ptr<edge::gfx::IContext> gfx_context{};
-			std::unique_ptr<edge::gfx::ext::ResourceLoader> resource_loader{};
 			std::unique_ptr<edge::gfx::ext::ShaderEffectSystem> shader_effect_system{};
 			std::unique_ptr<ExecutionContext> render_context{};
 			std::unique_ptr<IRenderWorld> render_world{};

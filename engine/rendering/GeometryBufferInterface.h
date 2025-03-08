@@ -1,6 +1,6 @@
 #pragma once
 
-#include <edge/gfx/ext/resource_loader/gfx_resource_loader.h>
+#include <edge/gfx/gfx_resource_loader.h>
 
 #include <unordered_map>
 
@@ -39,18 +39,11 @@ namespace engine
 			IndexDescription index_description{};
 		};
 
-		struct VertexData
+		struct GeometryData
 		{
 			uint32_t count{ 0u };
 			edge::gfx::IBuffer* buffer{ nullptr };
-			std::vector<uint8_t> data{};
-		};
-
-		struct IndexData
-		{
-			uint32_t count{ 0u };
-			edge::gfx::IBuffer* buffer{ nullptr };
-			edge::gfx::IndexType type{};
+			edge::gfx::ResourceStateFlags state{};
 			std::vector<uint8_t> data{};
 		};
 
@@ -82,7 +75,7 @@ namespace engine
 		class GeometryBuffer
 		{
 		public:
-			GeometryBuffer(edge::gfx::ext::ResourceLoader& resource_loader);
+			GeometryBuffer(edge::gfx::IContext& gfx_context);
 			virtual ~GeometryBuffer();
 
 			virtual void Flush();
@@ -105,11 +98,11 @@ namespace engine
 
 			edge::gfx::VertexLayout const& GetVertexLayout() const;
 		protected:
-			void TryFlushBuffer(edge::gfx::IBuffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage);
+			void TryFlushBuffer(GeometryData& geometry_data, edge::gfx::BufferUsageFlags usage);
 		protected:
-			edge::gfx::ext::ResourceLoader& resource_loader;
+			edge::gfx::IContext& gfx_context;
 			edge::gfx::VertexLayout vertex_layout{};
-			IndexData index_data{};
+			GeometryData index_data{};
 		};
 	}
 }

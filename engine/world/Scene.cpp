@@ -9,8 +9,7 @@
 #include <meshoptimizer.h>
 
 #include "../rendering/Rendering.h"
-#include <edge/gfx/gfx_structures.h>
-#include <edge/gfx/gfx_enum.h>
+#include <edge/gfx/gfx_context.h>
 
 #include <edge/util/util.h>
 #include <edge/util/fs_helper.h>
@@ -289,7 +288,8 @@ namespace engine
 
 		void Scene::LoadGLTF(easygltf::FGLTFRoot& root)
 		{
-			auto& resource_loader = renderer.GetResourceLoader();
+			auto& gfx_context = renderer.GetContext();
+
 			// Load textures
 			for (const auto& texture : root.textures)
 			{
@@ -300,8 +300,9 @@ namespace engine
 				auto& image = root.images[texture_source];
 				auto& sampler = root.samplers[texture.sampler];
 
+				// TODO: Use sampler cache
 				auto sampler_create_info = GetSamplerCreateInfo(sampler);
-				edge::gfx::ISampler* texture_sampler = resource_loader.GetSampler(sampler_create_info);
+				edge::gfx::ISampler* texture_sampler = gfx_context.CreateSampler(sampler_create_info);
 
 				// TODO: add ability to override format and sampler params
 				// TODO: find format from materials

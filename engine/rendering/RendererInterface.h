@@ -18,9 +18,6 @@ namespace engine
 
 			virtual void Render(float delta_time) = 0;
 
-			virtual edge::gfx::ext::ResourceLoader& GetResourceLoader() = 0;
-			virtual edge::gfx::ext::ResourceLoader const& GetResourceLoader() const = 0;
-
 			virtual edge::gfx::ext::ShaderEffectSystem& GetShaderEffectSystem() = 0;
 			virtual edge::gfx::ext::ShaderEffectSystem const& GetShaderEffectSystem() const = 0;
 

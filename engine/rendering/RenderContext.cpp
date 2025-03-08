@@ -80,7 +80,6 @@ namespace engine
 
 		RenderContext::RenderContext(IRenderer& renderer, edge::Window* window) :
 			context{ renderer.GetContext() },
-			resource_loader{ renderer.GetResourceLoader() },
 			shader_effect_system{ renderer.GetShaderEffectSystem() },
 			window{ *window }
 		{
@@ -178,7 +177,7 @@ namespace engine
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			edge::gfx::ITexture* texture = resource_loader.LoadTexture(path);
+			edge::gfx::ITexture* texture = edge::gfx::ResourceUpdater::LoadTexture(path);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
 			new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
@@ -190,7 +189,7 @@ namespace engine
 		{
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
-
+			
 			edge::gfx::TextureCreateInfo texture_create_info{};
 			texture_create_info.usage = create_info.usage;
 			texture_create_info.width = create_info.width;
@@ -199,11 +198,12 @@ namespace engine
 			texture_create_info.layers = create_info.layers;
 			texture_create_info.levels = create_info.levels;
 			texture_create_info.format = create_info.format;
-
-			edge::gfx::ITexture* texture = resource_loader.LoadTexture(texture_create_info, texture_data);
+			
+			edge::gfx::ITexture* texture = context.CreateTexture(texture_create_info);
+			edge::gfx::ResourceUpdater::UpdateTexture(texture, new_resource.current_state, texture_data);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, default_sampler });
-
-			new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
+			
+			//new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 			return render_resources.size() - 1ull;
 		}
@@ -486,7 +486,8 @@ namespace engine
 
 			global_resource_descriptor->Flush();
 
-			edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore = resource_loader.Submit({});
+			edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
+			edge::gfx::ResourceUpdater::Flush(upload_wait_semaphore, {});
 
 			// Finish performance query
 			current_command_list->EndQuery(timestamp_query, 1u);

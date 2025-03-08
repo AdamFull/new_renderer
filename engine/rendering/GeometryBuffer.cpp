@@ -76,15 +76,14 @@ namespace engine
 
 
 
-		GeometryBuffer::GeometryBuffer(edge::gfx::ext::ResourceLoader& resource_loader) :
-			resource_loader{ resource_loader }
+		GeometryBuffer::GeometryBuffer(edge::gfx::IContext& gfx_context) :
+			gfx_context{ gfx_context }
 		{
 		}
 
 		GeometryBuffer::~GeometryBuffer()
 		{
-			auto& context = resource_loader.GetContext();
-			context.Destroy(index_data.buffer);
+			gfx_context.Destroy(index_data.buffer);
 		}
 
 		void GeometryBuffer::Flush()
@@ -93,7 +92,7 @@ namespace engine
 
 			if (!index_data.data.empty())
 			{
-				TryFlushBuffer(&index_data.buffer, index_data.data, edge::gfx::BufferUsageFlag::eIndexBuffer);
+				TryFlushBuffer(index_data, edge::gfx::BufferUsageFlag::eIndexBuffer);
 				index_data.data.clear();
 			}
 		}
@@ -102,7 +101,22 @@ namespace engine
 		{
 			if (index_data.buffer)
 			{
-				command_list.BindIndexBuffer(index_data.buffer, index_data.type, 0ull);
+				if (index_data.state != edge::gfx::ResourceStateFlag::eIndexRead)
+				{
+					edge::gfx::BufferBarrier buffer_barrier{};
+					buffer_barrier.buffer = index_data.buffer;
+					buffer_barrier.src_state = index_data.state;
+					index_data.state = buffer_barrier.dst_state = edge::gfx::ResourceStateFlag::eIndexRead;
+					buffer_barrier.range.size = index_data.buffer->GetSize();
+
+					edge::gfx::ResourceBarrierInfo resource_barrier{};
+					resource_barrier.buffer_barriers = &buffer_barrier;
+					resource_barrier.buffer_barrier_count = 1;
+
+					command_list.ResourceBarrier(resource_barrier);
+				}
+
+				command_list.BindIndexBuffer(index_data.buffer, edge::gfx::IndexType::eUint16, 0ull);
 			}
 		}
 
@@ -128,47 +142,31 @@ namespace engine
 			return vertex_layout;
 		}
 
-		void GeometryBuffer::TryFlushBuffer(edge::gfx::IBuffer** buffer_ptr, const std::vector<uint8_t>& data, edge::gfx::BufferUsageFlags usage)
+		void GeometryBuffer::TryFlushBuffer(GeometryData& geometry_data, edge::gfx::BufferUsageFlags usage)
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			edge::gfx::IContext& context = resource_loader.GetContext();
-
-			if (!*buffer_ptr)
+			if (!geometry_data.buffer || geometry_data.buffer->GetSize() < geometry_data.data.size())
 			{
-				edge::gfx::BufferCreateInfo create_info{};
-				create_info.size = data.size();
-				create_info.count = 1ull;
-				create_info.usage = usage;
-
-				*buffer_ptr = context.CreateBuffer(create_info);
-			}
-
-			if ((*buffer_ptr)->GetSize() < data.size())
-			{
-				context.Destroy(*buffer_ptr);
+				if (geometry_data.buffer)
+				{
+					gfx_context.Destroy(geometry_data.buffer);
+				}
 
 				edge::gfx::BufferCreateInfo create_info{};
-				create_info.size = data.size();
-				create_info.count = 1ull;
+				create_info.size = geometry_data.data.size();
 				create_info.usage = usage;
 
-				*buffer_ptr = context.CreateBuffer(create_info);
+				geometry_data.buffer = gfx_context.CreateBuffer(create_info);
 			}
 
-			edge::gfx::BufferUpdateInfo buffer_update_info{};
-			buffer_update_info.dst_buffer = *buffer_ptr;
-			buffer_update_info.update_size = data.size();
-
-			auto* updater = resource_loader.BeginBufferUpdate(buffer_update_info);
-			updater->Update(data.data(), data.size());
-			resource_loader.EndBufferUpdate(&updater);
+			edge::gfx::ResourceUpdater::UpdateBuffer(geometry_data.buffer, geometry_data.state, geometry_data.data);
 		}
 
 
 
-		InterleavedGeometryBuffer::InterleavedGeometryBuffer(edge::gfx::ext::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
-			GeometryBuffer{ resource_loader }
+		InterleavedGeometryBuffer::InterleavedGeometryBuffer(edge::gfx::IContext& gfx_context, const GeometryBufferCreateInfo& create_info) :
+			GeometryBuffer{ gfx_context }
 		{
 			uint32_t offset{ 0u };
 
@@ -187,13 +185,12 @@ namespace engine
 			binding.binding = 0;
 			binding.stride = offset;
 
-			index_data.type = create_info.index_description.type;
+			//index_data.type = create_info.index_description.type;
 		}
 
 		InterleavedGeometryBuffer::~InterleavedGeometryBuffer()
 		{
-			auto& context = resource_loader.GetContext();
-			context.Destroy(vertex_data.buffer);
+			gfx_context.Destroy(vertex_data.buffer);
 		}
 
 		void InterleavedGeometryBuffer::Flush()
@@ -204,7 +201,7 @@ namespace engine
 
 			if (!vertex_data.data.empty())
 			{
-				TryFlushBuffer(&vertex_data.buffer, vertex_data.data, edge::gfx::BufferUsageFlag::eVertexBuffer);
+				TryFlushBuffer(vertex_data, edge::gfx::BufferUsageFlag::eVertexBuffer);
 				vertex_data.data.clear();
 			}
 		}
@@ -213,6 +210,21 @@ namespace engine
 		{
 			const uint32_t stride{ 0u };
 			uint64_t offset{ 0ull };
+
+			if (vertex_data.state != edge::gfx::ResourceStateFlag::eVertexRead)
+			{
+				edge::gfx::BufferBarrier buffer_barrier{};
+				buffer_barrier.buffer = vertex_data.buffer;
+				buffer_barrier.src_state = vertex_data.state;
+				vertex_data.state = buffer_barrier.dst_state = edge::gfx::ResourceStateFlag::eVertexRead;
+				buffer_barrier.range.size = vertex_data.buffer->GetSize();
+
+				edge::gfx::ResourceBarrierInfo resource_barrier{};
+				resource_barrier.buffer_barriers = &buffer_barrier;
+				resource_barrier.buffer_barrier_count = 1;
+
+				command_list.ResourceBarrier(resource_barrier);
+			}
 
 			assert(vertex_data.buffer && "VERTEX BUFFER IS NOT ALLOCATED");
 			command_list.BindVertexBuffers({ &vertex_data.buffer, 1u }, { &stride, 1u }, { &offset, 1u });
@@ -253,8 +265,8 @@ namespace engine
 		}
 
 
-		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(edge::gfx::ext::ResourceLoader& resource_loader, const GeometryBufferCreateInfo& create_info) :
-			GeometryBuffer{ resource_loader }
+		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(edge::gfx::IContext& gfx_context, const GeometryBufferCreateInfo& create_info) :
+			GeometryBuffer{ gfx_context }
 		{
 			for (auto& desc : create_info.attribute_descriptions)
 			{
@@ -268,15 +280,14 @@ namespace engine
 				bind_desc.stride = GetVertexFormatSizeBytes(desc.format);
 			}
 
-			index_data.type = create_info.index_description.type;
+			//index_data.type = create_info.index_description.type;
 		}
 
 		DeinterleavedGeometryBuffer::~DeinterleavedGeometryBuffer()
 		{
-			auto& context = resource_loader.GetContext();
 			for (auto& vert_data : vertex_datas)
 			{
-				context.Destroy(vert_data.buffer);
+				gfx_context.Destroy(vert_data.buffer);
 			}
 		}
 
@@ -290,7 +301,7 @@ namespace engine
 			{
 				if (!vertex_data.data.empty())
 				{
-					TryFlushBuffer(&vertex_data.buffer, vertex_data.data, edge::gfx::BufferUsageFlag::eVertexBuffer);
+					TryFlushBuffer(vertex_data, edge::gfx::BufferUsageFlag::eVertexBuffer);
 					vertex_data.data.clear();
 				}
 			}
@@ -302,15 +313,29 @@ namespace engine
 			std::array<edge::gfx::IBuffer*, k_max_attribure_description> vertex_buffers{};
 			std::array<uint32_t, k_max_attribure_description> strides{};
 			std::array<uint64_t, k_max_attribure_description> offsets{};
+			std::array<edge::gfx::BufferBarrier, k_max_attribure_description> barriers{};
+
+			edge::gfx::ResourceBarrierInfo resource_barrier{};
+			resource_barrier.buffer_barriers = barriers.data();
 
 			for (auto& vert_data : vertex_datas)
 			{
 				if (vert_data.buffer)
 				{
+					if (vert_data.state != edge::gfx::ResourceStateFlag::eVertexRead)
+					{
+						auto& barrier = barriers[resource_barrier.buffer_barrier_count++];
+						barrier.buffer = vert_data.buffer;
+						barrier.src_state = vert_data.state;
+						vert_data.state = barrier.dst_state = edge::gfx::ResourceStateFlag::eVertexRead;
+						barrier.range.size = vert_data.buffer->GetSize();
+					}
+
 					vertex_buffers[buffer_count++] = vert_data.buffer;
 				}
 			}
 
+			command_list.ResourceBarrier(resource_barrier);
 			command_list.BindVertexBuffers({ vertex_buffers.data(), buffer_count }, { strides.data(), buffer_count }, { offsets.data(), buffer_count });
 		}
 
@@ -322,7 +347,7 @@ namespace engine
 		}
 
 		template<typename _From, typename _To, typename _Pred>
-		void Transform(VertexData& vdat, const AttributeStream& attr, _Pred&& pred)
+		void Transform(GeometryData& vdat, const AttributeStream& attr, _Pred&& pred)
 		{
 			auto* begin = reinterpret_cast<const _From*>(attr.byte_range.data());
 			auto* end = begin + attr.count;

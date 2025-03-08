@@ -12,7 +12,7 @@ namespace engine
 		class InterleavedGeometryBuffer final : public GeometryBuffer
 		{
 		public:
-			InterleavedGeometryBuffer(edge::gfx::ext::ResourceLoader& loader, const GeometryBufferCreateInfo& create_info);
+			InterleavedGeometryBuffer(edge::gfx::IContext& gfx_context, const GeometryBufferCreateInfo& create_info);
 			~InterleavedGeometryBuffer();
 
 			void Flush() override;
@@ -25,13 +25,13 @@ namespace engine
 
 			void AddVertexStreamData(const void* data, uint32_t count, uint32_t stride, VertexAttributeFlag flag = {}) override;
 		private:
-			VertexData vertex_data{};
+			GeometryData vertex_data{};
 		};
 
 		class DeinterleavedGeometryBuffer final : public GeometryBuffer
 		{
 		public:
-			DeinterleavedGeometryBuffer(edge::gfx::ext::ResourceLoader& loader, const GeometryBufferCreateInfo& create_info);
+			DeinterleavedGeometryBuffer(edge::gfx::IContext& gfx_context, const GeometryBufferCreateInfo& create_info);
 			~DeinterleavedGeometryBuffer();
 
 			void Flush() override;
@@ -44,7 +44,7 @@ namespace engine
 
 			void AddVertexStreamData(const void* data, uint32_t count, uint32_t stride, VertexAttributeFlag flags = {}) override;
 		private:
-			std::array<VertexData, k_max_attribure_description> vertex_datas{};
+			std::array<GeometryData, k_max_attribure_description> vertex_datas{};
 		};
 	}
 }

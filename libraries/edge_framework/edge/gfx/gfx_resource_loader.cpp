@@ -739,15 +739,17 @@ namespace edge
 			dst_offset += data.size();
 		}
 
-		void BufferUpdater::InsertRegion(std::span<const uint8_t> data, uint64_t dst_offset)
+		void BufferUpdater::InsertRegion(std::span<const uint8_t> data, uint64_t offset)
 		{
-			assert(data.size() <= src_region_size && (dst_offset + data.size() <= copy_buffer_info.dst_buffer->GetSize()) && "Trying to insert region out of range.");
+			assert(data.size() <= src_region_size && (offset + data.size() <= copy_buffer_info.dst_buffer->GetSize()) && "Trying to insert region out of range.");
 
 			copy_regions.push_back({
 					src_offset,
-					dst_offset,
+					offset,
 					data.size()
 				});
+
+			//engine::util::Copy(src_memory, src_offset, data.data(), data.size(), offset);
 
 			memcpy(src_memory + src_offset, data.data(), data.size());
 
@@ -756,6 +758,8 @@ namespace edge
 
 		void BufferUpdater::Submit(ICommandList* cmd_list, ResourceStateFlags& current_state)
 		{
+			copy_buffer_info.src_buffer->Unmap();
+
 			// Sort regions by destination offset
 			std::sort(copy_regions.begin(), copy_regions.end(),
 				[](const BufferCopyRegion& a, const BufferCopyRegion& b) {

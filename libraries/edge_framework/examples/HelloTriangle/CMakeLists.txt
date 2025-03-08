@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(EdgeHelloTriangle)
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/../../edge/gfx/ext/cmake/ShaderEmbedding.cmake")
+include(GlslShaderCompiler)
 
 set(EDGE_HELLO_TRIANGLE_SOURCES main.cpp)
 
