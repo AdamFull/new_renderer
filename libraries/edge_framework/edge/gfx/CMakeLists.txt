@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(edge_gfx)
 
+include(GlslShaderCompiler)
+
+#ktx
+set(KTX_FEATURE_TESTS OFF CACHE BOOL "Create unit tests" FORCE)
+set(KTX_FEATURE_TOOLS OFF CACHE BOOL "Create KTX tools" FORCE)
+set(KTX_FEATURE_VULKAN OFF CACHE BOOL "Enable Vulkan texture upload" FORCE)
+set(KTX_FEATURE_GL_UPLOAD OFF CACHE BOOL "Enable OpenGL texture upload" FORCE)
+
+find_package(Ktx CONFIG REQUIRED)
+
 #spirv-cross
 #set(SPIRV_CROSS_SHARED OFF CACHE BOOL "Build the C API as a single shared library." FORCE)
 set(SPIRV_CROSS_STATIC ON CACHE BOOL "Build the C and C++ API as static libraries." FORCE)
@@ -11,8 +21,8 @@ set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "Enable util module support." FORCE)
 set(USE_NSIGHT_AFTERMATH OFF CACHE BOOL "Enable nsight aftermath support." FORCE)
 
 #TODO: add extensions as plugins
-add_subdirectory("ext/resource_loader")
 add_subdirectory("ext/shader_effect_system")
+add_subdirectory("ext/imgui")
 add_subdirectory("ext/printf")
 
 file(GLOB GFX_SOURCES FILES *.cpp *.h)
@@ -81,11 +91,23 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} 
     PUBLIC 
     "${CMAKE_CURRENT_SOURCE_DIR}" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../external/stb"
 )
 
+add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/shaders/mipgen.comp" GLSLANG_FLAGS ${GLSL_FLAGS} EMBED_TARGET MipGeneratorShader)
+add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/shaders/mipgen.comp" GLSLANG_FLAGS ${GLSL_FLAGS} DEFINES MIP_2 EMBED_TARGET MipGeneratorShaderMip2)
+add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/shaders/mipgen.comp" GLSLANG_FLAGS ${GLSL_FLAGS} DEFINES MIP_2 MIP_3 EMBED_TARGET MipGeneratorShaderMip3)
+add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/shaders/mipgen.comp" GLSLANG_FLAGS ${GLSL_FLAGS} DEFINES MIP_2 MIP_3 MIP_4 EMBED_TARGET MipGeneratorShaderMip4)
+
 target_link_libraries(${PROJECT_NAME}
+    PRIVATE
+    KTX::ktx
+    MipGeneratorShader
+    MipGeneratorShaderMip2
+    MipGeneratorShaderMip3
+    MipGeneratorShaderMip4
     PUBLIC
-    edge_gfx_ext_resource_loader
     edge_gfx_ext_shader_effect_system
+    edge_gfx_ext_imgui
     edge_gfx_ext_printf
 )

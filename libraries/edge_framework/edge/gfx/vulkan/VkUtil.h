@@ -209,6 +209,18 @@ namespace edge
 						access |= vk::AccessFlagBits2KHR::eIndirectCommandRead;
 				}
 
+				if (flags & ResourceStateFlag::eVertex)
+				{
+					if (flags & ResourceStateFlag::eRead)
+						access |= vk::AccessFlagBits2KHR::eVertexAttributeRead;
+				}
+
+				if (flags & ResourceStateFlag::eIndex)
+				{
+					if (flags & ResourceStateFlag::eRead)
+						access |= vk::AccessFlagBits2KHR::eIndexRead;
+				}
+
 				return access;
 			}
 
@@ -233,6 +245,10 @@ namespace edge
 					stages |= vk::PipelineStageFlagBits2KHR::eTransfer;
 				if (flags & ResourceStateFlag::ePresent)
 					stages |= vk::PipelineStageFlagBits2KHR::eAllCommands;
+				if (flags & ResourceStateFlag::eVertex)
+					stages |= vk::PipelineStageFlagBits2KHR::eVertexInput;
+				if (flags & ResourceStateFlag::eIndex)
+					stages |= vk::PipelineStageFlagBits2KHR::eIndexInput;
 
 				if(flags == ResourceStateFlag::eUndefined)
 					stages |= vk::PipelineStageFlagBits2KHR::eAllCommands;

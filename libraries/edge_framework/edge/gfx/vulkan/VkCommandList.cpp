@@ -267,7 +267,7 @@ namespace edge
 				// TODO: As i think it will be transfer dst in any case
 				vk_copy_info.dstImageLayout = vk::ImageLayout::eTransferDstOptimal;
 
-				for (int32_t i = 0; i < copy_info.copy_region_count; ++i)
+				for (int32_t i = 0; i < copy_info.copy_regions.size(); ++i)
 				{
 					auto& region = copy_info.copy_regions[i];
 					auto& vk_region = regions[vk_copy_info.regionCount++];
