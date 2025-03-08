@@ -501,5 +501,15 @@ namespace edge
         {
             return vk_to_format[format];
         }
+
+        Format FormatFromGLInternal(uint32_t format)
+        {
+            return {};
+        }
+
+        Format FormatFromGL(uint32_t format)
+        {
+            return {};
+        }
     }
 }

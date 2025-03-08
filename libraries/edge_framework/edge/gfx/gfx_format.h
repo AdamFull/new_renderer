@@ -252,6 +252,9 @@ namespace edge
         uint32_t FormatToVk(Format format);
         Format FormatFromVk(uint32_t format);
 
+        Format FormatFromGLInternal(uint32_t format);
+        Format FormatFromGL(uint32_t format);
+
         inline bool IsDepthOnlyFormat(Format format)
         {
             return format == Format::eD16Unorm ||

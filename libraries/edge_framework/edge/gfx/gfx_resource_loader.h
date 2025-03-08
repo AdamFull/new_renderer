@@ -1,0 +1,96 @@
+#pragma once
+
+#include <memory>
+#include "gfx_common.h"
+#include "gfx_structures.h"
+
+namespace edge
+{
+	namespace filesystem
+	{
+		class IVirtualFileSystemInterface;
+	}
+
+	namespace gfx
+	{
+		class MipGenerator;
+
+		class BufferUpdater
+		{
+		public:
+			friend class ResourceUpdater;
+
+			BufferUpdater(IBuffer* src_buffer, uint64_t src_offset, uint64_t src_size, IBuffer* dst_buffer);
+
+			void AddRegion(std::span<const uint8_t> data);
+			void InsertRegion(std::span<const uint8_t> data, uint64_t dst_offset);
+		private:
+			void Submit(ICommandList* command_list, ResourceStateFlags& current_state);
+
+			CopyBufferInfo copy_buffer_info{};
+			uint64_t src_region_size;
+			uint64_t src_offset{ 0ull };
+			uint64_t dst_offset{ 0ull };
+			uint8_t* src_memory;
+
+			std::vector<BufferCopyRegion> copy_regions{};
+		};
+
+		class TextureUpdater
+		{
+		public:
+			friend class ResourceUpdater;
+
+			TextureUpdater(IBuffer* src_buffer, uint64_t src_size, uint64_t src_offset, ITexture* dst_texture);
+		private:
+			void Submit(ICommandList* command_list);
+
+			CopyTextureInfo copy_texture_info{};
+			uint64_t src_region_size;
+			uint64_t src_offset{ 0ull };
+
+			std::vector<TextureCopyRegion> copy_regions{};
+		};
+
+		struct ResourceUpdaterCreateInfo
+		{
+			IContext* gfx_context{ nullptr };
+			filesystem::IVirtualFileSystemInterface* filesystem{ nullptr };
+
+			uint64_t buffer_size{ 32ull * 1024ull * 1024ull };
+			uint32_t buffer_count{ 1u };
+		};
+
+		class ResourceUpdater
+		{
+		public:
+			static void Create(const ResourceUpdaterCreateInfo& create_info);
+			static void Shutdown();
+
+			static auto AcquireCommandList() -> ICommandList*;
+			static void Flush(SemaphoreSubmitInfo& submitted_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores);
+
+			static auto LoadTexture(std::string_view path) -> ITexture*;
+
+			static void UpdateTexture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data);
+
+			static auto GetBufferUpdater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater;
+			static void SubmitBufferUpdater(BufferUpdater& updater, ResourceStateFlags& current_state);
+			static void UpdateBuffer(IBuffer* dst_buffer, ResourceStateFlags& current_state, std::span<const uint8_t> data);
+
+			//static auto GetTextureUpdater(ITexture* dst_texture, uint64_t update_size) -> TextureUpdater;
+		private:
+			static IContext* gfx_context;
+			static filesystem::IVirtualFileSystemInterface* filesystem;
+			static const IQueue* queue;
+
+			struct Node;
+			static std::vector<Node> nodes;
+			static uint32_t active_node_idx;
+
+			static std::unique_ptr<MipGenerator> mip_generator;
+
+			static bool recording;
+		};
+	}
+}

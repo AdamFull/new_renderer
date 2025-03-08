@@ -15,24 +15,13 @@ namespace edge
 			virtual auto SetResourceName(std::string_view name) const noexcept -> void = 0;
 
 			[[nodiscard]] virtual auto GetResourceType() const noexcept -> ResourceType = 0;
-		};
 
-		class IRenderResource : public IGFXResource
-		{
-		public:
-			~IRenderResource() override = default;
-
-			[[nodiscard]] auto GetResourceState() const noexcept -> ResourceStateFlags 
+			template<typename _Ty>
+			[[nodiscard]] auto As() -> _Ty
 			{
-				return state;
+				//assert();
+				return static_cast<_Ty>(this);
 			}
-
-			auto SetResourceState(ResourceStateFlags new_state) noexcept -> void
-			{
-				state = new_state;
-			}
-		protected:
-			ResourceStateFlags state{ ResourceStateFlag::eUndefined };
 		};
 
 		class IFence : public IGFXResource
@@ -96,7 +85,7 @@ namespace edge
 			[[nodiscard]] virtual auto AcquireNextImage(ISemaphore* signal_semaphore, IFence* fence, uint32_t* image_index) -> bool = 0;
 		};
 
-		class IBuffer : public IRenderResource
+		class IBuffer : public IGFXResource
 		{
 		public:
 			~IBuffer() override = default;
@@ -125,6 +114,7 @@ namespace edge
 				offset{ offset },
 				size{ size }
 			{
+				mapped = buffer.Map();
 			}
 
 			~BufferSuballocation() = default;
@@ -132,10 +122,10 @@ namespace edge
 			BufferSuballocation(const BufferSuballocation&) = delete;
 			BufferSuballocation(BufferSuballocation&& other) :
 				buffer{ other.buffer },
+				mapped{ std::exchange(other.mapped, nullptr) },
 				size{ std::exchange(other.size, {}) },
 				offset{ std::exchange(other.offset, {}) }
 			{
-
 			}
 
 			BufferSuballocation& operator=(const BufferSuballocation&) = delete;
@@ -150,7 +140,8 @@ namespace edge
 			auto Update(const void* data, uint64_t data_size) -> void
 			{
 				assert(data_size <= size);
-				buffer.Update(data, data_size, offset);
+				memcpy(mapped + offset, data, data_size);
+				//buffer.Update(data, data_size, offset);
 			}
 
 			[[nodiscard]] auto GetBuffer() noexcept -> IBuffer&
@@ -169,6 +160,7 @@ namespace edge
 			}
 		private:
 			IBuffer& buffer;
+			uint8_t* mapped{ nullptr };
 			uint64_t size{};
 			uint64_t offset{};
 		};
@@ -239,7 +231,7 @@ namespace edge
 			virtual auto Reset() noexcept -> void = 0;
 		};
 
-		class ITexture : public IRenderResource
+		class ITexture : public IGFXResource
 		{
 		public:
 			~ITexture() override = default;

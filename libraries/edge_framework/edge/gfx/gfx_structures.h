@@ -413,12 +413,6 @@ namespace edge
 			std::span<BufferCopyRegion> regions;
 		};
 
-		struct BufferUpdateInfo
-		{
-			IBuffer* dst_buffer{ nullptr };
-			uint64_t update_size{ 0ull };
-		};
-
 		struct TextureCopyRegion
 		{
 			uint64_t buffer_offset{};
@@ -442,8 +436,7 @@ namespace edge
 			IBuffer* src_buffer{ nullptr };
 			ITexture* dst_texture{ nullptr };
 
-			std::array<TextureCopyRegion, 64ull> copy_regions{};
-			uint32_t copy_region_count{ 0u };
+			std::span<TextureCopyRegion> copy_regions{};
 		};
 
 		struct BindDescriptorsInfo
@@ -492,6 +485,12 @@ namespace edge
 			uint32_t set{ 0u };
 			uint32_t binding{ 0u };
 			uint32_t array_index{ 0u };
+		};
+
+		struct RenderResourceDesc
+		{
+			IGFXResource* resource{ nullptr };
+			ResourceStateFlags state{};
 		};
 
 		uint32_t Hash(const VertexAttributeDescription& desc, uint32_t hash = 0u);
