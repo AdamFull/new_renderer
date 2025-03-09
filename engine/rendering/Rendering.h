@@ -51,6 +51,7 @@ namespace engine
 			std::unique_ptr<edge::gfx::FilesystemWrapper> fs;
 
 			std::unique_ptr<edge::gfx::IContext> gfx_context{};
+			edge::gfx::IPipelineCache* pipeline_cache{};
 			std::unique_ptr<edge::gfx::ext::ShaderEffectSystem> shader_effect_system{};
 			std::unique_ptr<ExecutionContext> render_context{};
 			std::unique_ptr<IRenderWorld> render_world{};

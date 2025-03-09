@@ -84,6 +84,7 @@ namespace engine
 			// Shader name in shader cache
 			std::string shader_name{};
 
+			edge::gfx::IPipelineCache* pipeline_cache{ nullptr };
 			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
 

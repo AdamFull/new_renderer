@@ -313,10 +313,11 @@ namespace engine
 			RenderPassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = &shader_effect_system.LoadEffect(create_info.shader_name);
+			pass_ci.pipeline_cache = create_info.pipeline_cache;
 			pass_ci.shared_descriptor = shared_descriptor;
 			pass_ci.pipeline_state = create_info.pipeline_state;
-			pass_ci.draw_callback = std::move(create_info.draw_callback);
-			pass_ci.enabled_callback = std::move(create_info.enabled_callback);
+			pass_ci.draw_callback = create_info.draw_callback;
+			pass_ci.enabled_callback = create_info.enabled_callback;
 
 			pass_ci.resource_attachments = create_info.resource_attachments;
 
@@ -329,10 +330,11 @@ namespace engine
 			ComputePassCreateInfo pass_ci{};
 			pass_ci.debug_name = create_info.shader_name;
 			pass_ci.shader = &shader_effect_system.LoadEffect(create_info.shader_name);
+			pass_ci.pipeline_cache = create_info.pipeline_cache;
 			pass_ci.one_time = create_info.one_time;
 			pass_ci.shared_descriptor = shared_descriptor;
-			pass_ci.draw_callback = std::move(create_info.draw_callback);
-			pass_ci.enabled_callback = std::move(create_info.enabled_callback);
+			pass_ci.draw_callback = create_info.draw_callback;
+			pass_ci.enabled_callback = create_info.enabled_callback;
 
 			auto new_pass = std::make_unique<ComputePass>(*this, pass_ci);
 			return new_pass;
