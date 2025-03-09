@@ -1,6 +1,8 @@
 #pragma once
 
+#include <thread>
 #include <memory>
+
 #include "gfx_common.h"
 #include "gfx_structures.h"
 
@@ -90,6 +92,29 @@ namespace edge
 
 			static std::unique_ptr<MipGenerator> mip_generator;
 
+			static bool recording;
+		};
+
+		class ResourceUploader
+		{
+		public:
+			static void Create(const ResourceUpdaterCreateInfo& create_info);
+			static void Shutdown();
+
+			static void UploaderThread(std::stop_token stop_token);
+		private:
+			static IContext* gfx_context;
+			static filesystem::IVirtualFileSystemInterface* filesystem;
+			static const IQueue* queue;
+
+			struct Node;
+			static std::vector<Node> nodes;
+			static uint32_t active_node_idx;
+
+			static std::unique_ptr<MipGenerator> mip_generator;
+
+			static std::jthread upload_thread;
+			static std::stop_source uploader_stop;
 			static bool recording;
 		};
 	}

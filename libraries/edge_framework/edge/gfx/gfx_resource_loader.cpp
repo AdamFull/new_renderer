@@ -706,10 +706,88 @@ namespace edge
 			SubmitBufferUpdater(updater, current_state);
 		}
 
-		//auto ResourceUpdater::GetTextureUpdater(ITexture* dst_texture, uint64_t update_size) -> TextureUpdater
-		//{
-		//	return {};
-		//}
+
+
+		IContext* ResourceUploader::gfx_context{ nullptr };
+		filesystem::IVirtualFileSystemInterface* ResourceUploader::filesystem{ nullptr };
+		const IQueue* ResourceUploader::queue{ nullptr };
+		std::vector<ResourceUploader::Node> ResourceUploader::nodes{};
+		uint32_t ResourceUploader::active_node_idx{ 0u };
+		std::unique_ptr<MipGenerator> ResourceUploader::mip_generator{};
+		std::jthread ResourceUploader::upload_thread{};
+		std::stop_source ResourceUploader::uploader_stop{};
+		bool ResourceUploader::recording{ false };
+
+
+		struct ResourceUploader::Node
+		{
+			Node(IContext* gfx_context, uint64_t size, std::string_view name) :
+				allocator{ gfx_context, size }
+			{
+				fence = gfx_context->CreateFence();
+				fence->SetResourceName(name);
+				semaphore = gfx_context->CreateSemaphore();
+				semaphore->SetResourceName(name);
+				cmd_pool = gfx_context->CreateCommandPool(queue);
+				cmd_pool->SetResourceName(name);
+			}
+
+			IFence* fence;
+			ISemaphore* semaphore;
+
+			ICommandList* cmd_list{ nullptr };
+			ICommandPool* cmd_pool;
+
+			BlockAllocator allocator;
+		};
+
+
+		void ResourceUploader::Create(const ResourceUpdaterCreateInfo& create_info)
+		{
+			ResourceUploader::gfx_context = create_info.gfx_context;
+			ResourceUploader::filesystem = create_info.filesystem;
+
+			queue = gfx_context->RequestQueue(QueueTypeFlag::eGraphics);
+
+			for (int32_t i = 0; i < create_info.buffer_count; ++i)
+			{
+				auto debug_name = std::format("uploader_{}", i);
+				nodes.emplace_back(gfx_context, create_info.buffer_size, debug_name);
+			}
+
+			mip_generator = std::make_unique<MipGenerator>(gfx_context);
+
+			upload_thread = std::jthread(ResourceUploader::UploaderThread);
+			uploader_stop = upload_thread.get_stop_source();
+			upload_thread.detach();
+		}
+
+		void ResourceUploader::Shutdown()
+		{
+			if (uploader_stop.stop_possible())
+			{
+				uploader_stop.stop_requested();
+			}
+
+			for (auto& node : nodes)
+			{
+				gfx_context->Destroy(node.fence);
+				gfx_context->Destroy(node.semaphore);
+				gfx_context->Destroy(node.cmd_pool);
+			}
+
+			mip_generator = nullptr;
+
+			nodes.clear();
+		}
+
+		void ResourceUploader::UploaderThread(std::stop_token stop_token)
+		{
+			while (!stop_token.stop_requested())
+			{
+
+			}
+		}
 
 
 

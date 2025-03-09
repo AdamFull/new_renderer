@@ -225,6 +225,7 @@ namespace engine
 			resource_updater_init.filesystem = vfs;
 
 			edge::gfx::ResourceUpdater::Create(resource_updater_init);
+			edge::gfx::ResourceUploader::Create(resource_updater_init);
 
 			edge::gfx::ext::ShaderEffectSystemCreateInfo effect_system_create_info{};
 			effect_system_create_info.context = gfx_context.get();
@@ -244,6 +245,7 @@ namespace engine
 		Renderer::~Renderer()
 		{
 			edge::gfx::ResourceUpdater::Shutdown();
+			edge::gfx::ResourceUploader::Shutdown();
 		}
 
 		uint32_t Renderer::AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler)
