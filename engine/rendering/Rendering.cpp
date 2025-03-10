@@ -2,9 +2,8 @@
 
 #include <edge/gfx/gfx_context.h>
 #include <edge/gfx/gfx_resource_loader.h>
-#include <edge/gfx/ext/shader_effect_system/gfx_shader_effect_system.h>
-
-#include "RenderContext.h"
+#include <edge/gfx/gfx_frame_graph.h>
+#include <edge/gfx/technique_system/gfx_technique_system.h>
 
 #include "render_graph/ComputePass.h"
 #include "render_graph/RenderPass.h"
@@ -227,27 +226,16 @@ namespace engine
 			edge::gfx::ResourceUpdater::Create(resource_updater_init);
 			edge::gfx::ResourceUploader::Create(resource_updater_init);
 
-			edge::gfx::ext::ShaderEffectSystemCreateInfo effect_system_create_info{};
-			effect_system_create_info.context = gfx_context.get();
-			effect_system_create_info.filesystem_wrapper = fs.get();
-			effect_system_create_info.effect_database_path = "/root/embed/rendering/shaders/shader_cache.shc";
-			effect_system_create_info.effect_database_compile_config_path = "/source/embed/shaders/config.json";
-			shader_effect_system = edge::gfx::ext::CreateShaderEffectSystem(effect_system_create_info);
+			edge::gfx::FrameGraphInitializeInfo fg_init_info{};
+			fg_init_info.gfx_context = gfx_context.get();
+			fg_init_info.filesystem = vfs;
 
-			render_context = std::make_unique<RenderContext>(*this, window);
+			edge::gfx::FrameGraph::Create(fg_init_info);
+
+			render_context = std::make_unique<RenderContext>(*gfx_context, vfs, window);
 
 			render_world = std::make_unique<RenderWorld>(*this);
 
-			std::vector<uint8_t> pipeline_cache_data{};
-			if (fs->Exists("/root/pipeline_cache.bin"))
-			{
-				fs->ReadFile("/root/pipeline_cache.bin", pipeline_cache_data);
-			}
-
-			edge::gfx::PipelineCacheCreateInfo pipeline_cache_ci{};
-			pipeline_cache_ci.data = pipeline_cache_data;
-
-			pipeline_cache = gfx_context->CreatePipelineCache(pipeline_cache_ci);
 
 			// Temporary func to create test render graph
 			BuildGraph();
@@ -255,22 +243,7 @@ namespace engine
 
 		Renderer::~Renderer()
 		{
-			if (pipeline_cache)
-			{
-				size_t pipeline_cache_data_size{ 0 };
-				pipeline_cache->GetData(pipeline_cache_data_size, nullptr);
-
-				if (pipeline_cache_data_size)
-				{
-					std::vector<uint8_t> data_to_write{};
-					data_to_write.resize(pipeline_cache_data_size);
-					pipeline_cache->GetData(pipeline_cache_data_size, data_to_write.data());
-
-					fs->WriteFile("/root/pipeline_cache.bin", data_to_write);
-				}
-
-				gfx_context->Destroy(pipeline_cache);
-			}
+			edge::gfx::FrameGraph::Shutdown();
 
 			edge::gfx::ResourceUpdater::Shutdown();
 			edge::gfx::ResourceUploader::Shutdown();
@@ -360,16 +333,6 @@ namespace engine
 			return *gfx_context;
 		}
 
-		edge::gfx::ext::ShaderEffectSystem& Renderer::GetShaderEffectSystem()
-		{
-			return *shader_effect_system;
-		}
-
-		edge::gfx::ext::ShaderEffectSystem const& Renderer::GetShaderEffectSystem() const
-		{
-			return *shader_effect_system;
-		}
-
 		uint32_t Renderer::RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
 		{
 			uint32_t hash = Hash(create_info);
@@ -420,6 +383,15 @@ namespace engine
 			return *render_world;
 		}
 
+		void Renderer::BuildFrameGraph()
+		{
+			constexpr const std::string_view k_frame_graph_path = "/root/fgb";
+
+			if (!edge::gfx::FrameGraph::Load(k_frame_graph_path))
+			{
+				edge::gfx::FrameGraph::Store(k_frame_graph_path);
+			}
+		}
 
 		void Renderer::BuildGraph()
 		{
@@ -753,8 +725,7 @@ namespace engine
 			// Generate brdflut
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "lighting:brdflut_generator";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = "generate_brdflut";
 				create_info.one_time = true;
 
 				create_info.draw_callback = [this, 
@@ -778,8 +749,7 @@ namespace engine
 			// Generate irradiance cubemap
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "lighting:irradiancecube_generator";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = "generate_irradiancecube";
 				create_info.one_time = true;
 
 				create_info.draw_callback = [this, 
@@ -809,8 +779,7 @@ namespace engine
 				auto group_node = render_context->CreateNode("prefiltered map generator", 0x99F9F1FF);
 
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "lighting:prefilteredmap_generator";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = "generate_prefilteredmap";
 				create_info.one_time = true;
 
 				create_info.draw_callback = [this,
@@ -865,8 +834,7 @@ namespace engine
 			// Crear cull counters
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "culling:clear_counters";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = "clear_counters";
 
 				create_info.draw_callback = [this,
 					indirect_count_buffer
@@ -897,8 +865,7 @@ namespace engine
 			// Cull meshes
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "culling:cull_and_batch";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = "cull_and_batch";
 
 				create_info.draw_callback = [this,
 					alive_bitset_buffer
@@ -933,8 +900,7 @@ namespace engine
 			// Calculate command offsets
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "culling:scan:INPUT_BIT_ARRAY";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = "scan_bit_array";
 			
 				create_info.draw_callback = [this,
 					alive_bitset_buffer,
@@ -973,8 +939,7 @@ namespace engine
 			// Assemble draw commands
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "culling:assemble_commands";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = "assemble_commands";
 			
 				create_info.draw_callback = [this,
 					alive_commands_buffer,
@@ -1024,14 +989,13 @@ namespace engine
 
 #if !DISABLE_SHADOWS
 			// Draw cascaded shadows
-			{B
+			{
 				RenderShaderPassCreateInfo create_info{};
 #if SKINNING_TEST
-				create_info.shader_name = "lighting:unidirectional_shadow:HAS_SKIN:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "directional_shadow_skin";
 #else
-				create_info.shader_name = "lighting:unidirectional_shadow:CASCADED_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "directional_shadow";
 #endif
-				create_info.pipeline_cache = pipeline_cache;
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
 				// Depth state
@@ -1136,11 +1100,10 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 #if SKINNING_TEST
-				create_info.shader_name = "lighting:unidirectional_shadow:HAS_SKIN:OMNI_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "omni_shadow_skin";
 #else
-				create_info.shader_name = "lighting:unidirectional_shadow:OMNI_SHADOW:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "omni_shadow";
 #endif
-				create_info.pipeline_cache = pipeline_cache;
 
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
@@ -1246,11 +1209,10 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 #if SKINNING_TEST
-				create_info.shader_name = "lighting:unidirectional_shadow:HAS_SKIN:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "cascaded_shadow_skin";
 #else
-				create_info.shader_name = "lighting:unidirectional_shadow:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "cascaded_shadow";
 #endif
-				create_info.pipeline_cache = pipeline_cache;
 
 				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
 			
@@ -1354,25 +1316,13 @@ namespace engine
 			{
 				RenderShaderPassCreateInfo create_info{};
 #if SKINNING_TEST
-				create_info.shader_name = "visibilitybuffer:write:HAS_SKIN:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "visibilitybuffer_write_skin";
 #else
-				create_info.shader_name = "visibilitybuffer:write:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "visibilitybuffer_write";
 #endif
-				create_info.pipeline_cache = pipeline_cache;
-				create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
-			
-				// Depth state
-				create_info.pipeline_state.depth_stencil_state.depth_test = true;
-				create_info.pipeline_state.depth_stencil_state.depth_write = true;
-				create_info.pipeline_state.depth_stencil_state.depth_compare_op = edge::gfx::CompareOp::eLess;
-			
-			
 				create_info.AddWriteAttachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
 				create_info.AddWriteAttachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
 				create_info.AddWriteAttachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 1.f });
-			
-				create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
-				create_info.pipeline_state.color_blending_state.attachment_count = 2;
 			
 				create_info.draw_callback = [this,
 					alive_commands_buffer,
@@ -1447,11 +1397,10 @@ namespace engine
 			{
 				ComputeShaderPassCreateInfo create_info{};
 #if SKINNING_TEST
-				create_info.shader_name = "visibilitybuffer:shade:HAS_SKIN:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "visibilitybuffer_shade_skin";
 #else
-				create_info.shader_name = "visibilitybuffer:shade:HAS_TEXCOORD:HAS_NORMAL:HAS_TANGENT:INDEX_16BIT";
+				create_info.technique_name = "visibilitybuffer_shade";
 #endif
-				create_info.pipeline_cache = pipeline_cache;
 			
 				create_info.draw_callback = [this, 
 					alive_commands_buffer,
@@ -1527,8 +1476,7 @@ namespace engine
 			// Compute static motion vectors (can be started in another queue)
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = use_low_precision_velocity ? "postprocess:generate_motion_vectors:LOW_PRECISION_VELOCITY" : "postprocess:generate_motion_vectors";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = use_low_precision_velocity ? "generate_motion_vectors_low_precision" : "generate_motion_vectors";
 				create_info.draw_callback = [this,
 					motion_vectors_target,
 					zbuffer_depth_target
@@ -1554,8 +1502,7 @@ namespace engine
 			// Copy history
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.shader_name = "utility:copy_image";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = "copy_image";
 			
 				create_info.draw_callback = [this,
 					input_target,
@@ -1585,8 +1532,7 @@ namespace engine
 				// FXAA 
 				{
 					ComputeShaderPassCreateInfo create_info{};
-					create_info.shader_name = "postprocess:apply_effect:FXAA";
-					create_info.pipeline_cache = pipeline_cache;
+					create_info.technique_name = "apply_fxaa_effect";
 			
 					create_info.enabled_callback = []() -> bool { return postprocess.fxaa.enable; };
 					create_info.draw_callback = [this,
@@ -1615,8 +1561,7 @@ namespace engine
 				// Apply motion blur
 				{
 					ComputeShaderPassCreateInfo create_info{};
-					create_info.shader_name = use_low_precision_velocity ? "postprocess:apply_effect:MOTION_BLUR:LOW_PRECISION_VELOCITY" : "postprocess:apply_effect:MOTION_BLUR";
-					create_info.pipeline_cache = pipeline_cache;
+					create_info.technique_name = use_low_precision_velocity ? "apply_motion_blur_effect_low" : "apply_motion_blur_effect";
 			
 					create_info.enabled_callback = []() -> bool { return postprocess.motionblur.enable; };
 					create_info.draw_callback = [this,
@@ -1652,8 +1597,7 @@ namespace engine
 					// Compute bokeh
 					{
 						ComputeShaderPassCreateInfo create_info{};
-						create_info.shader_name = "postprocess:bokeh";
-						create_info.pipeline_cache = pipeline_cache;
+						create_info.technique_name = "bokeh_filter";
 			
 						create_info.draw_callback = [this,
 							input_target,
@@ -1676,8 +1620,7 @@ namespace engine
 					// Apply dof
 					{
 						ComputeShaderPassCreateInfo create_info{};
-						create_info.shader_name = "postprocess:apply_effect:DOF";
-						create_info.pipeline_cache = pipeline_cache;
+						create_info.technique_name = "apply_dof_effect";
 			
 						create_info.draw_callback = [this,
 							input_target,
@@ -1716,8 +1659,7 @@ namespace engine
 					// Starting from brightness detection pass
 					{
 						ComputeShaderPassCreateInfo create_info{};
-						create_info.shader_name = bloom_use_brightness ? "postprocess:brightdetect" : "utility:copy_compute";
-						create_info.pipeline_cache = pipeline_cache;
+						create_info.technique_name = bloom_use_brightness ? "brightdetect" : "copy_image";
 			
 						create_info.draw_callback = [this,
 							input_target,
@@ -1741,8 +1683,7 @@ namespace engine
 					{
 						{
 							ComputeShaderPassCreateInfo create_info{};
-							create_info.shader_name = "postprocess:downsample:FIRST_PASS";
-							create_info.pipeline_cache = pipeline_cache;
+							create_info.technique_name = "downsample_first_pass";
 			
 							create_info.draw_callback = [this,
 								hdr0_div2,
@@ -1767,8 +1708,7 @@ namespace engine
 			
 						{
 							ComputeShaderPassCreateInfo create_info{};
-							create_info.shader_name = "postprocess:downsample";
-							create_info.pipeline_cache = pipeline_cache;
+							create_info.technique_name = "downsample";
 			
 							create_info.draw_callback = [this,
 								bloom_target
@@ -1803,8 +1743,7 @@ namespace engine
 					// Upsample
 					{
 						ComputeShaderPassCreateInfo create_info{};
-						create_info.shader_name = "postprocess:upsample";
-						create_info.pipeline_cache = pipeline_cache;
+						create_info.technique_name = "upsample";
 			
 						create_info.draw_callback = [this,
 							bloom_target
@@ -1838,8 +1777,7 @@ namespace engine
 					// Apply bloom
 					{
 						ComputeShaderPassCreateInfo create_info{};
-						create_info.shader_name = "postprocess:apply_effect:BLOOM";
-						create_info.pipeline_cache = pipeline_cache;
+						create_info.technique_name = "apply_bloom_effect";
 			
 						create_info.draw_callback = [this,
 							input_target,
@@ -1879,8 +1817,7 @@ namespace engine
 					// Compute histogram
 					{
 						ComputeShaderPassCreateInfo create_info{};
-						create_info.shader_name = "postprocess:compute_histogram";
-						create_info.pipeline_cache = pipeline_cache;
+						create_info.technique_name = "compute_histogram";
 			
 						create_info.draw_callback = [this,
 							input_target,
@@ -1910,8 +1847,7 @@ namespace engine
 					// Compute avg screen space brightness
 					{
 						ComputeShaderPassCreateInfo create_info{};
-						create_info.shader_name = "postprocess:compute_brightness";
-						create_info.pipeline_cache = pipeline_cache;
+						create_info.technique_name = "compute_brightness";
 			
 						create_info.draw_callback = [this,
 							avg_brightness_target,
@@ -1948,8 +1884,7 @@ namespace engine
 					// Apply tonemapping
 					{
 						ComputeShaderPassCreateInfo create_info{};
-						create_info.shader_name = "postprocess:apply_effect:TONEMAP";
-						create_info.pipeline_cache = pipeline_cache;
+						create_info.technique_name = "apply_tonemap_effect";
 			
 						create_info.draw_callback = [this,
 							input_target,
@@ -1985,12 +1920,8 @@ namespace engine
 			// Test output shader
 			{
 				RenderShaderPassCreateInfo create_info{};
-				create_info.shader_name = "testing:screenspace";
-				create_info.pipeline_cache = pipeline_cache;
+				create_info.technique_name = "screenspace";
 				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
-			
-				create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
-				create_info.pipeline_state.color_blending_state.attachment_count = 1;
 			
 				create_info.draw_callback = [this, 
 					final_target
@@ -2021,26 +1952,23 @@ namespace engine
 			}
 
 			// ImDbg renderer
-			{
-				if (ImDbg::GetCurrentContext())
-				{
-					GeometryBufferCreateInfo geometry_buffer_ci{};
-					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, edge::gfx::Format::eR16G16B16A16Sint);
-					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eTexCoord, edge::gfx::Format::eR16G16Unorm);
-					geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eColor, edge::gfx::Format::eR8G8B8A8Unorm);
-					geometry_buffer_ci.index_description.type = edge::gfx::IndexType::eUint16;
-
-					auto geometry_buffer_id = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
-					auto& geometry_buffer = LookUpGeometryBuffer(geometry_buffer_id);
-
-					RenderShaderPassCreateInfo create_info{};
-					create_info.shader_name = "testing:debug_draw";
-					create_info.pipeline_cache = pipeline_cache;
-					create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
-					create_info.pipeline_state.vertex_layout = geometry_buffer.GetVertexLayout();
-					create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
-				}
-			}
+			//{
+			//	if (ImDbg::GetCurrentContext())
+			//	{
+			//		GeometryBufferCreateInfo geometry_buffer_ci{};
+			//		geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, edge::gfx::Format::eR16G16B16A16Sint);
+			//		geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eTexCoord, edge::gfx::Format::eR16G16Unorm);
+			//		geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eColor, edge::gfx::Format::eR8G8B8A8Unorm);
+			//		geometry_buffer_ci.index_description.type = edge::gfx::IndexType::eUint16;
+			//
+			//		auto geometry_buffer_id = RequestInterleavedGeometryBuffer(geometry_buffer_ci);
+			//		auto& geometry_buffer = LookUpGeometryBuffer(geometry_buffer_id);
+			//
+			//		RenderShaderPassCreateInfo create_info{};
+			//		create_info.technique_name = "debug_draw";
+			//		create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+			//	}
+			//}
 
 			// Debug text
 			{
@@ -2068,20 +1996,8 @@ namespace engine
 				geometry_buffer.AddIndexStreamData(indices, 6, sizeof(uint16_t));
 
 				RenderShaderPassCreateInfo create_info{};
-				create_info.shader_name = "testing:debug_text";
-				create_info.pipeline_cache = pipeline_cache;
-				create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
-				create_info.pipeline_state.vertex_layout = geometry_buffer.GetVertexLayout();
+				create_info.technique_name = "debug_text";
 				create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
-
-				create_info.pipeline_state.color_blending_state.attachment_count = 1;
-				auto& blending = create_info.pipeline_state.color_blending_state.attachments[0];
-				blending.enable = true;
-				blending.src_color = edge::gfx::BlendFactor::eSrcAlpha;
-				blending.dst_color = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
-				blending.src_alpha = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
-				blending.dst_alpha = edge::gfx::BlendFactor::eZero;
-
 
 				uint32_t debug_text_buffer{ ~0u };
 				{
@@ -2185,19 +2101,8 @@ namespace engine
 					auto& geometry_buffer = LookUpGeometryBuffer(geometry_buffer_id);
 
 					RenderShaderPassCreateInfo create_info{};
-					create_info.shader_name = "testing:imgui";
-					create_info.pipeline_cache = pipeline_cache;
-					create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
-					create_info.pipeline_state.vertex_layout = geometry_buffer.GetVertexLayout();
+					create_info.technique_name = "imgui";
 					create_info.AddWriteAttachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
-
-					create_info.pipeline_state.color_blending_state.attachment_count = 1;
-					auto& blending = create_info.pipeline_state.color_blending_state.attachments[0];
-					blending.enable = true;
-					blending.src_color = edge::gfx::BlendFactor::eSrcAlpha;
-					blending.dst_color = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
-					blending.src_alpha = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
-					blending.dst_alpha = edge::gfx::BlendFactor::eZero;
 
 					create_info.draw_callback = [this, 
 						&geometry_buffer,

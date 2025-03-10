@@ -11,12 +11,14 @@ namespace edge
 {
 	class Window;
 
+	namespace filesystem
+	{
+		class IVirtualFileSystemInterface;
+	}
+
 	namespace gfx
 	{
-		namespace ext
-		{
-			class ShaderEffectSystem;
-		}
+		class TechniqueDatabase;
 	}
 }
 
@@ -30,7 +32,7 @@ namespace engine
 		class RenderContext final : public ExecutionContext
 		{
 		public:
-			RenderContext(IRenderer& renderer, edge::Window* window);
+			RenderContext(edge::gfx::IContext& gfx_context, edge::filesystem::IVirtualFileSystemInterface* filesystem, edge::Window* window);
 			~RenderContext();
 
 			RenderContext(const RenderContext&) = delete;
@@ -89,10 +91,11 @@ namespace engine
 			void UpdateResources();
 		private:
 			edge::gfx::IContext& context;
-			edge::gfx::ext::ShaderEffectSystem& shader_effect_system;
 
 			const edge::Window& window;
 			const edge::gfx::IQueue* queue;
+
+			std::unique_ptr<edge::gfx::TechniqueDatabase> technique_db{};
 
 			edge::gfx::ISwapchain* swapchain{ nullptr };
 			//vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };

@@ -16,6 +16,9 @@
 
 #include <edge/gfx/gfx_util.h>
 #include <edge/gfx/gfx_context.h>
+#include <edge/gfx/technique_system/gfx_technique_system.h>
+
+#include <edge/filesystem/VirtualFileSystemInterface.h>
 
 namespace engine
 {
@@ -78,9 +81,8 @@ namespace engine
 			edge::gfx::IContext& context;
 		};
 
-		RenderContext::RenderContext(IRenderer& renderer, edge::Window* window) :
-			context{ renderer.GetContext() },
-			shader_effect_system{ renderer.GetShaderEffectSystem() },
+		RenderContext::RenderContext(edge::gfx::IContext& gfx_context, edge::filesystem::IVirtualFileSystemInterface* filesystem, edge::Window* window) :
+			context{ gfx_context },
 			window{ *window }
 		{
 			// Select queue that can present
@@ -131,6 +133,385 @@ namespace engine
 			global_uniform_pool = std::make_unique<UniformPool>(context);
 
 			current_frame = render_frames[active_frame_index].get();
+
+			technique_db = std::make_unique<edge::gfx::TechniqueDatabase>(&gfx_context, filesystem);
+
+			// Register "culling" techniques
+			technique_db->AddTechnique("clear_counters", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/culling/clear_counters.comp" } }
+				});
+			technique_db->AddTechnique("cull_and_batch", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/culling/cull_and_batch.comp" } }
+				});
+			technique_db->AddTechnique("scan_bit_array", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {
+						.path = "/source/embed/shaders/culling/scan.comp",
+						.definitions = { "INPUT_BIT_ARRAY" }
+					} }
+				});
+			technique_db->AddTechnique("assemble_commands", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/culling/assemble_commands.comp" } }
+				});
+
+			// Register "deferred" technique
+			technique_db->AddTechnique("visibilitybuffer_write", {
+				.type = edge::gfx::TechniqueType::eGraphics,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/deferred/visbufferwrite.vert",
+						.definitions = { "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" }
+					},{
+						.path = "/source/embed/shaders/deferred/visbufferwrite.frag",
+						.definitions = { "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" }
+					}},
+				.color_blending_attachments = {
+					edge::gfx::ColorBlendAttachment{},
+					edge::gfx::ColorBlendAttachment{}
+				},
+				.rasterization_state = {
+						.cull_mode = edge::gfx::CullModeFlag::eFront
+					},
+				.depth_stencil_state = {
+					.depth_test = true,
+					.depth_write = true,
+					.depth_compare_op = edge::gfx::CompareOp::eLess
+					},
+				.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList,
+				.color_formats = {
+					edge::gfx::Format::eR8G8B8A8Unorm,
+					edge::gfx::Format::eR8G8B8A8Unorm
+					},
+				.depth_format = edge::gfx::Format::eD32Sfloat
+				});
+			technique_db->AddTechnique("visibilitybuffer_shade", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/deferred/visbuffershade.comp",
+						.definitions = { "LIGHT_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" }
+					}}
+				});
+
+			// Register "lighting" techniques
+			technique_db->AddTechnique("generate_brdflut", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/lighting/brdflut.comp" } }
+				});
+			technique_db->AddTechnique("generate_irradiancecube", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/lighting/irradiancecube.comp" } }
+				});
+			technique_db->AddTechnique("generate_prefilteredmap", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/lighting/prefilteredmap.comp" } }
+				});
+			technique_db->AddTechnique("directional_shadow", {
+				.type = edge::gfx::TechniqueType::eGraphics,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/lighting/unidirectional_shadow.vert",
+						.definitions = { "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" }
+					},{
+						.path = "/source/embed/shaders/lighting/unidirectional_shadow.frag",
+						.definitions = { "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" }
+					}},
+
+				.rasterization_state = {
+						.cull_mode = edge::gfx::CullModeFlag::eFront
+					},
+				.depth_stencil_state = {
+					.depth_test = true,
+					.depth_write = true,
+					.depth_compare_op = edge::gfx::CompareOp::eLess
+					},
+				.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList,
+				.depth_format = edge::gfx::Format::eD16Unorm
+				});
+			technique_db->AddTechnique("cascaded_shadow", {
+				.type = edge::gfx::TechniqueType::eGraphics,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/lighting/unidirectional_shadow.vert",
+						.definitions = { "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "HAS_TANGENT" }
+					},{
+						.path = "/source/embed/shaders/lighting/unidirectional_shadow.frag",
+						.definitions = { "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "HAS_TANGENT" }
+					}},
+
+				.rasterization_state = {
+						.cull_mode = edge::gfx::CullModeFlag::eFront
+					},
+				.depth_stencil_state = {
+					.depth_test = true,
+					.depth_write = true,
+					.depth_compare_op = edge::gfx::CompareOp::eLess
+					},
+				.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList,
+				.depth_format = edge::gfx::Format::eD32Sfloat
+				});
+			technique_db->AddTechnique("omni_shadow", {
+				.type = edge::gfx::TechniqueType::eGraphics,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/lighting/unidirectional_shadow.vert",
+						.definitions = { "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "HAS_TANGENT" }
+					},{
+						.path = "/source/embed/shaders/lighting/unidirectional_shadow.frag",
+						.definitions = { "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "HAS_TANGENT" }
+					}},
+
+				.rasterization_state = {
+						.cull_mode = edge::gfx::CullModeFlag::eFront
+					},
+				.depth_stencil_state = {
+					.depth_test = true,
+					.depth_write = true,
+					.depth_compare_op = edge::gfx::CompareOp::eLess
+					},
+				.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList,
+				.depth_format = edge::gfx::Format::eD16Unorm
+				});
+
+			// Register "postprocess" techniques
+			technique_db->AddTechnique("generate_motion_vectors_low_precision", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/postprocess/generate_motion_vectors.comp",
+						.definitions = { "LOW_PRECISION_VELOCITY" }
+					}}
+				});
+			technique_db->AddTechnique("generate_motion_vectors", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/postprocess/generate_motion_vectors.comp" } }
+				});
+			technique_db->AddTechnique("apply_fxaa_effect", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/postprocess/apply_effect.comp",
+						.definitions = { "FXAA" }
+					}}
+				});
+			technique_db->AddTechnique("apply_motion_blur_effect_low", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/postprocess/apply_effect.comp",
+						.definitions = { "MOTION_BLUR", "LOW_PRECISION_VELOCITY"}
+					}}
+				});
+			technique_db->AddTechnique("apply_motion_blur_effect", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/postprocess/apply_effect.comp",
+						.definitions = { "MOTION_BLUR" }
+					}}
+				});
+			technique_db->AddTechnique("apply_dof_effect", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/postprocess/apply_effect.comp",
+						.definitions = { "DOF" }
+					}}
+				});
+			technique_db->AddTechnique("apply_bloom_effect", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/postprocess/apply_effect.comp",
+						.definitions = { "BLOOM" }
+					}}
+				});
+			technique_db->AddTechnique("apply_tonemap_effect", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/postprocess/apply_effect.comp",
+						.definitions = { "TONEMAP" }
+					}}
+				});
+			technique_db->AddTechnique("bokeh_filter", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/postprocess/bokeh.comp" } }
+				});
+			technique_db->AddTechnique("brightdetect", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/postprocess/brightdetect.comp" } }
+				});
+			technique_db->AddTechnique("downsample", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/postprocess/downsample.comp" } }
+				});
+			technique_db->AddTechnique("downsample_first_pass", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/postprocess/downsample.comp",
+						.definitions = { "FIRST_PASS" }
+					}}
+				});
+			technique_db->AddTechnique("upsample", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/postprocess/upsample.comp" } }
+				});
+			technique_db->AddTechnique("compute_histogram", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/postprocess/comp_histogram.comp" } }
+				});
+			technique_db->AddTechnique("compute_brightness", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/postprocess/comp_average_brightness.comp" } }
+				});
+
+			// Register "testing" techniques
+			technique_db->AddTechnique("screenspace", {
+				.type = edge::gfx::TechniqueType::eGraphics,
+				.shared_descriptor = shared_descriptor,
+				.stages = {
+					{.path = "/source/embed/shaders/common/screenspace.vert" },
+					{.path = "/source/embed/shaders/testing/screenspace.frag" } },
+
+				.color_blending_attachments = {
+					edge::gfx::ColorBlendAttachment{}
+				},
+				.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList,
+				.color_formats = {current_frame->backbuffer->GetFormat()}
+				});
+			technique_db->AddTechnique("debug_draw", {
+				.type = edge::gfx::TechniqueType::eGraphics,
+				.shared_descriptor = shared_descriptor,
+				.stages = {
+					{.path = "/source/embed/shaders/testing/debug_draw.vert" },
+					{.path = "/source/embed/shaders/testing/debug_draw.frag" } },
+				.vertex_layout = {
+					.attributes = {
+						{
+							.location = 0,
+							.format = edge::gfx::Format::eR32G32B32Sfloat
+						},
+						{
+							.location = 1,
+							.format = edge::gfx::Format::eR32G32Sfloat,
+							.offset = 12
+						},
+						{
+							.location = 2,
+							.format = edge::gfx::Format::eR8G8B8A8Unorm,
+							.offset = 20
+						}
+					},
+					.bindings = {
+						{
+							.stride = 24
+						}
+					}
+				},
+				.color_blending_attachments = {
+					edge::gfx::ColorBlendAttachment{}
+				},
+				.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList,
+				.color_formats = {current_frame->backbuffer->GetFormat()}
+				});
+			technique_db->AddTechnique("debug_text", {
+				.type = edge::gfx::TechniqueType::eGraphics,
+				.shared_descriptor = shared_descriptor,
+				.stages = {
+					{.path = "/source/embed/shaders/testing/debug_text.vert" },
+					{.path = "/source/embed/shaders/testing/debug_text.frag" } },
+				.vertex_layout = {
+					.attributes = {
+						{
+							.location = 0,
+							.format = edge::gfx::Format::eR32G32Sfloat
+						}
+					},
+					.bindings = {
+						{
+							.stride = 8
+						}
+					}
+				},
+				.color_blending_attachments = {
+					edge::gfx::ColorBlendAttachment{
+					.enable = true,
+					.src_color = edge::gfx::BlendFactor::eSrcAlpha,
+					.dst_color = edge::gfx::BlendFactor::eOneMinusSrcAlpha,
+					.src_alpha = edge::gfx::BlendFactor::eOneMinusSrcAlpha,
+					.dst_alpha = edge::gfx::BlendFactor::eZero
+					}
+				},
+				.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList,
+				.color_formats = {current_frame->backbuffer->GetFormat()}
+				});
+			technique_db->AddTechnique("imgui", {
+				.type = edge::gfx::TechniqueType::eGraphics,
+				.shared_descriptor = shared_descriptor,
+				.stages = {
+					{.path = "/source/embed/shaders/testing/imgui.vert" },
+					{.path = "/source/embed/shaders/testing/imgui.frag" } },
+				.vertex_layout = {
+					.attributes = {
+						{
+							.location = 0,
+							.format = edge::gfx::Format::eR32G32Sfloat
+						},
+						{
+							.location = 1,
+							.format = edge::gfx::Format::eR32G32Sfloat,
+							.offset = 8
+						},
+						{
+							.location = 2,
+							.format = edge::gfx::Format::eR8G8B8A8Unorm,
+							.offset = 16
+						}
+					},
+					.bindings = {
+						{
+							.stride = 20
+						}
+					}
+				},
+				.color_blending_attachments = {
+					edge::gfx::ColorBlendAttachment{
+					.enable = true,
+					.src_color = edge::gfx::BlendFactor::eSrcAlpha,
+					.dst_color = edge::gfx::BlendFactor::eOneMinusSrcAlpha,
+					.src_alpha = edge::gfx::BlendFactor::eOneMinusSrcAlpha,
+					.dst_alpha = edge::gfx::BlendFactor::eZero
+					}
+				},
+				.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList,
+				.color_formats = {current_frame->backbuffer->GetFormat()}
+				});
+
+			// Register "utility" techniques
+			technique_db->AddTechnique("copy_image", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/utility/copy.comp" } }
+				});
 		}
 
 		RenderContext::~RenderContext()
@@ -310,12 +691,14 @@ namespace engine
 
 		std::unique_ptr<ExecutionNode> RenderContext::CreateNode(const RenderShaderPassCreateInfo& create_info)
 		{
+			auto& technique = technique_db->GetTechnique(create_info.technique_name);
+
 			RenderPassCreateInfo pass_ci{};
-			pass_ci.debug_name = create_info.shader_name;
-			pass_ci.shader = &shader_effect_system.LoadEffect(create_info.shader_name);
-			pass_ci.pipeline_cache = create_info.pipeline_cache;
+			pass_ci.name = technique.name;
+			pass_ci.shader = technique.shader;
+			pass_ci.root_signature = technique.root_signature;
+			pass_ci.pipeline = technique.pipeline;
 			pass_ci.shared_descriptor = shared_descriptor;
-			pass_ci.pipeline_state = create_info.pipeline_state;
 			pass_ci.draw_callback = create_info.draw_callback;
 			pass_ci.enabled_callback = create_info.enabled_callback;
 
@@ -327,12 +710,15 @@ namespace engine
 
 		std::unique_ptr<ExecutionNode> RenderContext::CreateNode(const ComputeShaderPassCreateInfo& create_info)
 		{
+			auto& technique = technique_db->GetTechnique(create_info.technique_name);
+
 			ComputePassCreateInfo pass_ci{};
-			pass_ci.debug_name = create_info.shader_name;
-			pass_ci.shader = &shader_effect_system.LoadEffect(create_info.shader_name);
-			pass_ci.pipeline_cache = create_info.pipeline_cache;
-			pass_ci.one_time = create_info.one_time;
+			pass_ci.name = technique.name;
+			pass_ci.shader = technique.shader;
+			pass_ci.root_signature = technique.root_signature;
+			pass_ci.pipeline = technique.pipeline;
 			pass_ci.shared_descriptor = shared_descriptor;
+			pass_ci.one_time = create_info.one_time;
 			pass_ci.draw_callback = create_info.draw_callback;
 			pass_ci.enabled_callback = create_info.enabled_callback;
 

@@ -82,9 +82,8 @@ namespace engine
 		struct ShaderPassCreateInfo
 		{
 			// Shader name in shader cache
-			std::string shader_name{};
+			std::string_view technique_name{};
 
-			edge::gfx::IPipelineCache* pipeline_cache{ nullptr };
 			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
 
@@ -100,8 +99,6 @@ namespace engine
 		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo
 		{
 			std::vector<RenderResourceAttachment> resource_attachments{};
-
-			edge::gfx::PipelineState pipeline_state{};
 
 			void AddWriteAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, edge::gfx::ClearColor clear_color = {}) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color); }
 			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eRead, flags, render_resource_id, edge::gfx::ClearColor{}); }

@@ -15,27 +15,6 @@ namespace engine
 			ShaderPass{ execution_context, create_info },
 			resource_attachments{ create_info.resource_attachments }
 		{
-			edge::gfx::GraphicsPipelineCreateInfo pipeline_ci{};
-			pipeline_ci.shader = shader_effect->GetShader();
-			pipeline_ci.root_signature = root_signature;
-			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
-			pipeline_ci.pipeline_state = create_info.pipeline_state;
-
-			for (auto& attachment : resource_attachments)
-			{
-				auto render_target = execution_context.GetTexture(attachment.render_resource_id);
-				auto rt_format = render_target->GetFormat();
-				if (attachment.flags & ResourceAttachmentTypeFlag::eDepth)
-					pipeline_ci.depth_format = rt_format;
-				else if (attachment.flags & ResourceAttachmentTypeFlag::eStencil)
-					pipeline_ci.stencil_format = rt_format;
-				else
-				{
-					pipeline_ci.color_formats[pipeline_ci.color_format_count++] = rt_format;
-				}
-			}
-
-			pipeline = context.CreatePipeline(pipeline_ci);
 		}
 
 		void RenderPass::AddColorAttachment(edge::gfx::Attachment attachment)

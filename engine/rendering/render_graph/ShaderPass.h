@@ -24,14 +24,15 @@ namespace engine
 
 		struct PassCreateInfo
 		{
-			edge::gfx::IShaderEffect* shader{ nullptr };
-			edge::gfx::IPipelineCache* pipeline_cache{ nullptr };
+			std::string_view name;
+			edge::gfx::IShader* shader{ nullptr };
+			edge::gfx::IRootSignature* root_signature{ nullptr };
+			edge::gfx::IPipeline* pipeline{ nullptr };
 			edge::gfx::ISharedDescriptor* shared_descriptor{ nullptr };
 
 			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
 
-			std::string debug_name{};
 			bool one_time{ false };
 		};
 
@@ -42,7 +43,6 @@ namespace engine
 
 		struct RenderPassCreateInfo : PassCreateInfo
 		{
-			edge::gfx::PipelineState pipeline_state{};
 			std::vector<RenderResourceAttachment> resource_attachments{};
 		};
 
@@ -215,7 +215,7 @@ namespace engine
 			std::vector<UniformHandle> uniform_handles;
 			std::unique_ptr<UniformHandle> constant_block;
 
-			edge::gfx::IShaderEffect* shader_effect{ nullptr };
+			edge::gfx::IShader* shader{ nullptr };
 			edge::gfx::IRootSignature* root_signature{ nullptr };
 			edge::gfx::IPipeline* pipeline{ nullptr };
 

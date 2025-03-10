@@ -21,13 +21,23 @@ set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "Enable util module support." FORCE)
 set(USE_NSIGHT_AFTERMATH OFF CACHE BOOL "Enable nsight aftermath support." FORCE)
 
 #TODO: add extensions as plugins
-add_subdirectory("ext/shader_effect_system")
 add_subdirectory("ext/imgui")
 add_subdirectory("ext/printf")
 
-file(GLOB GFX_SOURCES FILES *.cpp *.h)
+add_library(${PROJECT_NAME} STATIC)
 
-add_library(${PROJECT_NAME} STATIC ${GFX_SOURCES})
+target_sources(${PROJECT_NAME} PRIVATE
+    "gfx_context.cpp"
+    "gfx_enum.cpp"
+    "gfx_format_vk.cpp"
+    "gfx_frame_graph.cpp"
+    "gfx_nsight_aftermath.cpp"
+    "gfx_resource_loader.cpp"
+    "gfx_string.cpp"
+    "gfx_structures.cpp"
+)
+
+add_subdirectory("technique_system")
 
 if(USE_NSIGHT_AFTERMATH)
 find_package(NsightAftermath REQUIRED)
@@ -107,7 +117,6 @@ target_link_libraries(${PROJECT_NAME}
     MipGeneratorShaderMip3
     MipGeneratorShaderMip4
     PUBLIC
-    edge_gfx_ext_shader_effect_system
     edge_gfx_ext_imgui
     edge_gfx_ext_printf
 )

@@ -10,12 +10,6 @@ namespace engine
 		ComputePass::ComputePass(ExecutionContext& execution_context, const ComputePassCreateInfo& create_info) :
 			ShaderPass{ execution_context, create_info }
 		{
-			edge::gfx::ComputePipelineCreateInfo pipeline_ci{};
-			pipeline_ci.shader = shader_effect->GetShader();
-			pipeline_ci.root_signature = root_signature;
-			pipeline_ci.pipeline_cache = create_info.pipeline_cache;
-
-			pipeline = context.CreatePipeline(pipeline_ci);
 		}
 
 		void ComputePass::_Execute(edge::gfx::ICommandList& command_list, float delta_time)
