@@ -1,6 +1,5 @@
 #pragma once
 
-#include <edge/filesystem/VirtualFileSystemInterface.h>
 #include "RendererInterface.h"
 #include "RenderResourceContainer.h"
 
@@ -9,6 +8,11 @@
 
 namespace edge
 {
+	namespace fs
+	{
+		class VirtualFilesystem;
+	}
+
 	class Window;
 }
 
@@ -19,7 +23,7 @@ namespace engine
 		class Renderer : public IRenderer
 		{
 		public:
-			Renderer(edge::Window* window, edge::filesystem::IVirtualFileSystemInterface* vfs);
+			Renderer(edge::Window* window, edge::fs::VirtualFilesystem* vfs);
 			~Renderer();
 
 			uint32_t AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) override;
@@ -46,8 +50,6 @@ namespace engine
 			void BuildFrameGraph();
 			void BuildGraph();
 		private:
-			std::unique_ptr<edge::gfx::FilesystemWrapper> fs;
-
 			std::unique_ptr<edge::gfx::IContext> gfx_context{};
 			std::unique_ptr<ExecutionContext> render_context{};
 			std::unique_ptr<IRenderWorld> render_world{};

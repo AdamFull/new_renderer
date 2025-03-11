@@ -6,16 +6,16 @@
 
 namespace edge
 {
-	namespace filesystem
+	namespace fs
 	{
-		class IVirtualFileSystemInterface;
+		class VirtualFilesystem;
 	}
 
 	namespace gfx
 	{
 		struct ShaderCompilerCreateInfo
 		{
-			filesystem::IVirtualFileSystemInterface* filesystem{ nullptr };
+			fs::VirtualFilesystem* filesystem{ nullptr };
 			std::string_view base_path;
 			std::vector<std::string_view> additional_include_dirs;
 		};

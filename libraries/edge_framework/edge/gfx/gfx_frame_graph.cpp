@@ -4,14 +4,15 @@
 
 #include "../util/fs_helper.h"
 #include "../util/Logger.h"
-#include "../filesystem/VirtualFileSystemInterface.h"
+
+#include "../fs/fs_virtual_filesystem.h"
 
 namespace edge
 {
 	namespace gfx
 	{
 		IContext* FrameGraph::gfx_context;
-		filesystem::IVirtualFileSystemInterface* FrameGraph::filesystem;
+		fs::VirtualFilesystem* FrameGraph::filesystem;
 		IPipelineCache* FrameGraph::pipeline_cache;
 
 		std::vector<FrameGraphTechnique> FrameGraph::techniques;

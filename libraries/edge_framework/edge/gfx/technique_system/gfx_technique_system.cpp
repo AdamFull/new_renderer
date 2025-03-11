@@ -6,7 +6,7 @@
 
 #include "../../util/fs_helper.h"
 #include "../../util/Logger.h"
-#include "../../filesystem/VirtualFileSystemInterface.h"
+#include "../../fs/fs_virtual_filesystem.h"
 
 // TODO: define it from specific config
 #define DEVELOPMENT
@@ -17,7 +17,7 @@ namespace edge
 	{
 		constexpr const std::string_view k_frame_graph_cache_path = "/root/fgcache";
 
-		TechniqueDatabase::TechniqueDatabase(IContext* gfx_context, filesystem::IVirtualFileSystemInterface* filesystem) :
+		TechniqueDatabase::TechniqueDatabase(IContext* gfx_context, fs::VirtualFilesystem* filesystem) :
 			gfx_context{ gfx_context },
 			filesystem{ filesystem }
 		{
@@ -30,9 +30,9 @@ namespace edge
 			shader_compiler = std::make_unique<GLSLShaderCompiler>(compiler_ci);
 
 			std::vector<uint8_t> pipeline_cache_data{};
-			if (filesystem->Exists(k_frame_graph_cache_path))
+			if (filesystem->Exists(k_frame_graph_cache_path) && filesystem->ReadFile(k_frame_graph_cache_path, pipeline_cache_data))
 			{
-				filesystem->ReadFile(k_frame_graph_cache_path, pipeline_cache_data);
+				
 			}
 
 			PipelineCacheCreateInfo pipeline_cache_ci{};
@@ -94,61 +94,30 @@ namespace edge
 			size_t pos{ 0 };
 		};
 
-		class BinaryWriter
-		{
-		public:
-			BinaryWriter(size_t size)
-			{
-				data.reserve(size);
-			}
-
-			template<typename _Ty>
-			void Write(const _Ty& t)
-			{
-				const uint8_t* begin = (const uint8_t*)(&t);
-				const uint8_t* end = begin + sizeof(_Ty);
-				data.insert(data.end(), begin, end);
-			}
-
-			template<>
-			void Write(const std::vector<uint8_t>& t)
-			{
-				data.insert(data.end(), t.begin(), t.end());
-			}
-
-			const std::vector<uint8_t>& GetData()
-			{
-				return data;
-			}
-		private:
-			std::vector<uint8_t> data;
-		};
-
 		bool TechniqueDatabase::Load(std::string_view path)
 		{
-			std::vector<uint8_t> data;
-			if (!filesystem->Exists(path) || !filesystem->ReadFile(path, data))
+			if (!filesystem->Exists(path))
 				return false;
 
-			BinaryReader reader(data);
+			auto* file = filesystem->OpenFile(path, fs::FileModeFlag::eRead | fs::FileModeFlag::eBin);
 
 			size_t shader_count;
-			reader.Read(shader_count);
+			file->Read(shader_count);
 
 			for (int32_t i = 0; i < shader_count; ++i)
 			{
 				uint32_t hash;
-				reader.Read(hash);
+				file->Read(hash);
 
 				auto& shader = shaders[hash];
 
 				size_t code_size;
-				reader.Read(code_size);
+				file->Read(code_size);
 
 				shader.code.resize(code_size);
-				reader.Read(shader.code);
-				reader.Read(shader.shader_hash);
-				reader.Read(shader.dependency_hash);
+				file->Read(shader.code);
+				file->Read(shader.shader_hash);
+				file->Read(shader.dependency_hash);
 			}
 
 			return true;
@@ -156,24 +125,26 @@ namespace edge
 
 		bool TechniqueDatabase::Save(std::string_view path)
 		{
-			BinaryWriter writer(8 * 1024 * 1024);
+			auto* file = filesystem->OpenFile(path, fs::FileModeFlag::eWrite | fs::FileModeFlag::eBin);
 
 			size_t shader_count = shaders.size();
 
 			// Write shader_count first
-			writer.Write(shader_count);
+			file->Write(shader_count);
 
 			for (const auto& [hash, shader] : shaders)
 			{
-				writer.Write(hash);
+				file->Write(hash);
 
-				writer.Write(shader.code.size());
-				writer.Write(shader.code);
-				writer.Write(shader.shader_hash);
-				writer.Write(shader.dependency_hash);
+				file->Write(shader.code.size());
+				file->Write(shader.code);
+				file->Write(shader.shader_hash);
+				file->Write(shader.dependency_hash);
 			}
 
-			return filesystem->WriteFile(path, writer.GetData());
+			delete file;
+
+			return true;
 		}
 
 		void TechniqueDatabase::AddTechnique(std::string_view name, const TechniqueDesc& technique_desc)
@@ -291,11 +262,7 @@ namespace edge
 
 #if defined(DEVELOPMENT) || defined(EMBEDDED_SHADER_COMPILER)
 			std::string shader_source{};
-			if (!filesystem->ReadFile(stage.path, shader_source))
-			{
-				EDGE_LOGE("Failed to open shader: {}.", stage.path);
-				return {};
-			}
+			filesystem->ReadFile(stage.path, shader_source);
 
 			ShaderCompileInfo shader_compile_info{};
 			shader_compile_info.path = stage.path;

@@ -5,8 +5,9 @@
 #include <functional>
 #include <memory>
 
-#include "../filesystem/VirtualFileSystemInterface.h"
 #include "InputEvents.h"
+
+#include "../fs/fs_virtual_filesystem.h"
 
 namespace edge
 {
@@ -23,7 +24,7 @@ namespace edge
 	{
 		bool benchmark_enabled;
 		Window* window;
-		filesystem::IVirtualFileSystemInterface* filesystem;
+		fs::VirtualFilesystem* filesystem;
 	};
 
 	class Application

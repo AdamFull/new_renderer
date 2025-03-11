@@ -1,10 +1,17 @@
-#include <edge/filesystem/VirtualFileSystemInterface.h>
 #include <engine/rendering/RendererInterface.h>
 #include "ecs/systems/BaseSystem.h"
 
 #include <libraries/easygltf/include/easygltf/easygltf_base.h>
 
 #include <entt/fwd.hpp>
+
+namespace edge
+{
+	namespace fs
+	{
+		class VirtualFilesystem;
+	}
+}
 
 namespace engine
 {
@@ -21,7 +28,7 @@ namespace engine
 		class Scene final
 		{
 		public:
-			Scene(edge::filesystem::IVirtualFileSystemInterface* vfs, render::IRenderer& renderer);
+			Scene(edge::fs::VirtualFilesystem* vfs, render::IRenderer& renderer);
 			~Scene();
 
 			void Load(std::string_view path);
@@ -41,7 +48,7 @@ namespace engine
 		private:
 			render::IRenderer& renderer;
 
-			edge::filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
+			edge::fs::VirtualFilesystem* vfs{ nullptr };
 
 			SceneLoadedResources resources{};
 			std::unordered_map<uint32_t, entt::entity> node_to_entity{};

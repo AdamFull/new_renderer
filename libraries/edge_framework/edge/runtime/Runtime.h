@@ -2,7 +2,6 @@
 
 #include "Application.h"
 #include "Window.h"
-#include "../filesystem/VirtualFileSystemInterface.h"
 #include "../util/Performance.h"
 
 #ifdef CreateWindow
@@ -12,6 +11,11 @@
 namespace edge
 {
 	class IRuntimeContext;
+
+	namespace fs
+	{
+		class VirtualFilesystem;
+	}
 
 	enum ExitCode
 	{
@@ -115,7 +119,7 @@ namespace edge
 		void SetWindowProperties(const Window::OptionalProperties& properties);
 	protected:
 		std::unique_ptr<Window> window{ nullptr };
-		std::unique_ptr<filesystem::IVirtualFileSystemInterface> filesystem{};
+		std::unique_ptr<fs::VirtualFilesystem> filesystem{};
 
 		std::unique_ptr<Application> app{ nullptr };
 

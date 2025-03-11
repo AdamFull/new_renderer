@@ -1,8 +1,8 @@
 #include "Runtime.h"
 
 // Filesystem headers
-#include "../filesystem/VirtualFileSystemManager.h"
-#include "../filesystem/native/NativeFileSystem.h"
+#include "../fs/fs_virtual_filesystem.h"
+#include "../fs/native/fs_native_filesystem.h"
 
 #include "RuntimeContext.h"
 #include "../util/Logger.h"
@@ -30,11 +30,11 @@ namespace edge
 		}
 
 		// Initialize filesystem
-		filesystem = std::make_unique<filesystem::VirtualFileSystemManager>();
+		filesystem = std::make_unique<fs::VirtualFilesystem>();
 
 		// Mount default engine root filesystem
-		filesystem->Mount("/root", std::make_unique<filesystem::NativeFileSystem>("./"));
-		filesystem->Mount("/source", std::make_unique<filesystem::NativeFileSystem>("./../../../"));
+		filesystem->Mount("/root", new fs::NativeFilesystem("./"));
+		filesystem->Mount("/source", new fs::NativeFilesystem("./../../../"));
 
 		return 0;
 	}

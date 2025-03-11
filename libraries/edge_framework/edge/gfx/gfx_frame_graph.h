@@ -5,9 +5,9 @@
 
 namespace edge
 {
-	namespace filesystem
+	namespace fs
 	{
-		class IVirtualFileSystemInterface;
+		class VirtualFilesystem;
 	}
 
 	namespace gfx
@@ -36,7 +36,7 @@ namespace edge
 		struct FrameGraphInitializeInfo
 		{
 			IContext* gfx_context;
-			filesystem::IVirtualFileSystemInterface* filesystem;
+			fs::VirtualFilesystem* filesystem;
 		};
 
 		class FrameGraph
@@ -58,7 +58,7 @@ namespace edge
 			static FrameGraphPass& AddPass(std::string_view pass_name, ShaderStageFlags stage_flags);
 		private:
 			static IContext* gfx_context;
-			static filesystem::IVirtualFileSystemInterface* filesystem;
+			static fs::VirtualFilesystem* filesystem;
 			static IPipelineCache* pipeline_cache;
 
 			static std::vector<FrameGraphTechnique> techniques;

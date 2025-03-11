@@ -8,9 +8,9 @@
 
 namespace edge
 {
-	namespace filesystem
+	namespace fs
 	{
-		class IVirtualFileSystemInterface;
+		class VirtualFilesystem;
 	}
 
 	namespace gfx
@@ -57,7 +57,7 @@ namespace edge
 		struct ResourceUpdaterCreateInfo
 		{
 			IContext* gfx_context{ nullptr };
-			filesystem::IVirtualFileSystemInterface* filesystem{ nullptr };
+			fs::VirtualFilesystem* filesystem{ nullptr };
 
 			uint64_t buffer_size{ 32ull * 1024ull * 1024ull };
 			uint32_t buffer_count{ 1u };
@@ -83,7 +83,7 @@ namespace edge
 			//static auto GetTextureUpdater(ITexture* dst_texture, uint64_t update_size) -> TextureUpdater;
 		private:
 			static IContext* gfx_context;
-			static filesystem::IVirtualFileSystemInterface* filesystem;
+			static fs::VirtualFilesystem* filesystem;
 			static const IQueue* queue;
 
 			struct Node;
@@ -104,7 +104,7 @@ namespace edge
 			static void UploaderThread(std::stop_token stop_token);
 		private:
 			static IContext* gfx_context;
-			static filesystem::IVirtualFileSystemInterface* filesystem;
+			static fs::VirtualFilesystem* filesystem;
 			static const IQueue* queue;
 
 			struct Node;

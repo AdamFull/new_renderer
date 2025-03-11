@@ -5,6 +5,8 @@
 #include <edge/gfx/gfx_context.h>
 #include <edge/gfx/gfx_resource_loader.h>
 
+#include <edge/fs/fs_virtual_filesystem.h>
+
 #include <regex>
 
 #include "HelloTriangleVert.h"
@@ -14,108 +16,6 @@ struct BasicVertex
 {
 	struct Vec2 { float x, y; } pos;
 	struct Vec3 { float x, y, z; } color;
-};
-
-class VFSWrapper final : public edge::gfx::FilesystemWrapper
-{
-public:
-	VFSWrapper(edge::filesystem::IVirtualFileSystemInterface& vfs) :
-		vfs{ vfs }
-	{
-	}
-
-	bool Exists(std::string_view path) override
-	{
-		return vfs.Exists(path);
-	}
-
-	bool Mkdir(std::string_view path) override
-	{
-		return vfs.CreateDirectories(path);
-	}
-
-	bool ReadFile(std::string_view path, std::vector<uint8_t>& data) override
-	{
-		return vfs.ReadFile(path, data);
-	}
-
-	bool ReadFile(std::string_view path, std::string& data) override
-	{
-		return vfs.ReadFile(path, data);
-	}
-
-	bool WriteFile(std::string_view path, const std::vector<uint8_t>& data) override
-	{
-		return vfs.WriteFile(path, data);
-	}
-
-	size_t FileSize(std::string_view path) override
-	{
-		return vfs.FileSize(path);
-	}
-
-	std::vector<std::string> ListDir(std::string_view path, std::span<const std::string> include_rules, std::span<const std::string> exclude_rules) override
-	{
-		std::vector<std::string> list_files{};
-
-		auto iterator = vfs.Walk(path, true);
-		for (auto& it = iterator->Begin(); it != iterator->End(); ++it)
-		{
-			const auto& entry = *it;
-
-			// Skip files that do not match the include rules
-			if (!include_rules.empty() && !MatchesPattern(entry, include_rules))
-				continue;
-
-			// Skip files that match the exclude rules
-			if (!exclude_rules.empty() && MatchesPattern(entry, exclude_rules))
-				continue;
-
-			list_files.emplace_back(entry);
-		}
-
-		return list_files;
-	}
-
-private:
-	// Helper function to convert wildcard pattern to regex pattern
-	std::string WildcardToRegex(const std::string& pattern)
-	{
-		std::string regex_pattern;
-		regex_pattern.reserve(pattern.size() * 2);
-
-		for (char ch : pattern)
-		{
-			switch (ch) {
-			case '*':
-				regex_pattern += ".*"; // Match zero or more characters
-				break;
-			case '?':
-				regex_pattern += "."; // Match exactly one character
-				break;
-			case '.':
-				regex_pattern += "\\."; // Escape dot
-				break;
-			default:
-				regex_pattern += ch; // Add character as is
-				break;
-			}
-		}
-		return regex_pattern;
-	}
-
-	bool MatchesPattern(const std::string& file_name, const std::span<const std::string>& patterns)
-	{
-		for (const auto& pattern : patterns)
-		{
-			std::regex regex(WildcardToRegex(pattern), std::regex_constants::icase);
-			if (std::regex_match(file_name, regex))
-				return true;
-		}
-		return false;
-	}
-private:
-	edge::filesystem::IVirtualFileSystemInterface& vfs;
 };
 
 struct RenderFrame
@@ -213,9 +113,6 @@ public:
 
         // Init graphics context
         gfx_context = edge::gfx::CreateContext(gfx_create_info);
-
-        // Create filesystem wrapper
-        gfx_fs_wrapper = std::make_unique<VFSWrapper>(*options.filesystem);
 
 		edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
 		resource_updater_init.gfx_context = gfx_context.get();
@@ -536,7 +433,6 @@ private:
 	}
 private:
     std::unique_ptr<edge::gfx::IContext> gfx_context{};
-    std::unique_ptr<edge::gfx::FilesystemWrapper> gfx_fs_wrapper{};
 
 	edge::Window* window{ nullptr };
 

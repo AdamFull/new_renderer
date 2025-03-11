@@ -6,7 +6,7 @@
 #include "../util/Profiler.h"
 #include "../util/util.h"
 
-#include "../filesystem/VirtualFileSystemInterface.h"
+#include "../fs/fs_virtual_filesystem.h"
 
 #include <format>
 
@@ -475,7 +475,7 @@ namespace edge
 		};
 
 		IContext* ResourceUpdater::gfx_context{ nullptr };
-		filesystem::IVirtualFileSystemInterface* ResourceUpdater::filesystem{ nullptr };
+		fs::VirtualFilesystem* ResourceUpdater::filesystem{ nullptr };
 		const IQueue* ResourceUpdater::queue{ nullptr };
 		std::vector<ResourceUpdater::Node> ResourceUpdater::nodes{};
 		uint32_t ResourceUpdater::active_node_idx{ 0u };
@@ -576,8 +576,7 @@ namespace edge
 			}
 
 			std::vector<uint8_t> data{};
-			if (!filesystem->ReadFile(path, data))
-				return nullptr;
+			filesystem->ReadFile(path, data);
 
 			gfx::TextureCreateInfo create_info{};
 			texture_reader->Load(data, create_info);
@@ -709,7 +708,7 @@ namespace edge
 
 
 		IContext* ResourceUploader::gfx_context{ nullptr };
-		filesystem::IVirtualFileSystemInterface* ResourceUploader::filesystem{ nullptr };
+		fs::VirtualFilesystem* ResourceUploader::filesystem{ nullptr };
 		const IQueue* ResourceUploader::queue{ nullptr };
 		std::vector<ResourceUploader::Node> ResourceUploader::nodes{};
 		uint32_t ResourceUploader::active_node_idx{ 0u };

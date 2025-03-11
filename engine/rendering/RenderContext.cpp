@@ -18,7 +18,7 @@
 #include <edge/gfx/gfx_context.h>
 #include <edge/gfx/technique_system/gfx_technique_system.h>
 
-#include <edge/filesystem/VirtualFileSystemInterface.h>
+#include <edge/fs/fs_virtual_filesystem.h>
 
 namespace engine
 {
@@ -81,7 +81,7 @@ namespace engine
 			edge::gfx::IContext& context;
 		};
 
-		RenderContext::RenderContext(edge::gfx::IContext& gfx_context, edge::filesystem::IVirtualFileSystemInterface* filesystem, edge::Window* window) :
+		RenderContext::RenderContext(edge::gfx::IContext& gfx_context, edge::fs::VirtualFilesystem* filesystem, edge::Window* window) :
 			context{ gfx_context },
 			window{ *window }
 		{

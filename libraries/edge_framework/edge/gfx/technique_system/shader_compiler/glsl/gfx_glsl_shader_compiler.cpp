@@ -7,7 +7,7 @@
 #include "../../../../util/Hash.hpp"
 #include "../../../../util/Logger.h"
 #include "../../../../util/fs_helper.h"
-#include "../../../../filesystem/VirtualFileSystemInterface.h"
+#include "../../../../fs/fs_virtual_filesystem.h"
 
 #include <set>
 
@@ -24,7 +24,7 @@ namespace edge
 		class shader_includer : public glslang::TShader::Includer
 		{
 		public:
-			shader_includer(filesystem::IVirtualFileSystemInterface* fs, std::string_view base_path) :
+			shader_includer(fs::VirtualFilesystem* fs, std::string_view base_path) :
 				fs{ fs },
 				base_path{ base_path }
 			{
@@ -81,7 +81,7 @@ namespace edge
 		protected:
 			std::vector<std::string> directoryStack;
 			int externalLocalDirectoryCount;
-			filesystem::IVirtualFileSystemInterface* fs;
+			fs::VirtualFilesystem* fs;
 			std::string base_path;
 
 			uint32_t hash{ 0u };
@@ -107,7 +107,11 @@ namespace edge
 					if (fs->Exists(path) && fs->ReadFile(path, *file_data))
 					{
 						directoryStack.emplace_back(getDirectory(path));
-						hash ^= murmur_hash(file_data->c_str(), file_data->size(), 0);
+
+						if (collect_hash)
+						{
+							hash ^= murmur_hash(file_data->c_str(), file_data->size(), 0);
+						}
 
 						return new IncludeResult(path, reinterpret_cast<const char*>(file_data->data()), file_data->size(), file_data);
 					}

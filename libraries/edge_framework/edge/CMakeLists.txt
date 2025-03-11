@@ -13,7 +13,7 @@ endif()
 
 add_subdirectory("util")
 add_subdirectory("runtime")
-add_subdirectory("filesystem")
+add_subdirectory("fs")
 add_subdirectory("gfx")
 
 file(GLOB EDGE_FRAMEWORK_SOURCES FILES *.cpp *.h)
@@ -28,6 +28,6 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC 
     edge_utils 
     edge_runtime 
-    edge_filesystem 
+    edge_filesystem_new 
     edge_gfx
 )

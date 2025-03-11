@@ -19,7 +19,7 @@ namespace edge
 			auto CollectDependencyHash(const ShaderCompileInfo& compile_info) -> uint32_t override;
 			auto Compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool override;
 		private:
-			filesystem::IVirtualFileSystemInterface* filesystem{ nullptr };
+			fs::VirtualFilesystem* filesystem{ nullptr };
 
 			std::unique_ptr<shader_includer> includer;
 		};

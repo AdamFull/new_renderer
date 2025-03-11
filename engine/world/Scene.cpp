@@ -16,6 +16,7 @@
 #include <edge/util/Logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <edge/fs/fs_virtual_filesystem.h>
 #include <edge/util/Profiler.h>
 
 #include "EntityManager.h"
@@ -155,7 +156,7 @@ namespace engine
 		class VFSWrapper : public easygltf::IFilesystemWrapper
 		{
 		public:
-			VFSWrapper(edge::filesystem::IVirtualFileSystemInterface* vfs) : vfs(vfs) {}
+			VFSWrapper(edge::fs::VirtualFilesystem* vfs) : vfs(vfs) {}
 			~VFSWrapper() override = default;
 
 			bool exists(std::string_view path) override
@@ -184,7 +185,7 @@ namespace engine
 				return vfs->FileSize(path);
 			}
 		private:
-			edge::filesystem::IVirtualFileSystemInterface* vfs{ nullptr };
+			edge::fs::VirtualFilesystem* vfs{ nullptr };
 		};
 
 		edge::gfx::Filter GetSamplerFilter(int32_t filter)
@@ -248,7 +249,7 @@ namespace engine
 			return create_info;
 		}
 
-		Scene::Scene(edge::filesystem::IVirtualFileSystemInterface* vfs, render::IRenderer& renderer) :
+		Scene::Scene(edge::fs::VirtualFilesystem* vfs, render::IRenderer& renderer) :
 			vfs{ vfs },
 			renderer{ renderer }
 		{
