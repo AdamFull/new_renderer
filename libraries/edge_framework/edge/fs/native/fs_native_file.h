@@ -17,8 +17,6 @@ namespace edge
 			[[nodiscard]] auto IsOpen() -> bool override;
 			auto Close() -> void override;
 
-			[[nodiscard]] auto Size() -> uint64_t override;
-
 			[[nodiscard]] auto Seek(uint64_t offset, SeekOrigin origin) -> uint64_t override;
 			[[nodiscard]] auto Tell() -> uint64_t override;
 			[[nodiscard]] auto Read(void* buffer, uint64_t size) -> uint64_t override;

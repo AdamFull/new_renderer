@@ -8,6 +8,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 )
 
 add_subdirectory("native")
+add_subdirectory("zip")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF

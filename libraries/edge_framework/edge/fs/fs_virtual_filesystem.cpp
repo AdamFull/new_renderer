@@ -42,7 +42,8 @@ namespace edge
 			if (!file)
 				return 0ull;
 
-			auto size = file->Size();
+			file->Seek(0, SeekOrigin::eEnd);
+			auto size = file->Tell();
 			delete file;
 
 			return size;
@@ -51,7 +52,9 @@ namespace edge
 		auto VirtualFilesystem::ReadFile(std::string_view path, std::string& buffer) -> bool
 		{
 			auto* file = OpenFile(path, FileModeFlag::eRead | FileModeFlag::eBin);
-			buffer.resize(file->Size());
+			file->Seek(0, SeekOrigin::eEnd);
+			auto size = file->Tell();
+			buffer.resize(size);
 			auto bytes_readed = file->Read(buffer);
 			delete file;
 
@@ -61,7 +64,9 @@ namespace edge
 		auto VirtualFilesystem::ReadFile(std::string_view path, std::vector<uint8_t>& buffer) -> bool
 		{
 			auto* file = OpenFile(path, FileModeFlag::eRead | FileModeFlag::eBin);
-			buffer.resize(file->Size());
+			file->Seek(0, SeekOrigin::eEnd);
+			auto size = file->Tell();
+			buffer.resize(size);
 			auto bytes_readed = file->Read(buffer);
 			delete file;
 

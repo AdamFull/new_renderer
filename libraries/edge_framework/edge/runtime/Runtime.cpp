@@ -3,6 +3,7 @@
 // Filesystem headers
 #include "../fs/fs_virtual_filesystem.h"
 #include "../fs/native/fs_native_filesystem.h"
+#include "../fs/zip/fs_zip_filesystem.h"
 
 #include "RuntimeContext.h"
 #include "../util/Logger.h"
@@ -35,6 +36,9 @@ namespace edge
 		// Mount default engine root filesystem
 		filesystem->Mount("/root", new fs::NativeFilesystem("./"));
 		filesystem->Mount("/source", new fs::NativeFilesystem("./../../../"));
+		filesystem->Mount("/resources", new fs::ZipFilesystem("resources.zip"));
+
+		auto* iterator = filesystem->Walk("/resources/.", true);
 
 		return 0;
 	}

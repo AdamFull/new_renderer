@@ -44,16 +44,6 @@ namespace edge
 			fclose(file_handle);
 		}
 
-		auto NativeFile::Size() -> uint64_t
-		{
-			auto cur = Tell();
-			Seek(0, SeekOrigin::eEnd);
-			auto size = Tell();
-			auto seek_back = Seek(cur, SeekOrigin::eSet);
-
-			return size;
-		}
-
 		auto NativeFile::Seek(uint64_t offset, SeekOrigin origin) -> uint64_t
 		{
 			return fseek(file_handle, offset, (int32_t)origin);
