@@ -135,6 +135,7 @@ namespace engine
 			current_frame = render_frames[active_frame_index].get();
 
 			technique_db = std::make_unique<edge::gfx::TechniqueDatabase>(&gfx_context, filesystem);
+			technique_db->Load("/root/tdbcache");
 
 			// Register "culling" techniques
 			technique_db->AddTechnique("clear_counters", {
@@ -512,10 +513,13 @@ namespace engine
 				.shared_descriptor = shared_descriptor,
 				.stages = { {.path = "/source/embed/shaders/utility/copy.comp" } }
 				});
+
+			technique_db->Save("/root/tdbcache");
 		}
 
 		RenderContext::~RenderContext()
 		{
+			technique_db->Save("/root/tdbcache");
 			queue->WaitIdle();
 
 			auto image_count = swapchain->GetImageCount();

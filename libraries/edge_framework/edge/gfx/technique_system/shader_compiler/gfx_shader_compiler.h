@@ -32,7 +32,8 @@ namespace edge
 		public:
 			virtual ~IShaderCompiler() = default;
 
-			virtual bool Compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) = 0;
+			virtual auto CollectDependencyHash(const ShaderCompileInfo& compile_info) -> uint32_t = 0;
+			virtual auto Compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool = 0;
 		};
 	}
 }

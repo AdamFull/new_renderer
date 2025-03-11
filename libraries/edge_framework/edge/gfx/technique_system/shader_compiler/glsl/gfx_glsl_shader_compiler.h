@@ -16,7 +16,8 @@ namespace edge
 			GLSLShaderCompiler(const ShaderCompilerCreateInfo& create_info);
 			~GLSLShaderCompiler() override;
 
-			bool Compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) override;
+			auto CollectDependencyHash(const ShaderCompileInfo& compile_info) -> uint32_t override;
+			auto Compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool override;
 		private:
 			filesystem::IVirtualFileSystemInterface* filesystem{ nullptr };
 

@@ -8,6 +8,9 @@
 #include "../../util/Logger.h"
 #include "../../filesystem/VirtualFileSystemInterface.h"
 
+// TODO: define it from specific config
+#define DEVELOPMENT
+
 namespace edge
 {
 	namespace gfx
@@ -62,6 +65,115 @@ namespace edge
 
 			gfx_context->Destroy(pipeline_cache);
 			pipeline_cache = nullptr;
+		}
+
+		class BinaryReader
+		{
+		public:
+			BinaryReader(const std::vector<uint8_t>& d) :
+				data{ d }
+			{
+			}
+
+			template<typename _Ty>
+			void Read(_Ty& t)
+			{
+				t = *((_Ty*)(data.data() + pos));
+				pos += sizeof(_Ty);
+			}
+
+			template<>
+			void Read(std::vector<uint8_t>& t)
+			{
+				auto* ptr = data.data() + pos;
+				memcpy(t.data(), ptr, t.size());
+				pos += t.size();
+			}
+		private:
+			std::span<const uint8_t> data;
+			size_t pos{ 0 };
+		};
+
+		class BinaryWriter
+		{
+		public:
+			BinaryWriter(size_t size)
+			{
+				data.reserve(size);
+			}
+
+			template<typename _Ty>
+			void Write(const _Ty& t)
+			{
+				const uint8_t* begin = (const uint8_t*)(&t);
+				const uint8_t* end = begin + sizeof(_Ty);
+				data.insert(data.end(), begin, end);
+			}
+
+			template<>
+			void Write(const std::vector<uint8_t>& t)
+			{
+				data.insert(data.end(), t.begin(), t.end());
+			}
+
+			const std::vector<uint8_t>& GetData()
+			{
+				return data;
+			}
+		private:
+			std::vector<uint8_t> data;
+		};
+
+		bool TechniqueDatabase::Load(std::string_view path)
+		{
+			std::vector<uint8_t> data;
+			if (!filesystem->Exists(path) || !filesystem->ReadFile(path, data))
+				return false;
+
+			BinaryReader reader(data);
+
+			size_t shader_count;
+			reader.Read(shader_count);
+
+			for (int32_t i = 0; i < shader_count; ++i)
+			{
+				uint32_t hash;
+				reader.Read(hash);
+
+				auto& shader = shaders[hash];
+
+				size_t code_size;
+				reader.Read(code_size);
+
+				shader.code.resize(code_size);
+				reader.Read(shader.code);
+				reader.Read(shader.shader_hash);
+				reader.Read(shader.dependency_hash);
+			}
+
+			return true;
+		}
+
+		bool TechniqueDatabase::Save(std::string_view path)
+		{
+			BinaryWriter writer(8 * 1024 * 1024);
+
+			size_t shader_count = shaders.size();
+
+			// Write shader_count first
+			writer.Write(shader_count);
+
+			for (const auto& [hash, shader] : shaders)
+			{
+				writer.Write(hash);
+
+				writer.Write(shader.code.size());
+				writer.Write(shader.code);
+				writer.Write(shader.shader_hash);
+				writer.Write(shader.dependency_hash);
+			}
+
+			return filesystem->WriteFile(path, writer.GetData());
 		}
 
 		void TechniqueDatabase::AddTechnique(std::string_view name, const TechniqueDesc& technique_desc)
@@ -170,10 +282,6 @@ namespace edge
 
 		std::span<const uint8_t> TechniqueDatabase::GetOrCompileShader(const TechniqueDesc::ShaderStage& stage)
 		{
-			ShaderCompileInfo shader_compile_info{};
-			shader_compile_info.path = stage.path;
-			shader_compile_info.definitions = stage.definitions;
-
 			// This hash key needed to keep some cache for compiled shaders
 			uint32_t unique_shader_key{ 0u };
 			unique_shader_key ^= murmur_hash(stage.path);
@@ -181,25 +289,40 @@ namespace edge
 			for(const auto& define : stage.definitions)
 				unique_shader_key ^= murmur_hash(define);
 
-			// Return found shader code
-			auto found_code = shader_code.find(unique_shader_key);
-			if (found_code != shader_code.end())
-				return found_code->second;
-
-			EDGE_LOGI("Compiling shader: {}.", stage.path);
-
+#if defined(DEVELOPMENT) || defined(EMBEDDED_SHADER_COMPILER)
 			std::string shader_source{};
-			if (filesystem->Exists(stage.path) && filesystem->ReadFile(stage.path, shader_source))
+			if (!filesystem->ReadFile(stage.path, shader_source))
 			{
-				shader_compile_info.source = shader_source;
+				EDGE_LOGE("Failed to open shader: {}.", stage.path);
+				return {};
+			}
 
-				std::vector<uint8_t> compiled_code{};
-				if (shader_compiler->Compile(shader_compile_info, compiled_code))
-				{
-					EDGE_LOGI("Compiled shader: {}.", stage.path);
-					shader_code.emplace(unique_shader_key, std::move(compiled_code));
-					return shader_code[unique_shader_key];
-				}
+			ShaderCompileInfo shader_compile_info{};
+			shader_compile_info.path = stage.path;
+			shader_compile_info.definitions = stage.definitions;
+			shader_compile_info.source = shader_source;
+
+			uint32_t shader_hash = shader_hash = murmur_hash(shader_source, 0);
+			uint32_t dependency_hash = shader_compiler->CollectDependencyHash(shader_compile_info);
+#endif
+
+			// Return found shader code
+			auto found = shaders.find(unique_shader_key);
+			if (found != shaders.end() && 
+				found->second.shader_hash == shader_hash &&
+				found->second.dependency_hash == dependency_hash)
+			{
+				EDGE_LOGI("Loaded shader: {}.", stage.path);
+				return found->second.code;
+			}
+
+			auto& new_shader = shaders[unique_shader_key];
+			new_shader.shader_hash = shader_hash;
+			new_shader.dependency_hash = dependency_hash;
+			if (shader_compiler->Compile(shader_compile_info, new_shader.code))
+			{
+				EDGE_LOGI("Compiled shader: {}.", stage.path);
+				return new_shader.code;
 			}
 
 			EDGE_LOGE("Failed to compile shader: {}.", stage.path);

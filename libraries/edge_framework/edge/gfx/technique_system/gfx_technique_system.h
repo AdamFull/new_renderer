@@ -66,8 +66,18 @@ namespace edge
 				IPipeline* pipeline{ nullptr };
 			};
 
+			struct Shader
+			{
+				std::vector<uint8_t> code;
+				uint32_t shader_hash{ 0u };
+				uint32_t dependency_hash{ 0u };
+			};
+
 			TechniqueDatabase(IContext* gfx_context, filesystem::IVirtualFileSystemInterface* filesystem);
 			~TechniqueDatabase();
+
+			bool Load(std::string_view path);
+			bool Save(std::string_view path);
 
 			void AddTechnique(std::string_view name, const TechniqueDesc& technique_desc);
 			auto GetTechnique(std::string_view name) -> Technique&;
@@ -80,7 +90,7 @@ namespace edge
 
 			std::unique_ptr<IShaderCompiler> shader_compiler;
 
-			std::unordered_map<uint32_t, std::vector<uint8_t>> shader_code;
+			std::unordered_map<uint32_t, Shader> shaders;
 			std::unordered_map<std::string_view, Technique> techniques;
 		};
 	}

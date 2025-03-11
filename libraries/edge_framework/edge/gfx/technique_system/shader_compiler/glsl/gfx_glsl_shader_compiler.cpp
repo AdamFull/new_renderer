@@ -28,7 +28,7 @@ namespace edge
 				fs{ fs },
 				base_path{ base_path }
 			{
-
+				directoryStack.reserve(16);
 			}
 
 			virtual IncludeResult* includeLocal(const char* headerName,
@@ -61,23 +61,31 @@ namespace edge
 			{
 				if (result != nullptr)
 				{
-					delete static_cast<std::vector<uint8_t>*>(result->userData);
+					delete static_cast<std::string*>(result->userData);
 					delete result;
 				}
 			}
 
-			virtual std::set<std::string> getIncludedFiles()
+			uint32_t getDependencyHash()
 			{
-				return includedFiles;
+				return hash;
+			}
+
+			void reset(bool collect_hash = false)
+			{
+				this->collect_hash = collect_hash;
+				hash = 0;
 			}
 
 			virtual ~shader_includer() override { }
 		protected:
 			std::vector<std::string> directoryStack;
 			int externalLocalDirectoryCount;
-			std::set<std::string> includedFiles;
 			filesystem::IVirtualFileSystemInterface* fs;
 			std::string base_path;
+
+			uint32_t hash{ 0u };
+			bool collect_hash{ false };
 
 			// Search for a valid "local" path based on combining the stack of include
 			// directories and the nominal name of the header.
@@ -89,19 +97,17 @@ namespace edge
 				if (depth == 1)
 					directoryStack.back() = getDirectory(includerName);
 
-				std::array<char, 1024ull> buffer{};
-
 				// Find a directory that works, using a reverse search of the include stack.
 				for (auto it = directoryStack.rbegin(); it != directoryStack.rend(); ++it)
 				{
 					std::string path = *it + '/' + headerName;
 					std::replace(path.begin(), path.end(), '\\', '/');
 
-					std::vector<uint8_t>* file_data = new std::vector<uint8_t>;
+					std::string* file_data = new std::string;
 					if (fs->Exists(path) && fs->ReadFile(path, *file_data))
 					{
 						directoryStack.emplace_back(getDirectory(path));
-						includedFiles.insert(path);
+						hash ^= murmur_hash(file_data->c_str(), file_data->size(), 0);
 
 						return new IncludeResult(path, reinterpret_cast<const char*>(file_data->data()), file_data->size(), file_data);
 					}
@@ -127,7 +133,7 @@ namespace edge
 				return last == std::string::npos ? base_path : path.substr(0, last);
 			}
 		};
-
+		
 		static TBuiltInResource GetResources()
 		{
 			//auto props = UDevice->GetPhysical().getProperties();
@@ -262,6 +268,46 @@ namespace edge
 			return hash;
 		}
 
+		static EShLanguage GetLanguage(std::string_view path)
+		{
+			EShLanguage language{};
+
+			auto ext = fsh::get_ext(path);
+			if (ext.compare(".vert") == 0)
+				language = EShLangVertex;
+			else if (ext.compare(".tesc") == 0)
+				language = EShLangTessControl;
+			else if (ext.compare(".tese") == 0)
+				language = EShLangTessEvaluation;
+			else if (ext.compare(".geom") == 0)
+				language = EShLangGeometry;
+			else if (ext.compare(".frag") == 0)
+				language = EShLangFragment;
+			else if (ext.compare(".comp") == 0)
+				language = EShLangCompute;
+
+			return language;
+		}
+
+		static glslang::TShader CreateShader(const ShaderCompileInfo& compile_info, EShMessages& messages)
+		{
+			EShLanguage language = GetLanguage(compile_info.path);
+
+			glslang::TShader shader(language);
+			shader.setOverrideVersion(460);
+			shader.setEnvInput(glslang::EShSourceGlsl, language, k_client, 110);
+			shader.setEnvClient(k_client, k_client_version);
+			shader.setEnvTarget(glslang::EShTargetSpv, k_language_version);
+
+			messages = k_messages;
+#ifndef NDEBUG
+			messages = static_cast<EShMessages>(messages | EShMsgDebugInfo);
+			//shader.setDebugInfo(true);
+#endif
+
+			return shader;
+		}
+
 		GLSLShaderCompiler::GLSLShaderCompiler(const ShaderCompilerCreateInfo& create_info) :
 			filesystem{ create_info.filesystem }
 		{
@@ -282,35 +328,10 @@ namespace edge
 			glslang::FinalizeProcess();
 		}
 
-		bool GLSLShaderCompiler::Compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output)
+		auto GLSLShaderCompiler::CollectDependencyHash(const ShaderCompileInfo& compile_info) -> uint32_t
 		{
-			EShLanguage language{};
-
-			auto ext = fsh::get_ext(compile_info.path);
-			if (ext.compare(".vert") == 0)
-				language = EShLangVertex;
-			else if (ext.compare(".tesc") == 0)
-				language = EShLangTessControl;
-			else if (ext.compare(".tese") == 0)
-				language = EShLangTessEvaluation;
-			else if (ext.compare(".geom") == 0)
-				language = EShLangGeometry;
-			else if (ext.compare(".frag") == 0)
-				language = EShLangFragment;
-			else if (ext.compare(".comp") == 0)
-				language = EShLangCompute;
-
-			glslang::TShader shader(language);
-			shader.setOverrideVersion(460);
-			shader.setEnvInput(glslang::EShSourceGlsl, language, k_client, 110);
-			shader.setEnvClient(k_client, k_client_version);
-			shader.setEnvTarget(glslang::EShTargetSpv, k_language_version);
-
-			EShMessages messages{ k_messages };
-#ifndef NDEBUG
-			messages = static_cast<EShMessages>(messages | EShMsgDebugInfo);
-			//shader.setDebugInfo(true);
-#endif
+			EShMessages messages{};
+			auto shader = CreateShader(compile_info, messages);
 
 			auto shader_name_cstr = compile_info.path.data();
 			auto shader_source_cstr = compile_info.source.data();
@@ -328,16 +349,48 @@ namespace edge
 			auto preamble = preamble_ss.str();
 			shader.setPreamble(preamble.c_str());
 
-
-			std::string preprocessed_code{};
+			includer->reset(true);
 
 			auto resources = GetResources();
+			if (!shader.parse(&resources, k_client_version, false, messages, *includer))
+			{
+				EDGE_LOGE("\nParsing error: In shader \"{}\" \n{}\n{}\n", compile_info.path, shader.getInfoLog(), shader.getInfoDebugLog());
+				return {};
+			}
+
+			return includer->getDependencyHash();
+		}
+
+		bool GLSLShaderCompiler::Compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output)
+		{
+			EShMessages messages{};
+			auto shader = CreateShader(compile_info, messages);
+
+			auto shader_name_cstr = compile_info.path.data();
+			auto shader_source_cstr = compile_info.source.data();
+			shader.setStringsWithLengthsAndNames(&shader_source_cstr, nullptr, &shader_name_cstr, 1);
+
+			// Create preamble
+			std::stringstream preamble_ss;
+
+			// Include extention is required by default
+			preamble_ss << "#extension GL_GOOGLE_include_directive : require" << std::endl;
+
+			for (auto& definition : compile_info.definitions)
+				preamble_ss << std::format("#define {}", definition) << std::endl;
+
+			auto preamble = preamble_ss.str();
+			shader.setPreamble(preamble.c_str());
+
 			//if (!shader.preprocess(&resources, k_client_version, ENoProfile, false, false, messages, &preprocessed_code, *includer))
 			//{
 			//	EDGE_LOGE("\nPreprocess error: In shader \"{}\" \n{}\n{}\n", compile_info.path, shader.getInfoLog(), shader.getInfoDebugLog());
 			//	return false;
 			//}
 
+			includer->reset();
+
+			auto resources = GetResources();
 			if (!shader.parse(&resources, k_client_version, false, messages, *includer))
 			{
 				EDGE_LOGE("\nParsing error: In shader \"{}\" \n{}\n{}\n", compile_info.path, shader.getInfoLog(), shader.getInfoDebugLog());
