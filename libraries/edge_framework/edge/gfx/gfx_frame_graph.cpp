@@ -2,7 +2,7 @@
 
 #include "gfx_context.h"
 
-#include "../util/fs_helper.h"
+#include "../fs/fs_helper.h"
 #include "../util/Logger.h"
 
 #include "../fs/fs_virtual_filesystem.h"

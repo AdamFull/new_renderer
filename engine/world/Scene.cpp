@@ -12,7 +12,7 @@
 #include <edge/gfx/gfx_context.h>
 
 #include <edge/util/util.h>
-#include <edge/util/fs_helper.h>
+#include <edge/fs/fs_helper.h>
 #include <edge/util/Logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -167,7 +167,7 @@ namespace engine
 			std::string expandFilePath(std::string_view path) override
 			{
 				std::array<char, 1024ull> buffer{}, buffer2{};
-				return std::string(edge::fsh::normalize(edge::fsh::to_posix_path(path, buffer), buffer2));
+				return std::string(edge::fs::Normalize(edge::fs::ToPosixPath(path, buffer), buffer2));
 			}
 
 			bool readFile(std::string_view path, std::vector<uint8_t>& data) override
@@ -309,7 +309,7 @@ namespace engine
 				// TODO: find format from materials
 
 				std::array<char, 1024ull> buffer{};
-				auto image_path = edge::fsh::path_append(root.rootDirectory, easygltf::url_decode(image.uri), std::span(buffer));
+				auto image_path = edge::fs::PathAppend(root.rootDirectory, easygltf::url_decode(image.uri), std::span(buffer));
 				resources.textures.push_back(renderer.AddRenderResource(image_path, texture_sampler));
 			}
 

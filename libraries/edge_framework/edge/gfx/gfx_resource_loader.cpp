@@ -1,7 +1,7 @@
 #include "gfx_resource_loader.h"
 #include "gfx_context.h"
 
-#include "../util/fs_helper.h"
+#include "../fs/fs_helper.h"
 #include "../util/Logger.h"
 #include "../util/Profiler.h"
 #include "../util/util.h"
@@ -563,15 +563,15 @@ namespace edge
 
 			ICommandList* cmd_list = AcquireCommandList();
 
-			auto ext = edge::fsh::get_ext(path);
+			auto ext = fs::GetExt(path);
 			auto ext_hash = murmur_hash(ext.data(), ext.size(), 0);
 
 			std::unique_ptr<ITextureReader> texture_reader;
 
 			switch (ext_hash)
 			{
-			case edge::fsh::format::ktx:
-			case edge::fsh::format::ktx2: { texture_reader = std::make_unique<KTXImageLoader>(); } break;
+			case fs::format::ktx:
+			case fs::format::ktx2: { texture_reader = std::make_unique<KTXImageLoader>(); } break;
 			default: { texture_reader = std::make_unique<STBImageLoader>(); } break;
 			}
 

@@ -4,7 +4,7 @@
 
 #include "../gfx_context.h"
 
-#include "../../util/fs_helper.h"
+#include "../../fs/fs_helper.h"
 #include "../../util/Logger.h"
 #include "../../fs/fs_virtual_filesystem.h"
 
@@ -161,7 +161,7 @@ namespace edge
 			{
 				ShaderStageFlag stage_flag{};
 
-				auto ext = fsh::get_ext(stage.path);
+				auto ext = fs::GetExt(stage.path);
 				if (ext.compare(".vert") == 0)
 					stage_flag = ShaderStageFlag::eVertex;
 				else if (ext.compare(".tesc") == 0)

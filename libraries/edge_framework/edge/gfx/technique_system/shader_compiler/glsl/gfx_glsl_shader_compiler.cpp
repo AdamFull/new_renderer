@@ -6,7 +6,7 @@
 
 #include "../../../../util/Hash.hpp"
 #include "../../../../util/Logger.h"
-#include "../../../../util/fs_helper.h"
+#include "../../../../fs/fs_helper.h"
 #include "../../../../fs/fs_virtual_filesystem.h"
 
 #include <set>
@@ -276,7 +276,7 @@ namespace edge
 		{
 			EShLanguage language{};
 
-			auto ext = fsh::get_ext(path);
+			auto ext = fs::GetExt(path);
 			if (ext.compare(".vert") == 0)
 				language = EShLangVertex;
 			else if (ext.compare(".tesc") == 0)
