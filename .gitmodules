@@ -1,9 +1,6 @@
 [submodule "libraries/utllib"]
 	path = libraries/utllib
 	url = https://github.com/AdamFull/utllib.git
-[submodule "libraries/pak_archive"]
-	path = libraries/pak_archive
-	url = https://github.com/AdamFull/pak_archive.git
 [submodule "libraries/libwebm"]
 	path = libraries/libwebm
 	url = https://github.com/webmproject/libwebm
