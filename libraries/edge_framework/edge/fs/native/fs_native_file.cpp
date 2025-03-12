@@ -41,25 +41,40 @@ namespace edge
 		
 		auto NativeFile::Close() -> void
 		{
-			fclose(file_handle);
+			if (file_handle)
+			{
+				fclose(file_handle);
+				file_handle = nullptr;
+			}
 		}
 
-		auto NativeFile::Seek(uint64_t offset, SeekOrigin origin) -> uint64_t
+		auto NativeFile::Size() -> uint64_t
 		{
-			return fseek(file_handle, offset, (int32_t)origin);
+			auto cursor = ftell(file_handle);
+			fseek(file_handle, 0, SEEK_END);
+			auto size = ftell(file_handle);
+			fseek(file_handle, cursor, SEEK_SET);
+			return size;
 		}
 
-		auto NativeFile::Tell() -> uint64_t
+		auto NativeFile::Seek(uint64_t offset, SeekOrigin origin) -> int64_t
+		{
+			if (fseek(file_handle, static_cast<long>(offset), static_cast<int>(origin)) != 0)
+				return -1;
+			return ftell(file_handle);
+		}
+
+		auto NativeFile::Tell() -> int64_t
 		{
 			return ftell(file_handle);
 		}
 
-		auto NativeFile::Read(void* buffer, uint64_t size) -> uint64_t
+		auto NativeFile::Read(void* buffer, uint64_t size) -> int64_t
 		{
 			return fread(buffer, 1, size, file_handle);
 		}
 
-		auto NativeFile::Write(const void* buffer, uint64_t size) -> uint64_t
+		auto NativeFile::Write(const void* buffer, uint64_t size) -> int64_t
 		{
 			return fwrite(buffer, 1, size, file_handle);
 		}

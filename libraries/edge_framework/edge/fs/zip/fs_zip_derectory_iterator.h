@@ -18,14 +18,21 @@ namespace edge
 			ZipDirectoryIterator(zip_t* zip, std::string_view path, bool recursive);
 			~ZipDirectoryIterator() override;
 
-			auto End() -> bool override;
+			auto End() const noexcept -> bool override;
 			auto Next() -> void override;
-			auto Value() -> const std::string & override;
+			auto Value() const noexcept -> std::string_view override;
 		private:
+			bool MatchesPath(std::string_view entry_name);
+
 			zip_t* zip_handle{ nullptr };
 
-			int32_t current_entry{ 0 };
-			std::vector<std::string> entries{};
+			std::string root{};
+			bool recursive{ false };
+
+			int32_t current_index{ 0 };
+			int32_t entry_count{ 0 };
+
+			std::string_view current_entry;
 		};
 	}
 }

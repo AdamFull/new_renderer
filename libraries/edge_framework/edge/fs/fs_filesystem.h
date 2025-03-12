@@ -15,6 +15,7 @@ namespace edge
 			virtual ~IFilesystem() = default;
 
 			virtual auto OpenFile(std::string_view path, FileModeFlags mode) -> IFile* = 0;
+			virtual auto FileSize(std::string_view path) -> size_t = 0;
 
 			virtual auto CreateDirectories(std::string_view path) -> bool = 0;
 			virtual auto CreateDirectory(std::string_view path) -> bool = 0;

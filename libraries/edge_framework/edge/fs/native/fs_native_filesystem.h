@@ -14,6 +14,7 @@ namespace edge
 			~NativeFilesystem();
 
 			auto OpenFile(std::string_view path, FileModeFlags mode) -> IFile* override;
+			auto FileSize(std::string_view path) -> size_t override;
 
 			auto CreateDirectories(std::string_view path) -> bool override;
 			auto CreateDirectory(std::string_view path) -> bool override;
@@ -26,6 +27,7 @@ namespace edge
 
 			auto Walk(std::string_view path, bool recursive = false) -> IDirectoryIterator* override;
 		private:
+			auto GetPath(std::string_view local_path) -> std::filesystem::path;
 			std::filesystem::path fs_root;
 		};
 	}

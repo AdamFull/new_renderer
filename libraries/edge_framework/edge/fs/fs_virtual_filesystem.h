@@ -36,7 +36,7 @@ namespace edge
 
 			auto Remove(std::string_view path) -> bool;
 
-			auto Walk(std::string_view path, bool recursive = false) -> IDirectoryIterator*;
+			auto Walk(std::string_view path, bool recursive = false) -> DirectoryIterator;
 		private:
 			auto GetFilesystem(std::string_view path) -> IFilesystem*;
 

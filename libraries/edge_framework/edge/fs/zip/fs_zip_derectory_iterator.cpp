@@ -9,33 +9,24 @@ namespace edge
 	namespace fs
 	{
 		ZipDirectoryIterator::ZipDirectoryIterator(zip_t* zip, std::string_view path, bool recursive) :
-			zip_handle{ zip }
+			zip_handle{ zip },
+			root{ path },
+			recursive{ recursive }
 		{
-			for (zip_int64_t i = 0; i < zip_get_num_entries(zip_handle, 0); ++i)
+			if (!root.empty() && root.back() != '/')
+				root += '/';
+
+			entry_count = zip_get_num_entries(zip_handle, 0);
+
+			while (current_index < entry_count) 
 			{
-				zip_stat_t stat;
-				if (zip_stat_index(zip_handle, i, 0, &stat) == 0)
+				zip_stat_t st;
+				if (zip_stat_index(zip_handle, current_index, 0, &st) == 0 && MatchesPath(st.name)) 
 				{
-					std::string entry_path(stat.name);
-
-					if (entry_path == path)
-						continue;
-
-					if (recursive)
-					{
-						if (entry_path.find(path) == 0)
-							entries.emplace_back(entry_path);
-					}
-					else
-					{
-						if (entry_path.find(path) == 0 && entry_path.find('/', path.size()) == std::string::npos)
-							entries.emplace_back(entry_path);
-					}
+					current_entry = st.name;
+					break;
 				}
-				else
-				{
-					EDGE_LOGE("[ZipDirectoryIterator] Failed to read entry information in: {}, entry: {}", path, i);
-				}
+				++current_index;
 			}
 		}
 
@@ -44,19 +35,43 @@ namespace edge
 
 		}
 
-		auto ZipDirectoryIterator::End() -> bool
+		auto ZipDirectoryIterator::End() const noexcept -> bool
 		{
-			return current_entry == entries.size();
+			return current_index >= entry_count;
 		}
 
 		auto ZipDirectoryIterator::Next() -> void
 		{
-			++current_entry;
+			++current_index;
+
+			while (current_index < entry_count) 
+			{
+				zip_stat_t st;
+				if (zip_stat_index(zip_handle, current_index, 0, &st) == 0 && MatchesPath(st.name)) 
+				{
+					current_entry = st.name;
+					break;
+				}
+				++current_index;
+			}
 		}
 
-		auto ZipDirectoryIterator::Value() -> const std::string&
+		auto ZipDirectoryIterator::Value() const noexcept -> std::string_view
 		{
-			return entries[current_entry];
+			return current_entry;
+		}
+
+		bool ZipDirectoryIterator::MatchesPath(std::string_view entry_name)
+		{
+			if (!entry_name.starts_with(root))
+				return false;
+
+			if (recursive)
+				return true;
+
+			// Non-recursive: exclude entries deeper than immediate children
+			auto subpath = entry_name.substr(root.size());
+			return subpath.find('/') == std::string_view::npos || subpath.find('/') == subpath.size() - 1;
 		}
 	}
 }

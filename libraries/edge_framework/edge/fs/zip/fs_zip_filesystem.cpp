@@ -48,6 +48,15 @@ namespace edge
 			return new ZipFile(zip_handle, path, mode);
 		}
 
+		auto ZipFilesystem::FileSize(std::string_view path) -> size_t
+		{
+			zip_stat_t st;
+			if (zip_stat(zip_handle, path.data(), ZIP_FL_ENC_GUESS | ZIP_FL_NOCASE, &st) == 0)
+				return st.size;
+
+			return 0ull;
+		}
+
 		auto ZipFilesystem::CreateDirectories(std::string_view path) -> bool
 		{
 			assert(false && "NOT IMPLEMENTED");
@@ -65,8 +74,7 @@ namespace edge
 			if (!zip_handle)
 				return false;
 
-			zip_int64_t idx = zip_name_locate(zip_handle, path.data(), ZIP_FL_ENC_GUESS);
-			return idx >= 0;
+			return zip_name_locate(zip_handle, path.data(), ZIP_FL_ENC_GUESS | ZIP_FL_NOCASE) >= 0;
 		}
 
 		auto ZipFilesystem::IsDirectory(std::string_view path) -> bool
@@ -74,9 +82,9 @@ namespace edge
 			if (!zip_handle)
 				return false;
 
-			zip_stat_t stat_info;
-			if (zip_stat(zip_handle, path.data(), ZIP_FL_NOCASE, &stat_info) == 0)
-				return (stat_info.valid & ZIP_STAT_NAME) && (stat_info.name[strlen(stat_info.name) - 1] == '/');
+			zip_stat_t st;
+			if (zip_stat(zip_handle, path.data(), ZIP_FL_ENC_GUESS | ZIP_FL_NOCASE, &st) == 0)
+				return (st.valid & ZIP_STAT_NAME) && (st.name[strlen(st.name) - 1] == '/');
 
 			return false;
 		}
@@ -86,9 +94,9 @@ namespace edge
 			if (!zip_handle)
 				return false;
 
-			zip_stat_t stat_info;
-			if (zip_stat(zip_handle, path.data(), ZIP_FL_NOCASE, &stat_info) == 0)
-				return (stat_info.valid & ZIP_STAT_NAME) && (stat_info.name[strlen(stat_info.name) - 1] != '/');
+			zip_stat_t st;
+			if (zip_stat(zip_handle, path.data(), ZIP_FL_ENC_GUESS | ZIP_FL_NOCASE, &st) == 0)
+				return (st.valid & ZIP_STAT_NAME) && (st.name[strlen(st.name) - 1] != '/');
 
 			return false;
 		}

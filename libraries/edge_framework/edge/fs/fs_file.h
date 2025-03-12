@@ -45,10 +45,11 @@ namespace edge
 			[[nodiscard]] virtual auto IsOpen() -> bool = 0;
 			virtual auto Close() -> void = 0;
 
-			[[nodiscard]] virtual auto Seek(uint64_t offset, SeekOrigin origin) -> uint64_t = 0;
-			[[nodiscard]] virtual uint64_t Tell() = 0;
-			[[nodiscard]] virtual uint64_t Read(void* buffer, uint64_t size) = 0;
-			[[nodiscard]] virtual uint64_t Write(const void* buffer, uint64_t size) = 0;
+			[[nodiscard]] virtual auto Size() -> uint64_t = 0;
+			virtual auto Seek(uint64_t offset, SeekOrigin origin) -> int64_t = 0;
+			[[nodiscard]] virtual auto Tell() -> int64_t = 0;
+			virtual auto Read(void* buffer, uint64_t size) -> int64_t = 0;
+			virtual auto Write(const void* buffer, uint64_t size) -> int64_t = 0;
 
             template<typename _Ty>
             auto Read(_Ty& value) -> uint64_t

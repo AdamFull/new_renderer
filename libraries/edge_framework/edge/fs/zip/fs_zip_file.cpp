@@ -53,38 +53,55 @@ namespace edge
 		ZipFile::ZipFile(zip_t* zip, std::string_view path, FileModeFlags mode_flags) :
 			zip_handle{ zip }
 		{
-			zip_int64_t idx = zip_name_locate(zip_handle, path.data(), ZIP_FL_ENC_GUESS);
-			file_handle = zip_fopen_index(zip_handle, idx, 0);
+			constexpr const zip_flags_t flags{ ZIP_FL_ENC_GUESS | ZIP_FL_NOCASE };
+
+			auto file_index = zip_name_locate(zip_handle, path.data(), flags);
+			if (file_index < 0)
+			{
+				EDGE_LOGE("[ZipFile] Zip error: {}. File \"{}\"", zip_strerror(zip_handle), path);
+				return;
+			}
+
+			file_stat = new zip_stat_t;
+			if (zip_stat_index(zip_handle, file_index, flags, file_stat) != 0)
+			{
+				EDGE_LOGE("[ZipFile] Failed to read \"{}\" file metadata.", path);
+				return;
+			}
+
+			file_handle = zip_fopen_index(zip_handle, file_index, 0);
 
 			auto* zip_err = zip_get_error(zip_handle);
-			if (zip_err)
+			if (zip_err && zip_err->zip_err != 0)
 			{
 				char buffer[256];
 				int buffer_offset = zip_error_to_str(buffer, sizeof(buffer), zip_err->zip_err, errno);
 
-				zip_stat_t st;
-				if (zip_stat(zip_handle, path.data(), ZIP_FL_NOCASE, &st) == 0)
-				{
-					buffer_offset = snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset,
-						"\nName: %s\nSize: %llu"
-						"\nCompressed size: %llu\nModification time: %s"
-						"\nCRC: %lu"
-						"\nCompression method: %s"
-						"\nEncryption method: %s",
-						st.name, st.size,
-						st.comp_size, ctime(&st.mtime),
-						st.crc, 
-						GetZipCompressionMethodName(st.comp_method),
-						GetZipEncryptionMethodName(st.encryption_method)
-					);
-				}
+				buffer_offset = snprintf(buffer + buffer_offset, sizeof(buffer) - buffer_offset,
+					"\nName: %s\nSize: %llu"
+					"\nCompressed size: %llu\nModification time: %s"
+					"\nCRC: %lu"
+					"\nCompression method: %s"
+					"\nEncryption method: %s",
+					file_stat->name, file_stat->size,
+					file_stat->comp_size, ctime(&file_stat->mtime),
+					file_stat->crc, 
+					GetZipCompressionMethodName(file_stat->comp_method),
+					GetZipEncryptionMethodName(file_stat->encryption_method)
+				);
 				
-				EDGE_LOGE("[ZipFile] Failed to open file: {}. Error: {}", path, buffer);
+				EDGE_LOGE("[ZipFile] Failed to open file \"{}\". Error: {}", path, buffer);
 			}
 		}
 
 		ZipFile::~ZipFile()
 		{
+			if (file_stat)
+			{
+				delete file_stat;
+				file_stat = nullptr;
+			}
+
 			Close();
 		}
 
@@ -102,39 +119,41 @@ namespace edge
 			}
 		}
 
-		auto ZipFile::Seek(uint64_t offset, SeekOrigin origin) -> uint64_t
+		auto ZipFile::Size() -> uint64_t
 		{
 			if (!file_handle)
-			{
 				return 0ull;
-			}
 
-			return zip_fseek(file_handle, offset, (int32_t)origin);
+			return file_stat->size;
 		}
 
-		auto ZipFile::Tell() -> uint64_t
+		auto ZipFile::Seek(uint64_t offset, SeekOrigin origin) -> int64_t
+		{
+			if (zip_fseek(file_handle, static_cast<long>(offset), static_cast<int>(origin)) != 0)
+				return -1;
+			return zip_ftell(file_handle);
+		}
+
+		auto ZipFile::Tell() -> int64_t
 		{
 			if (!file_handle)
-			{
-				return 0ull;
-			}
+				return -1;
 
 			return zip_ftell(file_handle);
 		}
 
-		auto ZipFile::Read(void* buffer, uint64_t size) -> uint64_t
+		auto ZipFile::Read(void* buffer, uint64_t size) -> int64_t
 		{
 			if (!file_handle)
-			{
-				return 0ull;
-			}
+				return -1;
 
 			return zip_fread(file_handle, buffer, size);
 		}
 
-		auto ZipFile::Write(const void* buffer, uint64_t size) -> uint64_t 
+		auto ZipFile::Write(const void* buffer, uint64_t size) -> int64_t
 		{
-			return 0ull;
+			assert(false && "NOT IMPLEMENTED");
+			return -1;
 		}
 	}
 }

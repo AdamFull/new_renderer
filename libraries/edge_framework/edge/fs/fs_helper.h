@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Hash.hpp"
+#include "../util/Hash.hpp"
 
 #include <span>
 
 namespace edge
 {
-	namespace fsh
+	namespace fs
 	{
         namespace format
         {
@@ -38,9 +38,21 @@ namespace edge
             constexpr inline uint32_t wave = ".wave"_hash32;
             constexpr inline uint32_t ogg = ".ogg"_hash32;
             constexpr inline uint64_t audio_ts = 3;
+
+            // shaders
+            constexpr inline uint32_t vert = ".vert"_hash32;
+            constexpr inline uint32_t vs = ".vs"_hash32;
+            constexpr inline uint32_t tesc = ".tesc"_hash32;
+            constexpr inline uint32_t tese = ".tese"_hash32;
+            constexpr inline uint32_t geom = ".geom"_hash32;
+            constexpr inline uint32_t gs = ".gs"_hash32;
+            constexpr inline uint32_t frag = ".frag"_hash32;
+            constexpr inline uint32_t fs = ".fs"_hash32;
+            constexpr inline uint32_t comp = ".comp"_hash32;
+            constexpr inline uint32_t cs = ".cs"_hash32;
         }
 
-        inline constexpr std::string_view get_mount_point(std::string_view path) 
+        inline constexpr std::string_view GetMountPoint(std::string_view path) 
         {
             auto first_separator = path.find('/');
             std::string_view result = path.substr(0, first_separator);
@@ -54,7 +66,7 @@ namespace edge
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view to_posix_path(std::string_view path, std::span<char, _Size> buffer)
+        inline constexpr std::string_view ToPosixPath(std::string_view path, std::span<char, _Size> buffer)
         {
             size_t index = 0;
             for (char ch : path) 
@@ -68,14 +80,14 @@ namespace edge
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view to_posix_path(std::string_view path, std::array<char, _Size> buffer)
+        inline constexpr std::string_view ToPosixPath(std::string_view path, std::array<char, _Size> buffer)
         {
-            return to_posix_path(path, std::span(buffer));
+            return ToPosixPath(path, std::span(buffer));
         }
 
-        inline constexpr std::string_view get_local_path(std::string_view path) 
+        inline constexpr std::string_view GetLocalPath(std::string_view path) 
         {
-            auto mount_point = get_mount_point(path);
+            auto mount_point = GetMountPoint(path);
 
             if (!path.starts_with(mount_point))
                 return {};
@@ -87,13 +99,13 @@ namespace edge
             return local_path;
         }
 
-        inline constexpr std::string_view get_ext(std::string_view path) 
+        inline constexpr std::string_view GetExt(std::string_view path) 
         {
             auto dot_pos = path.rfind('.');
             return (dot_pos == std::string_view::npos) ? std::string_view{} : path.substr(dot_pos);
         }
 
-        inline constexpr std::string_view get_filename(std::string_view path) 
+        inline constexpr std::string_view GetFilename(std::string_view path) 
         {
             auto last_sep = path.find_last_of("/\\");
             return (last_sep == std::string_view::npos) ? path : path.substr(last_sep + 1);
@@ -101,19 +113,19 @@ namespace edge
 
         inline constexpr std::string_view get_stem(std::string_view path) 
         {
-            auto filename = get_filename(path);
-            auto ext = get_ext(filename);
+            auto filename = GetFilename(path);
+            auto ext = GetExt(filename);
             return filename.substr(0, filename.size() - ext.size());
         }
 
-        inline constexpr std::string_view parent_path(std::string_view path) 
+        inline constexpr std::string_view ParentPath(std::string_view path) 
         {
             auto separator_pos = path.find_last_of("/\\");
             return (separator_pos == std::string_view::npos) ? std::string_view{} : path.substr(0, separator_pos);
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view normalize(std::string_view path, std::span<char, _Size> buffer) 
+        inline constexpr std::string_view Normalize(std::string_view path, std::span<char, _Size> buffer) 
         {
             size_t index = 0;
 
@@ -140,13 +152,13 @@ namespace edge
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view normalize(std::string_view path, std::array<char, _Size> buffer)
+        inline constexpr std::string_view Normalize(std::string_view path, std::array<char, _Size> buffer)
         {
-            return normalize(path, std::span(buffer));;
+            return Normalize(path, std::span(buffer));;
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view path_append(std::string_view base_path, std::string_view relative_path, std::span<char, _Size> buffer)
+        inline constexpr std::string_view PathAppend(std::string_view base_path, std::string_view relative_path, std::span<char, _Size> buffer)
         {
             size_t index = 0;
 
@@ -182,67 +194,9 @@ namespace edge
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view path_append(std::string_view base_path, std::string_view relative_path, std::array<char, _Size> buffer)
+        inline constexpr std::string_view PathAppend(std::string_view base_path, std::string_view relative_path, std::array<char, _Size> buffer)
         {
             return path_append(base_path, relative_path, std::span(buffer));
         }
-
-        //inline constexpr bool is_image_format(std::string_view path)
-        //{
-        //    auto ext = get_ext(path);
-        //    auto format_hash = utl::murmur_hash(ext);
-        //    return format_hash == format::ktx ||
-        //        format_hash == format::ktx2 ||
-        //        format_hash == format::dds ||
-        //        format_hash == format::png ||
-        //        format_hash == format::jpg;
-        //}
-        //
-        //inline constexpr bool is_ktx_format(std::string_view path)
-        //{
-        //    auto ext = get_ext(path);
-        //    auto format_hash = utl::murmur_hash(ext);
-        //    return format_hash == format::ktx || format_hash == format::ktx2;
-        //}
-        //
-        //inline constexpr bool is_mesh_format(std::string_view path)
-        //{
-        //    auto ext = get_ext(path);
-        //    auto format_hash = utl::murmur_hash(ext);
-        //    return format_hash == format::gltf ||
-        //        format_hash == format::glb ||
-        //        format_hash == format::obj ||
-        //        format_hash == format::fbx;
-        //}
-        //
-        //inline constexpr bool is_gltf_format(std::string_view path)
-        //{
-        //    auto ext = get_ext(path);
-        //    auto format_hash = utl::murmur_hash(ext);
-        //    return format_hash == format::gltf || format_hash == format::glb;
-        //}
-        //
-        //inline constexpr bool is_obj_format(std::string_view path)
-        //{
-        //    auto ext = get_ext(path);
-        //    auto format_hash = utl::murmur_hash(ext);
-        //    return format_hash == format::obj;
-        //}
-        //
-        //inline constexpr bool is_fbx_format(std::string_view path)
-        //{
-        //    auto ext = get_ext(path);
-        //    auto format_hash = utl::murmur_hash(ext);
-        //    return format_hash == format::fbx;
-        //}
-        //
-        //inline constexpr bool is_audio_format(std::string_view path)
-        //{
-        //    auto ext = get_ext(path);
-        //    auto format_hash = utl::murmur_hash(ext);
-        //    return format_hash == format::wav ||
-        //        format_hash == format::wave ||
-        //        format_hash == format::ogg;
-        //}
 	}
 }

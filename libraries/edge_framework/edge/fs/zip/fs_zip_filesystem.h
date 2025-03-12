@@ -15,6 +15,7 @@ namespace edge
 			~ZipFilesystem();
 
 			auto OpenFile(std::string_view path, FileModeFlags mode) -> IFile* override;
+			auto FileSize(std::string_view path) -> size_t override;
 
 			auto CreateDirectories(std::string_view path) -> bool override;
 			auto CreateDirectory(std::string_view path) -> bool override;

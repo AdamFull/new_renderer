@@ -5,9 +5,12 @@
   "homepage": "https://github.com/AdamFull/new_renderer",
   "builtin-baseline": "9d196b217c8f435b90e8608753609c58c24faed1",
   "dependencies": [
-    "zstd",
-    "zlib",
-    "libzip",
+    {
+      "name": "libzip",
+      "features": [
+        "zstd"
+      ]
+    },
     {
       "name": "vulkan-headers",
       "version>=": "1.3.296.0"

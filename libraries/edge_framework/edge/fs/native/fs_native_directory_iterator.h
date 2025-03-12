@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../util/fs_helper.h"
+#include "../fs_helper.h"
 #include "../fs_directory_iterator.h"
 
 #include <array>
@@ -23,10 +23,10 @@ namespace edge
 				this->root = root;
 
 				std::array<char, 1024ull> buffer{};
-				this->path = fsh::to_posix_path(std::filesystem::relative(iterator->path(), root).string(), buffer);
+				this->path = fs::ToPosixPath(std::filesystem::relative(iterator->path(), root).string(), buffer);
 			}
 
-			auto End() -> bool override
+			auto End() const noexcept -> bool override
 			{
 				return iterator == _Ty();
 			}
@@ -40,11 +40,11 @@ namespace edge
 					auto decoded = convert.to_bytes(std::filesystem::relative(iterator->path(), root).u16string());
 
 					std::array<char, 1024ull> buffer{};
-					path = fsh::to_posix_path(decoded, buffer);
+					path = fs::ToPosixPath(decoded, buffer);
 				}
 			}
 
-			auto Value() -> const std::string& override
+			auto Value() const noexcept -> std::string_view override
 			{
 				return path;
 			}

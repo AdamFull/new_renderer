@@ -1,6 +1,6 @@
 #include "fs_virtual_filesystem.h"
 
-#include "../util/fs_helper.h"
+#include "fs_helper.h"
 
 #include "fs_directory_iterator.h"
 #include "fs_file.h"
@@ -33,29 +33,22 @@ namespace edge
 			if (!filesystem)
 				return nullptr;
 
-			return filesystem->OpenFile(fsh::get_local_path(path), mode);
+			return filesystem->OpenFile(fs::GetLocalPath(path), mode);
 		}
 
 		auto VirtualFilesystem::FileSize(std::string_view path) -> size_t
 		{
-			auto* file = OpenFile(path, FileModeFlag::eRead | FileModeFlag::eBin);
-			if (!file)
+			auto* filesystem = GetFilesystem(path);
+			if (!filesystem)
 				return 0ull;
 
-			file->Seek(0, SeekOrigin::eEnd);
-			auto size = file->Tell();
-			delete file;
-
-			return size;
+			return filesystem->FileSize(fs::GetLocalPath(path));
 		}
 
 		auto VirtualFilesystem::ReadFile(std::string_view path, std::string& buffer) -> bool
 		{
 			auto* file = OpenFile(path, FileModeFlag::eRead | FileModeFlag::eBin);
-			file->Seek(0, SeekOrigin::eEnd);
-			auto size = file->Tell();
-			file->Seek(0, SeekOrigin::eSet);
-			buffer.resize(size);
+			buffer.resize(file->Size());
 			auto bytes_readed = file->Read(buffer);
 			delete file;
 
@@ -65,10 +58,7 @@ namespace edge
 		auto VirtualFilesystem::ReadFile(std::string_view path, std::vector<uint8_t>& buffer) -> bool
 		{
 			auto* file = OpenFile(path, FileModeFlag::eRead | FileModeFlag::eBin);
-			file->Seek(0, SeekOrigin::eEnd);
-			auto size = file->Tell();
-			file->Seek(0, SeekOrigin::eSet);
-			buffer.resize(size);
+			buffer.resize(file->Size());
 			auto bytes_readed = file->Read(buffer);
 			delete file;
 
@@ -99,7 +89,7 @@ namespace edge
 			if (!filesystem)
 				return false;
 
-			return filesystem->CreateDirectories(fsh::get_local_path(path));
+			return filesystem->CreateDirectories(fs::GetLocalPath(path));
 		}
 
 		auto VirtualFilesystem::CreateDirectory(std::string_view path) -> bool
@@ -108,7 +98,7 @@ namespace edge
 			if (!filesystem)
 				return false;
 
-			return filesystem->CreateDirectory(fsh::get_local_path(path));
+			return filesystem->CreateDirectory(fs::GetLocalPath(path));
 		}
 
 		auto VirtualFilesystem::Exists(std::string_view path) -> bool
@@ -117,7 +107,7 @@ namespace edge
 			if (!filesystem)
 				return false;
 
-			return filesystem->Exists(fsh::get_local_path(path));
+			return filesystem->Exists(fs::GetLocalPath(path));
 		}
 
 		auto VirtualFilesystem::IsDirectory(std::string_view path) -> bool
@@ -126,7 +116,7 @@ namespace edge
 			if (!filesystem)
 				return false;
 
-			return filesystem->IsDirectory(fsh::get_local_path(path));
+			return filesystem->IsDirectory(fs::GetLocalPath(path));
 		}
 
 		auto VirtualFilesystem::IsFile(std::string_view path) -> bool
@@ -135,7 +125,7 @@ namespace edge
 			if (!filesystem)
 				return false;
 
-			return filesystem->IsFile(fsh::get_local_path(path));
+			return filesystem->IsFile(fs::GetLocalPath(path));
 		}
 
 		auto VirtualFilesystem::Remove(std::string_view path) -> bool
@@ -144,22 +134,22 @@ namespace edge
 			if (!filesystem)
 				return false;
 
-			return filesystem->Remove(fsh::get_local_path(path));
+			return filesystem->Remove(fs::GetLocalPath(path));
 		}
 
-		auto VirtualFilesystem::Walk(std::string_view path, bool recursive) -> IDirectoryIterator*
+		auto VirtualFilesystem::Walk(std::string_view path, bool recursive) -> DirectoryIterator
 		{
 			auto* filesystem = GetFilesystem(path);
 			if (!filesystem)
-				return nullptr;
+				return DirectoryIterator{ nullptr };
 
-			return filesystem->Walk(fsh::get_local_path(path), recursive);
+			return DirectoryIterator{ filesystem->Walk(fs::GetLocalPath(path), recursive) };
 		}
 	
 		auto VirtualFilesystem::GetFilesystem(std::string_view path) -> IFilesystem*
 		{
-			auto fs_prefix = fsh::get_mount_point(path);
-			auto found = filesystems.find(std::string(fs_prefix));
+			auto fs_prefix = fs::GetMountPoint(path);
+			auto found = filesystems.find(fs_prefix);
 			if (found != filesystems.end())
 				return found->second;
 
