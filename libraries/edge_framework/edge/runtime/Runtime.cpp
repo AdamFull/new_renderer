@@ -38,8 +38,6 @@ namespace edge
 		filesystem->Mount("/source", new fs::NativeFilesystem("./../../../"));
 		filesystem->Mount("/resources", new fs::ZipFilesystem("resources.zip"));
 
-		auto* iterator = filesystem->Walk("/resources/.", true);
-
 		return 0;
 	}
 

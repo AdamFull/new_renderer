@@ -340,7 +340,8 @@ namespace engine
 			}
 
 			// Load some static textures
-			auto casual_day_4k_cube = render_context->AddResource("/root/embed/rendering/textures/CasualDay4K.ktx2");
+			auto casual_day_4k_cube = render_context->AddResource("/resources/CasualDay4K.ktx2");
+			//auto casual_day_4k_cube = render_context->AddResource("/root/embed/rendering/textures/CasualDay4K.ktx2");
 			auto dirt_mask_texture = render_context->AddResource("/root/embed/rendering/textures/DirtMaskTextureExample.png");
 
 			// GI targets

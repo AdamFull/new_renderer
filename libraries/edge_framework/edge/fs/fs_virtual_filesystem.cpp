@@ -54,6 +54,7 @@ namespace edge
 			auto* file = OpenFile(path, FileModeFlag::eRead | FileModeFlag::eBin);
 			file->Seek(0, SeekOrigin::eEnd);
 			auto size = file->Tell();
+			file->Seek(0, SeekOrigin::eSet);
 			buffer.resize(size);
 			auto bytes_readed = file->Read(buffer);
 			delete file;
@@ -66,6 +67,7 @@ namespace edge
 			auto* file = OpenFile(path, FileModeFlag::eRead | FileModeFlag::eBin);
 			file->Seek(0, SeekOrigin::eEnd);
 			auto size = file->Tell();
+			file->Seek(0, SeekOrigin::eSet);
 			buffer.resize(size);
 			auto bytes_readed = file->Read(buffer);
 			delete file;
