@@ -474,6 +474,104 @@ namespace edge
 			ktxTexture* texture{ nullptr };
 		};
 
+		// Buffer updater implementation
+		BufferUpdater::BufferUpdater(IBuffer* src_buffer, uint64_t src_offset, uint64_t src_size, IBuffer* dst_buffer) :
+			copy_buffer_info{ src_buffer, dst_buffer, {} },
+			src_region_size{ src_size },
+			src_offset{ src_offset }
+		{
+			src_memory = src_buffer->Map();
+		}
+
+		void BufferUpdater::AddRegion(std::span<const uint8_t> data)
+		{
+			assert(data.size() <= src_region_size && (dst_offset + data.size() <= copy_buffer_info.dst_buffer->GetSize()) && "Trying to add region out of range.");
+
+			copy_regions.push_back({
+					src_offset,
+					dst_offset,
+					data.size()
+				});
+
+			memcpy(src_memory + src_offset, data.data(), data.size());
+
+			src_offset += data.size();
+			dst_offset += data.size();
+		}
+
+		void BufferUpdater::InsertRegion(std::span<const uint8_t> data, uint64_t offset)
+		{
+			assert(data.size() <= src_region_size && (offset + data.size() <= copy_buffer_info.dst_buffer->GetSize()) && "Trying to insert region out of range.");
+
+			copy_regions.push_back({
+					src_offset,
+					offset,
+					data.size()
+				});
+
+			//engine::util::Copy(src_memory, src_offset, data.data(), data.size(), offset);
+
+			memcpy(src_memory + src_offset, data.data(), data.size());
+
+			src_offset += data.size();
+		}
+
+		void BufferUpdater::Submit(ICommandList* cmd_list, ResourceStateFlags& current_state)
+		{
+			copy_buffer_info.src_buffer->Unmap();
+
+			// Sort regions by destination offset
+			std::sort(copy_regions.begin(), copy_regions.end(),
+				[](const BufferCopyRegion& a, const BufferCopyRegion& b) {
+					return a.dst_offset < b.dst_offset;
+				});
+
+			std::vector<BufferCopyRegion> merged_regions{};
+			merged_regions.emplace_back(copy_regions.front());
+
+			for (size_t i = 1; i < copy_regions.size(); ++i)
+			{
+				BufferCopyRegion& last = merged_regions.back();
+				const BufferCopyRegion& current = copy_regions[i];
+
+				uint64_t last_end = last.dst_offset + last.size;
+				uint64_t current_end = current.dst_offset + current.size;
+
+				// Check if regions are contiguous or overlapping
+				if (last_end >= current.dst_offset &&
+					(last.src_offset + (current.dst_offset - last.dst_offset) == current.src_offset))
+				{
+					// Merge regions by expanding the last region
+					last.size = std::max(last_end, current_end) - last.dst_offset;
+				}
+				else
+				{
+					// Regions can't be merged; add a new region
+					merged_regions.push_back(current);
+				}
+			}
+
+			if (current_state != ResourceStateFlag::eCopyDst)
+			{
+				// Translate dst_buffer for correct layout
+				BufferBarrier buffer_barrier{};
+				buffer_barrier.buffer = copy_buffer_info.dst_buffer;
+				buffer_barrier.src_state = current_state;
+				current_state = buffer_barrier.dst_state = ResourceStateFlag::eCopyDst;
+				buffer_barrier.range.size = src_region_size;
+
+				ResourceBarrierInfo resource_barrier{};
+				resource_barrier.buffer_barriers = &buffer_barrier;
+				resource_barrier.buffer_barrier_count = 1;
+
+				// TODO: Make resource translations only if needed
+				cmd_list->ResourceBarrier(resource_barrier);
+			}
+
+			copy_buffer_info.regions = merged_regions;
+			cmd_list->CopyBuffer(copy_buffer_info);
+		}
+
 		IContext* ResourceUpdater::gfx_context{ nullptr };
 		fs::VirtualFilesystem* ResourceUpdater::filesystem{ nullptr };
 		const IQueue* ResourceUpdater::queue{ nullptr };
@@ -786,107 +884,6 @@ namespace edge
 			{
 
 			}
-		}
-
-
-
-
-		// Buffer updater implementation
-		BufferUpdater::BufferUpdater(IBuffer* src_buffer, uint64_t src_offset, uint64_t src_size, IBuffer* dst_buffer) :
-			copy_buffer_info{ src_buffer, dst_buffer, {} },
-			src_region_size{ src_size },
-			src_offset{ src_offset }
-		{
-			src_memory = src_buffer->Map();
-		}
-
-		void BufferUpdater::AddRegion(std::span<const uint8_t> data)
-		{
-			assert(data.size() <= src_region_size && (dst_offset + data.size() <= copy_buffer_info.dst_buffer->GetSize()) && "Trying to add region out of range.");
-
-			copy_regions.push_back({
-					src_offset,
-					dst_offset,
-					data.size()
-				});
-
-			memcpy(src_memory + src_offset, data.data(), data.size());
-
-			src_offset += data.size();
-			dst_offset += data.size();
-		}
-
-		void BufferUpdater::InsertRegion(std::span<const uint8_t> data, uint64_t offset)
-		{
-			assert(data.size() <= src_region_size && (offset + data.size() <= copy_buffer_info.dst_buffer->GetSize()) && "Trying to insert region out of range.");
-
-			copy_regions.push_back({
-					src_offset,
-					offset,
-					data.size()
-				});
-
-			//engine::util::Copy(src_memory, src_offset, data.data(), data.size(), offset);
-
-			memcpy(src_memory + src_offset, data.data(), data.size());
-
-			src_offset += data.size();
-		}
-
-		void BufferUpdater::Submit(ICommandList* cmd_list, ResourceStateFlags& current_state)
-		{
-			copy_buffer_info.src_buffer->Unmap();
-
-			// Sort regions by destination offset
-			std::sort(copy_regions.begin(), copy_regions.end(),
-				[](const BufferCopyRegion& a, const BufferCopyRegion& b) {
-					return a.dst_offset < b.dst_offset;
-				});
-
-			std::vector<BufferCopyRegion> merged_regions{};
-			merged_regions.emplace_back(copy_regions.front());
-
-			for (size_t i = 1; i < copy_regions.size(); ++i)
-			{
-				BufferCopyRegion& last = merged_regions.back();
-				const BufferCopyRegion& current = copy_regions[i];
-
-				uint64_t last_end = last.dst_offset + last.size;
-				uint64_t current_end = current.dst_offset + current.size;
-
-				// Check if regions are contiguous or overlapping
-				if (last_end >= current.dst_offset &&
-					(last.src_offset + (current.dst_offset - last.dst_offset) == current.src_offset))
-				{
-					// Merge regions by expanding the last region
-					last.size = std::max(last_end, current_end) - last.dst_offset;
-				}
-				else
-				{
-					// Regions can't be merged; add a new region
-					merged_regions.push_back(current);
-				}
-			}
-
-			if (current_state != ResourceStateFlag::eCopyDst)
-			{
-				// Translate dst_buffer for correct layout
-				BufferBarrier buffer_barrier{};
-				buffer_barrier.buffer = copy_buffer_info.dst_buffer;
-				buffer_barrier.src_state = current_state;
-				current_state = buffer_barrier.dst_state = ResourceStateFlag::eCopyDst;
-				buffer_barrier.range.size = src_region_size;
-
-				ResourceBarrierInfo resource_barrier{};
-				resource_barrier.buffer_barriers = &buffer_barrier;
-				resource_barrier.buffer_barrier_count = 1;
-
-				// TODO: Make resource translations only if needed
-				cmd_list->ResourceBarrier(resource_barrier);
-			}
-
-			copy_buffer_info.regions = merged_regions;
-			cmd_list->CopyBuffer(copy_buffer_info);
 		}
 	}
 }
