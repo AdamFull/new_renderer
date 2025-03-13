@@ -288,8 +288,15 @@ namespace edge
 				create_info.surface = surface;
 				create_info.imageFormat = surface_format.format;
 				create_info.imageColorSpace = surface_format.colorSpace;
-				create_info.imageSharingMode = vk::SharingMode::eExclusive;
 				create_info.clipped = VK_TRUE;
+
+				auto family_count = device.GetQueueCount();
+
+				std::array<uint32_t, 8u> queue_families{};
+				std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
+				create_info.queueFamilyIndexCount = family_count;
+				create_info.pQueueFamilyIndices = &queue_families[0];
+				create_info.imageSharingMode = vk::SharingMode::eConcurrent;
 
 				vk::Result result = Handle(device).createSwapchainKHR(&create_info, allocation_callbacks, &handle);
 

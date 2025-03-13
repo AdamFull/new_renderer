@@ -1,5 +1,6 @@
 #include "VkImage.h"
 
+#include "VkDevice.h"
 #include "VkUtil.h"
 #include "../../util/Logger.h"
 
@@ -54,6 +55,10 @@ namespace edge
 
 			void Image::InitializeCreateInfo(const TextureCreateInfo& texture_create_info)
 			{
+				auto& device = allocator.GetDevice();
+				auto family_count = device.GetQueueCount();
+				std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
+
 				alloc_create_info.usage = vma::MemoryUsage::eUnknown;
 
 				bool is_3d = texture_create_info.depth > 1u;
@@ -101,8 +106,11 @@ namespace edge
 				if (texture_create_info.usage & TextureUsageFlag::eStorage)
 					create_info.usage |= vk::ImageUsageFlagBits::eStorage;
 
-				create_info.sharingMode = vk::SharingMode::eExclusive;
 				create_info.flags = is_cubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
+
+				create_info.queueFamilyIndexCount = family_count;
+				create_info.pQueueFamilyIndices = &queue_families[0];
+				create_info.sharingMode = vk::SharingMode::eConcurrent;
 			}
 		}
 	}
