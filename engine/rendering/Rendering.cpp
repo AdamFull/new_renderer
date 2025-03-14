@@ -122,12 +122,6 @@ namespace engine
 
 			edge::gfx::ResourceUpdater::Create(resource_updater_init);
 
-			edge::gfx::FrameGraphInitializeInfo fg_init_info{};
-			fg_init_info.gfx_context = gfx_context.get();
-			fg_init_info.filesystem = vfs;
-
-			edge::gfx::FrameGraph::Create(fg_init_info);
-
 			render_context = std::make_unique<RenderContext>(*gfx_context, vfs, window);
 
 			render_world = std::make_unique<RenderWorld>(*this);
@@ -140,7 +134,6 @@ namespace engine
 		Renderer::~Renderer()
 		{
 			edge::gfx::ResourceUpdater::Shutdown();
-			edge::gfx::FrameGraph::Shutdown();
 		}
 
 		uint32_t Renderer::AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler)
@@ -281,10 +274,7 @@ namespace engine
 		{
 			constexpr const std::string_view k_frame_graph_path = "/root/fgb";
 
-			if (!edge::gfx::FrameGraph::Load(k_frame_graph_path))
-			{
-				edge::gfx::FrameGraph::Store(k_frame_graph_path);
-			}
+			
 		}
 
 		void Renderer::BuildGraph()

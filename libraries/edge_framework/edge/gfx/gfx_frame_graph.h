@@ -12,57 +12,21 @@ namespace edge
 
 	namespace gfx
 	{
-		class shader_includer;
+		class FrameGraph;
 
-#pragma pack(push, 1)
-		struct FrameGraphShaderStage
+		class FrameGraphNode
 		{
-			uint32_t uuu;
-		};
-
-		struct FrameGraphTechnique
-		{
-			std::vector<std::string_view> stages;
-		};
-
-		struct FrameGraphPass
-		{
-			uint32_t technique;
-
-			
-		};
-#pragma pack(pop)
-
-		struct FrameGraphInitializeInfo
-		{
-			IContext* gfx_context;
-			fs::VirtualFilesystem* filesystem;
+		public:
+		private:
+			FrameGraph& graph;
 		};
 
 		class FrameGraph
 		{
 		public:
-			static void Create(const FrameGraphInitializeInfo& initialize_info);
-			static void Shutdown();
-
-			static bool Load(std::string_view path);
-			static void Store(std::string_view path);
-
-			static void Compile();
-
-			static void RegisterResource(std::string_view name, IGFXResource* resource, ResourceStateFlags initial_state = {});
-			static void UnregisterResource(std::string_view name);
-
-			static FrameGraphShaderStage& AddShaderStage(std::string_view pass_name, ShaderStageFlags stage_flags);
-			static FrameGraphTechnique& AddTechnique(std::string_view pass_name, ShaderStageFlags stage_flags);
-			static FrameGraphPass& AddPass(std::string_view pass_name, ShaderStageFlags stage_flags);
+			void RegisterResource(std::string_view name, IGFXResource* resource);
 		private:
-			static IContext* gfx_context;
-			static fs::VirtualFilesystem* filesystem;
-			static IPipelineCache* pipeline_cache;
-
-			static std::vector<FrameGraphTechnique> techniques;
-			static std::vector<FrameGraphPass> passes;
+			std::unordered_map<std::string_view, IGFXResource*> resource_mappings{};
 		};
 	}
 }
