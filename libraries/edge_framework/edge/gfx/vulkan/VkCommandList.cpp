@@ -292,9 +292,17 @@ namespace edge
 
 			void VulkanCommandList::ResourceBarrier(const ResourceBarrierInfo& barrier) const
 			{
-				std::array<vk::MemoryBarrier2KHR, 64ll> memory_barriers{};
-				std::array<vk::BufferMemoryBarrier2KHR, 64ll> buffer_barriers{};
-				std::array<vk::ImageMemoryBarrier2KHR, 64ll> image_barriers{};
+				std::vector<vk::MemoryBarrier2KHR> memory_barriers{};
+				if (barrier.memory_barriers)
+					memory_barriers.resize(barrier.memory_barrier_count);
+
+				std::vector<vk::BufferMemoryBarrier2KHR> buffer_barriers{};
+				if (barrier.buffer_barriers)
+					buffer_barriers.resize(barrier.buffer_barrier_count);
+
+				std::vector<vk::ImageMemoryBarrier2KHR> image_barriers{};
+				if (barrier.texture_barriers)
+					image_barriers.resize(barrier.texture_barrier_count);
 
 				vk::DependencyInfoKHR vk_barrier{};
 				vk_barrier.pMemoryBarriers = memory_barriers.data();
