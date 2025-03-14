@@ -562,7 +562,7 @@ namespace engine
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			edge::gfx::ITexture* texture = edge::gfx::ResourceUploader::LoadTexture(path, new_resource.current_state);
+			edge::gfx::ITexture* texture = edge::gfx::ResourceUpdater::LoadTexture(path, new_resource.current_state);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
 			return render_resources.size() - 1ull;
@@ -900,18 +900,7 @@ namespace engine
 
 			std::vector<edge::gfx::SemaphoreSubmitInfo> wait_semaphores{};
 			wait_semaphores.emplace_back(acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput);
-
-			edge::gfx::SemaphoreSubmitInfo update_wait_semaphore{};
-			edge::gfx::ResourceUpdater::Flush(update_wait_semaphore, {});
-
-			if (update_wait_semaphore.semaphore)
-				wait_semaphores.emplace_back(update_wait_semaphore);
-
-			edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
-			edge::gfx::ResourceUploader::Flush(upload_wait_semaphore, {});
-
-			if (upload_wait_semaphore.semaphore)
-				wait_semaphores.emplace_back(upload_wait_semaphore);
+			edge::gfx::ResourceUpdater::Flush(wait_semaphores, {});
 
 			// Finish performance query
 			current_command_list->EndQuery(timestamp_query, 1u);

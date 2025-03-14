@@ -121,7 +121,6 @@ namespace engine
 			resource_updater_init.filesystem = vfs;
 
 			edge::gfx::ResourceUpdater::Create(resource_updater_init);
-			edge::gfx::ResourceUploader::Create(resource_updater_init);
 
 			edge::gfx::FrameGraphInitializeInfo fg_init_info{};
 			fg_init_info.gfx_context = gfx_context.get();
@@ -140,10 +139,8 @@ namespace engine
 
 		Renderer::~Renderer()
 		{
-			edge::gfx::FrameGraph::Shutdown();
-
 			edge::gfx::ResourceUpdater::Shutdown();
-			edge::gfx::ResourceUploader::Shutdown();
+			edge::gfx::FrameGraph::Shutdown();
 		}
 
 		uint32_t Renderer::AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler)

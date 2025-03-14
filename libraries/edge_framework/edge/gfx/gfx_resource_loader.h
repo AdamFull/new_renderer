@@ -81,9 +81,9 @@ namespace edge
 			static void Create(const ResourceUpdaterCreateInfo& create_info);
 			static void Shutdown();
 
-			static void Flush(SemaphoreSubmitInfo& submitted_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores);
+			static void Flush(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores);
 
-			static auto LoadTexture(std::string_view path) -> ITexture*;
+			static auto LoadTexture(std::string_view path, ResourceStateFlags& output_resource_state) -> ITexture*;
 
 			static void UpdateTexture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data);
 
@@ -95,33 +95,12 @@ namespace edge
 		private:
 			static IContext* gfx_context;
 			static fs::VirtualFilesystem* filesystem;
-			static const IQueue* queue;
+			static const IQueue* update_queue;
+			static const IQueue* upload_queue;
 
-			static std::unique_ptr<IResourceLoader> loader;
+			static std::unique_ptr<IResourceLoader> updater;
+			static std::unique_ptr<IResourceLoader> uploader;
 			static std::unique_ptr<MipGenerator> mip_generator;
-		};
-
-		class ResourceUploader
-		{
-		public:
-			static void Create(const ResourceUpdaterCreateInfo& create_info);
-			static void Shutdown();
-
-			static void Flush(SemaphoreSubmitInfo& submitted_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores);
-
-			static auto LoadTexture(std::string_view path, ResourceStateFlags& output_resource_state) -> ITexture*;
-
-			static void UploaderThread(std::stop_token stop_token);
-		private:
-			static IContext* gfx_context;
-			static fs::VirtualFilesystem* filesystem;
-			static const IQueue* queue;
-
-			static std::unique_ptr<IResourceLoader> loader;
-			static std::unique_ptr<MipGenerator> mip_generator;
-
-			static std::jthread upload_thread;
-			static std::stop_source uploader_stop;
 		};
 	}
 }

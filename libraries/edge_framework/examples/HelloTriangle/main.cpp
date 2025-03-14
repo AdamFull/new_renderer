@@ -300,9 +300,11 @@ public:
 
 		command_list->ResourceBarrier(barrier);
 
+		std::vector<edge::gfx::SemaphoreSubmitInfo> wait_semaphores{};
+		wait_semaphores.emplace_back(acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput);
+
 		// Submit resource uploader queue
-		edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
-		edge::gfx::ResourceUpdater::Flush(upload_wait_semaphore, {});
+		edge::gfx::ResourceUpdater::Flush(wait_semaphores, {});
 
 		// Here is frame finished
 		command_list->End();
@@ -315,14 +317,7 @@ public:
 
 			// TODO: COMMAND BUFFERS
 			edge::gfx::SubmitInfo submit_info{};
-
-			edge::gfx::SemaphoreSubmitInfo wait_semaphores[2] = {
-				edge::gfx::SemaphoreSubmitInfo{ acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
-				upload_wait_semaphore
-			};
-
 			submit_info.wait_semaphore_infos = wait_semaphores;
-
 
 			edge::gfx::SemaphoreSubmitInfo signal_semaphores[1] = {
 				edge::gfx::SemaphoreSubmitInfo{ current_frame->render_finished, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
