@@ -57,7 +57,7 @@ namespace edge
 				block_size = std::exchange(other.block_size, {});
 				blocks = std::exchange(other.blocks, {});
 
-				return* this;
+				return*this;
 			}
 
 			BlockAllocator(const BlockAllocator&) = delete;
@@ -118,11 +118,135 @@ namespace edge
 			std::vector<Block> blocks{};
 		};
 
+		struct CommandNode
+		{
+			CommandNode(IContext* gfx_context, const IQueue* queue, std::string_view name) :
+				gfx_context{ gfx_context },
+				queue{ queue }
+			{
+				fence = gfx_context->CreateFence();
+				fence->SetResourceName(name);
+				semaphore = gfx_context->CreateSemaphore();
+				semaphore->SetResourceName(name);
+				cmd_pool = gfx_context->CreateCommandPool(queue);
+				cmd_pool->SetResourceName(name);
+			}
+
+			~CommandNode()
+			{
+				gfx_context->Destroy(fence);
+				gfx_context->Destroy(semaphore);
+				gfx_context->Destroy(cmd_pool);
+			}
+
+			CommandNode(CommandNode&& other) noexcept :
+				gfx_context{ std::exchange(other.gfx_context, nullptr) },
+				fence{ std::exchange(other.fence, nullptr) },
+				semaphore{ std::exchange(other.semaphore, nullptr) },
+				cmd_list{ std::exchange(other.cmd_list, nullptr) },
+				cmd_pool{ std::exchange(other.cmd_pool, nullptr) }
+			{
+			}
+
+			auto operator=(CommandNode&& other) noexcept -> CommandNode&
+			{
+				gfx_context = std::exchange(other.gfx_context, nullptr);
+				fence = std::exchange(other.fence, nullptr);
+				semaphore = std::exchange(other.semaphore, nullptr);
+				cmd_list = std::exchange(other.cmd_list, nullptr);
+				cmd_pool = std::exchange(other.cmd_pool, nullptr);
+
+				return*this;
+			}
+
+			CommandNode(const CommandNode&) = delete;
+			CommandNode& operator=(const CommandNode&) = delete;
+
+			[[nodiscard]] auto AcquireCommandList(bool& recording, std::string_view name) -> ICommandList*
+			{
+				EDGE_PROFILE_ZONE_SCOPED;
+
+				if (!recording)
+				{
+					fence->Wait();
+					fence->Reset();
+
+					cmd_pool->Reset();
+					cmd_list = nullptr;
+
+					cmd_list = cmd_pool->Allocate();
+					cmd_list->Begin();
+					cmd_list->BeginMarker(name, 0xFFFF00FF);
+					recording = true;
+				}
+				return cmd_list;
+			}
+
+			auto Flush(bool& recording, SemaphoreSubmitInfo& signalled_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores) -> void
+			{
+				EDGE_PROFILE_ZONE_SCOPED;
+
+				if (!recording)
+					return;
+
+				cmd_list->EndMarker();
+				cmd_list->End();
+
+				signalled_semaphore.semaphore = semaphore;
+
+				SubmitInfo submit_info{};
+				submit_info.command_lists = { &cmd_list, 1 };
+				submit_info.signal_semaphore_infos = { &signalled_semaphore, 1 };
+				submit_info.wait_semaphore_infos = wait_semaphores;
+				queue->Submit(submit_info, fence);
+
+				recording = false;
+			}
+
+			IContext* gfx_context;
+			const IQueue* queue;
+
+			IFence* fence;
+			ISemaphore* semaphore;
+
+			ICommandList* cmd_list{ nullptr };
+			ICommandPool* cmd_pool;
+		};
+
+		struct UploaderNode : CommandNode
+		{
+			UploaderNode(IContext* gfx_context, const IQueue* queue, uint64_t size, std::string_view name) :
+				CommandNode{ gfx_context, queue, name },
+				allocator{ gfx_context, size }
+			{
+			}
+
+			UploaderNode(UploaderNode&& other) noexcept :
+				CommandNode{ std::move(other) },
+				allocator{ std::move(other.allocator) }
+			{
+			}
+
+			auto operator=(UploaderNode&& other) noexcept -> UploaderNode&
+			{
+				CommandNode::operator=(std::move(other));
+				allocator = std::move(other.allocator);
+
+				return*this;
+			}
+
+			UploaderNode(const UploaderNode&) = delete;
+			UploaderNode& operator=(const UploaderNode&) = delete;
+
+			BlockAllocator allocator;
+		};
+
 		class MipGenerator
 		{
 		public:
-			MipGenerator(IContext* gfx_context) :
-				gfx_context{ gfx_context }
+			MipGenerator(IContext* gfx_context, const IQueue* queue, uint32_t generator_count) :
+				gfx_context{ gfx_context },
+				queue{ queue }
 			{
 				const std::span<const uint8_t> mip_generate_shaders[] =
 				{
@@ -161,9 +285,14 @@ namespace edge
 		
 				// Create descriptor allocator for allocate descriptors in mip passes
 				descriptor_allocator = gfx_context->CreateDescriptorAllocator();
+
+				for (int32_t i = 0; i < generator_count; ++i)
+				{
+					auto debug_name = std::format("MIP_GENERAOTR_{}", i);
+					nodes.emplace_back(gfx_context, queue, debug_name);
+				}
 		
 				// Also we need linear sampler 
-		
 				SamplerCreateInfo sampler_ci{};
 				sampler_ci.address_u = sampler_ci.address_v = sampler_ci.address_w = SamplerAddressMode::eClampToEdge;
 				sampler_ci.min_filter = Filter::eLinear;
@@ -186,8 +315,11 @@ namespace edge
 				gfx_context->Destroy(descriptor_allocator);
 			}
 		
-			ResourceStateFlags WriteCommands(ICommandList* cmd_list, ITexture* texture)
+			ResourceStateFlags WriteCommands(ITexture* texture, std::string_view path)
 			{
+				ICommandList* cmd_list = AcquireCommandList();
+				cmd_list->BeginMarker(path, 0xFFFFFFFF);
+
 				// ITexture should be in copy dest state
 				ResourceStateFlags resource_state{ ResourceStateFlag::eCopyDst };
 		
@@ -270,6 +402,8 @@ namespace edge
 		
 					mip += mip_count;
 				}
+
+				cmd_list->EndMarker();
 		
 				return resource_state;
 			}
@@ -278,8 +412,36 @@ namespace edge
 			{
 				descriptor_allocator->Reset();
 			}
+
+			auto Flush(SemaphoreSubmitInfo& signalled_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores) -> void
+			{
+				EDGE_PROFILE_ZONE_SCOPED;
+
+				auto& node = GetActiveNode();
+				signalled_semaphore.stage = StageFlag::eComputeShader;
+				node.Flush(recording, signalled_semaphore, wait_semaphores);
+				active_node_index = (active_node_index + 1) % nodes.size();
+			}
 		private:
+			[[nodiscard]] auto AcquireCommandList() -> ICommandList*
+			{
+				EDGE_PROFILE_ZONE_SCOPED;
+
+				auto& node = GetActiveNode();
+				return node.AcquireCommandList(recording, "MIP_GENERATOR");
+			}
+
+			auto GetActiveNode() -> CommandNode&
+			{
+				return nodes[active_node_index];
+			}
+
 			IContext* gfx_context{ nullptr };
+			const IQueue* queue;
+
+			std::vector<CommandNode> nodes;
+			uint32_t active_node_index{ 0 };
+			bool recording{ false };
 		
 			struct ShaderInstance
 			{
@@ -573,62 +735,6 @@ namespace edge
 		}
 
 
-		struct ResourceNode
-		{
-			ResourceNode(IContext* gfx_context, const IQueue* queue, uint64_t size, std::string_view name) :
-				gfx_context{ gfx_context },
-				allocator{ gfx_context, size }
-			{
-				fence = gfx_context->CreateFence();
-				fence->SetResourceName(name);
-				semaphore = gfx_context->CreateSemaphore();
-				semaphore->SetResourceName(name);
-				cmd_pool = gfx_context->CreateCommandPool(queue);
-				cmd_pool->SetResourceName(name);
-			}
-
-			~ResourceNode()
-			{
-				gfx_context->Destroy(fence);
-				gfx_context->Destroy(semaphore);
-				gfx_context->Destroy(cmd_pool);
-			}
-
-			ResourceNode(ResourceNode&& other) noexcept :
-				gfx_context{ std::exchange(other.gfx_context, nullptr) },
-				fence{ std::exchange(other.fence, nullptr) },
-				semaphore{ std::exchange(other.semaphore, nullptr) },
-				cmd_list{ std::exchange(other.cmd_list, nullptr) },
-				cmd_pool{ std::exchange(other.cmd_pool, nullptr) },
-				allocator{ std::move(other.allocator) }
-			{
-			}
-
-			auto operator=(ResourceNode&& other) noexcept -> ResourceNode&
-			{
-				gfx_context = std::exchange(other.gfx_context, nullptr);
-				fence = std::exchange(other.fence, nullptr);
-				semaphore = std::exchange(other.semaphore, nullptr);
-				cmd_list = std::exchange(other.cmd_list, nullptr);
-				cmd_pool = std::exchange(other.cmd_pool, nullptr);
-				allocator = std::move(other.allocator);
-
-				return*this;
-			}
-
-			ResourceNode(const ResourceNode&) = delete;
-			ResourceNode& operator=(const ResourceNode&) = delete;
-
-			IContext* gfx_context;
-			IFence* fence;
-			ISemaphore* semaphore;
-
-			ICommandList* cmd_list{ nullptr };
-			ICommandPool* cmd_pool;
-
-			BlockAllocator allocator;
-		};
-
 		class ResourceLoader final : public IResourceLoader
 		{
 		public:
@@ -653,57 +759,27 @@ namespace edge
 				EDGE_PROFILE_ZONE_SCOPED;
 
 				auto& node = GetActiveNode();
-				if (!recording)
-				{
-					node.fence->Wait();
-					node.fence->Reset();
-
-					node.allocator.Reset();
-					node.cmd_pool->Reset();
-					node.cmd_list = nullptr;
-
-					node.cmd_list = node.cmd_pool->Allocate();
-					node.cmd_list->Begin();
-					node.cmd_list->BeginMarker(loader_name, 0xFFFF00FF);
-					recording = true;
-				}
-				return node.cmd_list;
+				return node.AcquireCommandList(recording, loader_name);
 			}
 
 			auto Flush(SemaphoreSubmitInfo& signalled_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores) -> void override
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 
-				if (!recording)
-					return;
-
 				auto& node = GetActiveNode();
-				node.cmd_list->EndMarker();
-				node.cmd_list->End();
-
-				signalled_semaphore.semaphore = node.semaphore;
-				signalled_semaphore.stage = StageFlag::eTransfer | StageFlag::eComputeShader;
-
-				SubmitInfo submit_info{};
-				submit_info.command_lists = { &node.cmd_list, 1 };
-				submit_info.signal_semaphore_infos = { &signalled_semaphore, 1 };
-				submit_info.wait_semaphore_infos = wait_semaphores;
-
-				queue->Submit(submit_info, node.fence);
-
-				recording = false;
-
+				signalled_semaphore.stage = StageFlag::eTransfer;
+				node.Flush(recording, signalled_semaphore, wait_semaphores);
 				active_node_index = (active_node_index + 1) % nodes.size();
 			}
 
-			auto GetActiveNode() -> ResourceNode& override
+			auto GetActiveNode() -> UploaderNode & override
 			{
 				return nodes[active_node_index];
 			}
 		private:
 			const IQueue* queue;
 			std::string_view loader_name{};
-			std::vector<ResourceNode> nodes{};
+			std::vector<UploaderNode> nodes{};
 			uint32_t active_node_index{ 0 };
 			bool recording{ false };
 		};
@@ -711,8 +787,6 @@ namespace edge
 
 		IContext* ResourceUpdater::gfx_context{ nullptr };
 		fs::VirtualFilesystem* ResourceUpdater::filesystem{ nullptr };
-		const IQueue* ResourceUpdater::update_queue{ nullptr };
-		const IQueue* ResourceUpdater::upload_queue{ nullptr };
 
 		std::unique_ptr<IResourceLoader> ResourceUpdater::updater{};
 		std::unique_ptr<IResourceLoader> ResourceUpdater::uploader{};
@@ -723,13 +797,14 @@ namespace edge
 			ResourceUpdater::gfx_context = create_info.gfx_context;
 			ResourceUpdater::filesystem = create_info.filesystem;
 
-			update_queue = gfx_context->RequestQueue(QueueTypeFlag::eGraphics);
+			auto update_queue = gfx_context->RequestQueue(QueueTypeFlag::eGraphics);
 			updater = std::make_unique<ResourceLoader>(gfx_context, update_queue, create_info.buffer_count, create_info.buffer_size, "UPDATER");
 			
-			upload_queue = gfx_context->RequestQueue(QueueTypeFlag::eCompute, QueueTypeFlag::eGraphics);
+			auto upload_queue = gfx_context->RequestQueue(QueueTypeFlag::eTransfer, QueueTypeFlag::eGraphics | QueueTypeFlag::eCompute);
 			uploader = std::make_unique<ResourceLoader>(gfx_context, upload_queue, create_info.buffer_count, create_info.buffer_size, "UPLOADER");
 
-			mip_generator = std::make_unique<MipGenerator>(gfx_context);
+			auto compute_queue = gfx_context->RequestQueue(QueueTypeFlag::eCompute, QueueTypeFlag::eGraphics);
+			mip_generator = std::make_unique<MipGenerator>(gfx_context, compute_queue, create_info.buffer_count);
 		}
 
 		void ResourceUpdater::Shutdown()
@@ -744,6 +819,7 @@ namespace edge
 			EDGE_PROFILE_ZONE_SCOPED;
 
 			ICommandList* cmd_list = uploader->AcquireCommandList();
+			cmd_list->BeginMarker(path, 0xFFFFFFFF);
 
 			auto ext = fs::GetExt(path);
 			auto ext_hash = murmur_hash(ext.data(), ext.size(), 0);
@@ -782,8 +858,10 @@ namespace edge
 
 			texture_reader->Upload(cmd_list, src_buffer, src_offset, dst_texture);
 
+			cmd_list->EndMarker();
+
 			if (texture_reader->IsNeedToGenerateMips())
-				output_resource_state = mip_generator->WriteCommands(cmd_list, dst_texture);
+				output_resource_state = mip_generator->WriteCommands(dst_texture, path);
 
 			return dst_texture;
 		}
@@ -841,8 +919,17 @@ namespace edge
 
 			SemaphoreSubmitInfo uploader_semaphore{};
 			uploader->Flush(uploader_semaphore, wait_semaphores);
-			if (uploader_semaphore.semaphore)
-				signalled_semaphores.emplace_back(uploader_semaphore);
+			//if (uploader_semaphore.semaphore)
+			//	signalled_semaphores.emplace_back(uploader_semaphore);
+
+			SemaphoreSubmitInfo mip_generator_semaphore{};
+			if(uploader_semaphore.semaphore)
+				mip_generator->Flush(mip_generator_semaphore, { &uploader_semaphore, 1 });
+			else
+				mip_generator->Flush(mip_generator_semaphore, {});
+
+			if (mip_generator_semaphore.semaphore)
+				signalled_semaphores.emplace_back(mip_generator_semaphore);
 		}
 
 		auto ResourceUpdater::GetBufferUpdater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater

@@ -15,6 +15,9 @@ namespace edge
 
 	namespace gfx
 	{
+		struct CommandNode;
+		struct UploaderNode;
+
 		class MipGenerator;
 
 		class BufferUpdater
@@ -63,8 +66,6 @@ namespace edge
 			uint32_t buffer_count{ 1u };
 		};
 
-		struct ResourceNode;
-
 		class IResourceLoader
 		{
 		public:
@@ -72,7 +73,7 @@ namespace edge
 
 			[[nodiscard]] virtual auto AcquireCommandList() -> ICommandList* = 0;
 			virtual auto Flush(SemaphoreSubmitInfo& submitted_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores) -> void = 0;
-			virtual auto GetActiveNode() -> ResourceNode& = 0;
+			virtual auto GetActiveNode() -> UploaderNode & = 0;
 		};
 
 		class ResourceUpdater
@@ -95,8 +96,6 @@ namespace edge
 		private:
 			static IContext* gfx_context;
 			static fs::VirtualFilesystem* filesystem;
-			static const IQueue* update_queue;
-			static const IQueue* upload_queue;
 
 			static std::unique_ptr<IResourceLoader> updater;
 			static std::unique_ptr<IResourceLoader> uploader;
