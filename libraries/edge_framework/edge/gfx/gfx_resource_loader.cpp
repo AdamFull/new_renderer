@@ -132,7 +132,7 @@ namespace edge
 				cmd_pool->SetResourceName(name);
 			}
 
-			~CommandNode()
+			virtual ~CommandNode()
 			{
 				gfx_context->Destroy(fence);
 				gfx_context->Destroy(semaphore);
@@ -241,12 +241,54 @@ namespace edge
 			BlockAllocator allocator;
 		};
 
-		class MipGenerator
+		class CommandExecutor
+		{
+		public:
+			CommandExecutor(IContext* gfx_context, const IQueue* queue, StageFlag stage, std::string_view name) :
+				gfx_context{ gfx_context },
+				queue{ queue },
+				stage{ stage },
+				name{ name }
+			{
+			}
+
+			auto Flush(SemaphoreSubmitInfo& signalled_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores) -> void
+			{
+				EDGE_PROFILE_ZONE_SCOPED;
+
+				auto& node = GetActiveNode();
+				signalled_semaphore.stage = stage;
+				node.Flush(recording, signalled_semaphore, wait_semaphores);
+				active_node_index = (active_node_index + 1) % nodes.size();
+			}
+
+			[[nodiscard]] virtual auto AcquireCommandList() -> ICommandList*
+			{
+				EDGE_PROFILE_ZONE_SCOPED;
+
+				auto& node = GetActiveNode();
+				return node.AcquireCommandList(recording, name);
+			}
+
+			auto GetActiveNode() -> CommandNode&
+			{
+				return *nodes[active_node_index];
+			}
+		protected:
+			IContext* gfx_context;
+			const IQueue* queue;
+			std::vector<std::unique_ptr<CommandNode>> nodes;
+			uint32_t active_node_index{ 0 };
+			StageFlag stage;
+			std::string_view name;
+			bool recording{ false };
+		};
+
+		class MipGenerator : public CommandExecutor
 		{
 		public:
 			MipGenerator(IContext* gfx_context, const IQueue* queue, uint32_t generator_count) :
-				gfx_context{ gfx_context },
-				queue{ queue }
+				CommandExecutor{ gfx_context, queue, StageFlag::eComputeShader, "MIP_GENERATOR" }
 			{
 				const std::span<const uint8_t> mip_generate_shaders[] =
 				{
@@ -289,7 +331,7 @@ namespace edge
 				for (int32_t i = 0; i < generator_count; ++i)
 				{
 					auto debug_name = std::format("MIP_GENERAOTR_{}", i);
-					nodes.emplace_back(gfx_context, queue, debug_name);
+					nodes.emplace_back(std::make_unique<CommandNode>(gfx_context, queue, debug_name));
 				}
 		
 				// Also we need linear sampler 
@@ -412,37 +454,7 @@ namespace edge
 			{
 				descriptor_allocator->Reset();
 			}
-
-			auto Flush(SemaphoreSubmitInfo& signalled_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores) -> void
-			{
-				EDGE_PROFILE_ZONE_SCOPED;
-
-				auto& node = GetActiveNode();
-				signalled_semaphore.stage = StageFlag::eComputeShader;
-				node.Flush(recording, signalled_semaphore, wait_semaphores);
-				active_node_index = (active_node_index + 1) % nodes.size();
-			}
 		private:
-			[[nodiscard]] auto AcquireCommandList() -> ICommandList*
-			{
-				EDGE_PROFILE_ZONE_SCOPED;
-
-				auto& node = GetActiveNode();
-				return node.AcquireCommandList(recording, "MIP_GENERATOR");
-			}
-
-			auto GetActiveNode() -> CommandNode&
-			{
-				return nodes[active_node_index];
-			}
-
-			IContext* gfx_context{ nullptr };
-			const IQueue* queue;
-
-			std::vector<CommandNode> nodes;
-			uint32_t active_node_index{ 0 };
-			bool recording{ false };
-		
 			struct ShaderInstance
 			{
 				IShader* shader{ nullptr };
@@ -734,62 +746,39 @@ namespace edge
 			cmd_list->CopyBuffer(copy_buffer_info);
 		}
 
-
-		class ResourceLoader final : public IResourceLoader
+		class ResourceLoader final : public CommandExecutor
 		{
 		public:
 			ResourceLoader(IContext* gfx_context, const IQueue* queue, uint32_t node_count, uint64_t buffer_size, std::string_view name = {}) :
-				loader_name{ name },
-				queue{ queue }
+				CommandExecutor{ gfx_context, queue, StageFlag::eTransfer, name }
 			{
 				for (int32_t i = 0; i < node_count; ++i)
 				{
 					auto debug_name = std::format("{}_{}", name, i);
-					nodes.emplace_back(gfx_context, queue, buffer_size, debug_name);
+					nodes.emplace_back(std::make_unique<UploaderNode>(gfx_context, queue, buffer_size, debug_name));
 				}
-			}
-
-			~ResourceLoader() override
-			{
-				nodes.clear();
 			}
 
 			[[nodiscard]] auto AcquireCommandList() -> ICommandList* override
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 
-				auto& node = GetActiveNode();
-				return node.AcquireCommandList(recording, loader_name);
-			}
+				auto& node = (UploaderNode&)GetActiveNode();
+				if (!recording)
+				{
+					node.allocator.Reset();
+				}
 
-			auto Flush(SemaphoreSubmitInfo& signalled_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores) -> void override
-			{
-				EDGE_PROFILE_ZONE_SCOPED;
-
-				auto& node = GetActiveNode();
-				signalled_semaphore.stage = StageFlag::eTransfer;
-				node.Flush(recording, signalled_semaphore, wait_semaphores);
-				active_node_index = (active_node_index + 1) % nodes.size();
+				return node.AcquireCommandList(recording, name);
 			}
-
-			auto GetActiveNode() -> UploaderNode & override
-			{
-				return nodes[active_node_index];
-			}
-		private:
-			const IQueue* queue;
-			std::string_view loader_name{};
-			std::vector<UploaderNode> nodes{};
-			uint32_t active_node_index{ 0 };
-			bool recording{ false };
 		};
 
 
 		IContext* ResourceUpdater::gfx_context{ nullptr };
 		fs::VirtualFilesystem* ResourceUpdater::filesystem{ nullptr };
 
-		std::unique_ptr<IResourceLoader> ResourceUpdater::updater{};
-		std::unique_ptr<IResourceLoader> ResourceUpdater::uploader{};
+		std::unique_ptr<CommandExecutor> ResourceUpdater::updater{};
+		std::unique_ptr<CommandExecutor> ResourceUpdater::uploader{};
 		std::unique_ptr<MipGenerator> ResourceUpdater::mip_generator{};
 
 		void ResourceUpdater::Create(const ResourceUpdaterCreateInfo& create_info)
@@ -841,7 +830,7 @@ namespace edge
 
 			ITexture* dst_texture = gfx_context->CreateTexture(create_info);
 
-			auto& node = uploader->GetActiveNode();
+			auto& node = (UploaderNode&)uploader->GetActiveNode();
 			auto [src_buffer, src_offset] = node.allocator.Allocate(texture_reader->GetSize());
 
 			TextureBarrier texture_barrier{};
@@ -872,7 +861,7 @@ namespace edge
 
 			ICommandList* cmd_list = updater->AcquireCommandList();
 
-			auto& node = updater->GetActiveNode();
+			auto& node = (UploaderNode&)updater->GetActiveNode();
 			auto [src_buffer, src_offset] = node.allocator.Allocate(data.size());
 
 			auto* src_memory = src_buffer->Map();
@@ -936,7 +925,7 @@ namespace edge
 		{
 			updater->AcquireCommandList();
 
-			auto& node = updater->GetActiveNode();
+			auto& node = (UploaderNode&)updater->GetActiveNode();
 			auto [src_buffer, src_offset] = node.allocator.Allocate(update_size);
 
 			return { src_buffer, src_offset, update_size, dst_buffer };
