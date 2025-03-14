@@ -63,13 +63,24 @@ namespace edge
 			uint32_t buffer_count{ 1u };
 		};
 
+		struct ResourceNode;
+
+		class IResourceLoader
+		{
+		public:
+			virtual ~IResourceLoader() = default;
+
+			[[nodiscard]] virtual auto AcquireCommandList() -> ICommandList* = 0;
+			virtual auto Flush(SemaphoreSubmitInfo& submitted_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores) -> void = 0;
+			virtual auto GetActiveNode() -> ResourceNode& = 0;
+		};
+
 		class ResourceUpdater
 		{
 		public:
 			static void Create(const ResourceUpdaterCreateInfo& create_info);
 			static void Shutdown();
 
-			static auto AcquireCommandList() -> ICommandList*;
 			static void Flush(SemaphoreSubmitInfo& submitted_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores);
 
 			static auto LoadTexture(std::string_view path) -> ITexture*;
@@ -86,13 +97,8 @@ namespace edge
 			static fs::VirtualFilesystem* filesystem;
 			static const IQueue* queue;
 
-			struct Node;
-			static std::vector<Node> nodes;
-			static uint32_t active_node_idx;
-
+			static std::unique_ptr<IResourceLoader> loader;
 			static std::unique_ptr<MipGenerator> mip_generator;
-
-			static bool recording;
 		};
 
 		class ResourceUploader
@@ -101,21 +107,21 @@ namespace edge
 			static void Create(const ResourceUpdaterCreateInfo& create_info);
 			static void Shutdown();
 
+			static void Flush(SemaphoreSubmitInfo& submitted_semaphore, std::span<SemaphoreSubmitInfo> wait_semaphores);
+
+			static auto LoadTexture(std::string_view path, ResourceStateFlags& output_resource_state) -> ITexture*;
+
 			static void UploaderThread(std::stop_token stop_token);
 		private:
 			static IContext* gfx_context;
 			static fs::VirtualFilesystem* filesystem;
 			static const IQueue* queue;
 
-			struct Node;
-			static std::vector<Node> nodes;
-			static uint32_t active_node_idx;
-
+			static std::unique_ptr<IResourceLoader> loader;
 			static std::unique_ptr<MipGenerator> mip_generator;
 
 			static std::jthread upload_thread;
 			static std::stop_source uploader_stop;
-			static bool recording;
 		};
 	}
 }

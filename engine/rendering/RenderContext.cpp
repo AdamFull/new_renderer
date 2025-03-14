@@ -562,10 +562,8 @@ namespace engine
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			edge::gfx::ITexture* texture = edge::gfx::ResourceUpdater::LoadTexture(path);
+			edge::gfx::ITexture* texture = edge::gfx::ResourceUploader::LoadTexture(path, new_resource.current_state);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
-
-			new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 			return render_resources.size() - 1ull;
 		}
@@ -843,17 +841,29 @@ namespace engine
 			current_command_list->ResetQuery(timestamp_query, 0u, 2u);
 			current_command_list->BeginQuery(timestamp_query, 0u);
 
+			std::vector<edge::gfx::TextureBarrier> texture_barriers{};
+
 			// Update bindless textures
 			uint32_t array_index{ 0u };
-			for (auto& resource : static_textures.Data())
+			for (auto& resource : render_resources)
 			{
+				if (resource.resource_type != RenderResourceTypeFlag::eStaticImage)
+					continue;
+
+				auto& texture_obj = static_textures.Get(resource.resource_id);
+				if (resource.current_state != edge::gfx::ResourceStateFlag::eShaderReadOnlyResource)
+				{
+					auto& barrier = texture_barriers.emplace_back(texture_obj.texture, ~0u, resource.current_state, edge::gfx::ResourceStateFlag::eShaderReadOnlyResource);
+					resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
+				}
+
 				edge::gfx::TextureDescriptor texture_descriptor{};
 				texture_descriptor.type = edge::gfx::DescriptorType::eSampledImage;
 				texture_descriptor.set = 0;
 				texture_descriptor.binding = 3;
 
 				texture_descriptor.array_index = array_index;
-				texture_descriptor.texture = resource.texture;
+				texture_descriptor.texture = texture_obj.texture;
 				texture_descriptor.resource_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 				global_resource_descriptor->BindTexture(texture_descriptor);
@@ -864,11 +874,21 @@ namespace engine
 				sampler_descriptor.binding = 4;
 
 				sampler_descriptor.array_index = array_index;
-				sampler_descriptor.sampler = resource.sampler;
+				sampler_descriptor.sampler = texture_obj.sampler;
 
 				global_resource_descriptor->BindTexture(sampler_descriptor);
 
 				++array_index;
+			}
+
+			// Some textures can be just uploaded and we need to change them's state to shader readable
+			if (!texture_barriers.empty())
+			{
+				edge::gfx::ResourceBarrierInfo resource_barrier{};
+				resource_barrier.texture_barriers = texture_barriers.data();
+				resource_barrier.texture_barrier_count = texture_barriers.size();
+
+				current_command_list->ResourceBarrier(resource_barrier);
 			}
 		}
 
@@ -878,8 +898,20 @@ namespace engine
 
 			global_resource_descriptor->Flush();
 
+			std::vector<edge::gfx::SemaphoreSubmitInfo> wait_semaphores{};
+			wait_semaphores.emplace_back(acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput);
+
+			edge::gfx::SemaphoreSubmitInfo update_wait_semaphore{};
+			edge::gfx::ResourceUpdater::Flush(update_wait_semaphore, {});
+
+			if (update_wait_semaphore.semaphore)
+				wait_semaphores.emplace_back(update_wait_semaphore);
+
 			edge::gfx::SemaphoreSubmitInfo upload_wait_semaphore{};
-			edge::gfx::ResourceUpdater::Flush(upload_wait_semaphore, {});
+			edge::gfx::ResourceUploader::Flush(upload_wait_semaphore, {});
+
+			if (upload_wait_semaphore.semaphore)
+				wait_semaphores.emplace_back(upload_wait_semaphore);
 
 			// Finish performance query
 			current_command_list->EndQuery(timestamp_query, 1u);
@@ -895,13 +927,7 @@ namespace engine
 				// TODO: COMMAND BUFFERS
 				edge::gfx::SubmitInfo submit_info{};
 
-				edge::gfx::SemaphoreSubmitInfo wait_semaphores[2] = {
-					edge::gfx::SemaphoreSubmitInfo{ acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
-					upload_wait_semaphore
-				};
-
-				submit_info.wait_semaphore_infos = { &wait_semaphores[0], upload_wait_semaphore.semaphore ? 2u : 1u };
-
+				submit_info.wait_semaphore_infos = wait_semaphores;
 
 				edge::gfx::SemaphoreSubmitInfo signal_semaphores[] = {
 					edge::gfx::SemaphoreSubmitInfo{ current_frame->render_finished, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput },
@@ -909,7 +935,6 @@ namespace engine
 				};
 
 				submit_info.signal_semaphore_infos = signal_semaphores;
-
 				submit_info.command_lists = { &current_command_list, 1 };
 
 				queue->Submit(submit_info, current_frame->fence);
