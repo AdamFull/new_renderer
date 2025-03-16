@@ -183,11 +183,13 @@ namespace edge
 			}
 
 			IShader* shader = gfx_context->CreateShader(shader_stages);
+			shader->SetResourceName(name);
 
 			RootSignatureCreateInfo root_sign_ci{};
 			root_sign_ci.shader = shader;
 			root_sign_ci.shared_descriptor = technique_desc.shared_descriptor;
 			IRootSignature* root_signature = gfx_context->CreateRootSignature(root_sign_ci);
+			root_signature->SetResourceName(name);
 
 			IPipeline* pipeline{ nullptr };
 			if (technique_desc.type == TechniqueType::eCompute)
@@ -234,6 +236,8 @@ namespace edge
 				pipeline_ci.stencil_format = technique_desc.stencil_format;
 				pipeline = gfx_context->CreatePipeline(pipeline_ci);
 			}
+
+			pipeline->SetResourceName(name);
 
 			techniques.emplace(name, Technique{ name, shader, root_signature, pipeline });
 		}
