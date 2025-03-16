@@ -27,6 +27,12 @@ namespace edge
 				return nullptr;
 			}
 
+			auto D3D12Context::CreateTimelineSemaphore() const -> ISemaphore*
+			{
+				assert(false && "NOT IMPLEMENTED");
+				return nullptr;
+			}
+
 			auto D3D12Context::CreateSemaphore() const -> ISemaphore*
 			{
 				assert(false && "NOT IMPLEMENTED");
