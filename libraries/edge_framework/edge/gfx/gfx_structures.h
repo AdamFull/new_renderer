@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <array>
 #include <span>
 #include "gfx_shader_reflection.h"
@@ -491,6 +492,13 @@ namespace edge
 		{
 			IGFXResource* resource{ nullptr };
 			ResourceStateFlags state{};
+		};
+
+		struct AsyncResourceHandle
+		{
+			IGFXResource* resource{ nullptr };
+			ResourceStateFlags state{};
+			std::atomic_bool done{ false };
 		};
 
 		uint32_t Hash(const VertexAttributeDescription& desc, uint32_t hash = 0u);

@@ -1,7 +1,13 @@
 #pragma once
 
+#include <queue>
 #include <thread>
+#include <future>
+#include <mutex>
+#include <condition_variable>
 #include <memory>
+
+#include "../util/utl_future.hpp"
 
 #include "gfx_common.h"
 #include "gfx_structures.h"
@@ -64,15 +70,23 @@ namespace edge
 			uint32_t buffer_count{ 1u };
 		};
 
+		struct ResourceJobPack
+		{
+			std::shared_ptr<AsyncResourceHandle> handle{};
+			std::packaged_task<std::pair<IGFXResource*, ResourceStateFlags>()> task{};
+		};
+
 		class ResourceUpdater
 		{
 		public:
 			static void Create(const ResourceUpdaterCreateInfo& create_info);
 			static void Shutdown();
 
-			static void Flush(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores);
+			static bool Flush(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores);
 
-			static auto LoadTexture(std::string_view path, ResourceStateFlags& output_resource_state) -> ITexture*;
+			static auto LoadTexture(std::string path) -> std::shared_ptr<AsyncResourceHandle>;
+			static auto LoadTextureSync(std::string path, ResourceStateFlags& state) -> ITexture*;
+			static auto SyncUploads() -> void;
 
 			static void UpdateTexture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data);
 
@@ -82,8 +96,21 @@ namespace edge
 
 			//static auto GetTextureUpdater(ITexture* dst_texture, uint64_t update_size) -> TextureUpdater;
 		private:
+			static auto LoadTextureImpl(ICommandList* cmd_list, CommandExecutor& cmd_exec, std::string path, ResourceStateFlags& output_state) -> ITexture*;
+			static void ProcessJobs(std::stop_token stop_token);
+			static void FlushUploader();
+
 			static IContext* gfx_context;
 			static fs::VirtualFilesystem* filesystem;
+
+			static std::queue<ResourceJobPack> jobs;
+			static std::queue<ResourceJobPack> done_jobs;
+			static std::mutex mutex;
+			static std::mutex semaphore_mutex;
+			static std::condition_variable cv;
+			static std::jthread worker_thread;
+			static std::atomic<bool> needs_sync;
+			static SemaphoreSubmitInfo last_submitted;
 
 			static std::unique_ptr<CommandExecutor> updater;
 			static std::unique_ptr<CommandExecutor> uploader;

@@ -126,7 +126,7 @@ namespace edge
 			{
 				fence = gfx_context->CreateFence();
 				fence->SetResourceName(name);
-				semaphore = gfx_context->CreateSemaphore();
+				semaphore = gfx_context->CreateTimelineSemaphore();
 				semaphore->SetResourceName(name);
 				cmd_pool = gfx_context->CreateCommandPool(queue);
 				cmd_pool->SetResourceName(name);
@@ -193,6 +193,7 @@ namespace edge
 				cmd_list->End();
 
 				signalled_semaphore.semaphore = semaphore;
+				signalled_semaphore.value = ++counter;
 
 				SubmitInfo submit_info{};
 				submit_info.command_lists = { &cmd_list, 1 };
@@ -211,6 +212,8 @@ namespace edge
 
 			ICommandList* cmd_list{ nullptr };
 			ICommandPool* cmd_pool;
+
+			uint64_t counter{ 0 };
 		};
 
 		struct UploaderNode : CommandNode
@@ -501,7 +504,8 @@ namespace edge
 				create_info.height = image_height;
 				//create_info.format = image_channel_count == 4 ? gfx::Format::eR8G8B8A8Unorm : gfx::Format::eR8G8B8Unorm;
 				create_info.format = gfx::Format::eR8G8B8A8Unorm;
-				create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(image_width, image_height)))) + 1u;
+				//create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(image_width, image_height)))) + 1u;
+				create_info.levels = 1;
 
 				return image_data;
 			}
@@ -777,6 +781,15 @@ namespace edge
 		IContext* ResourceUpdater::gfx_context{ nullptr };
 		fs::VirtualFilesystem* ResourceUpdater::filesystem{ nullptr };
 
+		std::queue<ResourceJobPack> ResourceUpdater::jobs{};
+		std::queue<ResourceJobPack> ResourceUpdater::done_jobs{};
+		std::mutex ResourceUpdater::mutex{};
+		std::mutex ResourceUpdater::semaphore_mutex{};
+		std::condition_variable ResourceUpdater::cv{};
+		std::jthread ResourceUpdater::worker_thread{};
+		std::atomic<bool> ResourceUpdater::needs_sync{};
+		SemaphoreSubmitInfo ResourceUpdater::last_submitted{};
+
 		std::unique_ptr<CommandExecutor> ResourceUpdater::updater{};
 		std::unique_ptr<CommandExecutor> ResourceUpdater::uploader{};
 		std::unique_ptr<MipGenerator> ResourceUpdater::mip_generator{};
@@ -787,13 +800,18 @@ namespace edge
 			ResourceUpdater::filesystem = create_info.filesystem;
 
 			auto update_queue = gfx_context->RequestQueue(QueueTypeFlag::eGraphics);
+			update_queue->SetResourceName("UPDATE");
 			updater = std::make_unique<ResourceLoader>(gfx_context, update_queue, create_info.buffer_count, create_info.buffer_size, "UPDATER");
 			
 			auto upload_queue = gfx_context->RequestQueue(QueueTypeFlag::eTransfer, QueueTypeFlag::eGraphics | QueueTypeFlag::eCompute);
+			upload_queue->SetResourceName("UPLOAD");
 			uploader = std::make_unique<ResourceLoader>(gfx_context, upload_queue, create_info.buffer_count, create_info.buffer_size, "UPLOADER");
 
 			auto compute_queue = gfx_context->RequestQueue(QueueTypeFlag::eCompute, QueueTypeFlag::eGraphics);
+			compute_queue->SetResourceName("COMPUTE_ASYNC");
 			mip_generator = std::make_unique<MipGenerator>(gfx_context, compute_queue, create_info.buffer_count);
+
+			worker_thread = std::jthread{ [](std::stop_token st) { ProcessJobs(st); } };
 		}
 
 		void ResourceUpdater::Shutdown()
@@ -803,56 +821,42 @@ namespace edge
 			mip_generator = nullptr;
 		}
 
-		auto ResourceUpdater::LoadTexture(std::string_view path, ResourceStateFlags& output_resource_state) -> ITexture*
+		auto ResourceUpdater::LoadTexture(std::string path) -> std::shared_ptr<AsyncResourceHandle>
+		{
+			std::packaged_task<std::pair<IGFXResource*, ResourceStateFlags>()> task([path]() -> std::pair<IGFXResource*, ResourceStateFlags>
+				{
+					EDGE_PROFILE_ZONE_SCOPED;
+
+					ICommandList* cmd_list = uploader->AcquireCommandList();
+					
+					ResourceStateFlags state{};
+					return std::make_pair(LoadTextureImpl(cmd_list, *uploader, path, state), state);
+				});
+
+			auto handle = std::make_shared<AsyncResourceHandle>();
+			{
+				std::lock_guard<std::mutex> lock(mutex);
+				jobs.push({
+					.handle = handle,
+					.task = std::move(task)
+					});
+			}
+			cv.notify_one();
+
+			return handle;
+		}
+
+		auto ResourceUpdater::LoadTextureSync(std::string path, ResourceStateFlags& state) -> ITexture*
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			ICommandList* cmd_list = uploader->AcquireCommandList();
-			cmd_list->BeginMarker(path, 0xFFFFFFFF);
+			ICommandList* cmd_list = updater->AcquireCommandList();
+			return LoadTextureImpl(cmd_list, *updater, path, state);
+		}
 
-			auto ext = fs::GetExt(path);
-			auto ext_hash = murmur_hash(ext.data(), ext.size(), 0);
-
-			std::unique_ptr<ITextureReader> texture_reader;
-
-			switch (ext_hash)
-			{
-			case fs::format::ktx:
-			case fs::format::ktx2: { texture_reader = std::make_unique<KTXImageLoader>(); } break;
-			default: { texture_reader = std::make_unique<STBImageLoader>(); } break;
-			}
-
-			std::vector<uint8_t> data{};
-			filesystem->ReadFile(path, data);
-
-			gfx::TextureCreateInfo create_info{};
-			texture_reader->Load(data, create_info);
-
-			ITexture* dst_texture = gfx_context->CreateTexture(create_info);
-
-			auto& node = (UploaderNode&)uploader->GetActiveNode();
-			auto [src_buffer, src_offset] = node.allocator.Allocate(texture_reader->GetSize());
-
-			TextureBarrier texture_barrier{};
-			texture_barrier.texture = dst_texture;
-			texture_barrier.src_state = ResourceStateFlag::eUndefined;
-			output_resource_state = texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
-			
-			ResourceBarrierInfo resource_barrier{};
-			resource_barrier.texture_barriers = &texture_barrier;
-			resource_barrier.texture_barrier_count = 1u;
-
-			// Transfer to intermediate layout
-			cmd_list->ResourceBarrier(resource_barrier);
-
-			texture_reader->Upload(cmd_list, src_buffer, src_offset, dst_texture);
-
-			cmd_list->EndMarker();
-
-			if (texture_reader->IsNeedToGenerateMips())
-				output_resource_state = mip_generator->WriteCommands(dst_texture, path);
-
-			return dst_texture;
+		auto ResourceUpdater::SyncUploads() -> void
+		{
+			needs_sync.store(true, std::memory_order_relaxed);
 		}
 
 		void ResourceUpdater::UpdateTexture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data)
@@ -899,26 +903,24 @@ namespace edge
 			cmd_list->ResourceBarrier(resource_barrier);
 		}
 
-		void ResourceUpdater::Flush(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores)
+		bool ResourceUpdater::Flush(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores)
 		{
 			SemaphoreSubmitInfo updater_semaphore{};
 			updater->Flush(updater_semaphore, wait_semaphores);
 			if (updater_semaphore.semaphore)
 				signalled_semaphores.emplace_back(updater_semaphore);
 
-			SemaphoreSubmitInfo uploader_semaphore{};
-			uploader->Flush(uploader_semaphore, wait_semaphores);
-			//if (uploader_semaphore.semaphore)
-			//	signalled_semaphores.emplace_back(uploader_semaphore);
+			bool uploads_flushed{ false };
+			semaphore_mutex.lock();
+			if (last_submitted.semaphore)
+			{
+				signalled_semaphores.emplace_back(last_submitted);
+				last_submitted = {};
+				uploads_flushed = true;
+			}
+			semaphore_mutex.unlock();
 
-			SemaphoreSubmitInfo mip_generator_semaphore{};
-			if(uploader_semaphore.semaphore)
-				mip_generator->Flush(mip_generator_semaphore, { &uploader_semaphore, 1 });
-			else
-				mip_generator->Flush(mip_generator_semaphore, {});
-
-			if (mip_generator_semaphore.semaphore)
-				signalled_semaphores.emplace_back(mip_generator_semaphore);
+			return true;
 		}
 
 		auto ResourceUpdater::GetBufferUpdater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater
@@ -942,6 +944,121 @@ namespace edge
 			auto updater = GetBufferUpdater(dst_buffer, data.size());
 			updater.AddRegion(data);
 			SubmitBufferUpdater(updater, current_state);
+		}
+
+		auto ResourceUpdater::LoadTextureImpl(ICommandList* cmd_list, CommandExecutor& cmd_exec, std::string path, ResourceStateFlags& output_state) -> ITexture*
+		{
+			EDGE_LOGD("[ResourceUpdater] Loading texture \"{}\"", path);
+			cmd_list->BeginMarker(path, 0xFFFFFFFF);
+
+			std::unique_ptr<ITextureReader> texture_reader;
+
+			auto ext = fs::GetExt(path);
+			auto ext_hash = murmur_hash(ext.data(), ext.size(), 0);
+			switch (ext_hash)
+			{
+			case fs::format::ktx:
+			case fs::format::ktx2: { texture_reader = std::make_unique<KTXImageLoader>(); } break;
+			default: { texture_reader = std::make_unique<STBImageLoader>(); } break;
+			}
+
+			std::vector<uint8_t> data{};
+			filesystem->ReadFile(path, data);
+
+			gfx::TextureCreateInfo create_info{};
+			texture_reader->Load(data, create_info);
+
+			ITexture* dst_texture = gfx_context->CreateTexture(create_info);
+			dst_texture->SetResourceName(path);
+
+			auto& node = (UploaderNode&)cmd_exec.GetActiveNode();
+			auto [src_buffer, src_offset] = node.allocator.Allocate(texture_reader->GetSize());
+
+			TextureBarrier texture_barrier{};
+			texture_barrier.texture = dst_texture;
+			texture_barrier.src_state = ResourceStateFlag::eUndefined;
+			texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
+
+			ResourceBarrierInfo resource_barrier{};
+			resource_barrier.texture_barriers = &texture_barrier;
+			resource_barrier.texture_barrier_count = 1u;
+
+			// Transfer to intermediate layout
+			cmd_list->ResourceBarrier(resource_barrier);
+
+			texture_reader->Upload(cmd_list, src_buffer, src_offset, dst_texture);
+
+			cmd_list->EndMarker();
+
+			output_state = ResourceStateFlag::eCopyDst;
+
+			EDGE_LOGD("[ResourceUpdater] Loading texture \"{}\" done", path);
+
+			//if (texture_reader->IsNeedToGenerateMips())
+			//	resource_result.state = mip_generator->WriteCommands(dst_texture, path);
+
+			return dst_texture;
+		}
+
+		void ResourceUpdater::ProcessJobs(std::stop_token stop_token)
+		{
+			while (!stop_token.stop_requested())
+			{
+				std::queue<ResourceJobPack> local_jobs;
+				{
+					std::unique_lock<std::mutex> lock(mutex);
+					cv.wait(lock, [&stop_token] { return !jobs.empty() || stop_token.stop_requested(); });
+					if (stop_token.stop_requested() && jobs.empty())
+						break;
+					std::swap(local_jobs, jobs);
+				}
+
+				EDGE_LOGD("[ResourceUpdater] Starting working on {} uploads.", local_jobs.size());
+
+				// Process all jobs in the current batch.
+				while (!local_jobs.empty())
+				{
+					auto job_pack = std::move(local_jobs.front());
+					local_jobs.pop();
+					job_pack.task();
+
+					done_jobs.push(std::move(job_pack));
+
+					if (needs_sync.load(std::memory_order_relaxed))
+					{
+						FlushUploader();
+						needs_sync.store(false, std::memory_order_relaxed);
+					}
+				}
+
+				FlushUploader();
+			}
+		}
+
+		void ResourceUpdater::FlushUploader()
+		{
+			EDGE_LOGD("[ResourceUpdater] Flushing uploader work.");
+
+			SemaphoreSubmitInfo uploader_semaphore{};
+			uploader->Flush(uploader_semaphore, {});
+			if (uploader_semaphore.semaphore)
+			{
+				semaphore_mutex.lock();
+				last_submitted = uploader_semaphore;
+				semaphore_mutex.unlock();
+
+				while (!done_jobs.empty())
+				{
+					auto job_pack = std::move(done_jobs.front());
+					done_jobs.pop();
+
+					auto future = job_pack.task.get_future();
+					auto result = future.get();
+					job_pack.handle->resource = result.first;
+					job_pack.handle->state = result.second;
+					job_pack.handle->done.store(true, std::memory_order_relaxed);
+				}
+			}
 		}
 	}
 }
