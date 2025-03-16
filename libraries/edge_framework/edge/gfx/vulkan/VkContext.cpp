@@ -241,6 +241,11 @@ namespace edge
 				return new VulkanFence(*device);
 			}
 
+			auto VulkanContext::CreateTimelineSemaphore() const -> ISemaphore*
+			{
+				return new VulkanSemaphore(*device, true);
+			}
+
 			auto VulkanContext::CreateSemaphore() const -> ISemaphore*
 			{
 				return new VulkanSemaphore(*device);

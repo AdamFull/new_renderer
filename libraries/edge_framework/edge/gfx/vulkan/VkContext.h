@@ -35,6 +35,7 @@ namespace edge
 
 				[[nodiscard]] auto CreateFence() const -> IFence* override;
 
+				[[nodiscard]] auto CreateTimelineSemaphore() const -> ISemaphore* override;
 				[[nodiscard]] auto CreateSemaphore() const -> ISemaphore* override;
 
 				[[nodiscard]] auto RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const -> IQueue* override;

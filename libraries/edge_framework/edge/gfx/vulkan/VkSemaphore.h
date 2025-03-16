@@ -14,7 +14,7 @@ namespace edge
 			class VulkanSemaphore final : public ISemaphore, public VulkanResource<vk::Semaphore>
 			{
 			public:
-				VulkanSemaphore(Device& device);
+				VulkanSemaphore(Device& device, bool timeline = false);
 				~VulkanSemaphore();
 
 				VulkanSemaphore(const VulkanSemaphore&) = delete;

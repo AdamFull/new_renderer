@@ -21,6 +21,7 @@ namespace edge
 
 			[[nodiscard]] virtual auto CreateFence() const -> IFence* = 0;
 
+			[[nodiscard]] virtual auto CreateTimelineSemaphore() const -> ISemaphore* = 0;
 			[[nodiscard]] virtual auto CreateSemaphore() const -> ISemaphore* = 0;
 
 			[[nodiscard]] virtual auto RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const -> IQueue const* = 0;
