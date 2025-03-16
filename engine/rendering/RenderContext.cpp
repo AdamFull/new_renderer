@@ -87,6 +87,7 @@ namespace engine
 		{
 			// Select queue that can present
 			queue = context.RequestQueue(edge::gfx::QueueTypeFlag::ePresent | edge::gfx::QueueTypeFlag::eGraphics);
+			queue->SetResourceName("GRAPHICS");
 			
 			edge::gfx::SwapChainCreateInfo swapchain_ci{};
 			swapchain_ci.window = window;
@@ -128,6 +129,19 @@ namespace engine
 			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eSampler, 4u, shlib::MAX_SAMPLED_TEXTURES);
 
 			shared_descriptor = context.CreateSharedDescriptor(shared_descriptor_ci);
+
+			edge::gfx::TextureCreateInfo dummy_texture_ci{};
+			dummy_texture_ci.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eTransferable;
+			dummy_texture_ci.width = 4;
+			dummy_texture_ci.height = 4;
+			dummy_texture_ci.format = edge::gfx::Format::eR8G8B8A8Unorm;
+
+			dummy_texture = context.CreateTexture(dummy_texture_ci);
+			dummy_texture->SetResourceName("dummy texture");
+
+			uint8_t dummy_data[64] = { 0 };
+			edge::gfx::ResourceStateFlags resource_state{};
+			edge::gfx::ResourceUpdater::UpdateTexture(dummy_texture, resource_state, dummy_data);
 
 			// Create uniform pool
 			global_uniform_pool = std::make_unique<UniformPool>(context);
@@ -557,13 +571,23 @@ namespace engine
 			return render_resources.size() - 1ull;
 		}
 
-		uint32_t RenderContext::AddResource(std::string_view path, edge::gfx::ISampler* sampler)
+		uint32_t RenderContext::AddResourceSync(std::string_view path, edge::gfx::ISampler* sampler)
 		{
 			auto& new_resource = render_resources.emplace_back();
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-			edge::gfx::ITexture* texture = edge::gfx::ResourceUpdater::LoadTexture(path, new_resource.current_state);
+			edge::gfx::ITexture* texture = edge::gfx::ResourceUpdater::LoadTextureSync(path.data(), new_resource.current_state);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+
+			return render_resources.size() - 1ull;
+		}
+
+		uint32_t RenderContext::AddResource(std::string_view path, edge::gfx::ISampler* sampler)
+		{
+			auto& new_resource = render_resources.emplace_back();
+			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
+			new_resource.resource_id = static_textures.Add(TextureObject{ dummy_texture, sampler ? sampler : default_sampler });
+			pending_resources.emplace_back(std::make_pair(edge::gfx::ResourceUpdater::LoadTexture(path.data()), (uint32_t)(render_resources.size() - 1ull)));
 
 			return render_resources.size() - 1ull;
 		}
@@ -841,6 +865,26 @@ namespace engine
 			current_command_list->ResetQuery(timestamp_query, 0u, 2u);
 			current_command_list->BeginQuery(timestamp_query, 0u);
 
+			for (auto it = pending_resources.begin(); it != pending_resources.end();)
+			{
+				auto resource_desc = it->first;
+				auto resource_uploaded = resource_desc->done.load(std::memory_order_relaxed);
+				if (resource_uploaded)
+				{
+					auto& render_resource = render_resources[it->second];
+					render_resource.current_state = resource_desc->state;
+
+					auto& resource = static_textures.Get(render_resource.resource_id);
+					resource.texture = resource_desc->resource->As<edge::gfx::ITexture*>();
+					it = pending_resources.erase(it);
+				}
+				else
+					++it;
+			}
+
+			// Submit uploading work
+			edge::gfx::ResourceUpdater::SyncUploads();
+
 			std::vector<edge::gfx::TextureBarrier> texture_barriers{};
 
 			// Update bindless textures
@@ -851,7 +895,7 @@ namespace engine
 					continue;
 
 				auto& texture_obj = static_textures.Get(resource.resource_id);
-				if (resource.current_state != edge::gfx::ResourceStateFlag::eShaderReadOnlyResource)
+				if (resource.current_state != edge::gfx::ResourceStateFlag::eShaderReadOnlyResource && texture_obj.texture != dummy_texture)
 				{
 					auto& barrier = texture_barriers.emplace_back(texture_obj.texture, ~0u, resource.current_state, edge::gfx::ResourceStateFlag::eShaderReadOnlyResource);
 					resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;

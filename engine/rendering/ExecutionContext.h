@@ -152,6 +152,7 @@ namespace engine
 			virtual ~ExecutionContext() = default;
 
 			virtual uint32_t AddResource() = 0;
+			virtual uint32_t AddResourceSync(std::string_view path, edge::gfx::ISampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
 			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) = 0;

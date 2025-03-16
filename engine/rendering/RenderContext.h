@@ -1,5 +1,7 @@
 #pragma once
 
+#include <future>
+
 #include "RenderResourceContainer.h"
 
 #include "ExecutionContext.h"
@@ -41,6 +43,7 @@ namespace engine
 			RenderContext& operator=(RenderContext&&) = delete;
 
 			uint32_t AddResource() override;
+			uint32_t AddResourceSync(std::string_view path, edge::gfx::ISampler* sampler = nullptr) override;
 			uint32_t AddResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) override;
 			uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) override;
 			uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) override;
@@ -99,6 +102,9 @@ namespace engine
 
 			edge::gfx::ISwapchain* swapchain{ nullptr };
 			//vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
+
+			edge::gfx::ITexture* dummy_texture{ nullptr };
+			std::vector<std::pair<std::shared_ptr<edge::gfx::AsyncResourceHandle>, uint32_t>> pending_resources;
 
 			RenderFrame* current_frame{ nullptr };
 
