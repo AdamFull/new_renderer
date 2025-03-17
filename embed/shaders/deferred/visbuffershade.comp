@@ -60,12 +60,25 @@ MaterialSample sampleMaterial(in Material mat, in VertexAttribute va)
 	res.normal = va.normal;
 	if(mat.normalTexture != INVALID_HANDLE)
 	{
-		vec3 ts_normal = sampleTexture(mat.normalTexture, va).rgb;
+		vec3 raw_normal = sampleTexture(mat.normalTexture, va).rgb;
+
+		// Some textures can have only rg channels, we need to decode third
+		if(raw_normal.b == 0)
+		{
+			raw_normal.rg = raw_normal.rg * 2.0 - 1.0;
+			raw_normal.b = sqrt(clamp(1.0 - dot(raw_normal, raw_normal), 0.0, 1.0));
+		}
+		else
+		{
+			raw_normal = raw_normal * 2.0 - 1.0;
+		}
+		
+		vec3 ts_normal = normalize(raw_normal);
 
 		vec3 b = cross(va.normal, va.tangent.xyz) * va.tangent.w;
 		mat3 tbn = mat3(va.tangent.xyz, b, va.normal);
 
-		res.normal = normalize(tbn * ((2.0 * ts_normal - 1.0) * vec3(mat.normalScale, mat.normalScale, 1.0)));
+		res.normal = normalize(tbn * (ts_normal * vec3(mat.normalScale, mat.normalScale, 1.0)));
 	}
 
 	// Sample AO
