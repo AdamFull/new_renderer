@@ -277,5 +277,143 @@ namespace edge
         {
             return !IsDepthOnlyFormat(format) || !IsDepthStencilFormat(format);
         }
+
+        inline uint64_t GetFormatBlockAlign(Format format)
+        {
+            switch (format)
+            {
+                // 8-bit packed formats
+            case Format::eR4G4UnormPack8:
+            case Format::eR8Unorm:
+            case Format::eR8Snorm:
+            case Format::eR8Uint:
+            case Format::eR8Sint:
+            case Format::eS8Uint:
+                return 1ull;
+
+                // 16-bit packed formats
+            case Format::eR4G4B4A4UnormPack16:
+            case Format::eB4G4R4A4UnormPack16:
+            case Format::eR5G6B5UnormPack16:
+            case Format::eB5G6R5UnormPack16:
+            case Format::eR5G5B5A1UnormPack16:
+            case Format::eB5G5R5A1UnormPack16:
+            case Format::eA1R5G5B5UnormPack16:
+            case Format::eR8G8Unorm:
+            case Format::eR8G8Snorm:
+            case Format::eR8G8Uint:
+            case Format::eR8G8Sint:
+            case Format::eR16Unorm:
+            case Format::eR16Snorm:
+            case Format::eR16Uint:
+            case Format::eR16Sint:
+            case Format::eR16Sfloat:
+            case Format::eD16Unorm:
+                return 2;
+
+                // 24/32-bit packed formats
+            case Format::eR8G8B8Unorm:
+            case Format::eR8G8B8Snorm:
+            case Format::eR8G8B8Uint:
+            case Format::eR8G8B8Sint:
+            case Format::eB8G8R8Unorm:
+            case Format::eB8G8R8Snorm:
+            case Format::eB8G8R8Uint:
+            case Format::eB8G8R8Sint:
+                return 3;
+
+            case Format::eR8G8B8A8Unorm:
+            case Format::eR8G8B8A8Snorm:
+            case Format::eR8G8B8A8Uint:
+            case Format::eR8G8B8A8Sint:
+            case Format::eB8G8R8A8Unorm:
+            case Format::eB8G8R8A8Snorm:
+            case Format::eB8G8R8A8Uint:
+            case Format::eB8G8R8A8Sint:
+            case Format::eA8B8G8R8UnormPack32:
+            case Format::eA8B8G8R8SnormPack32:
+            case Format::eR32Uint:
+            case Format::eR32Sint:
+            case Format::eR32Sfloat:
+            case Format::eB10G11R11UfloatPack32:
+            case Format::eE5B9G9R9UfloatPack32:
+            case Format::eD32Sfloat:
+            case Format::eX8D24UnormPack32:
+            case Format::eD24UnormS8Uint:
+            case Format::eD32SfloatS8Uint:
+                return 4;
+
+                // 64-bit formats
+            case Format::eR16G16Unorm:
+            case Format::eR16G16Snorm:
+            case Format::eR16G16Uint:
+            case Format::eR16G16Sint:
+            case Format::eR16G16Sfloat:
+            case Format::eR64Uint:
+            case Format::eR64Sint:
+            case Format::eR64Sfloat:
+            case Format::eR32G32Uint:
+            case Format::eR32G32Sint:
+            case Format::eR32G32Sfloat:
+                return 8;
+
+                // 128-bit formats
+            case Format::eR32G32B32A32Uint:
+            case Format::eR32G32B32A32Sint:
+            case Format::eR32G32B32A32Sfloat:
+            case Format::eR64G64Uint:
+            case Format::eR64G64Sint:
+            case Format::eR64G64Sfloat:
+                return 16;
+
+                // Compressed BC Formats
+            case Format::eBc1RgbUnormBlock:
+            case Format::eBc1RgbaUnormBlock:
+            case Format::eBc1RgbSrgbBlock:
+            case Format::eBc1RgbaSrgbBlock:
+            case Format::eBc4UnormBlock:
+            case Format::eBc4SnormBlock:
+                return 8;
+
+            case Format::eBc2UnormBlock:
+            case Format::eBc2SrgbBlock:
+            case Format::eBc3UnormBlock:
+            case Format::eBc3SrgbBlock:
+            case Format::eBc5UnormBlock:
+            case Format::eBc5SnormBlock:
+            case Format::eBc7SrgbBlock:
+            case Format::eBc7UnormBlock:
+            case Format::eBc6HUfloatBlock:
+            case Format::eBc6HSfloatBlock:
+                return 16;
+
+                // ETC/EAC Formats
+            case Format::eEtc2R8G8B8UnormBlock:
+            case Format::eEtc2R8G8B8A8UnormBlock:
+            case Format::eEacR11UnormBlock:
+            case Format::eEacR11G11UnormBlock:
+                return 16;
+
+                // ASTC Formats (All ASTC blocks are 16-byte aligned)
+            case Format::eAstc4x4UnormBlock:
+            case Format::eAstc5x4UnormBlock:
+            case Format::eAstc5x5UnormBlock:
+            case Format::eAstc6x5UnormBlock:
+            case Format::eAstc6x6UnormBlock:
+            case Format::eAstc8x5UnormBlock:
+            case Format::eAstc8x6UnormBlock:
+            case Format::eAstc8x8UnormBlock:
+            case Format::eAstc10x5UnormBlock:
+            case Format::eAstc10x6UnormBlock:
+            case Format::eAstc10x8UnormBlock:
+            case Format::eAstc10x10UnormBlock:
+            case Format::eAstc12x10UnormBlock:
+            case Format::eAstc12x12UnormBlock:
+                return 16;
+
+            default:
+                return 4;
+            }
+        }
     }
 }
