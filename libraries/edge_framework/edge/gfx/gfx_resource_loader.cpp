@@ -5,6 +5,7 @@
 #include "../util/Logger.h"
 #include "../util/Profiler.h"
 #include "../util/util.h"
+#include "../util/Memory.hpp"
 
 #include "../fs/fs_virtual_filesystem.h"
 
@@ -71,11 +72,13 @@ namespace edge
 				}
 			}
 
-			auto Allocate(uint64_t requested_size) -> std::tuple<IBuffer*, uint64_t>
+			auto Allocate(uint64_t requested_size, uint64_t alignment = 1ull) -> std::tuple<IBuffer*, uint64_t>
 			{
-				Block& block = GetBlock(requested_size);
-				block.used += requested_size;
-				return { block.buffer, block.used - requested_size };
+				uint64_t size = aligned_size(requested_size, alignment);
+
+				Block& block = GetBlock(size);
+				block.used += size;
+				return { block.buffer, aligned_size(block.used - size, alignment) };
 			}
 
 			auto Reset() -> void
@@ -642,6 +645,8 @@ namespace edge
 						auto ktxresult = ktxTexture_GetImageOffset(texture, level, 0, layer, &region.buffer_offset);
 						if (ktxresult != KTX_SUCCESS)
 							return;
+
+						region.buffer_offset += src_offset;
 					}
 				}
 
@@ -971,8 +976,10 @@ namespace edge
 			ITexture* dst_texture = gfx_context->CreateTexture(create_info);
 			dst_texture->SetResourceName(path);
 
+			auto block_align = GetFormatBlockAlign(create_info.format);
+
 			auto& node = (UploaderNode&)cmd_exec.GetActiveNode();
-			auto [src_buffer, src_offset] = node.allocator.Allocate(texture_reader->GetSize());
+			auto [src_buffer, src_offset] = node.allocator.Allocate(texture_reader->GetSize(), block_align);
 
 			TextureBarrier texture_barrier{};
 			texture_barrier.texture = dst_texture;
