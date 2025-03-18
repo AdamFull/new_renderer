@@ -524,7 +524,7 @@ namespace edge
 			//compute_queue->SetResourceName("COMPUTE_ASYNC");
 			//mip_generator = std::make_unique<MipGenerator>(gfx_context, compute_queue, create_info.buffer_count);
 
-			uploading_dispatcher = std::make_unique<UploadingDispatcher>(gfx_context, create_info.buffer_size, 8);
+			uploading_dispatcher = std::make_unique<UploadingDispatcher>(gfx_context, create_info.buffer_size, 4);
 		}
 
 		void ResourceUpdater::Shutdown()
@@ -651,22 +651,13 @@ namespace edge
 
 		auto ResourceUpdater::LoadTextureImpl(ICommandList* cmd_list, StagingBufferAllocator& allocator, std::string path, ResourceStateFlags& output_state) -> ITexture*
 		{
-			EDGE_LOGD("[ResourceUpdater] Loading texture \"{}\"", path);
+			EDGE_LOGT("[ResourceUpdater] Loading texture \"{}\"", path);
 			cmd_list->BeginMarker(path, 0xFFFFFFFF);
 
-			std::vector<uint8_t> data{};
-			filesystem->ReadFile(path, data);
+			auto texture_loader = MakeTextureLoader(path, gfx_context, *filesystem);
 
-			auto texture_loader = MakeTextureLoader(path);
-
-			gfx::TextureCreateInfo create_info{};
-			texture_loader->Load(data, create_info);
-
-			ITexture* dst_texture = gfx_context->CreateTexture(create_info);
+			ITexture* dst_texture = texture_loader->GetTexture();
 			dst_texture->SetResourceName(path);
-
-			auto block_align = GetFormatBlockAlign(create_info.format);
-			auto [src_buffer, src_offset] = allocator.Allocate(texture_loader->GetSize(), block_align);
 
 			TextureBarrier texture_barrier{};
 			texture_barrier.texture = dst_texture;
@@ -680,13 +671,13 @@ namespace edge
 			// Transfer to intermediate layout
 			cmd_list->ResourceBarrier(resource_barrier);
 
-			texture_loader->Upload(cmd_list, src_buffer, src_offset, dst_texture);
+			texture_loader->Upload(cmd_list, allocator);
 
 			cmd_list->EndMarker();
 
 			output_state = ResourceStateFlag::eCopyDst;
 
-			EDGE_LOGD("[ResourceUpdater] Loading texture \"{}\" done", path);
+			EDGE_LOGT("[ResourceUpdater] Loading texture \"{}\" done", path);
 
 			//if (texture_reader->IsNeedToGenerateMips())
 			//	resource_result.state = mip_generator->WriteCommands(dst_texture, path);

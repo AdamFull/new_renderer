@@ -25,7 +25,7 @@ namespace edge
 		class UploadingThreadWorker
 		{
 		public:
-			UploadingThreadWorker(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size);
+			UploadingThreadWorker(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size, const std::string& worker_name);
 			~UploadingThreadWorker();
 
 			UploadingThreadWorker(UploadingThreadWorker&& other) noexcept = delete;
@@ -43,6 +43,8 @@ namespace edge
 			IContext* gfx_context;
 			ICommandPool* cmd_pool;
 			ICommandList* cmd_list{ nullptr };
+
+			std::string worker_name;
 
 			std::jthread thread;
 			std::mutex mutex;

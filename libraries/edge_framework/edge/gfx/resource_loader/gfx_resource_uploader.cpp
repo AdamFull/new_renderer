@@ -1,6 +1,7 @@
 #include "gfx_resource_uploader.h"
 
-#include "../util/Logger.h"
+#include "../../util/Logger.h"
+#include "../../util/Profiler.h"
 
 #include "gfx_staging_allocator.h"
 
@@ -13,8 +14,9 @@ namespace edge
 {
 	namespace gfx
 	{
-		UploadingThreadWorker::UploadingThreadWorker(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size) :
-			gfx_context{ gfx_context }
+		UploadingThreadWorker::UploadingThreadWorker(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size, const std::string& worker_name) :
+			gfx_context{ gfx_context },
+			worker_name{ worker_name }
 		{
 			allocator = std::make_unique<ArenaStagingAllocator>(gfx_context, buffer_size);
 
@@ -45,6 +47,7 @@ namespace edge
 			ICommandList* out_cmd_list{ nullptr };
 			if (recording)
 			{
+				cmd_list->EndMarker();
 				cmd_list->End();
 				out_cmd_list = cmd_list;
 				recording = false;
@@ -68,6 +71,7 @@ namespace edge
 
 				cmd_list = cmd_pool->Allocate();
 				cmd_list->Begin();
+				cmd_list->BeginMarker(worker_name, 0xFFFFFFFF);
 				recording = true;
 			}
 
@@ -76,6 +80,8 @@ namespace edge
 
 		auto UploadingThreadWorker::Loop(std::stop_token stop_token) -> void
 		{
+			EDGE_PROFILE_SET_THREAD_NAME(worker_name.c_str());
+
 			while (!stop_token.stop_requested())
 			{
 				std::unique_lock lock(mutex);
@@ -86,18 +92,15 @@ namespace edge
 
 				auto job = std::move(jobs.front());
 				jobs.pop();
-				work_count.fetch_sub(1, std::memory_order_relaxed);
-
 				lock.unlock();
 
-				ICommandList* cmd = AcquireCmdList();
+				work_count.fetch_sub(1, std::memory_order_relaxed);
 
 				// Execute the job
+				ICommandList* cmd = AcquireCmdList();
 				job.task(cmd, *allocator);
 
-				auto future = job.task.get_future();
-				auto result = future.get();
-
+				auto result = job.task.get_future().get();
 				job.handle->resource = result.first;
 				job.handle->state = result.second;
 			}
@@ -116,7 +119,8 @@ namespace edge
 
 			for (int32_t i = 0; i < worker_count; ++i)
 			{
-				workers.emplace_back(std::make_unique<UploadingThreadWorker>(gfx_context, queue, buffer_size));
+				auto worker_name = std::format("UPLOADING_THREAD_{}", 1);
+				workers.emplace_back(std::make_unique<UploadingThreadWorker>(gfx_context, queue, buffer_size, worker_name));
 			}
 
 			dispatcher_thread = std::jthread([this](std::stop_token stop_token) {Loop(stop_token); });
@@ -157,6 +161,8 @@ namespace edge
 
 		auto UploadingDispatcher::Loop(std::stop_token stop_token) -> void
 		{
+			EDGE_PROFILE_SET_THREAD_NAME("UPLOADING_WORK_DISPATCHER");
+
 			while (!stop_token.stop_requested())
 			{
 				// Wait for new jobs
@@ -171,20 +177,26 @@ namespace edge
 					std::swap(local_jobs, pending_jobs);
 				}
 
-				// Wait previous uploads
-				auto start = std::chrono::steady_clock::now();
+				EDGE_PROFILE_ZONE_SCOPED;
 
+#ifndef NDEBUG
+				auto start = std::chrono::steady_clock::now();
+#endif
+
+				// Wait previous uploads
 				fence->Wait();
 				fence->Reset();
 
+#ifndef NDEBUG
 				{
 					auto tp = std::chrono::steady_clock::now();
 					auto wait_time = std::chrono::duration_cast<std::chrono::milliseconds>(tp - start).count();
-					EDGE_LOGD("[UploadingDispatcher] Waiting previous uploads done in {} ms.", wait_time);
+					EDGE_LOGT("[UploadingDispatcher] Waiting previous uploads done in {} ms.", wait_time);
 					start = tp;
 				}
+#endif
 
-				EDGE_LOGD("[UploadingDispatcher] Starting working on {} uploads.", local_jobs.size());
+				EDGE_LOGT("[UploadingDispatcher] Starting working on {} uploads.", local_jobs.size());
 
 				auto completion_latch = std::latch(local_jobs.size());
 
@@ -226,11 +238,13 @@ namespace edge
 				// Wait until all workers finish their tasks
 				completion_latch.wait();
 
+#ifndef NDEBUG
 				{
 					auto tp = std::chrono::steady_clock::now();
 					auto wait_time = std::chrono::duration_cast<std::chrono::milliseconds>(tp - start).count();
-					EDGE_LOGD("[UploadingDispatcher] All work done in {} ms.", wait_time);
+					EDGE_LOGT("[UploadingDispatcher] All work done in {} ms.", wait_time);
 				}
+#endif
 
 				// Collect command lists for submit
 				std::vector<ICommandList*> cmds{};
@@ -251,8 +265,9 @@ namespace edge
 					SubmitInfo submit_info{};
 					submit_info.command_lists = cmds;
 					submit_info.signal_semaphore_infos = { &signal_semaphore, 1 };
-					//submit_info.wait_semaphore_infos = wait_semaphores;
 					queue->Submit(submit_info, fence);
+
+					EDGE_LOGT("[UploadingDispatcher] Submitting {} command lists and signalling semaphore with value {}.", cmds.size(), signal_semaphore.value);
 
 					sync_needed.store(true, std::memory_order_relaxed);
 				}
