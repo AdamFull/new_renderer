@@ -37,6 +37,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "gfx_structures.cpp"
 )
 
+add_subdirectory("resource_loader")
 add_subdirectory("technique_system")
 
 if(USE_NSIGHT_AFTERMATH)
