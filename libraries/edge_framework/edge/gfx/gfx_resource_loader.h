@@ -21,6 +21,8 @@ namespace edge
 
 	namespace gfx
 	{
+		class StagingBufferAllocator;
+		class UploadingDispatcher;
 		class CommandExecutor;
 		class MipGenerator;
 
@@ -70,12 +72,6 @@ namespace edge
 			uint32_t buffer_count{ 1u };
 		};
 
-		struct ResourceJobPack
-		{
-			std::shared_ptr<AsyncResourceHandle> handle{};
-			std::packaged_task<std::pair<IGFXResource*, ResourceStateFlags>()> task{};
-		};
-
 		class ResourceUpdater
 		{
 		public:
@@ -96,25 +92,15 @@ namespace edge
 
 			//static auto GetTextureUpdater(ITexture* dst_texture, uint64_t update_size) -> TextureUpdater;
 		private:
-			static auto LoadTextureImpl(ICommandList* cmd_list, CommandExecutor& cmd_exec, std::string path, ResourceStateFlags& output_state) -> ITexture*;
-			static void ProcessJobs(std::stop_token stop_token);
-			static void FlushUploader();
+			static auto LoadTextureImpl(ICommandList* cmd_list, StagingBufferAllocator& allocator, std::string path, ResourceStateFlags& output_state) -> ITexture*;
 
 			static IContext* gfx_context;
 			static fs::VirtualFilesystem* filesystem;
 
-			static std::queue<ResourceJobPack> jobs;
-			static std::queue<ResourceJobPack> done_jobs;
-			static std::mutex mutex;
-			static std::mutex semaphore_mutex;
-			static std::condition_variable cv;
-			static std::jthread worker_thread;
-			static std::atomic<bool> needs_sync;
-			static SemaphoreSubmitInfo last_submitted;
-
 			static std::unique_ptr<CommandExecutor> updater;
-			static std::unique_ptr<CommandExecutor> uploader;
-			static std::unique_ptr<MipGenerator> mip_generator;
+			//static std::unique_ptr<CommandExecutor> uploader;
+			//static std::unique_ptr<MipGenerator> mip_generator;
+			static std::unique_ptr<UploadingDispatcher> uploading_dispatcher;
 		};
 	}
 }

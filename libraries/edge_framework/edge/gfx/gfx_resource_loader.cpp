@@ -11,14 +11,14 @@
 
 #include <format>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
-#include <ktx.h>
-
 #include "MipGeneratorShader.h"
 #include "MipGeneratorShaderMip2.h"
 #include "MipGeneratorShaderMip3.h"
 #include "MipGeneratorShaderMip4.h"
+
+#include "resource_loader/gfx_staging_allocator.h"
+#include "resource_loader/gfx_resource_uploader.h"
+#include "resource_loader/gfx_texture_loader.h"
 
 #ifdef CreateSemaphore
 #undef CreateSemaphore
@@ -28,99 +28,6 @@ namespace edge
 {
 	namespace gfx
 	{
-		// Helper class for manage staging memory allocation
-		class BlockAllocator
-		{
-		public:
-			struct Block
-			{
-				IBuffer* buffer;
-				uint64_t used;
-			};
-
-			BlockAllocator(IContext* gfx_context, uint64_t size) :
-				gfx_context{ gfx_context },
-				block_size{ size }
-			{
-				AddBlock(size);
-			}
-
-			BlockAllocator(BlockAllocator&& other) noexcept :
-				gfx_context{ std::exchange(other.gfx_context, nullptr) },
-				block_size{ std::exchange(other.block_size, {}) },
-				blocks{ std::exchange(other.blocks, {}) }
-			{
-			}
-
-			auto operator=(BlockAllocator&& other) noexcept -> BlockAllocator&
-			{
-				gfx_context = std::exchange(other.gfx_context, nullptr);
-				block_size = std::exchange(other.block_size, {});
-				blocks = std::exchange(other.blocks, {});
-
-				return*this;
-			}
-
-			BlockAllocator(const BlockAllocator&) = delete;
-			BlockAllocator& operator=(const BlockAllocator&) = delete;
-
-			~BlockAllocator()
-			{
-				for (auto& block : blocks)
-				{
-					gfx_context->Destroy(block.buffer);
-				}
-			}
-
-			auto Allocate(uint64_t requested_size, uint64_t alignment = 1ull) -> std::tuple<IBuffer*, uint64_t>
-			{
-				uint64_t size = aligned_size(requested_size, alignment);
-
-				Block& block = GetBlock(size);
-				block.used += size;
-				return { block.buffer, aligned_size(block.used - size, alignment) };
-			}
-
-			auto Reset() -> void
-			{
-				for (auto& block : blocks)
-					block.used = 0;
-			}
-		private:
-			auto GetBlock(uint64_t requested_size) -> Block&
-			{
-				auto found_block = std::find_if(blocks.begin(), blocks.end(), [requested_size](const Block& block) {
-					return  block.buffer->GetSize() - block.used > requested_size;
-					});
-
-				if (found_block != blocks.end())
-					return *found_block;
-
-				return AddBlock(std::max(block_size, requested_size));
-			}
-
-			auto AddBlock(uint64_t size) -> Block&
-			{
-				BufferCreateInfo buffer_ci{};
-				buffer_ci.size = size;
-				buffer_ci.usage = BufferUsageFlag::eStagingBuffer;
-
-				auto& block = blocks.emplace_back(Block{
-					.buffer = gfx_context->CreateBuffer(buffer_ci),
-					.used = 0ull
-					});
-
-				block.buffer->SetResourceName("uploader_staging");
-
-				return block;
-			}
-		private:
-			IContext* gfx_context{ nullptr };
-
-			uint64_t block_size{ 0ull };
-			std::vector<Block> blocks{};
-		};
-
 		struct CommandNode
 		{
 			CommandNode(IContext* gfx_context, const IQueue* queue, std::string_view name) :
@@ -222,9 +129,9 @@ namespace edge
 		struct UploaderNode : CommandNode
 		{
 			UploaderNode(IContext* gfx_context, const IQueue* queue, uint64_t size, std::string_view name) :
-				CommandNode{ gfx_context, queue, name },
-				allocator{ gfx_context, size }
+				CommandNode{ gfx_context, queue, name }
 			{
+				allocator = std::make_unique<ArenaStagingAllocator>(gfx_context, size);
 			}
 
 			UploaderNode(UploaderNode&& other) noexcept :
@@ -244,7 +151,7 @@ namespace edge
 			UploaderNode(const UploaderNode&) = delete;
 			UploaderNode& operator=(const UploaderNode&) = delete;
 
-			BlockAllocator allocator;
+			std::unique_ptr<StagingBufferAllocator> allocator;
 		};
 
 		class CommandExecutor
@@ -475,188 +382,6 @@ namespace edge
 			std::array<ShaderInstance, 4ull> shader_instances;
 		};
 
-		class ITextureReader
-		{
-		public:
-			virtual ~ITextureReader() = default;
-
-			virtual auto Load(std::span<const uint8_t> data, TextureCreateInfo& create_info) -> bool = 0;
-			virtual auto IsNeedToGenerateMips() const noexcept -> bool = 0;
-			virtual auto GetSize() -> uint64_t = 0;
-			virtual auto Upload(ICommandList* cmd_list, IBuffer* src_buffer, uint64_t src_offset, ITexture* dst_texture) -> void = 0;
-		private:
-		};
-
-		class STBImageLoader final : public ITextureReader
-		{
-		public:
-			~STBImageLoader() override
-			{
-				if (image_data)
-				{
-					stbi_image_free(image_data);
-				}
-			}
-
-			auto Load(std::span<const uint8_t> data, TextureCreateInfo& create_info) -> bool override
-			{
-				image_data = stbi_load_from_memory(data.data(), data.size(), &image_width, &image_height, &image_channel_count, STBI_rgb_alpha);
-
-				create_info.usage |= gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eTransferable;
-				create_info.width = image_width;
-				create_info.height = image_height;
-				//create_info.format = image_channel_count == 4 ? gfx::Format::eR8G8B8A8Unorm : gfx::Format::eR8G8B8Unorm;
-				create_info.format = gfx::Format::eR8G8B8A8Unorm;
-				//create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(image_width, image_height)))) + 1u;
-				create_info.levels = 1;
-
-				return image_data;
-			}
-
-			auto IsNeedToGenerateMips() const noexcept -> bool override
-			{
-				return true;
-			}
-
-			auto GetSize() -> uint64_t override
-			{
-				return image_width * image_height * 4ull;
-			}
-
-			auto Upload(ICommandList* cmd_list, IBuffer* src_buffer, uint64_t src_offset, ITexture* dst_texture) -> void override
-			{
-				TextureCopyRegion copy_region{};
-				copy_region.buffer_offset = src_offset;
-				copy_region.size_x = image_width;
-				copy_region.size_y = image_height;
-
-				gfx::CopyTextureInfo copy_texture{};
-				copy_texture.src_buffer = src_buffer;
-				copy_texture.dst_texture = dst_texture;
-				copy_texture.copy_regions = { &copy_region, 1 };
-
-				auto* src_memory = src_buffer->Map();
-				memcpy(src_memory + src_offset, image_data, GetSize());
-
-				cmd_list->CopyTexture(copy_texture);
-			}
-		private:
-			uint8_t* image_data{ nullptr };
-			int32_t image_width{ 1 };
-			int32_t image_height{ 1 };
-			int32_t image_channel_count{ 1 };
-		};
-
-		class KTXImageLoader final : public ITextureReader
-		{
-		public:
-			~KTXImageLoader() override
-			{
-				if (texture)
-				{
-					ktxTexture_Destroy(texture);
-				}
-			}
-
-			auto Load(std::span<const uint8_t> data, TextureCreateInfo& create_info) -> bool override
-			{
-				auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
-				assert(ktxresult == KTX_SUCCESS && "FAILED TO OPEN KTX IMAGE");
-				if (ktxresult != KTX_SUCCESS)
-					return false;
-
-				if (texture->isCubemap)
-					create_info.usage |= gfx::TextureUsageFlag::eCubemap;
-
-				create_info.usage |= gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eTransferable;
-				create_info.width = texture->baseWidth;
-				create_info.height = texture->baseHeight;
-				create_info.depth = texture->baseDepth;
-
-				create_info.levels = texture->numLevels;
-				create_info.layers = texture->numLayers;
-
-				if (texture->generateMipmaps)
-				{
-					create_info.usage |= gfx::TextureUsageFlag::eCubemap;
-					create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
-				}
-
-				switch (texture->classId)
-				{
-				case ktxTexture1_c: {
-					ktxTexture1* ktxtexture1 = (ktxTexture1*)texture;
-
-					//uint32_t vk_format = vkGetFormatFromOpenGLInternalFormat(ktxtexture1->glInternalformat);
-					//if (vk_format == 0u)
-					//{
-					//	vk_format = vkGetFormatFromOpenGLFormat(ktxtexture1->glFormat, ktxtexture1->glType);
-					//}
-					//
-					//create_info.format = gfx::FormatFromVk(vk_format);
-				} break;
-				case ktxTexture2_c: {
-					ktxTexture2* ktxtexture2 = (ktxTexture2*)texture;
-
-					if (ktxTexture2_NeedsTranscoding(ktxtexture2))
-					{
-						ktxresult = ktxTexture2_TranscodeBasis(ktxtexture2, KTX_TTF_BC7_RGBA, 0);
-					}
-						
-					create_info.format = gfx::FormatFromVk(ktxtexture2->vkFormat);
-				} break;
-				}
-
-				return true;
-			}
-
-			auto IsNeedToGenerateMips() const noexcept -> bool override
-			{
-				return texture->generateMipmaps;
-			}
-
-			auto GetSize() -> uint64_t override
-			{
-				return texture->dataSize;
-			}
-
-			auto Upload(ICommandList* cmd_list, IBuffer* src_buffer, uint64_t src_offset, ITexture* dst_texture) -> void override
-			{
-				std::vector<TextureCopyRegion> copy_regions{};
-
-				gfx::CopyTextureInfo copy_texture{};
-				copy_texture.src_buffer = src_buffer;
-				copy_texture.dst_texture = dst_texture;
-
-				auto* src_memory = src_buffer->Map();
-				memcpy(src_memory + src_offset, texture->pData, texture->dataSize);
-
-				// Collect image copy regions
-				auto num_layers = texture->isCubemap ? texture->numFaces : texture->numLayers;
-				for (int32_t layer = 0; layer < num_layers; layer++)
-				{
-					for (int32_t level = 0; level < texture->numLevels; level++)
-					{
-						auto& region = copy_regions.emplace_back(src_offset, 0, 0, 0, 
-							(texture->baseWidth >> level), 
-							(texture->baseHeight >> level), 1, 
-							layer, texture->numLayers, level);
-
-						auto ktxresult = ktxTexture_GetImageOffset(texture, level, 0, layer, &region.buffer_offset);
-						if (ktxresult != KTX_SUCCESS)
-							return;
-
-						region.buffer_offset += src_offset;
-					}
-				}
-
-				copy_texture.copy_regions = copy_regions;
-				cmd_list->CopyTexture(copy_texture);
-			}
-		protected:
-			ktxTexture* texture{ nullptr };
-		};
-
 		// Buffer updater implementation
 		BufferUpdater::BufferUpdater(IBuffer* src_buffer, uint64_t src_offset, uint64_t src_size, IBuffer* dst_buffer) :
 			copy_buffer_info{ src_buffer, dst_buffer, {} },
@@ -747,7 +472,6 @@ namespace edge
 				resource_barrier.buffer_barriers = &buffer_barrier;
 				resource_barrier.buffer_barrier_count = 1;
 
-				// TODO: Make resource translations only if needed
 				cmd_list->ResourceBarrier(resource_barrier);
 			}
 
@@ -775,29 +499,17 @@ namespace edge
 				auto& node = (UploaderNode&)GetActiveNode();
 				if (!recording)
 				{
-					node.allocator.Reset();
+					node.allocator->Reset();
 				}
 
 				return node.AcquireCommandList(recording, name);
 			}
 		};
 
-
 		IContext* ResourceUpdater::gfx_context{ nullptr };
 		fs::VirtualFilesystem* ResourceUpdater::filesystem{ nullptr };
-
-		std::queue<ResourceJobPack> ResourceUpdater::jobs{};
-		std::queue<ResourceJobPack> ResourceUpdater::done_jobs{};
-		std::mutex ResourceUpdater::mutex{};
-		std::mutex ResourceUpdater::semaphore_mutex{};
-		std::condition_variable ResourceUpdater::cv{};
-		std::jthread ResourceUpdater::worker_thread{};
-		std::atomic<bool> ResourceUpdater::needs_sync{};
-		SemaphoreSubmitInfo ResourceUpdater::last_submitted{};
-
 		std::unique_ptr<CommandExecutor> ResourceUpdater::updater{};
-		std::unique_ptr<CommandExecutor> ResourceUpdater::uploader{};
-		std::unique_ptr<MipGenerator> ResourceUpdater::mip_generator{};
+		std::unique_ptr<UploadingDispatcher> ResourceUpdater::uploading_dispatcher{};
 
 		void ResourceUpdater::Create(const ResourceUpdaterCreateInfo& create_info)
 		{
@@ -807,46 +519,33 @@ namespace edge
 			auto update_queue = gfx_context->RequestQueue(QueueTypeFlag::eGraphics);
 			update_queue->SetResourceName("UPDATE");
 			updater = std::make_unique<ResourceLoader>(gfx_context, update_queue, create_info.buffer_count, create_info.buffer_size, "UPDATER");
-			
-			auto upload_queue = gfx_context->RequestQueue(QueueTypeFlag::eTransfer, QueueTypeFlag::eGraphics | QueueTypeFlag::eCompute);
-			upload_queue->SetResourceName("UPLOAD");
-			uploader = std::make_unique<ResourceLoader>(gfx_context, upload_queue, create_info.buffer_count, create_info.buffer_size, "UPLOADER");
 
-			auto compute_queue = gfx_context->RequestQueue(QueueTypeFlag::eCompute, QueueTypeFlag::eGraphics);
-			compute_queue->SetResourceName("COMPUTE_ASYNC");
-			mip_generator = std::make_unique<MipGenerator>(gfx_context, compute_queue, create_info.buffer_count);
+			//auto compute_queue = gfx_context->RequestQueue(QueueTypeFlag::eCompute, QueueTypeFlag::eGraphics);
+			//compute_queue->SetResourceName("COMPUTE_ASYNC");
+			//mip_generator = std::make_unique<MipGenerator>(gfx_context, compute_queue, create_info.buffer_count);
 
-			worker_thread = std::jthread{ [](std::stop_token st) { ProcessJobs(st); } };
+			uploading_dispatcher = std::make_unique<UploadingDispatcher>(gfx_context, create_info.buffer_size, 2);
 		}
 
 		void ResourceUpdater::Shutdown()
 		{
 			updater = nullptr;
-			uploader = nullptr;
-			mip_generator = nullptr;
+			uploading_dispatcher = nullptr;
+			//mip_generator = nullptr;
 		}
 
 		auto ResourceUpdater::LoadTexture(std::string path) -> std::shared_ptr<AsyncResourceHandle>
 		{
-			std::packaged_task<std::pair<IGFXResource*, ResourceStateFlags>()> task([path]() -> std::pair<IGFXResource*, ResourceStateFlags>
+			std::packaged_task<ResourceUploadFnSign> task([path](ICommandList* cmd_list, StagingBufferAllocator& allocator) -> ResourceUploadResult
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					ICommandList* cmd_list = uploader->AcquireCommandList();
-					
 					ResourceStateFlags state{};
-					return std::make_pair(LoadTextureImpl(cmd_list, *uploader, path, state), state);
+					return std::make_pair(LoadTextureImpl(cmd_list, allocator, path, state), state);
 				});
 
 			auto handle = std::make_shared<AsyncResourceHandle>();
-			{
-				std::lock_guard<std::mutex> lock(mutex);
-				jobs.push({
-					.handle = handle,
-					.task = std::move(task)
-					});
-			}
-			cv.notify_one();
+			uploading_dispatcher->Submit({ handle, std::move(task) });
 
 			return handle;
 		}
@@ -856,12 +555,13 @@ namespace edge
 			EDGE_PROFILE_ZONE_SCOPED;
 
 			ICommandList* cmd_list = updater->AcquireCommandList();
-			return LoadTextureImpl(cmd_list, *updater, path, state);
+			auto& node = (UploaderNode&)updater->GetActiveNode();
+			return LoadTextureImpl(cmd_list, *node.allocator, path, state);
 		}
 
 		auto ResourceUpdater::SyncUploads() -> void
 		{
-			needs_sync.store(true, std::memory_order_relaxed);
+			//needs_sync.store(true, std::memory_order_relaxed);
 		}
 
 		void ResourceUpdater::UpdateTexture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data)
@@ -871,7 +571,7 @@ namespace edge
 			ICommandList* cmd_list = updater->AcquireCommandList();
 
 			auto& node = (UploaderNode&)updater->GetActiveNode();
-			auto [src_buffer, src_offset] = node.allocator.Allocate(data.size());
+			auto [src_buffer, src_offset] = node.allocator->Allocate(data.size());
 
 			auto* src_memory = src_buffer->Map();
 			memcpy(src_memory + src_offset, data.data(), data.size());
@@ -916,16 +616,14 @@ namespace edge
 				signalled_semaphores.emplace_back(updater_semaphore);
 
 			bool uploads_flushed{ false };
-			semaphore_mutex.lock();
-			if (last_submitted.semaphore)
+			SemaphoreSubmitInfo uploader_semaphore{};
+			if (uploading_dispatcher->IsSyncNeeded(uploader_semaphore))
 			{
-				signalled_semaphores.emplace_back(last_submitted);
-				last_submitted = {};
+				signalled_semaphores.emplace_back(uploader_semaphore);
 				uploads_flushed = true;
 			}
-			semaphore_mutex.unlock();
 
-			return true;
+			return uploads_flushed;
 		}
 
 		auto ResourceUpdater::GetBufferUpdater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater
@@ -933,7 +631,7 @@ namespace edge
 			updater->AcquireCommandList();
 
 			auto& node = (UploaderNode&)updater->GetActiveNode();
-			auto [src_buffer, src_offset] = node.allocator.Allocate(update_size);
+			auto [src_buffer, src_offset] = node.allocator->Allocate(update_size);
 
 			return { src_buffer, src_offset, update_size, dst_buffer };
 		}
@@ -951,35 +649,24 @@ namespace edge
 			SubmitBufferUpdater(updater, current_state);
 		}
 
-		auto ResourceUpdater::LoadTextureImpl(ICommandList* cmd_list, CommandExecutor& cmd_exec, std::string path, ResourceStateFlags& output_state) -> ITexture*
+		auto ResourceUpdater::LoadTextureImpl(ICommandList* cmd_list, StagingBufferAllocator& allocator, std::string path, ResourceStateFlags& output_state) -> ITexture*
 		{
 			EDGE_LOGD("[ResourceUpdater] Loading texture \"{}\"", path);
 			cmd_list->BeginMarker(path, 0xFFFFFFFF);
 
-			std::unique_ptr<ITextureReader> texture_reader;
-
-			auto ext = fs::GetExt(path);
-			auto ext_hash = murmur_hash(ext.data(), ext.size(), 0);
-			switch (ext_hash)
-			{
-			case fs::format::ktx:
-			case fs::format::ktx2: { texture_reader = std::make_unique<KTXImageLoader>(); } break;
-			default: { texture_reader = std::make_unique<STBImageLoader>(); } break;
-			}
-
 			std::vector<uint8_t> data{};
 			filesystem->ReadFile(path, data);
 
+			auto texture_loader = MakeTextureLoader(path);
+
 			gfx::TextureCreateInfo create_info{};
-			texture_reader->Load(data, create_info);
+			texture_loader->Load(data, create_info);
 
 			ITexture* dst_texture = gfx_context->CreateTexture(create_info);
 			dst_texture->SetResourceName(path);
 
 			auto block_align = GetFormatBlockAlign(create_info.format);
-
-			auto& node = (UploaderNode&)cmd_exec.GetActiveNode();
-			auto [src_buffer, src_offset] = node.allocator.Allocate(texture_reader->GetSize(), block_align);
+			auto [src_buffer, src_offset] = allocator.Allocate(texture_loader->GetSize(), block_align);
 
 			TextureBarrier texture_barrier{};
 			texture_barrier.texture = dst_texture;
@@ -993,7 +680,7 @@ namespace edge
 			// Transfer to intermediate layout
 			cmd_list->ResourceBarrier(resource_barrier);
 
-			texture_reader->Upload(cmd_list, src_buffer, src_offset, dst_texture);
+			texture_loader->Upload(cmd_list, src_buffer, src_offset, dst_texture);
 
 			cmd_list->EndMarker();
 
@@ -1005,67 +692,6 @@ namespace edge
 			//	resource_result.state = mip_generator->WriteCommands(dst_texture, path);
 
 			return dst_texture;
-		}
-
-		void ResourceUpdater::ProcessJobs(std::stop_token stop_token)
-		{
-			while (!stop_token.stop_requested())
-			{
-				std::queue<ResourceJobPack> local_jobs;
-				{
-					std::unique_lock<std::mutex> lock(mutex);
-					cv.wait(lock, [&stop_token] { return !jobs.empty() || stop_token.stop_requested(); });
-					if (stop_token.stop_requested() && jobs.empty())
-						break;
-					std::swap(local_jobs, jobs);
-				}
-
-				EDGE_LOGD("[ResourceUpdater] Starting working on {} uploads.", local_jobs.size());
-
-				// Process all jobs in the current batch.
-				while (!local_jobs.empty())
-				{
-					auto job_pack = std::move(local_jobs.front());
-					local_jobs.pop();
-					job_pack.task();
-
-					done_jobs.push(std::move(job_pack));
-
-					if (needs_sync.load(std::memory_order_relaxed))
-					{
-						FlushUploader();
-						needs_sync.store(false, std::memory_order_relaxed);
-					}
-				}
-
-				FlushUploader();
-			}
-		}
-
-		void ResourceUpdater::FlushUploader()
-		{
-			EDGE_LOGD("[ResourceUpdater] Flushing uploader work.");
-
-			SemaphoreSubmitInfo uploader_semaphore{};
-			uploader->Flush(uploader_semaphore, {});
-			if (uploader_semaphore.semaphore)
-			{
-				semaphore_mutex.lock();
-				last_submitted = uploader_semaphore;
-				semaphore_mutex.unlock();
-
-				while (!done_jobs.empty())
-				{
-					auto job_pack = std::move(done_jobs.front());
-					done_jobs.pop();
-
-					auto future = job_pack.task.get_future();
-					auto result = future.get();
-					job_pack.handle->resource = result.first;
-					job_pack.handle->state = result.second;
-					job_pack.handle->done.store(true, std::memory_order_relaxed);
-				}
-			}
 		}
 	}
 }
