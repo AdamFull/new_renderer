@@ -34,9 +34,8 @@ namespace edge
 			UploadingThreadWorker& operator=(const UploadingThreadWorker&) = delete;
 
 			auto DispatchJob(ResourceJobPack&& job) -> void;
-			auto EndCmd() -> ICommandList*;
-
-			auto IsIdle() -> bool;
+			auto EndCmd() noexcept -> ICommandList*;
+			auto GetWorkCount() noexcept -> uint64_t;
 		private:
 			auto AcquireCmdList() -> ICommandList*;
 			auto Loop(std::stop_token stop_token) -> void;
@@ -49,7 +48,7 @@ namespace edge
 			std::mutex mutex;
 			std::condition_variable cv;
 			std::queue<ResourceJobPack> jobs{};
-			std::atomic_bool is_idle{ true };
+			std::atomic_uint64_t work_count{};
 
 			bool recording{ false };
 

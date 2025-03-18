@@ -524,7 +524,7 @@ namespace edge
 			//compute_queue->SetResourceName("COMPUTE_ASYNC");
 			//mip_generator = std::make_unique<MipGenerator>(gfx_context, compute_queue, create_info.buffer_count);
 
-			uploading_dispatcher = std::make_unique<UploadingDispatcher>(gfx_context, create_info.buffer_size, 2);
+			uploading_dispatcher = std::make_unique<UploadingDispatcher>(gfx_context, create_info.buffer_size, 8);
 		}
 
 		void ResourceUpdater::Shutdown()

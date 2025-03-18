@@ -6,6 +6,9 @@
 
 #include "../gfx_context.h"
 
+#include <latch>
+#include <chrono>
+
 namespace edge
 {
 	namespace gfx
@@ -32,11 +35,12 @@ namespace edge
 			{
 				std::lock_guard lock(mutex);
 				jobs.emplace(std::move(job));
+				work_count.fetch_add(1, std::memory_order_relaxed);
 			}
 			cv.notify_one();
 		}
 
-		auto UploadingThreadWorker::EndCmd() -> ICommandList*
+		auto UploadingThreadWorker::EndCmd() noexcept -> ICommandList*
 		{
 			ICommandList* out_cmd_list{ nullptr };
 			if (recording)
@@ -49,9 +53,9 @@ namespace edge
 			return out_cmd_list;
 		}
 
-		auto UploadingThreadWorker::IsIdle() -> bool
+		auto UploadingThreadWorker::GetWorkCount() noexcept -> uint64_t
 		{
-			return is_idle.load(std::memory_order_relaxed);
+			return work_count.load(std::memory_order_relaxed);
 		}
 
 		auto UploadingThreadWorker::AcquireCmdList() -> ICommandList*
@@ -80,10 +84,10 @@ namespace edge
 				if (stop_token.stop_requested())
 					break;
 
-				is_idle.store(false, std::memory_order_relaxed);
-
 				auto job = std::move(jobs.front());
 				jobs.pop();
+				work_count.fetch_sub(1, std::memory_order_relaxed);
+
 				lock.unlock();
 
 				ICommandList* cmd = AcquireCmdList();
@@ -96,11 +100,6 @@ namespace edge
 
 				job.handle->resource = result.first;
 				job.handle->state = result.second;
-
-				if (jobs.empty())
-				{
-					is_idle.store(true, std::memory_order_relaxed);
-				}
 			}
 		}
 
@@ -148,9 +147,8 @@ namespace edge
 			auto is_sync_needed = sync_needed.load(std::memory_order_relaxed);
 			if (is_sync_needed)
 			{
-				semaphore_mutex.lock();
+				std::lock_guard lock(semaphore_mutex);
 				semaphore_submit = signal_semaphore;
-				semaphore_mutex.unlock();
 				sync_needed.store(false, std::memory_order_relaxed);
 			}
 
@@ -174,73 +172,95 @@ namespace edge
 				}
 
 				// Wait previous uploads
+				auto start = std::chrono::steady_clock::now();
+
 				fence->Wait();
 				fence->Reset();
 
-				EDGE_LOGD("[ResourceUpdater] Starting working on {} uploads.", local_jobs.size());
+				{
+					auto tp = std::chrono::steady_clock::now();
+					auto wait_time = std::chrono::duration_cast<std::chrono::milliseconds>(tp - start).count();
+					EDGE_LOGD("[UploadingDispatcher] Waiting previous uploads done in {} ms.", wait_time);
+					start = tp;
+				}
 
-				// Distribute tasks among workers (Round-Robin)
+				EDGE_LOGD("[UploadingDispatcher] Starting working on {} uploads.", local_jobs.size());
+
+				auto completion_latch = std::latch(local_jobs.size());
+
+				// Distribute tasks among workers (Round-Robinx)
 				while (!local_jobs.empty())
 				{
-					auto& worker = workers[worker_index % workers.size()];
 					auto job = std::move(local_jobs.front());
+					local_jobs.pop();
+
+					auto original_task = std::make_shared<std::packaged_task<ResourceUploadFnSign>>(std::move(job.task));
+					std::packaged_task<ResourceUploadFnSign> wrapped_task(
+						[&completion_latch, original_task]
+						(ICommandList* cmd, StagingBufferAllocator& alloc) mutable -> ResourceUploadResult {
+							(*original_task)(cmd, alloc);
+							completion_latch.count_down();
+							return original_task->get_future().get();
+						}); 
+					job.task = std::move(wrapped_task);
 
 					processed_handles.push_back(job.handle);
-					worker->DispatchJob(std::move(job));
 
-					local_jobs.pop();
-					++worker_index;
+					size_t selected = 0;
+					auto min_size = workers[0]->GetWorkCount();
+					for (int64_t i = 1; i < workers.size(); ++i) 
+					{
+						auto size = workers[i]->GetWorkCount();
+						if (size < min_size) 
+						{
+							min_size = size;
+							selected = i;
+						}
+					}
+
+					//auto& worker = workers[(worker_index++) % workers.size()];
+					auto& worker = workers[selected];
+					worker->DispatchJob(std::move(job));
 				}
 
 				// Wait until all workers finish their tasks
-				bool all_done;
-				do
+				completion_latch.wait();
+
 				{
-					all_done = true;
-
-					// avoid busy-waiting aggressively
-					std::this_thread::sleep_for(std::chrono::microseconds(10));
-
-					for (auto& worker : workers)
-					{
-						if (!worker->IsIdle())
-						{
-							all_done = false;
-							break;
-						}
-					}
-				} while (!all_done);
-
-				// Collect command lists for submit
-				std::vector<ICommandList*> command_lists{};
-				for (auto& worker : workers)
-				{
-					auto* cmd_list = worker->EndCmd();
-					if (cmd_list)
-						command_lists.emplace_back(cmd_list);
+					auto tp = std::chrono::steady_clock::now();
+					auto wait_time = std::chrono::duration_cast<std::chrono::milliseconds>(tp - start).count();
+					EDGE_LOGD("[UploadingDispatcher] All work done in {} ms.", wait_time);
 				}
 
-				// Increment current semaphore
-				semaphore_mutex.lock();
-				++signal_semaphore.value;
-				semaphore_mutex.unlock();
+				// Collect command lists for submit
+				std::vector<ICommandList*> cmds{};
+				for (auto& worker : workers)
+				{
+					if (auto* cmd = worker->EndCmd())
+						cmds.emplace_back(cmd);
+				}
 
 				// Submit command lists and update resource handles
-				if (!command_lists.empty())
+				if (!cmds.empty())
 				{
+					std::lock_guard lock(semaphore_mutex);
+
+					// Increment current semaphore
+					++signal_semaphore.value;
+
 					SubmitInfo submit_info{};
-					submit_info.command_lists = command_lists;
+					submit_info.command_lists = cmds;
 					submit_info.signal_semaphore_infos = { &signal_semaphore, 1 };
 					//submit_info.wait_semaphore_infos = wait_semaphores;
 					queue->Submit(submit_info, fence);
 
 					sync_needed.store(true, std::memory_order_relaxed);
-
-					for (auto& resource_handle : processed_handles)
-						resource_handle->done.store(true, std::memory_order_relaxed);
-
-					processed_handles.clear();
 				}
+
+				for (auto& resource_handle : processed_handles)
+					resource_handle->done.store(true, std::memory_order_relaxed);
+
+				processed_handles.clear();
 			}
 		}
 	}
