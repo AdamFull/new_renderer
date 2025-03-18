@@ -5,3 +5,4 @@
 #define EDGE_PROFILE_ZONE_SCOPED ZoneScoped
 #define EDGE_PROFILE_ZONE_SCOPED_NAMED(name) ZoneScopedN(name)
 #define EDGE_PROFILE_FRAME_MARK FrameMark
+#define EDGE_PROFILE_SET_THREAD_NAME(name) tracy::SetThreadName(name)
