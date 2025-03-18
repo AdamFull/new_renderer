@@ -18,6 +18,7 @@
 #define EDGE_LOGW(...) spdlog::warn(__VA_ARGS__);
 #define EDGE_LOGE(...) spdlog::error(__VA_ARGS__); debugbreak();
 #define EDGE_LOGD(...) spdlog::debug(__VA_ARGS__);
+#define EDGE_LOGT(...) spdlog::trace(__VA_ARGS__);
 
 namespace edge
 {
