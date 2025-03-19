@@ -1,45 +1,129 @@
-// https://poniesandlight.co.uk/reflect/coroutines_job_system/
-// https://github.com/tgfrerer/pal_tasks/
-
 #pragma once
 
 #include <coroutine>
-#include <cstdint>
+#include <exception>
 
 namespace edge
 {
 	namespace utl
 	{
-		struct TaskPromise;
-
-		struct Task : std::coroutine_handle<TaskPromise> 
-		{
-			using promise_type = TaskPromise;
-		};
-
-		struct suspend_task 
-		{
-			// if await_ready is false, then await_suspend will be called
-			constexpr bool await_ready() noexcept { return false; };
-			void await_suspend(std::coroutine_handle<TaskPromise> h) noexcept;
-			void await_resume() noexcept {};
-		};
-
-		struct finalize_task 
-		{
-			// if await_ready is false, then await_suspend will be called
-			constexpr bool await_ready() noexcept { return false; };
-			void await_suspend(std::coroutine_handle<TaskPromise> h) noexcept;
-			void await_resume() noexcept {};
-		};
-
-		class scheduler_impl;
-		class task_list_o;
+		class SchedulerImpl;
+		class TaskListImpl;
 		class TaskList;
 
-		class Scheduler 
+		struct Job
 		{
-			scheduler_impl* p_impl = nullptr;
+			std::coroutine_handle<> handle;
+			Job(std::coroutine_handle<> h) : handle(h) {}
+			void operator()() { handle.resume(); }
+			static Job from_address(void* addr)
+			{
+				return Job(std::coroutine_handle<>::from_address(addr));
+			}
+		};
+
+		struct TaskPromiseBase
+		{
+			TaskListImpl* task_list = nullptr;
+			SchedulerImpl* scheduler = nullptr;
+			std::coroutine_handle<> continuation = nullptr;
+			std::exception_ptr exception;
+		};
+
+		struct final_awaitable
+		{
+			bool await_ready() noexcept { return false; }
+			std::coroutine_handle<> await_suspend(std::coroutine_handle<> h) noexcept;
+			void await_resume() noexcept {}
+		};
+
+		struct suspend_task
+		{
+			constexpr bool await_ready() noexcept { return false; }
+			void await_suspend(std::coroutine_handle<> h) noexcept;
+			void await_resume() noexcept {}
+		};
+
+		template<typename _T = void>
+		struct Task
+		{
+			struct promise_type : public TaskPromiseBase
+			{
+				_T result;
+
+				auto get_return_object() { return Task{ std::coroutine_handle<promise_type>::from_promise(*this) }; }
+				std::suspend_always initial_suspend() noexcept { return {}; }
+				auto final_suspend() noexcept { return final_awaitable{}; }
+				void return_value(_T value) { result = std::move(value); }
+
+				void unhandled_exception() { exception = std::current_exception(); }
+			};
+
+			std::coroutine_handle<promise_type> coro;
+
+			void operator()() { coro.resume(); }
+
+			Task(std::coroutine_handle<promise_type> h) : coro(h) {}
+			Task(const Task&) = delete;
+			Task(Task&& other) : coro(other.coro) { other.coro = nullptr; }
+			Task& operator=(Task&& other)
+			{
+				if (this != &other)
+				{
+					if (coro)
+						coro.destroy();
+					coro = other.coro;
+					other.coro = nullptr;
+				}
+				return *this;
+			}
+
+			bool await_ready() const noexcept { return false; }
+			auto await_suspend(std::coroutine_handle<> cont)
+			{
+				coro.promise().continuation = cont;
+				return coro;
+			}
+
+			auto await_resume()
+			{
+				if (coro.promise().exception)
+					std::rethrow_exception(coro.promise().exception);
+				if constexpr (!std::is_void_v<_T>)
+					return std::move(coro.promise().result);
+			}
+
+			// Allow conversion to a type–erased Job (for the scheduler)
+			operator Job() { return Job(coro); }
+
+			// Helpers so that a Task can be constructed from a void* stored in the task list.
+			static Task from_address(void* addr) 
+			{
+				return Task(std::coroutine_handle<promise_type>::from_address(addr));
+			}
+		};
+
+		template<>
+		struct Task<void>::promise_type : public TaskPromiseBase
+		{
+			auto get_return_object() { return Task{ std::coroutine_handle<promise_type>::from_promise(*this) }; }
+			std::suspend_always initial_suspend() noexcept { return {}; }
+			auto final_suspend() noexcept { return final_awaitable{}; }
+
+			void return_void() {}
+			void unhandled_exception() { exception = std::current_exception(); }
+		};
+
+		class Scheduler
+		{
+		public:
+			~Scheduler();
+
+			static Scheduler* Create(int32_t num_worker_threads = 0);
+
+			void ExecuteList(TaskList& t);
+		private:
+			SchedulerImpl* p_impl = nullptr;
 
 			Scheduler(int32_t num_worker_threads);
 
@@ -47,61 +131,20 @@ namespace edge
 			Scheduler(Scheduler&&) = delete;
 			Scheduler& operator=(const Scheduler&) = delete;
 			Scheduler& operator=(Scheduler&&) = delete;
-
-		public:
-			// Execute all tasks in the task list, then free the task list object
-			// this takes possession of the task list object, and acts as if it was
-			// a blocking call.
-			//
-			// Once this call returns, the TaskList that was given as a parameter
-			// has been consumed, and you should not re-use it.
-			void ExecuteList(TaskList& p_t);
-
-			// Create a scheduler with as many hardware threads as possible
-			//  0 ... No worker threads, just one main thread
-			//  n ... n number of worker threads
-			// -1 ... As many worker threads as cpus, -1
-			static Scheduler* Create(int32_t num_worker_threads = 0);
-
-			~Scheduler();
 		};
 
-		class TaskList 
+		class TaskList
 		{
-			task_list_o* p_impl; // owning
-
-			TaskList(const TaskList&) = delete;
-			TaskList(TaskList&&) = delete;
-			TaskList& operator=(const TaskList&) = delete;
-			TaskList& operator=(TaskList&&) = delete;
-
 		public:
-			TaskList(uint32_t hint_capacity = 1);
+			friend class SchedulerImpl;
 
+			TaskList(uint32_t hint_capacity = 1);
 			~TaskList();
 
-			void PushTask(Task c);
+			void AddTask(Job c);
 
-			friend class scheduler_impl;
-		};
-
-		struct TaskPromise 
-		{
-			Task get_return_object() 
-			{
-				return { Task::from_promise(*this) };
-			}
-
-			std::suspend_always initial_suspend() noexcept 
-			{
-				return {};
-			}
-
-			finalize_task   final_suspend() noexcept { return {}; }
-			void            return_void() {};
-			void            unhandled_exception() {};
-			scheduler_impl* scheduler = nullptr;
-			task_list_o* p_task_list = nullptr;
+		private:
+			TaskListImpl* p_impl;
 		};
 	}
 }

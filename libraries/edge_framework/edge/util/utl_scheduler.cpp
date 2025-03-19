@@ -1,32 +1,25 @@
 #include "utl_scheduler.h"
 
-#include <cassert>
-#include <deque>
 #include <iostream>
-#include <string>
-#include <thread>
-#include <vector>
 
 #include "lockfree_ring_buffer.h"
 
 namespace edge::utl
 {
-	using coroutine_handle_t = std::coroutine_handle<TaskPromise>;
-
 	// A channel is a thread-safe primitive to communicate with worker threads -
 	// each worker thread has exactly one channel. Once a channel contains
 	// a payload it is blocked (you cannot push anymore handles onto this channel).
 	// The channel gets free and ready to receive another handle as soon as the
 	// worker thread has finished processing the current handle.
-	struct Channel 
+	struct Channel
 	{
 		void* handle; // storage for channel payload: one single handle. void means that the channel is free.
 		std::atomic_flag flag;   // signal that the current channel is busy.
 
-		bool TryPush(coroutine_handle_t& h) 
+		bool TryPush(std::coroutine_handle<>& h)
 		{
 
-			if (flag.test_and_set()) 
+			if (flag.test_and_set())
 			{
 				// if the current channel was already flagged
 				// we cannot add anymore work.
@@ -44,7 +37,7 @@ namespace edge::utl
 			return true;
 		}
 
-		~Channel() 
+		~Channel()
 		{
 
 			// Once the channel accepts a coroutine handle, it becomes the
@@ -52,19 +45,18 @@ namespace edge::utl
 			// that we own when this object dips into ovlivion, we must clean
 			// them up first.
 			//
-			if (this->handle) 
+			if (this->handle)
 			{
 				// std::cout << "WARNING: leftover task in channel." << std::endl;
 				// std::cout << "destroying task: " << this->handle << std::endl;
-				Task::from_address(this->handle).destroy();
+				Job::from_address(handle).handle.destroy();
 			}
 
 			this->handle = nullptr;
 		}
 	};
 
-
-	class task_list_o 
+	class TaskListImpl
 	{
 		lockfree_ring_buffer_t tasks;
 		std::atomic_size_t     num_tasks; // number of tasks, only gets decremented if taks has been removed
@@ -72,24 +64,24 @@ namespace edge::utl
 	public:
 		std::atomic_flag block_flag; // flag used to signal that dependent tasks have completed
 
-		task_list_o(uint32_t capacity_hint = 32) // start with capacity of 32
+		TaskListImpl(uint32_t capacity_hint = 32) // start with capacity of 32
 			: tasks(capacity_hint)
-			, num_tasks(0) 
+			, num_tasks(0)
 		{
 		}
 
-		~task_list_o() 
+		~TaskListImpl()
 		{
 			// If there are any tasks left on the task list, we must destroy them, as we own them.
 			void* task;
-			while ((task = this->tasks.try_pop())) 
+			while ((task = this->tasks.try_pop()))
 			{
-				Task::from_address(task).destroy();
+				Job::from_address(task).handle.destroy();
 			}
 		}
 
 		// Push a suspended task back onto the end of the task list
-		inline void PushTask(coroutine_handle_t const& c) 
+		inline void PushTask(std::coroutine_handle<> const& c)
 		{
 			tasks.push(c.address());
 		}
@@ -97,9 +89,13 @@ namespace edge::utl
 		// Get the next task if possible, if there is no next task,
 		// return an empty coroutine handle.
 		// An empty coroutine handle will compare true to nullptr
-		inline coroutine_handle_t PopTask() 
+		inline Job PopTask()
 		{
-			return Task::from_address(tasks.try_pop());
+			void* ptr = tasks.try_pop();
+			if (ptr)
+				return Job::from_address(ptr);
+
+			return Job(std::noop_coroutine());
 		}
 
 		// Return the number of tasks which are both in flight and waiting
@@ -108,33 +104,34 @@ namespace edge::utl
 		// processed and are in flight will not show up on the task list.
 		//
 		// num_tasks gets decremented only if a task was fully completed.
-		inline size_t GetTasksCount() 
+		inline size_t GetTasksCount()
 		{
 			return num_tasks;
 		}
 
 		// Add a new task to the task list - only allowed in setup phase,
 		// where only one thread has access to the task list.
-		void AddTask(coroutine_handle_t& c) 
+		void AddTask(std::coroutine_handle<TaskPromiseBase> c)
 		{
-			c.promise().p_task_list = this;
+			c.promise().task_list = this;
 			tasks.unsafe_initial_dynamic_push(c.address());
 			num_tasks++;
 		}
 
-		void TagAllTasksWithScheduler(scheduler_impl* p_scheduler) 
+		void TagAllTasksWithScheduler(SchedulerImpl* p_scheduler)
 		{
 			tasks.unsafe_for_each(
 				[](void* c, void* p_scheduler) {
-					coroutine_handle_t::from_address(c).promise().scheduler = static_cast<scheduler_impl*>(p_scheduler);
+					auto h = std::coroutine_handle<TaskPromiseBase>::from_address(c);
+					h.promise().scheduler = static_cast<SchedulerImpl*>(p_scheduler);
 				},
 				p_scheduler);
 		}
 
-		void DecrementTaskCount() 
+		void DecrementTaskCount()
 		{
 			size_t num_flags = --num_tasks;
-			if (num_flags == 0) 
+			if (num_flags == 0)
 			{
 				block_flag.clear(std::memory_order_release);
 				block_flag.notify_one(); // unblock us on block flag.
@@ -143,17 +140,18 @@ namespace edge::utl
 	};
 
 	TaskList::TaskList(uint32_t hint_capacity)
-		: p_impl(new task_list_o(hint_capacity)) 
+		: p_impl(new TaskListImpl(hint_capacity))
 	{
 	}
 
-	void TaskList::PushTask(Task c)
+	void TaskList::AddTask(Job j)
 	{
 		assert(p_impl != nullptr && "task list must be valid. Was this task list already used?");
-		p_impl->AddTask(c);
+		auto h = std::coroutine_handle<TaskPromiseBase>::from_address(j.handle.address());
+		p_impl->AddTask(h);
 	}
 
-	TaskList::~TaskList() 
+	TaskList::~TaskList()
 	{
 		// In case that this task list was deleted already, p_impl will
 		// be nullptr, which means that this delete operator is a no-op.
@@ -162,27 +160,25 @@ namespace edge::utl
 		delete p_impl;
 	}
 
-	// ----------------------------------------------------------------------
-
-	class scheduler_impl 
+	class SchedulerImpl
 	{
 
-		bool MoveTaskToWorkerThread(coroutine_handle_t& c);
+		bool MoveTaskToWorkerThread(std::coroutine_handle<>& c);
 
 	public:
 		std::vector<Channel*>     channels; // non-owning - channels are owned by their threads
 		std::vector<std::jthread> threads;
 
-		scheduler_impl(int32_t num_worker_threads = 0);
+		SchedulerImpl(int32_t num_worker_threads = 0);
 
-		~scheduler_impl() 
+		~SchedulerImpl()
 		{
 			// We must unblock any threads which are currently waiting on a flag signal for more work
 			// as there is no more work coming, we must artificially signal the flag so that these
 			// worker threads can resume to completion.
-			for (auto* c : channels) 
+			for (auto* c : channels)
 			{
-				if (c) 
+				if (c)
 				{
 					c->flag.test_and_set(); // Set flag so that if there is a worker blocked on this flag, it may proceed.
 					c->flag.notify_one();   // Notify the worker thread (if any worker thread is waiting) that the flag has flipped.
@@ -198,9 +194,9 @@ namespace edge::utl
 		void WaitForTaskList(TaskList& p_t);
 	};
 
-	scheduler_impl::scheduler_impl(int32_t num_worker_threads) 
+	SchedulerImpl::SchedulerImpl(int32_t num_worker_threads)
 	{
-		if (num_worker_threads < 0) 
+		if (num_worker_threads < 0)
 		{
 			// If negative, then this means that we must
 			// count backwards from the number of available hardware threads
@@ -218,21 +214,21 @@ namespace edge::utl
 
 		// NOTE THAT BY DEFAULT WE DON'T HAVE ANY WORKER THREADS
 		//
-		for (int i = 0; i != num_worker_threads; i++) 
+		for (int i = 0; i != num_worker_threads; i++)
 		{
 			channels.emplace_back(new Channel());
 			threads.emplace_back(
 				//
 				// Thread worker implementation
 				//
-				[](std::stop_token stop_token, Channel* ch) 
+				[](std::stop_token stop_token, Channel* ch)
 				{
-					while (!stop_token.stop_requested()) 
+					while (!stop_token.stop_requested())
 					{
 
-						if (ch->handle) 
+						if (ch->handle)
 						{
-							coroutine_handle_t::from_address(ch->handle).resume(); // resume coroutine
+							std::coroutine_handle<>::from_address(ch->handle).resume();// resume coroutine
 							ch->handle = nullptr;
 							// signal that we are ready to receive new tasks
 							ch->flag.clear(std::memory_order::release);
@@ -255,7 +251,7 @@ namespace edge::utl
 		}
 	}
 
-	void scheduler_impl::WaitForTaskList(TaskList& p_t) 
+	void SchedulerImpl::WaitForTaskList(TaskList& p_t)
 	{
 
 		if (p_t.p_impl == nullptr) {
@@ -274,19 +270,19 @@ namespace edge::utl
 
 		// Distribute work, as long as there is work to distribute
 
-		while (p_t.p_impl->GetTasksCount()) 
+		while (p_t.p_impl->GetTasksCount())
 		{
 
 			// ----------| Invariant: There are Tasks in this Task List which have not yet completed
 
-			coroutine_handle_t c = (p_t.p_impl)->PopTask();
+			Job j = (p_t.p_impl)->PopTask();
 
-			if (c == nullptr) 
+			if (!j.handle)
 			{
 				// We could not fetch a task from the task list - this means
 				// that there are tasks in-progress that we must wait for.
 
-				if (p_t.p_impl->block_flag.test_and_set(std::memory_order::acq_rel)) 
+				if (p_t.p_impl->block_flag.test_and_set(std::memory_order::acq_rel))
 				{
 					std::cout << "blocking thread " << std::this_thread::get_id() << " on [" << p_t.p_impl << "]" << std::endl;
 					// Wait for the flag to be set - this is the case if any of these happen:
@@ -295,7 +291,7 @@ namespace edge::utl
 					p_t.p_impl->block_flag.wait(true, std::memory_order::acquire);
 					std::cout << "resuming thread " << std::this_thread::get_id() << " on [" << p_t.p_impl << "]" << std::endl;
 				}
-				else 
+				else
 				{
 					std::cout << "spinning thread " << std::this_thread::get_id() << " on [" << p_t.p_impl << "]" << std::endl;
 				}
@@ -309,7 +305,7 @@ namespace edge::utl
 			// which means that it will be executed on the worker thread associated
 			// with this channel.
 
-			if (MoveTaskToWorkerThread(c)) 
+			if (MoveTaskToWorkerThread(j.handle))
 			{
 				// Pushing consumes the coroutine handle - that is, it becomes owned by the channel
 				// who owns it for the worker thread.
@@ -322,7 +318,7 @@ namespace edge::utl
 			}
 
 			// --------| Invariant: All worker threads are busy - or there are no worker threads: we must execute on this thread
-			c();
+			j();
 		}
 
 		// Once all tasks have been complete, release task list
@@ -332,13 +328,13 @@ namespace edge::utl
 
 	// ----------------------------------------------------------------------
 
-	inline bool scheduler_impl::MoveTaskToWorkerThread(coroutine_handle_t& c) 
+	inline bool SchedulerImpl::MoveTaskToWorkerThread(std::coroutine_handle<>& c)
 	{
 		// Iterate over all channels. If we can place the coroutine
 		// on a channel, do so.
-		for (auto& ch : channels) 
+		for (auto& ch : channels)
 		{
-			if (true == ch->TryPush(c)) 
+			if (true == ch->TryPush(c))
 			{
 				return true;
 			}
@@ -349,81 +345,55 @@ namespace edge::utl
 	// ----------------------------------------------------------------------
 
 	Scheduler::Scheduler(int32_t num_worker_threads)
-		: p_impl(new scheduler_impl(num_worker_threads)) {
+		: p_impl(new SchedulerImpl(num_worker_threads)) 
+	{
 	}
 
-	void Scheduler::ExecuteList(TaskList& p_t) 
+	void Scheduler::ExecuteList(TaskList& p_t)
 	{
 		p_impl->WaitForTaskList(p_t);
 	}
 
-	Scheduler* Scheduler::Create(int32_t num_worker_threads) 
+	Scheduler* Scheduler::Create(int32_t num_worker_threads)
 	{
 		return new Scheduler(num_worker_threads);
 	}
 
-	Scheduler::~Scheduler() 
+	Scheduler::~Scheduler()
 	{
 		delete p_impl;
 	}
 
-	// ----------------------------------------------------------------------
 
-	void suspend_task::await_suspend(std::coroutine_handle<TaskPromise> h) noexcept 
+
+	std::coroutine_handle<> final_awaitable::await_suspend(std::coroutine_handle<> h) noexcept
 	{
-
-		// ----------| Invariant: At this point the coroutine pointed to by h
-		// has been fully suspended. This is guaranteed by the c++ standard.
-
-		auto& promise = h.promise();
-
-		auto& task_list = promise.p_task_list;
-
-		// Put the current coroutine to the back of the scheduler queue
-		// as it has been fully suspended at this point.
-
-		task_list->PushTask(promise.get_return_object());
-
+		auto h_base = std::coroutine_handle<TaskPromiseBase>::from_address(h.address());
+		auto& promise = h_base.promise();
+		promise.task_list->DecrementTaskCount();
+		if (promise.continuation)
 		{
-			// We must unblock/awake the scheduling thread each time we suspend
-			// a coroutine so that the scheduling worker may pick up work again,
-			// in case it had been put to sleep earlier.
-			promise.p_task_list->block_flag.clear(std::memory_order_release);
-			promise.p_task_list->block_flag.notify_one(); // wake up worker just in case
+			// Grab the continuation and clear it.
+			auto cont = promise.continuation;
+			promise.continuation = nullptr;
+			return cont;
 		}
-
-		{
-			// --- Eager Workers ---
-			//
-			// Eagerly try to fetch & execute the next task from the front of the
-			// scheduler queue -
-			// We do this so that multiple threads can share the
-			// scheduling workload.
-			//
-			// But we can also disable that, so that there is only one thread
-			// that does the scheduling, and removing elements from the
-			// queue.
-
-			coroutine_handle_t c = task_list->PopTask();
-
-			if (c) 
-			{
-				assert(!c.done() && "task must not be done");
-				c();
-			}
-		}
-
-		// Note: Once we drop off here, control will return to where the resume()
-		// command that brought us here was issued.
+		return std::noop_coroutine();
 	}
 
-	// ----------------------------------------------------------------------
-
-	void finalize_task::await_suspend(std::coroutine_handle<TaskPromise> h) noexcept 
+	void suspend_task::await_suspend(std::coroutine_handle<> h) noexcept
 	{
-		// This is the last time that this coroutine will be awakened
-		// we do not suspend it anymore after this
-		h.promise().p_task_list->DecrementTaskCount();
-		h.destroy(); // are we allowed to destroy here?
+		auto h_base = std::coroutine_handle<TaskPromiseBase>::from_address(h.address());
+		auto& promise = h_base.promise();
+		promise.task_list->PushTask(h_base);
+		// Wake up the scheduler in case a worker thread is waiting.
+		promise.task_list->block_flag.clear(std::memory_order_release);
+		promise.task_list->block_flag.notify_one();
+		// Optionally, eagerly fetch the next job.
+		Job next = promise.task_list->PopTask();
+		if (next.handle)
+		{
+			next();
+		}
 	}
 }
