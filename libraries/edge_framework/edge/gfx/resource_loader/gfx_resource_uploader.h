@@ -6,7 +6,7 @@
 #include <mutex>
 
 #include "../gfx_structures.h"
-#include "../../util/utl_thread_pool.h"
+#include "../../util/utl_scheduler.h"
 
 namespace edge
 {
@@ -63,7 +63,7 @@ namespace edge
 
 			uint64_t buffer_size;
 
-			utl::ThreadPool pool;
+			utl::Scheduler* scheduler;
 
 			IFence* fence;
 			SemaphoreSubmitInfo signal_semaphore{};

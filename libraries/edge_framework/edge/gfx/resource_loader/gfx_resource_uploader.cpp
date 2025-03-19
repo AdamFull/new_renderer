@@ -7,7 +7,6 @@
 
 #include "../gfx_context.h"
 
-#include <latch>
 #include <chrono>
 
 namespace edge::gfx
@@ -62,9 +61,10 @@ namespace edge::gfx
 
 	UploadingDispatcher::UploadingDispatcher(IContext* gfx_context, uint64_t buffer_size, uint32_t worker_count) :
 		gfx_context{ gfx_context },
-		buffer_size{ buffer_size },
-		pool{ worker_count }
+		buffer_size{ buffer_size }
 	{
+		scheduler = utl::Scheduler::Create(worker_count);
+
 		queue = gfx_context->RequestQueue(QueueTypeFlag::eTransfer, QueueTypeFlag::eGraphics | QueueTypeFlag::eCompute);
 		queue->SetResourceName("UPLOAD");
 
@@ -80,6 +80,9 @@ namespace edge::gfx
 	{
 		dispatcher_thread.request_stop();
 		cv.notify_all();
+
+		delete scheduler;
+		scheduler = nullptr;
 
 		fence->Wait();
 
@@ -154,7 +157,20 @@ namespace edge::gfx
 
 			EDGE_LOGT("[UploadingDispatcher] Starting working on {} uploads.", local_jobs.size());
 
-			auto completion_latch = std::latch(local_jobs.size());
+			auto task_generator = [this](std::shared_ptr<ResourceJobPack> job_pack) -> utl::Task
+				{
+					auto& worker_ctx = GetWorkerContext();
+					ICommandList* cmd = worker_ctx.AcquireCmdList();
+					job_pack->task(cmd, *worker_ctx.allocator);
+
+					auto result = job_pack->task.get_future().get();
+					job_pack->handle->resource = result.first;
+					job_pack->handle->state = result.second;
+
+					co_return;
+				};
+
+			utl::TaskList task_list;
 
 			while (!local_jobs.empty())
 			{
@@ -162,22 +178,11 @@ namespace edge::gfx
 				local_jobs.pop();
 
 				auto shared_job = std::make_shared<ResourceJobPack>(std::move(job));
-				pool.Submit([this, &completion_latch, shared_job]() {
-					auto& worker_ctx = GetWorkerContext();
-					ICommandList* cmd = worker_ctx.AcquireCmdList();
-					shared_job->task(cmd, *worker_ctx.allocator);
-
-					auto result = shared_job->task.get_future().get();
-					shared_job->handle->resource = result.first;
-					shared_job->handle->state = result.second;
-
-					completion_latch.count_down();
-					});
-
+				task_list.PushTask(task_generator(shared_job));
 				processed_handles.push_back(shared_job->handle);
 			}
 
-			completion_latch.wait();
+			scheduler->ExecuteList(task_list);
 
 #ifndef NDEBUG
 			{
