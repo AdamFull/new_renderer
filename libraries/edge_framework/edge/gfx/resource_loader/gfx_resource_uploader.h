@@ -6,6 +6,7 @@
 #include <mutex>
 
 #include "../gfx_structures.h"
+#include "../../util/utl_thread_pool.h"
 
 namespace edge
 {
@@ -22,38 +23,25 @@ namespace edge
 			std::packaged_task<ResourceUploadFnSign> task{};
 		};
 
-		class UploadingThreadWorker
+		struct WorkerContext
 		{
 		public:
-			UploadingThreadWorker(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size, const std::string& worker_name);
-			~UploadingThreadWorker();
+			WorkerContext(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size);
+			~WorkerContext();
 
-			UploadingThreadWorker(UploadingThreadWorker&& other) noexcept = delete;
-			auto operator=(UploadingThreadWorker&& other) noexcept -> UploadingThreadWorker & = delete;
-			UploadingThreadWorker(const UploadingThreadWorker&) = delete;
-			UploadingThreadWorker& operator=(const UploadingThreadWorker&) = delete;
+			WorkerContext(WorkerContext&& other) noexcept = delete;
+			auto operator=(WorkerContext&& other) noexcept -> WorkerContext & = delete;
+			WorkerContext(const WorkerContext&) = delete;
+			WorkerContext& operator=(const WorkerContext&) = delete;
 
-			auto DispatchJob(ResourceJobPack&& job) -> void;
-			auto EndCmd() noexcept -> ICommandList*;
-			auto GetWorkCount() noexcept -> uint64_t;
-		private:
 			auto AcquireCmdList() -> ICommandList*;
-			auto Loop(std::stop_token stop_token) -> void;
+			auto EndCmd() noexcept -> ICommandList*;
 
 			IContext* gfx_context;
 			ICommandPool* cmd_pool;
 			ICommandList* cmd_list{ nullptr };
 
-			std::string worker_name;
-
-			std::jthread thread;
-			std::mutex mutex;
-			std::condition_variable cv;
-			std::queue<ResourceJobPack> jobs{};
-			std::atomic_uint64_t work_count{};
-
 			bool recording{ false };
-
 			std::unique_ptr<StagingBufferAllocator> allocator;
 		};
 
@@ -65,11 +53,17 @@ namespace edge
 
 			auto Submit(ResourceJobPack&& job) -> void;
 			auto IsSyncNeeded(SemaphoreSubmitInfo& semaphore_submit) -> bool;
+			auto GetWorkerContext() -> WorkerContext&;
 		private:
 			auto Loop(std::stop_token stop_token) -> void;
+			auto RegisterThreadContext() -> size_t;
 
 			IContext* gfx_context;
 			const IQueue* queue;
+
+			uint64_t buffer_size;
+
+			utl::ThreadPool pool;
 
 			IFence* fence;
 			SemaphoreSubmitInfo signal_semaphore{};
@@ -80,10 +74,12 @@ namespace edge
 			std::mutex semaphore_mutex;
 			std::condition_variable cv;
 
+			std::vector<std::unique_ptr<WorkerContext>> contexts;
+			std::mutex context_mtx;
+			size_t next_worker{ 0ull };
+
 			std::vector<std::shared_ptr<AsyncResourceHandle>> processed_handles{};
 			std::queue<ResourceJobPack> pending_jobs{};
-			std::vector<std::unique_ptr<UploadingThreadWorker>> workers{};
-			size_t worker_index{ 0 };
 		};
 	}
 }
