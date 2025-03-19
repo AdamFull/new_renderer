@@ -42,16 +42,29 @@ namespace edge
 
 		struct UploadContext
 		{
+			UploadContext(IContext* gfx_context);
+			~UploadContext();
+
+			void Reset();
+			void IncrementSemaphore();
+			void AddWorker(const IQueue* queue, uint64_t size);
+
+			IContext* gfx_context;
 			IFence* fence;
 			SemaphoreSubmitInfo signal_semaphore{};
 
 			std::vector<std::unique_ptr<WorkerContext>> workers;
+		private:
+			UploadContext(UploadContext&& other) noexcept = delete;
+			auto operator=(UploadContext&& other) noexcept -> UploadContext & = delete;
+			UploadContext(const UploadContext&) = delete;
+			UploadContext& operator=(const UploadContext&) = delete;
 		};
 
 		class UploadingDispatcher
 		{
 		public:
-			UploadingDispatcher(IContext* gfx_context, uint64_t buffer_size = 16 * 1024 * 1024, uint32_t worker_count = 2);
+			UploadingDispatcher(IContext* gfx_context, uint64_t buffer_size = 16 * 1024 * 1024, uint32_t uploader_count = 2);
 			~UploadingDispatcher();
 
 			template<typename _Fn>
@@ -100,7 +113,7 @@ namespace edge
 			std::mutex semaphore_mutex;
 			std::condition_variable cv;
 
-			std::vector<UploadContext> upload_contexts{};
+			std::vector<std::unique_ptr<UploadContext>> upload_contexts{};
 			uint32_t active_uploader_idx{ 0 };
 			uint32_t last_used_uploader_idx{ 0 };
 			size_t next_worker{ 0ull };

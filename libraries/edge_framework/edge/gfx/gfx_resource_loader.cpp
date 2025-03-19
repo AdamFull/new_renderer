@@ -518,13 +518,13 @@ namespace edge
 
 			auto update_queue = gfx_context->RequestQueue(QueueTypeFlag::eGraphics);
 			update_queue->SetResourceName("UPDATE");
-			updater = std::make_unique<ResourceLoader>(gfx_context, update_queue, create_info.buffer_count, create_info.buffer_size, "UPDATER");
+			updater = std::make_unique<ResourceLoader>(gfx_context, update_queue, create_info.update_buffer_count, create_info.update_buffer_size, "UPDATER");
 
 			//auto compute_queue = gfx_context->RequestQueue(QueueTypeFlag::eCompute, QueueTypeFlag::eGraphics);
 			//compute_queue->SetResourceName("COMPUTE_ASYNC");
 			//mip_generator = std::make_unique<MipGenerator>(gfx_context, compute_queue, create_info.buffer_count);
 
-			uploading_dispatcher = std::make_unique<UploadingDispatcher>(gfx_context, create_info.buffer_size, 4);
+			uploading_dispatcher = std::make_unique<UploadingDispatcher>(gfx_context, create_info.upload_buffer_size, create_info.upload_buffer_count);
 		}
 
 		void ResourceUpdater::Shutdown()

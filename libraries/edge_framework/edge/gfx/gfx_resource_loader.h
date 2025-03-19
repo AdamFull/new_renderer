@@ -68,8 +68,11 @@ namespace edge
 			IContext* gfx_context{ nullptr };
 			fs::VirtualFilesystem* filesystem{ nullptr };
 
-			uint64_t buffer_size{ 32ull * 1024ull * 1024ull };
-			uint32_t buffer_count{ 1u };
+			uint64_t update_buffer_size{ 16ull * 1024ull * 1024ull };
+			uint32_t update_buffer_count{ 1u };
+
+			uint64_t upload_buffer_size{ 32ull * 1024ull * 1024ull };
+			uint32_t upload_buffer_count{ 2u };
 		};
 
 		class ResourceUpdater
