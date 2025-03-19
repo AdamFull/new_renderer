@@ -6,7 +6,8 @@
 #include <mutex>
 
 #include "../gfx_structures.h"
-#include "../../util/utl_scheduler.h"
+
+#include <taskflow/taskflow.hpp>
 
 namespace edge
 {
@@ -16,12 +17,6 @@ namespace edge
 
 		using ResourceUploadResult = std::pair<IGFXResource*, ResourceStateFlags>;
 		using ResourceUploadFnSign = ResourceUploadResult(ICommandList*, StagingBufferAllocator&);
-
-		struct ResourceJobPack
-		{
-			std::shared_ptr<AsyncResourceHandle> handle{};
-			std::packaged_task<ResourceUploadFnSign> task{};
-		};
 
 		struct WorkerContext
 		{
@@ -45,16 +40,48 @@ namespace edge
 			std::unique_ptr<StagingBufferAllocator> allocator;
 		};
 
+		struct UploadContext
+		{
+			IFence* fence;
+			SemaphoreSubmitInfo signal_semaphore{};
+
+			std::vector<std::unique_ptr<WorkerContext>> workers;
+		};
+
 		class UploadingDispatcher
 		{
 		public:
 			UploadingDispatcher(IContext* gfx_context, uint64_t buffer_size = 16 * 1024 * 1024, uint32_t worker_count = 2);
 			~UploadingDispatcher();
 
-			auto Submit(ResourceJobPack&& job) -> void;
+			template<typename _Fn>
+			auto Submit(_Fn&& task) -> std::shared_ptr<AsyncResourceHandle>
+			{
+				auto handle = std::make_shared<AsyncResourceHandle>();
+
+				{
+					std::lock_guard lock(mutex);
+					pending_jobs.emplace([this, handle, 
+						t = std::make_shared<std::packaged_task<ResourceUploadFnSign>>(std::move(task))]() {
+							auto& worker_ctx = GetWorkerContext();
+							ICommandList* cmd = worker_ctx.AcquireCmdList();
+							(*t)(cmd, *worker_ctx.allocator);
+
+							auto result = t->get_future().get();
+							handle->resource = result.first;
+							handle->state = result.second;
+						});
+					pending_handles.emplace_back(handle);
+				}
+				cv.notify_one();
+
+				return handle;
+			}
+
 			auto IsSyncNeeded(SemaphoreSubmitInfo& semaphore_submit) -> bool;
 			auto GetWorkerContext() -> WorkerContext&;
 		private:
+			auto GetUploadContext() -> UploadContext&;
 			auto Loop(std::stop_token stop_token) -> void;
 			auto RegisterThreadContext() -> size_t;
 
@@ -63,10 +90,9 @@ namespace edge
 
 			uint64_t buffer_size;
 
-			utl::Scheduler* scheduler;
+			tf::Executor executor;
+			tf::Taskflow pending_jobs;
 
-			IFence* fence;
-			SemaphoreSubmitInfo signal_semaphore{};
 			std::atomic_bool sync_needed{};
 
 			std::jthread dispatcher_thread;
@@ -74,12 +100,13 @@ namespace edge
 			std::mutex semaphore_mutex;
 			std::condition_variable cv;
 
-			std::vector<std::unique_ptr<WorkerContext>> contexts;
-			std::mutex context_mtx;
+			std::vector<UploadContext> upload_contexts{};
+			uint32_t active_uploader_idx{ 0 };
+			uint32_t last_used_uploader_idx{ 0 };
 			size_t next_worker{ 0ull };
+			std::mutex context_mtx;
 
-			std::vector<std::shared_ptr<AsyncResourceHandle>> processed_handles{};
-			std::queue<ResourceJobPack> pending_jobs{};
+			std::vector<std::shared_ptr<AsyncResourceHandle>> pending_handles{};
 		};
 	}
 }

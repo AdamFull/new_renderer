@@ -536,18 +536,14 @@ namespace edge
 
 		auto ResourceUpdater::LoadTexture(std::string path) -> std::shared_ptr<AsyncResourceHandle>
 		{
-			std::packaged_task<ResourceUploadFnSign> task([path](ICommandList* cmd_list, StagingBufferAllocator& allocator) -> ResourceUploadResult
+			return uploading_dispatcher->Submit(
+				[path](ICommandList* cmd_list, StagingBufferAllocator& allocator) -> ResourceUploadResult
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
 					ResourceStateFlags state{};
 					return std::make_pair(LoadTextureImpl(cmd_list, allocator, path, state), state);
 				});
-
-			auto handle = std::make_shared<AsyncResourceHandle>();
-			uploading_dispatcher->Submit({ handle, std::move(task) });
-
-			return handle;
 		}
 
 		auto ResourceUpdater::LoadTextureSync(std::string path, ResourceStateFlags& state) -> ITexture*
