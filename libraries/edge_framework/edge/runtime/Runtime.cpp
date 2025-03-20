@@ -34,9 +34,9 @@ namespace edge
 		filesystem = std::make_unique<fs::VirtualFilesystem>();
 
 		// Mount default engine root filesystem
-		filesystem->Mount("/root", new fs::NativeFilesystem("./"));
-		filesystem->Mount("/source", new fs::NativeFilesystem("./../../../"));
-		filesystem->Mount("/resources", new fs::ZipFilesystem("resources.zip"));
+		filesystem->mount("/root", new fs::NativeFilesystem("./"));
+		filesystem->mount("/source", new fs::NativeFilesystem("./../../../"));
+		filesystem->mount("/resources", new fs::ZipFilesystem("resources.zip"));
 
 		return 0;
 	}

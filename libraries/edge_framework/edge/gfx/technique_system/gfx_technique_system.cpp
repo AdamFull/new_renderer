@@ -30,7 +30,7 @@ namespace edge
 			shader_compiler = std::make_unique<GLSLShaderCompiler>(compiler_ci);
 
 			std::vector<uint8_t> pipeline_cache_data{};
-			if (filesystem->Exists(k_frame_graph_cache_path) && filesystem->ReadFile(k_frame_graph_cache_path, pipeline_cache_data))
+			if (filesystem->exists(k_frame_graph_cache_path) && filesystem->read_file(k_frame_graph_cache_path, pipeline_cache_data))
 			{
 				
 			}
@@ -60,64 +60,37 @@ namespace edge
 				std::vector<uint8_t> data(cache_size, '\0');
 				pipeline_cache->GetData(cache_size, data.data());
 
-				filesystem->WriteFile(k_frame_graph_cache_path, data);
+				filesystem->write_file(k_frame_graph_cache_path, data);
 			}
 
 			gfx_context->Destroy(pipeline_cache);
 			pipeline_cache = nullptr;
 		}
 
-		class BinaryReader
-		{
-		public:
-			BinaryReader(const std::vector<uint8_t>& d) :
-				data{ d }
-			{
-			}
-
-			template<typename _Ty>
-			void Read(_Ty& t)
-			{
-				t = *((_Ty*)(data.data() + pos));
-				pos += sizeof(_Ty);
-			}
-
-			template<>
-			void Read(std::vector<uint8_t>& t)
-			{
-				auto* ptr = data.data() + pos;
-				memcpy(t.data(), ptr, t.size());
-				pos += t.size();
-			}
-		private:
-			std::span<const uint8_t> data;
-			size_t pos{ 0 };
-		};
-
 		bool TechniqueDatabase::Load(std::string_view path)
 		{
-			if (!filesystem->Exists(path))
+			if (!filesystem->exists(path))
 				return false;
 
-			auto* file = filesystem->OpenFile(path, fs::FileModeFlag::eRead | fs::FileModeFlag::eBin);
+			auto* file = filesystem->open_file(path, fs::FileModeFlag::eRead | fs::FileModeFlag::eBin);
 
 			size_t shader_count;
-			file->Read(shader_count);
+			file->read(shader_count);
 
 			for (int32_t i = 0; i < shader_count; ++i)
 			{
 				uint32_t hash;
-				file->Read(hash);
+				file->read(hash);
 
 				auto& shader = shaders[hash];
 
 				size_t code_size;
-				file->Read(code_size);
+				file->read(code_size);
 
 				shader.code.resize(code_size);
-				file->Read(shader.code);
-				file->Read(shader.shader_hash);
-				file->Read(shader.dependency_hash);
+				file->read(shader.code);
+				file->read(shader.shader_hash);
+				file->read(shader.dependency_hash);
 			}
 
 			return true;
@@ -125,21 +98,21 @@ namespace edge
 
 		bool TechniqueDatabase::Save(std::string_view path)
 		{
-			auto* file = filesystem->OpenFile(path, fs::FileModeFlag::eWrite | fs::FileModeFlag::eBin);
+			auto* file = filesystem->open_file(path, fs::FileModeFlag::eWrite | fs::FileModeFlag::eBin);
 
 			size_t shader_count = shaders.size();
 
 			// Write shader_count first
-			file->Write(shader_count);
+			file->write(shader_count);
 
 			for (const auto& [hash, shader] : shaders)
 			{
-				file->Write(hash);
+				file->write(hash);
 
-				file->Write(shader.code.size());
-				file->Write(shader.code);
-				file->Write(shader.shader_hash);
-				file->Write(shader.dependency_hash);
+				file->write(shader.code.size());
+				file->write(shader.code);
+				file->write(shader.shader_hash);
+				file->write(shader.dependency_hash);
 			}
 
 			delete file;
@@ -161,7 +134,7 @@ namespace edge
 			{
 				ShaderStageFlag stage_flag{};
 
-				auto ext = fs::GetExt(stage.path);
+				auto ext = fs::get_ext(stage.path);
 				if (ext.compare(".vert") == 0)
 					stage_flag = ShaderStageFlag::eVertex;
 				else if (ext.compare(".tesc") == 0)
@@ -266,7 +239,7 @@ namespace edge
 
 #if defined(DEVELOPMENT) || defined(EMBEDDED_SHADER_COMPILER)
 			std::string shader_source{};
-			filesystem->ReadFile(stage.path, shader_source);
+			filesystem->read_file(stage.path, shader_source);
 
 			ShaderCompileInfo shader_compile_info{};
 			shader_compile_info.path = stage.path;

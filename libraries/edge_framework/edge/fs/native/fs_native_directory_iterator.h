@@ -23,15 +23,15 @@ namespace edge
 				this->root = root;
 
 				std::array<char, 1024ull> buffer{};
-				this->path = fs::ToPosixPath(std::filesystem::relative(iterator->path(), root).string(), buffer);
+				this->path = fs::to_posix_path(std::filesystem::relative(iterator->path(), root).string(), buffer);
 			}
 
-			auto End() const noexcept -> bool override
+			auto end() const noexcept -> bool override
 			{
 				return iterator == _Ty();
 			}
 
-			auto Next() -> void override
+			auto next() -> void override
 			{
 				++iterator;
 				if (iterator != _Ty())
@@ -40,11 +40,11 @@ namespace edge
 					auto decoded = convert.to_bytes(std::filesystem::relative(iterator->path(), root).u16string());
 
 					std::array<char, 1024ull> buffer{};
-					path = fs::ToPosixPath(decoded, buffer);
+					path = fs::to_posix_path(decoded, buffer);
 				}
 			}
 
-			auto Value() const noexcept -> std::string_view override
+			auto value() const noexcept -> std::string_view override
 			{
 				return path;
 			}

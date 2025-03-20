@@ -21,7 +21,7 @@ namespace edge
 			while (current_index < entry_count) 
 			{
 				zip_stat_t st;
-				if (zip_stat_index(zip_handle, current_index, 0, &st) == 0 && MatchesPath(st.name)) 
+				if (zip_stat_index(zip_handle, current_index, 0, &st) == 0 && matches_path(st.name)) 
 				{
 					current_entry = st.name;
 					break;
@@ -35,12 +35,12 @@ namespace edge
 
 		}
 
-		auto ZipDirectoryIterator::End() const noexcept -> bool
+		auto ZipDirectoryIterator::end() const noexcept -> bool
 		{
 			return current_index >= entry_count;
 		}
 
-		auto ZipDirectoryIterator::Next() -> void
+		auto ZipDirectoryIterator::next() -> void
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			++current_index;
@@ -48,7 +48,7 @@ namespace edge
 			while (current_index < entry_count) 
 			{
 				zip_stat_t st;
-				if (zip_stat_index(zip_handle, current_index, 0, &st) == 0 && MatchesPath(st.name)) 
+				if (zip_stat_index(zip_handle, current_index, 0, &st) == 0 && matches_path(st.name)) 
 				{
 					current_entry = st.name;
 					break;
@@ -57,12 +57,12 @@ namespace edge
 			}
 		}
 
-		auto ZipDirectoryIterator::Value() const noexcept -> std::string_view
+		auto ZipDirectoryIterator::value() const noexcept -> std::string_view
 		{
 			return current_entry;
 		}
 
-		bool ZipDirectoryIterator::MatchesPath(std::string_view entry_name)
+		bool ZipDirectoryIterator::matches_path(std::string_view entry_name)
 		{
 			if (!entry_name.starts_with(root))
 				return false;

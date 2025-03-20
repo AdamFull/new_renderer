@@ -43,13 +43,13 @@ namespace edge
 			}
 		}
 
-		auto ZipFilesystem::OpenFile(std::string_view path, FileModeFlags mode) -> IFile*
+		auto ZipFilesystem::open_file(std::string_view path, FileModeFlags mode) -> IFile*
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			return new ZipFile(zip_handle, path, mode);
 		}
 
-		auto ZipFilesystem::FileSize(std::string_view path) -> size_t
+		auto ZipFilesystem::file_size(std::string_view path) -> size_t
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			zip_stat_t st;
@@ -59,19 +59,19 @@ namespace edge
 			return 0ull;
 		}
 
-		auto ZipFilesystem::CreateDirectories(std::string_view path) -> bool
+		auto ZipFilesystem::create_directories(std::string_view path) -> bool
 		{
 			assert(false && "NOT IMPLEMENTED");
 			return false;
 		}
 
-		auto ZipFilesystem::CreateDirectory(std::string_view path) -> bool
+		auto ZipFilesystem::create_directory(std::string_view path) -> bool
 		{
 			assert(false && "NOT IMPLEMENTED");
 			return false;
 		}
 
-		auto ZipFilesystem::Exists(std::string_view path) -> bool
+		auto ZipFilesystem::exists(std::string_view path) -> bool
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 
@@ -81,7 +81,7 @@ namespace edge
 			return zip_name_locate(zip_handle, path.data(), ZIP_FL_ENC_GUESS | ZIP_FL_NOCASE) >= 0;
 		}
 
-		auto ZipFilesystem::IsDirectory(std::string_view path) -> bool
+		auto ZipFilesystem::is_directory(std::string_view path) -> bool
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 
@@ -95,7 +95,7 @@ namespace edge
 			return false;
 		}
 
-		auto ZipFilesystem::IsFile(std::string_view path) -> bool
+		auto ZipFilesystem::is_file(std::string_view path) -> bool
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 
@@ -109,13 +109,13 @@ namespace edge
 			return false;
 		}
 
-		auto ZipFilesystem::Remove(std::string_view path) -> bool
+		auto ZipFilesystem::remove(std::string_view path) -> bool
 		{
 			assert(false && "NOT IMPLEMENTED");
 			return false;
 		}
 
-		auto ZipFilesystem::Walk(std::string_view path, bool recursive) -> IDirectoryIterator*
+		auto ZipFilesystem::walk(std::string_view path, bool recursive) -> IDirectoryIterator*
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			return new ZipDirectoryIterator(zip_handle, path, recursive);

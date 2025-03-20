@@ -14,19 +14,19 @@ namespace edge
 		public:
 			virtual ~IFilesystem() = default;
 
-			virtual auto OpenFile(std::string_view path, FileModeFlags mode) -> IFile* = 0;
-			virtual auto FileSize(std::string_view path) -> size_t = 0;
+			virtual auto open_file(std::string_view path, FileModeFlags mode) -> IFile* = 0;
+			virtual auto file_size(std::string_view path) -> size_t = 0;
 
-			virtual auto CreateDirectories(std::string_view path) -> bool = 0;
-			virtual auto CreateDirectory(std::string_view path) -> bool = 0;
+			virtual auto create_directories(std::string_view path) -> bool = 0;
+			virtual auto create_directory(std::string_view path) -> bool = 0;
 
-			virtual auto Exists(std::string_view path) -> bool = 0;
-			virtual auto IsDirectory(std::string_view path) -> bool = 0;
-			virtual auto IsFile(std::string_view path) -> bool = 0;
+			virtual auto exists(std::string_view path) -> bool = 0;
+			virtual auto is_directory(std::string_view path) -> bool = 0;
+			virtual auto is_file(std::string_view path) -> bool = 0;
 
-			virtual auto Remove(std::string_view path) -> bool = 0;
+			virtual auto remove(std::string_view path) -> bool = 0;
 
-			virtual auto Walk(std::string_view path, bool recursive = false) -> IDirectoryIterator* = 0;
+			virtual auto walk(std::string_view path, bool recursive = false) -> IDirectoryIterator* = 0;
 		};
 	}
 }

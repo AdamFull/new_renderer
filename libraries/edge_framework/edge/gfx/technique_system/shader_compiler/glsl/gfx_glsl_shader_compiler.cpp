@@ -104,7 +104,7 @@ namespace edge
 					std::replace(path.begin(), path.end(), '\\', '/');
 
 					std::string* file_data = new std::string;
-					if (fs->Exists(path) && fs->ReadFile(path, *file_data))
+					if (fs->exists(path) && fs->read_file(path, *file_data))
 					{
 						directoryStack.emplace_back(getDirectory(path));
 
@@ -276,7 +276,7 @@ namespace edge
 		{
 			EShLanguage language{};
 
-			auto ext = fs::GetExt(path);
+			auto ext = fs::get_ext(path);
 			if (ext.compare(".vert") == 0)
 				language = EShLangVertex;
 			else if (ext.compare(".tesc") == 0)

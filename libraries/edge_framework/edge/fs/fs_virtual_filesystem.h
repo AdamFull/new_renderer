@@ -17,28 +17,28 @@ namespace edge
 		public:
 			~VirtualFilesystem();
 
-			auto Mount(std::string_view mount_point, IFilesystem* filesystem) -> void;
-			auto Unmount(std::string_view mount_point) -> void;
+			auto mount(std::string_view mount_point, IFilesystem* filesystem) -> void;
+			auto unmount(std::string_view mount_point) -> void;
 
-			auto OpenFile(std::string_view path, FileModeFlags mode) -> IFile*;
-			auto FileSize(std::string_view path) -> size_t;
-			auto ReadFile(std::string_view path, std::string& buffer) -> bool;
-			auto ReadFile(std::string_view path, std::vector<uint8_t>& buffer) -> bool;
-			auto WriteFile(std::string_view path, std::string_view buffer) -> bool;
-			auto WriteFile(std::string_view path, std::span<const uint8_t> buffer) -> bool;
+			auto open_file(std::string_view path, FileModeFlags mode) -> IFile*;
+			auto file_size(std::string_view path) -> size_t;
+			auto read_file(std::string_view path, std::string& buffer) -> bool;
+			auto read_file(std::string_view path, std::vector<uint8_t>& buffer) -> bool;
+			auto write_file(std::string_view path, std::string_view buffer) -> bool;
+			auto write_file(std::string_view path, std::span<const uint8_t> buffer) -> bool;
 
-			auto CreateDirectories(std::string_view path) -> bool;
-			auto CreateDirectory(std::string_view path) -> bool;
+			auto create_directories(std::string_view path) -> bool;
+			auto create_directory(std::string_view path) -> bool;
 
-			auto Exists(std::string_view path) -> bool;
-			auto IsDirectory(std::string_view path) -> bool;
-			auto IsFile(std::string_view path) -> bool;
+			auto exists(std::string_view path) -> bool;
+			auto is_directory(std::string_view path) -> bool;
+			auto is_file(std::string_view path) -> bool;
 
-			auto Remove(std::string_view path) -> bool;
+			auto remove(std::string_view path) -> bool;
 
-			auto Walk(std::string_view path, bool recursive = false) -> DirectoryIterator;
+			auto walk(std::string_view path, bool recursive = false) -> DirectoryIterator;
 		private:
-			auto GetFilesystem(std::string_view path) -> IFilesystem*;
+			auto get_filesystem(std::string_view path) -> IFilesystem*;
 
 			std::unordered_map<std::string_view, IFilesystem*> filesystems;
 		};

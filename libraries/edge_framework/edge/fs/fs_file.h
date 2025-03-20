@@ -42,54 +42,54 @@ namespace edge
 		public:
 			virtual ~IFile() = default;
 
-			[[nodiscard]] virtual auto IsOpen() -> bool = 0;
-			virtual auto Close() -> void = 0;
+			[[nodiscard]] virtual auto is_open() -> bool = 0;
+			virtual auto close() -> void = 0;
 
-			[[nodiscard]] virtual auto Size() -> uint64_t = 0;
-			virtual auto Seek(uint64_t offset, SeekOrigin origin) -> int64_t = 0;
-			[[nodiscard]] virtual auto Tell() -> int64_t = 0;
-			virtual auto Read(void* buffer, uint64_t size) -> int64_t = 0;
-			virtual auto Write(const void* buffer, uint64_t size) -> int64_t = 0;
+			[[nodiscard]] virtual auto size() -> uint64_t = 0;
+			virtual auto seek(uint64_t offset, SeekOrigin origin) -> int64_t = 0;
+			[[nodiscard]] virtual auto tell() -> int64_t = 0;
+			virtual auto read(void* buffer, uint64_t size) -> int64_t = 0;
+			virtual auto write(const void* buffer, uint64_t size) -> int64_t = 0;
 
             template<typename _Ty>
-            auto Read(_Ty& value) -> uint64_t
+            auto read(_Ty& value) -> uint64_t
             {
-                return Read(&value, sizeof(_Ty));
+                return read(&value, sizeof(_Ty));
             }
 
 			template<>
-			auto Read(std::string& buffer) -> uint64_t
+			auto read(std::string& buffer) -> uint64_t
 			{
-				return Read(buffer.data(), buffer.size());
+				return read(buffer.data(), buffer.size());
 			}
 
 			template<>
-			auto Read(std::vector<uint8_t>& buffer) -> uint64_t
+			auto read(std::vector<uint8_t>& buffer) -> uint64_t
 			{
-				return Read(buffer.data(), buffer.size());
+				return read(buffer.data(), buffer.size());
 			}
 
-			auto Read(std::span<uint8_t> buffer) -> uint64_t
+			auto read(std::span<uint8_t> buffer) -> uint64_t
 			{
-				return Read(buffer.data(), buffer.size());
+				return read(buffer.data(), buffer.size());
 			}
 
             template<typename _Ty>
-            auto Write(const _Ty& value) -> uint64_t
+            auto write(const _Ty& value) -> uint64_t
             {
-                return Write(&value, sizeof(_Ty));
+                return write(&value, sizeof(_Ty));
             }
 
 			template<>
-			auto Write(const std::string& buffer) -> uint64_t
+			auto write(const std::string& buffer) -> uint64_t
 			{
-				return Write(buffer.data(), buffer.size());
+				return write(buffer.data(), buffer.size());
 			}
 
 			template<>
-			auto Write(const std::vector<uint8_t>& buffer) -> uint64_t
+			auto write(const std::vector<uint8_t>& buffer) -> uint64_t
             {
-                return Write(buffer.data(), buffer.size());
+                return write(buffer.data(), buffer.size());
             }
 		};
 	}

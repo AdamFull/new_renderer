@@ -180,9 +180,9 @@ namespace edge
 			std::unique_ptr<TextureLoader> texture_loader;
 
 			std::vector<uint8_t> data{};
-			fs.ReadFile(path, data);
+			fs.read_file(path, data);
 
-			auto ext = fs::GetExt(path);
+			auto ext = fs::get_ext(path);
 			auto ext_hash = murmur_hash(ext.data(), ext.size(), 0);
 			switch (ext_hash)
 			{

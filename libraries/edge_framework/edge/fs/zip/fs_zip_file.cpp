@@ -102,15 +102,15 @@ namespace edge
 				file_stat = nullptr;
 			}
 
-			Close();
+			close();
 		}
 
-		auto ZipFile::IsOpen() -> bool
+		auto ZipFile::is_open() -> bool
 		{
 			return (file_handle);
 		}
 
-		auto ZipFile::Close() -> void
+		auto ZipFile::close() -> void
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			if (file_handle)
@@ -120,7 +120,7 @@ namespace edge
 			}
 		}
 
-		auto ZipFile::Size() -> uint64_t
+		auto ZipFile::size() -> uint64_t
 		{
 			if (!file_handle)
 				return 0ull;
@@ -128,7 +128,7 @@ namespace edge
 			return file_stat->size;
 		}
 
-		auto ZipFile::Seek(uint64_t offset, SeekOrigin origin) -> int64_t
+		auto ZipFile::seek(uint64_t offset, SeekOrigin origin) -> int64_t
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			if (zip_fseek(file_handle, static_cast<long>(offset), static_cast<int>(origin)) != 0)
@@ -136,7 +136,7 @@ namespace edge
 			return zip_ftell(file_handle);
 		}
 
-		auto ZipFile::Tell() -> int64_t
+		auto ZipFile::tell() -> int64_t
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			if (!file_handle)
@@ -145,7 +145,7 @@ namespace edge
 			return zip_ftell(file_handle);
 		}
 
-		auto ZipFile::Read(void* buffer, uint64_t size) -> int64_t
+		auto ZipFile::read(void* buffer, uint64_t size) -> int64_t
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			if (!file_handle)
@@ -154,7 +154,7 @@ namespace edge
 			return zip_fread(file_handle, buffer, size);
 		}
 
-		auto ZipFile::Write(const void* buffer, uint64_t size) -> int64_t
+		auto ZipFile::write(const void* buffer, uint64_t size) -> int64_t
 		{
 			assert(false && "NOT IMPLEMENTED");
 			return -1;

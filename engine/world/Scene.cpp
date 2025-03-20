@@ -161,28 +161,28 @@ namespace engine
 
 			bool exists(std::string_view path) override
 			{
-				return vfs->Exists(path);
+				return vfs->exists(path);
 			}
 
 			std::string expandFilePath(std::string_view path) override
 			{
 				std::array<char, 1024ull> buffer{}, buffer2{};
-				return std::string(edge::fs::Normalize(edge::fs::ToPosixPath(path, buffer), buffer2));
+				return std::string(edge::fs::normalize(edge::fs::to_posix_path(path, buffer), buffer2));
 			}
 
 			bool readFile(std::string_view path, std::vector<uint8_t>& data) override
 			{
-				return vfs->ReadFile(path, data);
+				return vfs->read_file(path, data);
 			}
 
 			bool writeFile(std::string_view path, const std::vector<uint8_t>& data) override
 			{
-				return vfs->WriteFile(path, data);
+				return vfs->write_file(path, data);
 			}
 
 			uint64_t fileSize(std::string_view path) override
 			{
-				return vfs->FileSize(path);
+				return vfs->file_size(path);
 			}
 		private:
 			edge::fs::VirtualFilesystem* vfs{ nullptr };
@@ -309,7 +309,7 @@ namespace engine
 				// TODO: find format from materials
 
 				std::array<char, 1024ull> buffer{};
-				auto image_path = edge::fs::PathAppend(root.rootDirectory, easygltf::url_decode(image.uri), std::span(buffer));
+				auto image_path = edge::fs::path_append(root.rootDirectory, easygltf::url_decode(image.uri), std::span(buffer));
 				resources.textures.push_back(renderer.AddRenderResource(image_path, texture_sampler));
 			}
 

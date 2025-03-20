@@ -11,9 +11,9 @@ namespace edge
 		public:
 			virtual ~IDirectoryIterator() = default;
 
-			virtual auto End() const noexcept -> bool = 0;
-			virtual auto Next() -> void = 0;
-			virtual auto Value() const noexcept -> std::string_view = 0;
+			virtual auto end() const noexcept -> bool = 0;
+			virtual auto next() -> void = 0;
+			virtual auto value() const noexcept -> std::string_view = 0;
 		};
 
 		class DirectoryIterator
@@ -52,13 +52,13 @@ namespace edge
 
 			auto operator++() -> DirectoryIterator&
 			{
-				impl->Next();
+				impl->next();
 				return *this;
 			}
 
 			auto operator*() const noexcept -> std::string_view
 			{
-				return impl->Value();
+				return impl->value();
 			}
 
 			auto operator!=(const DirectoryIterator& other) -> bool const
@@ -67,7 +67,7 @@ namespace edge
 				//	return !impl->End();
 				//
 				//return impl != other.impl;
-				return impl && !impl->End();
+				return impl && !impl->end();
 			}
 		private:
 			IDirectoryIterator* impl{ nullptr };

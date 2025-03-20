@@ -16,19 +16,19 @@ namespace edge
 			ZipFilesystem(std::string_view root, std::string_view password = {});
 			~ZipFilesystem();
 
-			auto OpenFile(std::string_view path, FileModeFlags mode) -> IFile* override;
-			auto FileSize(std::string_view path) -> size_t override;
+			auto open_file(std::string_view path, FileModeFlags mode) -> IFile* override;
+			auto file_size(std::string_view path) -> size_t override;
 
-			auto CreateDirectories(std::string_view path) -> bool override;
-			auto CreateDirectory(std::string_view path) -> bool override;
+			auto create_directories(std::string_view path) -> bool override;
+			auto create_directory(std::string_view path) -> bool override;
 
-			auto Exists(std::string_view path) -> bool override;
-			auto IsDirectory(std::string_view path) -> bool override;
-			auto IsFile(std::string_view path) -> bool override;
+			auto exists(std::string_view path) -> bool override;
+			auto is_directory(std::string_view path) -> bool override;
+			auto is_file(std::string_view path) -> bool override;
 
-			auto Remove(std::string_view path) -> bool override;
+			auto remove(std::string_view path) -> bool override;
 
-			auto Walk(std::string_view path, bool recursive = false) -> IDirectoryIterator* override;
+			auto walk(std::string_view path, bool recursive = false) -> IDirectoryIterator* override;
 		private:
 			zip_t* zip_handle{ nullptr };
 

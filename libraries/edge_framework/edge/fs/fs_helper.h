@@ -52,7 +52,7 @@ namespace edge
             constexpr inline uint32_t cs = ".cs"_hash32;
         }
 
-        inline constexpr std::string_view GetMountPoint(std::string_view path) 
+        inline constexpr std::string_view get_mount_point(std::string_view path) 
         {
             auto first_separator = path.find('/');
             std::string_view result = path.substr(0, first_separator);
@@ -66,7 +66,7 @@ namespace edge
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view ToPosixPath(std::string_view path, std::span<char, _Size> buffer)
+        inline constexpr std::string_view to_posix_path(std::string_view path, std::span<char, _Size> buffer)
         {
             size_t index = 0;
             for (char ch : path) 
@@ -80,14 +80,14 @@ namespace edge
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view ToPosixPath(std::string_view path, std::array<char, _Size> buffer)
+        inline constexpr std::string_view to_posix_path(std::string_view path, std::array<char, _Size> buffer)
         {
-            return ToPosixPath(path, std::span(buffer));
+            return to_posix_path(path, std::span(buffer));
         }
 
-        inline constexpr std::string_view GetLocalPath(std::string_view path) 
+        inline constexpr std::string_view get_local_path(std::string_view path) 
         {
-            auto mount_point = GetMountPoint(path);
+            auto mount_point = get_mount_point(path);
 
             if (!path.starts_with(mount_point))
                 return {};
@@ -99,13 +99,13 @@ namespace edge
             return local_path;
         }
 
-        inline constexpr std::string_view GetExt(std::string_view path) 
+        inline constexpr std::string_view get_ext(std::string_view path) 
         {
             auto dot_pos = path.rfind('.');
             return (dot_pos == std::string_view::npos) ? std::string_view{} : path.substr(dot_pos);
         }
 
-        inline constexpr std::string_view GetFilename(std::string_view path) 
+        inline constexpr std::string_view get_filename(std::string_view path) 
         {
             auto last_sep = path.find_last_of("/\\");
             return (last_sep == std::string_view::npos) ? path : path.substr(last_sep + 1);
@@ -113,19 +113,19 @@ namespace edge
 
         inline constexpr std::string_view get_stem(std::string_view path) 
         {
-            auto filename = GetFilename(path);
-            auto ext = GetExt(filename);
+            auto filename = get_filename(path);
+            auto ext = get_ext(filename);
             return filename.substr(0, filename.size() - ext.size());
         }
 
-        inline constexpr std::string_view ParentPath(std::string_view path) 
+        inline constexpr std::string_view parent_path(std::string_view path) 
         {
             auto separator_pos = path.find_last_of("/\\");
             return (separator_pos == std::string_view::npos) ? std::string_view{} : path.substr(0, separator_pos);
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view Normalize(std::string_view path, std::span<char, _Size> buffer) 
+        inline constexpr std::string_view normalize(std::string_view path, std::span<char, _Size> buffer) 
         {
             size_t index = 0;
 
@@ -152,13 +152,13 @@ namespace edge
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view Normalize(std::string_view path, std::array<char, _Size> buffer)
+        inline constexpr std::string_view normalize(std::string_view path, std::array<char, _Size> buffer)
         {
-            return Normalize(path, std::span(buffer));;
+            return normalize(path, std::span(buffer));;
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view PathAppend(std::string_view base_path, std::string_view relative_path, std::span<char, _Size> buffer)
+        inline constexpr std::string_view path_append(std::string_view base_path, std::string_view relative_path, std::span<char, _Size> buffer)
         {
             size_t index = 0;
 
@@ -194,7 +194,7 @@ namespace edge
         }
 
         template<size_t _Size>
-        inline constexpr std::string_view PathAppend(std::string_view base_path, std::string_view relative_path, std::array<char, _Size> buffer)
+        inline constexpr std::string_view path_append(std::string_view base_path, std::string_view relative_path, std::array<char, _Size> buffer)
         {
             return path_append(base_path, relative_path, std::span(buffer));
         }
