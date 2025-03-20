@@ -103,7 +103,7 @@ namespace engine
 			{
 				if (index_data.state != edge::gfx::ResourceStateFlag::eIndexRead)
 				{
-					edge::gfx::BufferBarrier buffer_barrier{};
+					edge::gfx::BufferBarrierDesc buffer_barrier{};
 					buffer_barrier.buffer = index_data.buffer;
 					buffer_barrier.src_state = index_data.state;
 					index_data.state = buffer_barrier.dst_state = edge::gfx::ResourceStateFlag::eIndexRead;
@@ -212,7 +212,7 @@ namespace engine
 
 			if (vertex_data.state != edge::gfx::ResourceStateFlag::eVertexRead)
 			{
-				edge::gfx::BufferBarrier buffer_barrier{};
+				edge::gfx::BufferBarrierDesc buffer_barrier{};
 				buffer_barrier.buffer = vertex_data.buffer;
 				buffer_barrier.src_state = vertex_data.state;
 				vertex_data.state = buffer_barrier.dst_state = edge::gfx::ResourceStateFlag::eVertexRead;
@@ -311,7 +311,7 @@ namespace engine
 			std::array<edge::gfx::IBuffer*, k_max_attribure_description> vertex_buffers{};
 			std::array<uint32_t, k_max_attribure_description> strides{};
 			std::array<uint64_t, k_max_attribure_description> offsets{};
-			std::array<edge::gfx::BufferBarrier, k_max_attribure_description> barriers{};
+			std::array<edge::gfx::BufferBarrierDesc, k_max_attribure_description> barriers{};
 			size_t barrier_count{ 0 };
 
 			edge::gfx::ResourceBarrierInfo resource_barrier{};

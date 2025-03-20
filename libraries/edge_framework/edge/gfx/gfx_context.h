@@ -3,10 +3,6 @@
 #include <memory>
 #include "gfx_base.h"
 
-#ifdef create_semaphore
-#undef create_semaphore
-#endif
-
 namespace edge::gfx
 {
 	// TODO: may be return pointers here and add release function also

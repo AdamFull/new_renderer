@@ -238,7 +238,7 @@ namespace edge
 			{
 				auto* dst_buffer = resource_desc.resource->as<IBuffer*>();
 
-				BufferBarrier buffer_barrier{};
+				BufferBarrierDesc buffer_barrier{};
 				buffer_barrier.buffer = dst_buffer;
 				buffer_barrier.src_state = resource_desc.state;
 				resource_desc.state = buffer_barrier.dst_state = ResourceStateFlag::eCopyDst;
@@ -271,7 +271,7 @@ namespace edge
 			{
 				auto* dst_texture = resource_desc.resource->as<ITexture*>();
 
-				TextureBarrier texture_barrier{};
+				TextureBarrierDesc texture_barrier{};
 				texture_barrier.texture = dst_texture;
 				texture_barrier.src_state = resource_desc.state;
 				resource_desc.state = texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
@@ -417,7 +417,7 @@ namespace edge
 
 				UpdateTexture(command_list, gpImguiContext->font_texture, font_width, font_height, { font_pixels , upload_size });
 
-				TextureBarrier texture_barrier{};
+				TextureBarrierDesc texture_barrier{};
 				texture_barrier.texture = gpImguiContext->font_texture.resource->as<ITexture*>();
 				texture_barrier.src_state = gpImguiContext->font_texture.state;
 				gpImguiContext->font_texture.state = texture_barrier.dst_state = ResourceStateFlag::eShaderReadOnlyResource;

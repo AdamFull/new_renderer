@@ -252,12 +252,12 @@ public:
 		auto* command_list = current_frame->command_pool->allocate();
 		command_list->begin();
 
-		edge::gfx::TextureBarrier texture_translation{};
+		edge::gfx::TextureBarrierDesc texture_translation{};
 		texture_translation.texture = current_frame->backbuffer;
 		texture_translation.src_state = edge::gfx::ResourceStateFlag::eUndefined;
 		texture_translation.dst_state = edge::gfx::ResourceStateFlag::eColorAttachmentWrite;
 
-		edge::gfx::BufferBarrier vertex_buffer_barrier{};
+		edge::gfx::BufferBarrierDesc vertex_buffer_barrier{};
 		vertex_buffer_barrier.buffer = vertex_buffer;
 		vertex_buffer_barrier.src_state = edge::gfx::ResourceStateFlag::eCopyDst;
 		vertex_buffer_barrier.dst_state = edge::gfx::ResourceStateFlag::eVertexRead;

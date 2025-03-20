@@ -4,10 +4,6 @@
 
 #include <algorithm>
 
-#ifdef MemoryBarrier
-#undef MemoryBarrier
-#endif
-
 namespace engine
 {
 	namespace render
@@ -230,9 +226,9 @@ namespace engine
 
 			// Per frame barriers
 
-			std::vector<edge::gfx::BufferBarrier> buffer_barriers{};
-			std::vector<edge::gfx::TextureBarrier> texture_barriers{};
-			std::vector<edge::gfx::MemoryBarrier> memory_barriers{};
+			std::vector<edge::gfx::BufferBarrierDesc> buffer_barriers{};
+			std::vector<edge::gfx::TextureBarrierDesc> texture_barriers{};
+			std::vector<edge::gfx::MemoryBarrierDesc> memory_barriers{};
 			edge::gfx::ResourceBarrierInfo resource_barriers{};
 		};
 	}

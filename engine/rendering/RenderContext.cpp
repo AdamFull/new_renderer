@@ -768,7 +768,7 @@ namespace engine
 
 			auto& backbuffer_resource = GetResource(0);
 
-			edge::gfx::TextureBarrier texture_barrier{};
+			edge::gfx::TextureBarrierDesc texture_barrier{};
 			edge::gfx::ResourceBarrierInfo resource_barriers{};
 			resource_barriers.texture_barriers = { &texture_barrier, 1 };
 
@@ -881,7 +881,7 @@ namespace engine
 					++it;
 			}
 
-			std::vector<edge::gfx::TextureBarrier> texture_barriers{};
+			std::vector<edge::gfx::TextureBarrierDesc> texture_barriers{};
 
 			// Update bindless textures
 			uint32_t array_index{ 0u };

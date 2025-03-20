@@ -6,10 +6,6 @@
 #include "gfx_shader_reflection.h"
 #include "gfx_format.h"
 
-#ifdef MemoryBarrier
-#undef MemoryBarrier
-#endif
-
 namespace edge
 {
 	class Window;
@@ -322,14 +318,14 @@ namespace edge
 			uint64_t offset{ 0ull };
 		};
 
-		struct BufferBarrier {
+		struct BufferBarrierDesc {
 			IBuffer* buffer{ nullptr };
 			ResourceStateFlags src_state{};
 			ResourceStateFlags dst_state{};
 			BufferRangeInfo range{};
 		};
 
-		struct TextureBarrier {
+		struct TextureBarrierDesc {
 			ITexture* texture{ nullptr };
 			uint32_t subresource_index{ ~0u };
 
@@ -337,15 +333,15 @@ namespace edge
 			ResourceStateFlags dst_state{};
 		};
 
-		struct MemoryBarrier {
+		struct MemoryBarrierDesc {
 			ResourceStateFlags src_state{};
 			ResourceStateFlags dst_state{};
 		};
 
 		struct ResourceBarrierInfo {
-			std::span<const BufferBarrier> buffer_barriers;
-			std::span<const TextureBarrier> texture_barriers;
-			std::span<const MemoryBarrier> memory_barriers;
+			std::span<const BufferBarrierDesc> buffer_barriers;
+			std::span<const TextureBarrierDesc> texture_barriers;
+			std::span<const MemoryBarrierDesc> memory_barriers;
 		};
 
 		struct IndirectDrawCommand {

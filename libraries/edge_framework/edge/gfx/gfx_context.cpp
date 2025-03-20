@@ -5,7 +5,7 @@
 #endif
 
 #if VULKAN_SUPPORTED
-#include <vulkan/VkContext.h>
+#include <vulkan/gfx_vk_context.h>
 #endif
 
 #include "../util/Enum.hpp"

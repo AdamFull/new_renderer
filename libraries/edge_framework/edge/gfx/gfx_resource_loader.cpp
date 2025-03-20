@@ -20,10 +20,6 @@
 #include "resource_loader/gfx_resource_uploader.h"
 #include "resource_loader/gfx_texture_loader.h"
 
-#ifdef create_semaphore
-#undef create_semaphore
-#endif
-
 namespace edge::gfx
 {
 	struct CommandNode {
@@ -250,7 +246,7 @@ namespace edge::gfx
 			// ITexture should be in copy dest state
 			ResourceStateFlags resource_state{ ResourceStateFlag::eCopyDst };
 
-			TextureBarrier texture_barrier{};
+			TextureBarrierDesc texture_barrier{};
 			texture_barrier.texture = texture;
 
 			ResourceBarrierInfo resource_barrier{};
@@ -422,7 +418,7 @@ namespace edge::gfx
 
 		if (current_state != ResourceStateFlag::eCopyDst) {
 			// Translate dst_buffer for correct layout
-			BufferBarrier buffer_barrier{};
+			BufferBarrierDesc buffer_barrier{};
 			buffer_barrier.buffer = copy_buffer_info.dst_buffer;
 			buffer_barrier.src_state = current_state;
 			current_state = buffer_barrier.dst_state = ResourceStateFlag::eCopyDst;
@@ -530,7 +526,7 @@ namespace edge::gfx
 		copy_texture.src_buffer = src_buffer;
 		copy_texture.copy_regions = { &copy_region, 1 };
 
-		TextureBarrier texture_barrier{};
+		TextureBarrierDesc texture_barrier{};
 		texture_barrier.texture = dst_texture;
 		texture_barrier.src_state = current_state;
 		current_state = texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
@@ -597,7 +593,7 @@ namespace edge::gfx
 		ITexture* dst_texture = texture_loader->get_texture();
 		dst_texture->set_resource_name(path);
 
-		TextureBarrier texture_barrier{};
+		TextureBarrierDesc texture_barrier{};
 		texture_barrier.texture = dst_texture;
 		texture_barrier.src_state = ResourceStateFlag::eUndefined;
 		texture_barrier.dst_state = ResourceStateFlag::eCopyDst;

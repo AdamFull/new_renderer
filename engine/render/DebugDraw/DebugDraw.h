@@ -5,10 +5,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#ifdef DrawText
-#undef DrawText
-#endif
-
 typedef void* ImDbgHandle;
 
 typedef uint16_t ImDbgIndex;

@@ -31,10 +31,6 @@
 
 #include <edge/fs/fs_virtual_filesystem.h>
 
-#ifdef MemoryBarrier
-#undef MemoryBarrier
-#endif
-
 #if USE_NSIGHT_AFTERMATH
 #include <edge/gfx/gfx_nsight_aftermath.h>
 #endif
