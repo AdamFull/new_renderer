@@ -90,7 +90,7 @@ namespace edge::gfx::vulkan
 			return ~0;
 		}
 		else {
-			throw std::runtime_error("Could not find a matching memory type");
+			EDGE_LOGE("[VkPhysicalDevice] Could not find a matching memory type");
 		}
 	}
 }
