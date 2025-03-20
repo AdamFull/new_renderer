@@ -80,9 +80,9 @@ namespace engine
 
 			virtual void Flush();
 
-			void BindIndexBuffer(edge::gfx::ICommandList& command_list);
+			void bind_index_buffer(edge::gfx::ICommandList& command_list);
 
-			virtual void BindVertexBuffers(edge::gfx::ICommandList& command_list) = 0;
+			virtual void bind_vertex_buffers(edge::gfx::ICommandList& command_list) = 0;
 
 			void Bind(edge::gfx::ICommandList& command_list);
 

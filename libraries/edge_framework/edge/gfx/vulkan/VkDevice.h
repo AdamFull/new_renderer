@@ -14,8 +14,7 @@ namespace edge
 			class DebugUtils;
 			class PhysicalDevice;
 
-			class Device : public VulkanResource<vk::Device>
-			{
+			class Device : public VulkanResource<vk::Device> {
 			public:
 				/**
 				 * @brief Device constructor
@@ -34,26 +33,24 @@ namespace edge
 				Device& operator=(const Device&) = delete;
 				Device& operator=(Device&&) = delete;
 
-				auto GetGpu() const noexcept -> PhysicalDevice const&
-				{
+				auto get_gpu() const noexcept -> PhysicalDevice const& {
 					return gpu;
 				}
 
-				[[nodiscard]] auto RequestQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) -> VulkanQueue*;
+				[[nodiscard]] auto request_queue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) -> VulkanQueue*;
 
-				auto GetQueueCount() const -> size_t
-				{
+				auto get_queue_count() const -> size_t {
 					return queue_families.size();
 				}
 
-				auto IsExtensionSupported(const char* extension) const noexcept -> bool;
+				auto is_extension_supported(const char* extension) const noexcept -> bool;
 
-				auto IsEnabled(std::string const& extension) const noexcept -> bool;
+				auto is_enabled(std::string const& extension) const noexcept -> bool;
 
-				auto GetQueueFamilyIndex(vk::QueueFlagBits queue_flag) const -> uint32_t;
+				auto get_queue_family_index(vk::QueueFlagBits queue_flag) const -> uint32_t;
 
-				void SetDebugUtils(DebugUtils* debug_utils) noexcept;
-				auto GetDebugUtils() const noexcept -> DebugUtils const&;
+				void set_debug_utils(DebugUtils* debug_utils) noexcept;
+				auto get_debug_utils() const noexcept -> DebugUtils const&;
 
 			private:
 				DebugUtils* debug_utils{ nullptr };

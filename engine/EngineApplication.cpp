@@ -51,7 +51,7 @@ namespace engine
 
 	bool EngineApplication::Prepare(const edge::ApplicationOptions& options)
 	{
-		ImDbg::CreateContext();
+		ImDbg::create_context();
 
 		ui = std::make_unique<EngineUI>(*options.window);
 
@@ -82,7 +82,7 @@ namespace engine
 
 		scene->Update(delta_time);
 
-		ImDbg::EndFrame();
+		ImDbg::end_frame();
 
 
 

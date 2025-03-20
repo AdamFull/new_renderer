@@ -69,7 +69,7 @@ namespace engine
 			virtual void AddShadow(const shlib::SpotShadowCommit& shadow_data) = 0;
 
 			virtual void BeginFrame(float delta_time) = 0;
-			virtual void EndFrame() = 0;
+			virtual void end_frame() = 0;
 
 			virtual edge::gfx::IBuffer* GetDrawBuffer() = 0;
 			virtual uint32_t GetDrawCount() const = 0;

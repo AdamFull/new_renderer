@@ -35,7 +35,7 @@ namespace engine
 
 			}
 
-			Buffer* XAudio2Context::CreateBuffer(const BufferCreateInfo& create_info)
+			Buffer* XAudio2Context::create_buffer(const BufferCreateInfo& create_info)
 			{
 				return nullptr;
 			}

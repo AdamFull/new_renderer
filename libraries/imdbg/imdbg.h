@@ -36,13 +36,13 @@ namespace ImDbg
 		virtual void Reset() = 0;
 	};
 
-	void CreateContext();
+	void create_context();
 	void DestroyContext();
 
 	IContext* GetCurrentContext();
 
 	void NewFrame();
-	void EndFrame();
+	void end_frame();
 
 	void DrawPoint2D(IVec2 position, Color color, float size = 1.f);
 	void DrawLine2D(IVec2 from, IVec2 to, Color color, float thickness = 1.f);

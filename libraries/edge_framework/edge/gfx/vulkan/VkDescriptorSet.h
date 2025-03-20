@@ -10,8 +10,7 @@ namespace edge
 		{
 			class Device;
 
-			class DescriptorSet final : public VulkanResource<vk::DescriptorSet>
-			{
+			class DescriptorSet final : public VulkanResource<vk::DescriptorSet> {
 			public:
 				friend class DescriptorPool;
 

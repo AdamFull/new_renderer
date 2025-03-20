@@ -10,8 +10,7 @@ namespace edge
 	{
 		namespace vulkan
 		{
-			struct DriverVersion
-			{
+			struct DriverVersion {
 				uint16_t major;
 				uint16_t minor;
 				uint16_t patch;
@@ -22,47 +21,39 @@ namespace edge
 			 *
 			 * This class is responsible for handling gpu features, properties, and queue families for the device creation.
 			 */
-			class PhysicalDevice : public VulkanResource<vk::PhysicalDevice>
-			{
+			class PhysicalDevice : public VulkanResource<vk::PhysicalDevice> {
 			public:
 				PhysicalDevice(Instance& instance, vk::PhysicalDevice physical_device);
 
 				PhysicalDevice(const PhysicalDevice&) = delete;
-
 				PhysicalDevice(PhysicalDevice&&) = delete;
-
 				PhysicalDevice& operator=(const PhysicalDevice&) = delete;
-
 				PhysicalDevice& operator=(PhysicalDevice&&) = delete;
 
 				/**
 				 * @return The version of the driver
 				 */
-				auto GetDriverVersion() const noexcept -> DriverVersion;
+				auto get_driver_version() const noexcept -> DriverVersion;
 
 				/**
 				 * @brief Used at logical device creation to pass the extensions feature chain to vkCreateDevice
 				 * @returns A void pointer to the start of the extension linked list
 				 */
-				auto GetExtensionFeatureChain() const noexcept -> void*
-				{
+				auto get_extension_feature_chain() const noexcept -> void* {
 					return last_requested_extension_feature;
 				}
 
-				auto IsExtensionSupported(const char* requested_extension) const noexcept -> bool;
+				auto is_extension_supported(const char* requested_extension) const noexcept -> bool;
 
-				auto GetFeatures() const noexcept -> vk::PhysicalDeviceFeatures const&
-				{
+				auto get_features() const noexcept -> vk::PhysicalDeviceFeatures const& {
 					return features;
 				}
 
-				auto GetInstance() const noexcept -> Instance&
-				{
+				auto get_instance() const noexcept -> Instance& {
 					return instance;
 				}
 
-				auto GetMemoryProperties() const noexcept -> vk::PhysicalDeviceMemoryProperties const&
-				{
+				auto get_memory_properties() const noexcept -> vk::PhysicalDeviceMemoryProperties const& {
 					return memory_properties;
 				}
 
@@ -73,25 +64,21 @@ namespace edge
 				 * @param memory_type_found True if found, false if not found
 				 * @returns The memory type index of the found memory type
 				 */
-				auto GetMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memory_type_found = nullptr) const noexcept -> uint32_t;
+				auto get_memory_type(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memory_type_found = nullptr) const noexcept -> uint32_t;
 
-				const vk::PhysicalDeviceProperties& GetProperties() const
-				{
+				const vk::PhysicalDeviceProperties& get_properties() const {
 					return properties;
 				}
 
-				auto GetQueueFamilyProperties() const noexcept -> std::vector<vk::QueueFamilyProperties> const&
-				{
+				auto get_queue_family_properties() const noexcept -> std::vector<vk::QueueFamilyProperties> const& {
 					return queue_family_properties;
 				}
 
-				auto GetRequestedFeatures() const noexcept -> const vk::PhysicalDeviceFeatures&
-				{
+				auto get_requested_features() const noexcept -> const vk::PhysicalDeviceFeatures& {
 					return requested_features;
 				}
 
-				auto GetMutableRequestedFeatures() noexcept -> vk::PhysicalDeviceFeatures&
-				{
+				auto get_mutable_requested_features() noexcept -> vk::PhysicalDeviceFeatures& {
 					return requested_features;
 				}
 
@@ -103,24 +90,21 @@ namespace edge
 				 * @returns The extension feature struct
 				 */
 				template <typename StructureType>
-				StructureType& RequestExtensionFeatures()
-				{
+				StructureType& request_extension_features() {
 					// We cannot request extension features if the physical device properties 2 instance extension isn't enabled
-					if (!instance.IsEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
-					{
+					if (!instance.is_enabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
 						throw std::runtime_error("Couldn't request feature from device as " + std::string(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) + " isn't enabled!");
 					}
 
 					// If the type already exists in the map, return a casted pointer to get the extension feature struct
 					vk::StructureType structureType = StructureType::structureType;        // need to instantiate this value to be usable in find()!
 					auto extension_features_it = extension_features.find(structureType);
-					if (extension_features_it != extension_features.end())
-					{
+					if (extension_features_it != extension_features.end()) {
 						return *static_cast<StructureType*>(extension_features_it->second.get());
 					}
 
 					// Get the extension feature
-					vk::StructureChain<vk::PhysicalDeviceFeatures2KHR, StructureType> featureChain = handle.getFeatures2KHR<vk::PhysicalDeviceFeatures2KHR, StructureType>();
+					vk::StructureChain<vk::PhysicalDeviceFeatures2KHR, StructureType> featureChain = handle_.getFeatures2KHR<vk::PhysicalDeviceFeatures2KHR, StructureType>();
 
 					// Insert the extension feature into the extension feature map so its ownership is held
 					extension_features.insert({ structureType, std::make_shared<StructureType>(featureChain.template get<StructureType>()) });
@@ -130,8 +114,7 @@ namespace edge
 
 					// If an extension feature has already been requested, we shift the linked list down by one
 					// Making this current extension the new base pointer
-					if (last_requested_extension_feature)
-					{
+					if (last_requested_extension_feature) {
 						extension_ptr->pNext = last_requested_extension_feature;
 					}
 					last_requested_extension_feature = extension_ptr;
@@ -145,8 +128,7 @@ namespace edge
 				 * @param enable If true, present queue will have prio 1.0 and other queues have prio 0.5.
 				 * Default state is false, where all queues have 0.5 priority.
 				 */
-				void SetHighPriorityGraphicsQueueEnable(bool enable)
-				{
+				void set_high_priority_graphics_queue_enable(bool enable) {
 					high_priority_graphics_queue = enable;
 				}
 
@@ -154,8 +136,7 @@ namespace edge
 				 * @brief Returns high priority graphics queue state.
 				 * @return High priority state.
 				 */
-				bool HasHighPriorityGraphicsQueue() const
-				{
+				bool has_high_priority_graphics_queue() const {
 					return high_priority_graphics_queue;
 				}
 

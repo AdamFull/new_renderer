@@ -12,8 +12,7 @@ namespace edge
 			class Device;
 			class QueueFamilyManager;
 
-			class VulkanQueue final : public IQueue, public VulkanResource<vk::Queue>
-			{
+			class VulkanQueue final : public IQueue, public VulkanResource<vk::Queue> {
 			public:
 				VulkanQueue(QueueFamilyManager* family_manager, vk::Queue queue);
 				VulkanQueue(VulkanQueue&& other);
@@ -23,31 +22,27 @@ namespace edge
 				VulkanQueue& operator=(const VulkanQueue&) = delete;
 				VulkanQueue& operator=(VulkanQueue&&) = delete;
 
-				auto GetFamily() const noexcept -> QueueFamilyManager const&
-				{
+				auto get_family() const noexcept -> QueueFamilyManager const& {
 					return *family_manager;
 				}
 
-				void SetFamily(QueueFamilyManager* family) noexcept
-				{
+				void set_family(QueueFamilyManager* family) noexcept {
 					family_manager = family;
 				}
 
-				auto IsUsed() const noexcept -> bool
-				{
+				auto is_used() const noexcept -> bool {
 					return used;
 				}
 
-				void SetUsed(bool value) noexcept
-				{
+				void set_used(bool value) noexcept {
 					used = value;
 				}
 
-				void SetResourceName(std::string_view name) const noexcept override;
+				void set_resource_name(std::string_view name) const noexcept override;
 
-				void Submit(const SubmitInfo& submit_info, IFence* fence) const override;
-				void Present(const PresentInfo& present_info) const override;
-				void WaitIdle() const override;
+				void submit(const SubmitInfo& submit_info, IFence* fence) const override;
+				void present(const PresentInfo& present_info) const override;
+				void wait_idle() const override;
 			private:
 				QueueFamilyManager* family_manager{ nullptr };
 

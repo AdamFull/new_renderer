@@ -29,12 +29,12 @@ namespace engine
 
 		void RenderPass::Begin(edge::gfx::ICommandList& command_list)
 		{
-			command_list.BeginRendering(rendering_info);
+			command_list.begin_rendering(rendering_info);
 		}
 
 		void RenderPass::End(edge::gfx::ICommandList& command_list)
 		{
-			command_list.EndRendering();
+			command_list.end_rendering();
 		}
 
 		void RenderPass::_Execute(edge::gfx::ICommandList& command_list, float delta_time)
@@ -95,10 +95,10 @@ namespace engine
 				attachment->texture_state = barrier.dst_state;
 				attachment->clear_color = resource_attachment.clear_color;
 
-				rendering_info.width = attachment->texture->GetWidth();
-				rendering_info.height = attachment->texture->GetHeight();
+				rendering_info.width = attachment->texture->get_width();
+				rendering_info.height = attachment->texture->get_height();
 
-				rendering_info.layer_count = attachment->texture->GetArrayLayerCount();
+				rendering_info.layer_count = attachment->texture->get_array_layer_count();
 
 				render_resource.SetState(barrier.dst_state);
 			}

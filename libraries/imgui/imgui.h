@@ -321,10 +321,10 @@ IM_MSVC_RUNTIME_CHECKS_RESTORE
 namespace ImGui
 {
     // IContext creation and access
-    // - Each context create its own ImFontAtlas by default. You may instance one yourself and pass it to CreateContext() to share a font atlas between contexts.
+    // - Each context create its own ImFontAtlas by default. You may instance one yourself and pass it to create_context() to share a font atlas between contexts.
     // - DLL users: heaps and globals are not shared across DLL boundaries! You will need to call SetCurrentContext() + SetAllocatorFunctions()
     //   for each static/DLL boundary you are calling from. Read "IContext and Memory Allocators" section of imgui.cpp for details.
-    IMGUI_API ImGuiContext* CreateContext(ImFontAtlas* shared_font_atlas = NULL);
+    IMGUI_API ImGuiContext* create_context(ImFontAtlas* shared_font_atlas = NULL);
     IMGUI_API void          DestroyContext(ImGuiContext* ctx = NULL);   // NULL = destroy current context
     IMGUI_API ImGuiContext* GetCurrentContext();
     IMGUI_API void          SetCurrentContext(ImGuiContext* ctx);
@@ -332,8 +332,8 @@ namespace ImGui
     // Main
     IMGUI_API ImGuiIO&      GetIO();                                    // access the IO structure (mouse/keyboard/gamepad inputs, time, various configuration options/flags)
     IMGUI_API ImGuiStyle&   GetStyle();                                 // access the Style structure (colors, sizes). Always use PushStyleColor(), PushStyleVar() to modify style mid-frame!
-    IMGUI_API void          NewFrame();                                 // start a new Dear ImGui frame, you can submit any command from this point until Render()/EndFrame().
-    IMGUI_API void          EndFrame();                                 // ends the Dear ImGui frame. automatically called by Render(). If you don't need to render data (skipping rendering) you may call EndFrame() without Render()... but you'll have wasted CPU already! If you don't need to render, better to not create any windows and not call NewFrame() at all!
+    IMGUI_API void          NewFrame();                                 // start a new Dear ImGui frame, you can submit any command from this point until Render()/end_frame().
+    IMGUI_API void          end_frame();                                 // ends the Dear ImGui frame. automatically called by Render(). If you don't need to render data (skipping rendering) you may call end_frame() without Render()... but you'll have wasted CPU already! If you don't need to render, better to not create any windows and not call NewFrame() at all!
     IMGUI_API void          Render();                                   // ends the Dear ImGui frame, finalize the draw data. You can then get call GetDrawData().
     IMGUI_API ImDrawData*   GetDrawData();                              // valid after Render() and until the next call to NewFrame(). this is what you have to render.
 
@@ -1046,8 +1046,8 @@ namespace ImGui
     // - The disk functions are automatically called if io.IniFilename != NULL (default is "imgui.ini").
     // - Set io.IniFilename to NULL to load/save manually. Read io.WantSaveIniSettings description about handling .ini saving manually.
     // - Important: default value "imgui.ini" is relative to current working dir! Most apps will want to lock this to an absolute path (e.g. same path as executables).
-    IMGUI_API void          LoadIniSettingsFromDisk(const char* ini_filename);                  // call after CreateContext() and before the first call to NewFrame(). NewFrame() automatically calls LoadIniSettingsFromDisk(io.IniFilename).
-    IMGUI_API void          LoadIniSettingsFromMemory(const char* ini_data, size_t ini_size=0); // call after CreateContext() and before the first call to NewFrame() to provide .ini data from your own data source.
+    IMGUI_API void          LoadIniSettingsFromDisk(const char* ini_filename);                  // call after create_context() and before the first call to NewFrame(). NewFrame() automatically calls LoadIniSettingsFromDisk(io.IniFilename).
+    IMGUI_API void          LoadIniSettingsFromMemory(const char* ini_data, size_t ini_size=0); // call after create_context() and before the first call to NewFrame() to provide .ini data from your own data source.
     IMGUI_API void          SaveIniSettingsToDisk(const char* ini_filename);                    // this is automatically called (if io.IniFilename is not empty) a few seconds after any modification that should be reflected in the .ini file (and also by DestroyContext).
     IMGUI_API const char*   SaveIniSettingsToMemory(size_t* out_ini_size = NULL);               // return a zero-terminated string with the .ini data which you can save by your own mean. call when io.WantSaveIniSettings is set, then save data by your own mean and clear io.WantSaveIniSettings.
 
@@ -2416,7 +2416,7 @@ struct ImGuiIO
 #endif
 
     //------------------------------------------------------------------
-    // Output - Updated by NewFrame() or EndFrame()/Render()
+    // Output - Updated by NewFrame() or end_frame()/Render()
     // (when reading from the io.WantCaptureMouse, io.WantCaptureKeyboard flags to dispatch your inputs, it is
     //  generally easier and more correct to use their state BEFORE calling NewFrame(). See FAQ for details!)
     //------------------------------------------------------------------
@@ -3636,7 +3636,7 @@ struct ImGuiViewport
 // Steps to use multi-viewports in your application, when using a default backend from the examples/ folder:
 // - Application:  Enable feature with 'io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable'.
 // - Backend:      The backend initialization will setup all necessary ImGuiPlatformIO's functions and update monitors info every frame.
-// - Application:  In your main loop, call ImGui::UpdatePlatformWindows(), ImGui::RenderPlatformWindowsDefault() after EndFrame() or Render().
+// - Application:  In your main loop, call ImGui::UpdatePlatformWindows(), ImGui::RenderPlatformWindowsDefault() after end_frame() or Render().
 // - Application:  Fix absolute coordinates used in ImGui::SetWindowPos() or ImGui::SetNextWindowPos() calls.
 //
 // Steps to use multi-viewports in your application, when using a custom backend:
@@ -3648,7 +3648,7 @@ struct ImGuiViewport
 //                 Set 'io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports' and 'io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports'.
 //                 Update ImGuiPlatformIO's Monitors list every frame.
 //                 Update MousePos every frame, in absolute coordinates.
-// - Application:  In your main loop, call ImGui::UpdatePlatformWindows(), ImGui::RenderPlatformWindowsDefault() after EndFrame() or Render().
+// - Application:  In your main loop, call ImGui::UpdatePlatformWindows(), ImGui::RenderPlatformWindowsDefault() after end_frame() or Render().
 //                 You may skip calling RenderPlatformWindowsDefault() if its API is not convenient for your needs. Read comments below.
 // - Application:  Fix absolute coordinates used in ImGui::SetWindowPos() or ImGui::SetNextWindowPos() calls.
 //
@@ -3674,7 +3674,7 @@ struct ImGuiPlatformIO
     // (Optional) Platform functions (e.g. Win32, GLFW, SDL2)
     // For reference, the second column shows which function are generally calling the Platform Functions:
     //   N = ImGui::NewFrame()                        ~ beginning of the dear imgui frame: read info from platform/OS windows (latest size/position)
-    //   F = ImGui::Begin(), ImGui::EndFrame()        ~ during the dear imgui frame
+    //   F = ImGui::Begin(), ImGui::end_frame()        ~ during the dear imgui frame
     //   U = ImGui::UpdatePlatformWindows()           ~ after the dear imgui frame: create and update all platform/OS windows
     //   R = ImGui::RenderPlatformWindowsDefault()    ~ render
     //   D = ImGui::DestroyPlatformWindows()          ~ shutdown
@@ -3720,7 +3720,7 @@ struct ImGuiPlatformIO
     // Output - List of viewports to render into platform windows
     //------------------------------------------------------------------
 
-    // Viewports list (the list is updated by calling ImGui::EndFrame or ImGui::Render)
+    // Viewports list (the list is updated by calling ImGui::end_frame or ImGui::Render)
     // (in the future we will attempt to organize this feature to remove the need for a "main viewport")
     ImVector<ImGuiViewport*>        Viewports;                              // Main viewports, followed by all secondary viewports.
     ImGuiPlatformIO()               { memset(this, 0, sizeof(*this)); }     // Zero clear

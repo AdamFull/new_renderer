@@ -27,7 +27,7 @@ uvec2 ARmp8x8(uint a)
 // Divide the 2D-Dispatch_Grid into tiles of dimension [N, DipatchGridDim.y]
 // “CTA” (Cooperative Thread Array) == Thread Group in DirectX terminology
 uvec2 ThreadGroupTilingX(
-	const uvec2 dipatchGridDim,		// Arguments of the Dispatch call (typically from a ConstantBuffer)
+	const uvec2 dipatchGridDim,		// Arguments of the dispatch call (typically from a ConstantBuffer)
 	const uvec2 ctaDim,			// Already known in HLSL, eg:[numthreads(8, 8, 1)] -> uvec2(8, 8)
 	const uint maxTileWidth,		// User parameter (N). Recommended values: 8, 16 or 32.
 	const uvec2 groupThreadID,		// SV_GroupThreadID

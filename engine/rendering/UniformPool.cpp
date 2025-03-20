@@ -19,8 +19,8 @@ namespace engine
 			create_info.usage = edge::gfx::BufferUsageFlag::eUniformBuffer;
 			create_info.size = whole_size;
 
-			buffer = context.CreateBuffer(create_info);
-			size_remain = buffer->GetSize();
+			buffer = context.create_buffer(create_info);
+			size_remain = buffer->get_size();
 		}
 
 		UniformPoolFrame::UniformPoolFrame(UniformPoolFrame&& other) :
@@ -34,7 +34,7 @@ namespace engine
 
 		UniformPoolFrame::~UniformPoolFrame()
 		{
-			context.Destroy(buffer);
+			context.destroy(buffer);
 		}
 
 		bool UniformPoolFrame::IsExpired() const
@@ -44,7 +44,7 @@ namespace engine
 
 		void UniformPoolFrame::Reset() const
 		{
-			size_remain = buffer->GetSize();
+			size_remain = buffer->get_size();
 			--expired_countdown;
 		}
 
@@ -55,7 +55,7 @@ namespace engine
 
 		edge::gfx::BufferSuballocation UniformPoolFrame::RequestBlock(uint64_t requested_size)
 		{
-			edge::gfx::BufferSuballocation suballocation{ *buffer, buffer->GetSize() - size_remain, requested_size };
+			edge::gfx::BufferSuballocation suballocation{ *buffer, buffer->get_size() - size_remain, requested_size };
 			expired_countdown = k_max_frames_idle;
 			size_remain -= requested_size;
 			return suballocation;
@@ -66,7 +66,7 @@ namespace engine
 			context{ context },
 			frame_size{ frame_size }
 		{
-			context.RequestMinimalBufferAlignment(edge::gfx::BufferUsageFlag::eUniformBuffer, minimal_alignment);
+			context.request_minimal_buffer_alignment(edge::gfx::BufferUsageFlag::eUniformBuffer, minimal_alignment);
 
 			pool_frames.emplace_back(std::make_unique<UniformPoolFrame>(context, frame_size));
 		}

@@ -2198,8 +2198,8 @@ struct ImGuiContext
     int                     FrameCountEnded;
     int                     FrameCountPlatformEnded;
     int                     FrameCountRendered;
-    bool                    WithinFrameScope;                   // Set by NewFrame(), cleared by EndFrame()
-    bool                    WithinFrameScopeWithImplicitWindow; // Set by NewFrame(), cleared by EndFrame() when the implicit debug window has been pushed
+    bool                    WithinFrameScope;                   // Set by NewFrame(), cleared by end_frame()
+    bool                    WithinFrameScopeWithImplicitWindow; // Set by NewFrame(), cleared by end_frame() when the implicit debug window has been pushed
     bool                    WithinEndChild;                     // Set within EndChild()
     bool                    GcCompactAll;                       // Request full GC
     bool                    TestEngineHookItems;                // Will call test engine hooks: ImGuiTestEngineHook_ItemAdd(), ImGuiTestEngineHook_ItemInfo(), ImGuiTestEngineHook_Log()
@@ -2215,7 +2215,7 @@ struct ImGuiContext
     // Windows state
     ImVector<ImGuiWindow*>  Windows;                            // Windows, sorted in display order, back to front
     ImVector<ImGuiWindow*>  WindowsFocusOrder;                  // Root windows, sorted in focus order, back to front.
-    ImVector<ImGuiWindow*>  WindowsTempSortBuffer;              // Temporary buffer used in EndFrame() to reorder windows so parents are kept before their child
+    ImVector<ImGuiWindow*>  WindowsTempSortBuffer;              // Temporary buffer used in end_frame() to reorder windows so parents are kept before their child
     ImVector<ImGuiWindowStackData> CurrentWindowStack;
     ImGuiStorage            WindowsById;                        // Map window's ImGuiID to ImGuiWindow*
     int                     WindowsActiveCount;                 // Number of unique windows submitted by frame
@@ -2825,7 +2825,7 @@ struct IMGUI_API ImGuiWindow
     ImGuiViewportP*         Viewport;                           // Always set in Begin(). Inactive windows may have a NULL value here if their viewport was discarded.
     ImGuiID                 ViewportId;                         // We backup the viewport id (since the viewport may disappear or never be created if the window is inactive)
     ImVec2                  ViewportPos;                        // We backup the viewport position (since the viewport may disappear or never be created if the window is inactive)
-    int                     ViewportAllowPlatformMonitorExtend; // Reset to -1 every frame (index is guaranteed to be valid between NewFrame..EndFrame), only used in the Appearing frame of a tooltip/popup to enforce clamping to a given monitor
+    int                     ViewportAllowPlatformMonitorExtend; // Reset to -1 every frame (index is guaranteed to be valid between NewFrame..end_frame), only used in the Appearing frame of a tooltip/popup to enforce clamping to a given monitor
     ImVec2                  Pos;                                // Position (always rounded-up to nearest pixel)
     ImVec2                  Size;                               // Current size (==SizeFull or collapsed title bar size)
     ImVec2                  SizeFull;                           // Size when non collapsed
@@ -3342,7 +3342,7 @@ namespace ImGui
     // We should always have a CurrentWindow in the stack (there is an implicit "Debug" window)
     // If this ever crashes because g.CurrentWindow is NULL, it means that either:
     // - ImGui::NewFrame() has never been called, which is illegal.
-    // - You are calling ImGui functions after ImGui::EndFrame()/ImGui::Render() and before the next ImGui::NewFrame(), which is also illegal.
+    // - You are calling ImGui functions after ImGui::end_frame()/ImGui::Render() and before the next ImGui::NewFrame(), which is also illegal.
     inline    ImGuiWindow*  GetCurrentWindowRead()      { ImGuiContext& g = *GImGui; return g.CurrentWindow; }
     inline    ImGuiWindow*  GetCurrentWindow()          { ImGuiContext& g = *GImGui; g.CurrentWindow->WriteAccessed = true; return g.CurrentWindow; }
     IMGUI_API ImGuiWindow*  FindWindowByID(ImGuiID id);
@@ -3386,7 +3386,7 @@ namespace ImGui
 
     // Init
     IMGUI_API void          Initialize();
-    IMGUI_API void          Shutdown();    // Since 1.60 this is a _private_ function. You can call DestroyContext() to destroy the context created by CreateContext().
+    IMGUI_API void          Shutdown();    // Since 1.60 this is a _private_ function. You can call DestroyContext() to destroy the context created by create_context().
 
     // NewFrame
     IMGUI_API void          UpdateInputEvents(bool trickle_fast_inputs);

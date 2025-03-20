@@ -6,15 +6,13 @@ namespace edge
 {
 	namespace gfx
 	{
-		enum class RenderApi
-		{
+		enum class RenderApi {
 			eAuto,
 			eVulkan,
 			eDirectx12
 		};
 
-		enum class ResourceType
-		{
+		enum class ResourceType {
 			eUnknown,
 			eFence,
 			eSemaphore,
@@ -35,8 +33,7 @@ namespace edge
 			eQueryPool
 		};
 
-		enum class ShaderStageFlag
-		{
+		enum class ShaderStageFlag {
 			eVertex = 1 << 0,
 			eTessellationControl = 1 << 1,
 			eTessellationEvaluation = 1 << 2,
@@ -46,29 +43,25 @@ namespace edge
 			eAllGraphics = eVertex | eTessellationControl | eTessellationEvaluation | eGeometry | eFragment
 		};
 
-		enum class IndexType
-		{
+		enum class IndexType {
 			eUint16,
 			eUint32
 		};
 
-		enum class QueueTypeFlag
-		{
+		enum class QueueTypeFlag {
 			eGraphics = 1 << 0,
 			ePresent = 1 << 1,
 			eCompute = 1 << 2,
 			eTransfer = 1 << 3
 		};
 
-		enum class CommandPoolResetMode
-		{
+		enum class CommandPoolResetMode {
 			eResetPool,
 			eResetIndividually,
 			eAlwaysAllocate,
 		};
 
-		enum class StageFlag
-		{
+		enum class StageFlag {
 			eNone = 1 << 0,
 			eTopOfPipe = 1 << 1,
 			eDrawIndirect = 1 << 2,
@@ -97,8 +90,7 @@ namespace edge
 			ePreRasterizationShaders = 1 << 25
 		};
 
-		enum class ResourceStateFlag
-		{
+		enum class ResourceStateFlag {
 			eUndefined = 0,
 			eRead = 1 << 0,
 			eWrite = 1 << 1,
@@ -143,22 +135,19 @@ namespace edge
 			ePresentSrc = eRead | ePresent
 		};
 
-		enum class AccessTypeFlag
-		{
+		enum class AccessTypeFlag {
 			eRead = 1 << 0,
 			eWrite = 1 << 1,
 			eRW = eRead | eWrite
 		};
 
 		// For sampler
-		enum class Filter
-		{
+		enum class Filter {
 			eNearest,
 			eLinear
 		};
 
-		enum class SamplerAddressMode
-		{
+		enum class SamplerAddressMode {
 			eMirror,
 			eRepeat,
 			eClampToEdge,
@@ -166,8 +155,7 @@ namespace edge
 		};
 
 
-		enum class CompareOp
-		{
+		enum class CompareOp {
 			eNone,
 			eNever,
 			eLess,
@@ -180,15 +168,13 @@ namespace edge
 		};
 
 		// For query pool
-		enum class QueryType
-		{
+		enum class QueryType {
 			eTimestamp,
 			eOcclusion,
 			ePipelineStatistics
 		};
 
-		enum class BufferUsageFlag
-		{
+		enum class BufferUsageFlag {
 			eCopy = 1 << 0,
 			eStorage = 1 << 1,
 			eVertex = 1 << 2,
@@ -211,8 +197,7 @@ namespace edge
 			eIndirectBuffer = eCopy | eStorage | eIndirect | eGpuOnly
 		};
 
-		enum class TextureUsageFlag
-		{
+		enum class TextureUsageFlag {
 			eCubemap = 1 << 0,
 			eTransferable = 1 << 1,
 			eSamplable = 1 << 2,
@@ -220,14 +205,12 @@ namespace edge
 			eRenderTarget = 1 << 4
 		};
 
-		enum class PipelineType
-		{
+		enum class PipelineType {
 			eCompute,
 			eGraphics
 		};
 
-		enum class PrimitiveTopology
-		{
+		enum class PrimitiveTopology {
 			ePointList,
 			eLineList,
 			eLineStrip,
@@ -236,8 +219,7 @@ namespace edge
 			ePatchList
 		};
 
-		enum class SampleCount
-		{
+		enum class SampleCount {
 			e1 = 1,
 			e2 = 2,
 			e4 = 4,
@@ -245,27 +227,23 @@ namespace edge
 			e16 = 16
 		};
 
-		enum class FillMode
-		{
+		enum class FillMode {
 			eSolid,
 			eWireframe
 		};
 
-		enum class CullModeFlag
-		{
+		enum class CullModeFlag {
 			eNone = 0,
 			eFront = 1 << 0,
 			eBack = 1 << 1
 		};
 
-		enum class FrontFace
-		{
+		enum class FrontFace {
 			eCCW,
 			eCW
 		};
 
-		enum class StencilOp
-		{
+		enum class StencilOp {
 			eKeep,
 			eZero,
 			eReplace,
@@ -276,8 +254,7 @@ namespace edge
 			eDecrementAndWrap
 		};
 
-		enum class BlendFactor
-		{
+		enum class BlendFactor {
 			eZero,
 			eOne,
 			eSrcColor,
@@ -293,8 +270,7 @@ namespace edge
 			eSrcAlphaSaturate
 		};
 
-		enum class BlendOp
-		{
+		enum class BlendOp {
 			eAdd,
 			eSubtract,
 			eReverseSubtract,
@@ -302,8 +278,7 @@ namespace edge
 			eMax
 		};
 
-		enum class ColorMaskFlag
-		{
+		enum class ColorMaskFlag {
 			eR = 1 << 0,
 			eG = 1 << 1,
 			eB = 1 << 2,
@@ -311,22 +286,19 @@ namespace edge
 			eAll = eR | eG | eB | eA
 		};
 
-		enum class LoadOp
-		{
+		enum class LoadOp {
 			eLoad,
 			eClear,
 			eDontCare
 		};
 
-		enum class StoreOp
-		{
+		enum class StoreOp {
 			eStore,
 			eDontCare,
 			eNone
 		};
 
-		enum class DescriptorType
-		{
+		enum class DescriptorType {
 			eSampler,
 			eCombinedImageSampler,
 			eSampledImage,
@@ -401,7 +373,7 @@ EDGE_REGISTER_ENUM_CLASS(edge::gfx, CommandPoolResetMode,
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, StageFlags, StageFlag,
 	EDGE_ENUM_META(edge::gfx::StageFlag::eNone, "None"),
 	EDGE_ENUM_META(edge::gfx::StageFlag::eTopOfPipe, "TopOfPipe"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eDrawIndirect, "DrawIndirect"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eDrawIndirect, "draw_indirect"),
 	EDGE_ENUM_META(edge::gfx::StageFlag::eVertexInput, "VertexInput"),
 	EDGE_ENUM_META(edge::gfx::StageFlag::eVertexShader, "VertexShader"),
 	EDGE_ENUM_META(edge::gfx::StageFlag::eTessellationControlShader, "TessellationControlShader"),
@@ -629,29 +601,26 @@ EDGE_REGISTER_ENUM_CLASS(edge::gfx, DescriptorType,
 	EDGE_ENUM_META(edge::gfx::DescriptorType::eInputAttachment, "InputAttachment")
 )
 
-namespace edge
+namespace edge::gfx
 {
-	namespace gfx
-	{
-		void to_json(nlohmann::json& json, const ShaderStageFlags& type);
-		void from_json(const nlohmann::json& json, ShaderStageFlags& type);
+	void to_json(nlohmann::json& json, const ShaderStageFlags& type);
+	void from_json(const nlohmann::json& json, ShaderStageFlags& type);
 
-		void to_json(nlohmann::json& json, const QueueTypeFlags& type);
-		void from_json(const nlohmann::json& json, QueueTypeFlags& type);
+	void to_json(nlohmann::json& json, const QueueTypeFlags& type);
+	void from_json(const nlohmann::json& json, QueueTypeFlags& type);
 
-		void to_json(nlohmann::json& json, const AccessTypeFlags& type);
-		void from_json(const nlohmann::json& json, AccessTypeFlags& type);
+	void to_json(nlohmann::json& json, const AccessTypeFlags& type);
+	void from_json(const nlohmann::json& json, AccessTypeFlags& type);
 
-		void to_json(nlohmann::json& json, const BufferUsageFlags& type);
-		void from_json(const nlohmann::json& json, BufferUsageFlags& type);
+	void to_json(nlohmann::json& json, const BufferUsageFlags& type);
+	void from_json(const nlohmann::json& json, BufferUsageFlags& type);
 
-		void to_json(nlohmann::json& json, const TextureUsageFlags& type);
-		void from_json(const nlohmann::json& json, TextureUsageFlags& type);
+	void to_json(nlohmann::json& json, const TextureUsageFlags& type);
+	void from_json(const nlohmann::json& json, TextureUsageFlags& type);
 
-		void to_json(nlohmann::json& json, const CullModeFlags& type);
-		void from_json(const nlohmann::json& json, CullModeFlags& type);
+	void to_json(nlohmann::json& json, const CullModeFlags& type);
+	void from_json(const nlohmann::json& json, CullModeFlags& type);
 
-		void to_json(nlohmann::json& json, const ColorMaskFlags& type);
-		void from_json(const nlohmann::json& json, ColorMaskFlags& type);
-	}
+	void to_json(nlohmann::json& json, const ColorMaskFlags& type);
+	void from_json(const nlohmann::json& json, ColorMaskFlags& type);
 }

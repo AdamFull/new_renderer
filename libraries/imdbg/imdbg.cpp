@@ -155,7 +155,7 @@ namespace ImDbg
 
 	extern IContext* imdbg_context{ nullptr };
 
-	void CreateContext()
+	void create_context()
 	{
 		assert(!imdbg_context && "ImDbg context is already created.");
 		imdbg_context = new Context;
@@ -179,7 +179,7 @@ namespace ImDbg
 		imdbg_context->Reset();
 	}
 
-	void EndFrame()
+	void end_frame()
 	{
 		assert(imdbg_context && "ImDbg context is not initialized.");
 		imdbg_context->Execute();

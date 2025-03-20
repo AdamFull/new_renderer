@@ -12,41 +12,35 @@
 namespace edge::gfx
 {
 	WorkerContext::WorkerContext(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size) :
-		gfx_context{ gfx_context }
-	{
+		gfx_context{ gfx_context } {
 		allocator = std::make_unique<ArenaStagingAllocator>(gfx_context, buffer_size);
-		cmd_pool = gfx_context->CreateCommandPool(queue);
+		cmd_pool = gfx_context->create_command_pool(queue);
 	}
 
-	WorkerContext::~WorkerContext()
-	{
-		gfx_context->Destroy(cmd_pool);
+	WorkerContext::~WorkerContext() {
+		gfx_context->destroy(cmd_pool);
 	}
 
-	auto WorkerContext::AcquireCmdList() -> ICommandList*
-	{
-		if (!recording)
-		{
-			allocator->Reset();
+	auto WorkerContext::acquire_cmd_list() -> ICommandList* {
+		if (!recording) {
+			allocator->reset();
 
-			cmd_pool->Reset();
+			cmd_pool->reset();
 
-			cmd_list = cmd_pool->Allocate();
-			cmd_list->Begin();
-			//cmd_list->BeginMarker(worker_name, 0xFFFFFFFF);
+			cmd_list = cmd_pool->allocate();
+			cmd_list->begin();
+			//cmd_list->begin_marker(worker_name, 0xFFFFFFFF);
 			recording = true;
 		}
 
 		return cmd_list;
 	}
 
-	auto WorkerContext::EndCmd() noexcept -> ICommandList*
-	{
+	auto WorkerContext::end_cmd() noexcept -> ICommandList* {
 		ICommandList* out_cmd_list{ nullptr };
-		if (recording)
-		{
-			//cmd_list->EndMarker();
-			cmd_list->End();
+		if (recording) {
+			//cmd_list->end_marker();
+			cmd_list->end();
 			out_cmd_list = cmd_list;
 			recording = false;
 		}
@@ -57,34 +51,29 @@ namespace edge::gfx
 
 
 	UploadContext::UploadContext(IContext* gfx_context) :
-		gfx_context{ gfx_context }
-	{
-		fence = gfx_context->CreateFence();
-		signal_semaphore.semaphore = gfx_context->CreateTimelineSemaphore();
+		gfx_context{ gfx_context } {
+		fence = gfx_context->create_fence();
+		signal_semaphore.semaphore = gfx_context->create_timeline_semaphore();
 		signal_semaphore.value = 0;
 		signal_semaphore.stage = StageFlag::eTransfer;
 	}
 
-	UploadContext::~UploadContext()
-	{
-		fence->Wait();
-		gfx_context->Destroy(fence);
-		gfx_context->Destroy(signal_semaphore.semaphore);
+	UploadContext::~UploadContext() {
+		fence->wait();
+		gfx_context->destroy(fence);
+		gfx_context->destroy(signal_semaphore.semaphore);
 	}
 
-	void UploadContext::Reset()
-	{
-		fence->Wait();
-		fence->Reset();
+	void UploadContext::reset() {
+		fence->wait();
+		fence->reset();
 	}
 
-	void UploadContext::IncrementSemaphore()
-	{
+	void UploadContext::increment_semaphore() {
 		++signal_semaphore.value;
 	}
 
-	void UploadContext::AddWorker(const IQueue* queue, uint64_t size)
-	{
+	void UploadContext::add_worker(const IQueue* queue, uint64_t size) {
 		workers.emplace_back(std::make_unique<WorkerContext>(gfx_context, queue, size));
 	}
 
@@ -92,30 +81,27 @@ namespace edge::gfx
 	UploadingDispatcher::UploadingDispatcher(IContext* gfx_context, uint64_t buffer_size, uint32_t uploader_count) :
 		gfx_context{ gfx_context },
 		buffer_size{ buffer_size },
-		executor{ 2 }
-	{
-		queue = gfx_context->RequestQueue(QueueTypeFlag::eTransfer, QueueTypeFlag::eGraphics | QueueTypeFlag::eCompute);
-		queue->SetResourceName("UPLOAD");
+		executor{ 2 } {
+
+		queue = gfx_context->request_queue(QueueTypeFlag::eTransfer, QueueTypeFlag::eGraphics | QueueTypeFlag::eCompute);
+		queue->set_resource_name("UPLOAD");
 
 		for (int32_t i = 0; i < uploader_count; ++i)
 			upload_contexts.emplace_back(std::make_unique<UploadContext>(gfx_context));
 		
-		dispatcher_thread = std::jthread([this](std::stop_token stop_token) {Loop(stop_token); });
+		dispatcher_thread = std::jthread([this](std::stop_token stop_token) { loop(stop_token); });
 	}
 
-	UploadingDispatcher::~UploadingDispatcher()
-	{
+	UploadingDispatcher::~UploadingDispatcher() {
 		dispatcher_thread.request_stop();
 		cv.notify_all();
 
 		upload_contexts.clear();
 	}
 
-	auto UploadingDispatcher::IsSyncNeeded(SemaphoreSubmitInfo& semaphore_submit) -> bool
-	{
+	auto UploadingDispatcher::is_sync_needed(SemaphoreSubmitInfo& semaphore_submit) -> bool {
 		auto is_sync_needed = sync_needed.load(std::memory_order_relaxed);
-		if (is_sync_needed)
-		{
+		if (is_sync_needed) {
 			std::lock_guard lock(semaphore_mutex);
 			semaphore_submit = upload_contexts[last_used_uploader_idx]->signal_semaphore;
 			sync_needed.store(false, std::memory_order_relaxed);
@@ -124,24 +110,20 @@ namespace edge::gfx
 		return is_sync_needed;
 	}
 
-	auto UploadingDispatcher::GetWorkerContext() -> WorkerContext&
-	{
-		static thread_local size_t thread_index = RegisterThreadContext();
-		auto& upload_ctx = GetUploadContext();
+	auto UploadingDispatcher::get_worker_context() -> WorkerContext& {
+		static thread_local size_t thread_index = register_thread_context();
+		auto& upload_ctx = get_upload_context();
 		return *upload_ctx.workers[thread_index];
 	}
 
-	auto UploadingDispatcher::GetUploadContext() -> UploadContext&
-	{
+	auto UploadingDispatcher::get_upload_context() -> UploadContext& {
 		return *upload_contexts[active_uploader_idx];
 	}
 
-	auto UploadingDispatcher::Loop(std::stop_token stop_token) -> void
-	{
+	auto UploadingDispatcher::loop(std::stop_token stop_token) -> void {
 		EDGE_PROFILE_SET_THREAD_NAME("UPLOADING_WORK_DISPATCHER");
 
-		while (!stop_token.stop_requested())
-		{
+		while (!stop_token.stop_requested()) {
 			// Wait for new jobs
 			tf::Taskflow local_jobs{};
 			std::vector<std::shared_ptr<AsyncResourceHandle>> local_handles;
@@ -162,10 +144,10 @@ namespace edge::gfx
 			auto start = std::chrono::steady_clock::now();
 #endif
 
-			auto& upload_ctx = GetUploadContext();
+			auto& upload_ctx = get_upload_context();
 
 			// Wait previous uploads
-			upload_ctx.Reset();
+			upload_ctx.reset();
 
 #ifndef NDEBUG
 			{
@@ -192,7 +174,7 @@ namespace edge::gfx
 			std::vector<ICommandList*> cmds{};
 			for (auto& worker : upload_ctx.workers)
 			{
-				if (auto* cmd = worker->EndCmd())
+				if (auto* cmd = worker->end_cmd())
 					cmds.emplace_back(cmd);
 			}
 
@@ -202,12 +184,12 @@ namespace edge::gfx
 				std::lock_guard lock(semaphore_mutex);
 
 				// Increment current semaphore
-				upload_ctx.IncrementSemaphore();
+				upload_ctx.increment_semaphore();
 
 				SubmitInfo submit_info{};
 				submit_info.command_lists = cmds;
 				submit_info.signal_semaphore_infos = { &upload_ctx.signal_semaphore, 1 };
-				queue->Submit(submit_info, upload_ctx.fence);
+				queue->submit(submit_info, upload_ctx.fence);
 
 				EDGE_LOGT("[UploadingDispatcher] Submitting {} command lists and signalling semaphore with value {}.", cmds.size(), upload_ctx.signal_semaphore.value);
 
@@ -225,13 +207,12 @@ namespace edge::gfx
 		}
 	}
 
-	auto UploadingDispatcher::RegisterThreadContext() -> size_t
-	{
+	auto UploadingDispatcher::register_thread_context() -> size_t {
 		std::lock_guard<std::mutex> lock(context_mtx);
 
 		size_t index = next_worker;
 		for (auto& upload_ctx : upload_contexts)
-			upload_ctx->AddWorker(queue, buffer_size);
+			upload_ctx->add_worker(queue, buffer_size);
 		++next_worker;
 
 		return index;

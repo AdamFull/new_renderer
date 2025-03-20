@@ -13,29 +13,25 @@ namespace edge
 	{
 		NsightAftermath* NsightAftermath::self{ nullptr };
 
-		NsightAftermath::NsightAftermath()
-		{
+		NsightAftermath::NsightAftermath() {
 			GFSDK_Aftermath_Result result = GFSDK_Aftermath_EnableGpuCrashDumps(
 				GFSDK_Aftermath_Version_API,
 				GFSDK_Aftermath_GpuCrashDumpWatchedApiFlags_Vulkan,
 				GFSDK_Aftermath_GpuCrashDumpFeatureFlags_DeferDebugInfoCallbacks, // Let the Nsight Aftermath library cache shader debug information.
-				GpuCrashDumpCallback,                                             // Register callback for GPU crash dumps.
-				ShaderDebugInfoCallback,                                          // Register callback for shader debug information.
-				CrashDumpDescriptionCallback,                                     // Register callback for GPU crash dump description.
-				ResolveMarkerCallback,                                            // Register callback for resolving application-managed markers.
+				gpu_crash_dump_callback,                                             // Register callback for GPU crash dumps.
+				shader_debug_info_callback,                                          // Register callback for shader debug information.
+				crash_dump_description_callback,                                     // Register callback for GPU crash dump description.
+				resolve_marker_callback,                                            // Register callback for resolving application-managed markers.
 				this);
 
 			initialized = GFSDK_Aftermath_SUCCEED(result);
-			if (initialized)
-			{
+			if (initialized) {
 				self = this;
 			}
 		}
 
-		NsightAftermath::~NsightAftermath()
-		{
-			if (initialized)
-			{
+		NsightAftermath::~NsightAftermath() {
+			if (initialized) {
 				initialized = false;
 				self = nullptr;
 
@@ -43,58 +39,46 @@ namespace edge
 			}
 		}
 
-		bool NsightAftermath::IsInitialized()
-		{
+		bool NsightAftermath::is_initialized() {
 			return initialized;
 		}
 
-		void NsightAftermath::BeginFrame()
-		{
+		void NsightAftermath::begin_frame() {
 			per_frame_markers[frame_index % frame_history_size].clear();
 		}
 
-		void NsightAftermath::TryBeginFrame()
-		{
-			if (self)
-			{
-				self->BeginFrame();
+		void NsightAftermath::try_begin_frame() {
+			if (self) {
+				self->begin_frame();
 			}
 		}
 
-		void NsightAftermath::EndFrame()
-		{
+		void NsightAftermath::end_frame() {
 			frame_index++;
 		}
 
-		void NsightAftermath::TryEndFrame()
-		{
-			if (self)
-			{
-				self->EndFrame();
+		void NsightAftermath::try_end_frame() {
+			if (self) {
+				self->end_frame();
 			}
 		}
 
-		void NsightAftermath::SetMarker(ICommandList* cmd_list, const char* name)
-		{
+		void NsightAftermath::set_marker(ICommandList* cmd_list, const char* name) {
 			uint32_t marker_map_index = frame_index % frame_history_size;
 			auto& current_frame_marker_map = per_frame_markers[marker_map_index];
 			size_t marker_id = marker_map_index * 10000 + current_frame_marker_map.size() + 1;
 
-			SetMarkerImpl(cmd_list, (const void*)marker_id);
+			set_marker_impl(cmd_list, (const void*)marker_id);
 		}
 
-		void NsightAftermath::TrySetMarker(ICommandList* cmd_list, const char* name)
-		{
-			if (self)
-			{
-				self->SetMarker(cmd_list, name);
+		void NsightAftermath::try_set_marker(ICommandList* cmd_list, const char* name) {
+			if (self) {
+				self->set_marker(cmd_list, name);
 			}
 		}
 
-		void NsightAftermath::OnGpuCrashDump(const void* pGpuCrashDump, const uint32_t gpuCrashDumpSize)
-		{
-			if (!std::filesystem::exists(base_path_str))
-			{
+		void NsightAftermath::on_gpu_crash_dump(const void* pGpuCrashDump, const uint32_t gpuCrashDumpSize) {
+			if (!std::filesystem::exists(base_path_str)) {
 				std::filesystem::create_directories(base_path_str);
 			}
 
@@ -127,8 +111,7 @@ namespace edge
 			// registered with Nsight Graphics.
 			const std::string crashDumpFileName = baseFileName + ".nv-gpudmp";
 			std::ofstream dumpFile(crashDumpFileName, std::ios::out | std::ios::binary);
-			if (dumpFile)
-			{
+			if (dumpFile) {
 				dumpFile.write((const char*)pGpuCrashDump, gpuCrashDumpSize);
 				dumpFile.close();
 			}
@@ -140,9 +123,9 @@ namespace edge
 				decoder,
 				GFSDK_Aftermath_GpuCrashDumpDecoderFlags_ALL_INFO,
 				GFSDK_Aftermath_GpuCrashDumpFormatterFlags_NONE,
-				ShaderDebugInfoLookupCallback,
-				ShaderLookupCallback,
-				ShaderSourceDebugInfoLookupCallback,
+				shader_debug_info_lookup_callback,
+				shader_lookup_callback,
+				shader_source_debug_Info_lookup_callback,
 				this,
 				&jsonSize);
 
@@ -153,8 +136,7 @@ namespace edge
 			// Write the crash dump data as JSON to a file.
 			const std::string jsonFileName = crashDumpFileName + ".json";
 			std::ofstream jsonFile(jsonFileName, std::ios::out | std::ios::binary);
-			if (jsonFile)
-			{
+			if (jsonFile) {
 				// Write the JSON to the file (excluding string termination)
 				jsonFile.write(json.data(), json.size() - 1);
 				jsonFile.close();
@@ -164,10 +146,8 @@ namespace edge
 			GFSDK_Aftermath_GpuCrashDump_DestroyDecoder(decoder);
 		}
 
-		void NsightAftermath::OnShaderDebugInfo(const void* pShaderDebugInfo, const uint32_t shaderDebugInfoSize)
-		{
-			if (!std::filesystem::exists(base_path_str))
-			{
+		void NsightAftermath::on_shader_debug_info(const void* pShaderDebugInfo, const uint32_t shaderDebugInfoSize) {
+			if (!std::filesystem::exists(base_path_str)) {
 				std::filesystem::create_directories(base_path_str);
 			}
 
@@ -175,8 +155,7 @@ namespace edge
 			GFSDK_Aftermath_ShaderDebugInfoIdentifier identifier = {};
 			GFSDK_Aftermath_Result result = GFSDK_Aftermath_GetShaderDebugInfoIdentifier(GFSDK_Aftermath_Version_API, pShaderDebugInfo, shaderDebugInfoSize, &identifier);
 
-			if (GFSDK_Aftermath_SUCCEED(result))
-			{
+			if (GFSDK_Aftermath_SUCCEED(result)) {
 				shader_debug_data[identifier] = std::vector<uint8_t>((uint8_t*)pShaderDebugInfo, (uint8_t*)pShaderDebugInfo + shaderDebugInfoSize);
 
 				std::filesystem::path base_path{ base_path_str };
@@ -189,19 +168,15 @@ namespace edge
 			}
 		}
 
-		void NsightAftermath::OnCrashDumpDescription(PFN_GFSDK_Aftermath_AddGpuCrashDumpDescription addDescription)
-		{
+		void NsightAftermath::on_crash_dump_description(PFN_GFSDK_Aftermath_AddGpuCrashDumpDescription addDescription) {
 			addDescription(GFSDK_Aftermath_GpuCrashDumpDescriptionKey_ApplicationName, "EdgeApplication");
 			addDescription(GFSDK_Aftermath_GpuCrashDumpDescriptionKey_ApplicationVersion, "v1.0");
 		}
 
-		void NsightAftermath::OnResolveMarker(const void* pMarkerData, const uint32_t markerDataSize, void** ppResolvedMarkerData, uint32_t* pResolvedMarkerDataSize)
-		{
-			for (auto& markers : per_frame_markers)
-			{
+		void NsightAftermath::on_resolve_marker(const void* pMarkerData, const uint32_t markerDataSize, void** ppResolvedMarkerData, uint32_t* pResolvedMarkerDataSize) {
+			for (auto& markers : per_frame_markers) {
 				const auto& found_marker = markers.find((uint64_t)pMarkerData);
-				if (found_marker != markers.end())
-				{
+				if (found_marker != markers.end()) {
 					const std::string& found_marker_data = found_marker->second;
 					// std::string::data() will return a valid pointer until the string is next modified
 					// we don't modify the string after calling data() here, so the pointer should remain valid
@@ -212,74 +187,61 @@ namespace edge
 			}
 		}
 
-		void NsightAftermath::OnShaderDebugInfoLookup(const GFSDK_Aftermath_ShaderDebugInfoIdentifier* pIdentifier, PFN_GFSDK_Aftermath_SetData setShaderDebugInfo)
-		{
+		void NsightAftermath::on_shader_debug_info_lookup(const GFSDK_Aftermath_ShaderDebugInfoIdentifier* pIdentifier, PFN_GFSDK_Aftermath_SetData setShaderDebugInfo) {
 			auto found = shader_debug_data.find(*pIdentifier);
-			if (found != shader_debug_data.end())
-			{
+			if (found != shader_debug_data.end()) {
 				setShaderDebugInfo(found->second.data(), static_cast<uint32_t>(found->second.size()));
 			}
 		}
 
-		void NsightAftermath::OnShaderLookup(const GFSDK_Aftermath_ShaderBinaryHash* pShaderHash, PFN_GFSDK_Aftermath_SetData setShaderBinary)
-		{
+		void NsightAftermath::on_shader_lookup(const GFSDK_Aftermath_ShaderBinaryHash* pShaderHash, PFN_GFSDK_Aftermath_SetData setShaderBinary) {
 			auto found = shader_binary_map.find(*pShaderHash);
-			if (found != shader_binary_map.end())
-			{
+			if (found != shader_binary_map.end()) {
 				setShaderBinary(found->second.data(), static_cast<uint32_t>(found->second.size()));
 			}
 		}
 
-		void NsightAftermath::OnShaderSourceDebugInfoLookup(const GFSDK_Aftermath_ShaderDebugName* pShaderDebugName, PFN_GFSDK_Aftermath_SetData setShaderBinary)
-		{
+		void NsightAftermath::on_shader_source_debug_info_lookup(const GFSDK_Aftermath_ShaderDebugName* pShaderDebugName, PFN_GFSDK_Aftermath_SetData setShaderBinary) {
 			auto found = shader_full_binary_map.find(*pShaderDebugName);
-			if (found != shader_full_binary_map.end())
-			{
+			if (found != shader_full_binary_map.end()) {
 				setShaderBinary(found->second.data(), static_cast<uint32_t>(found->second.size()));
 			}
 		}
 
 
-		void NsightAftermath::GpuCrashDumpCallback(const void* pGpuCrashDump, const uint32_t gpuCrashDumpSize, void* pUserData)
-		{
+		void NsightAftermath::gpu_crash_dump_callback(const void* pGpuCrashDump, const uint32_t gpuCrashDumpSize, void* pUserData) {
 			auto* handle = static_cast<NsightAftermath*>(pUserData);
-			handle->OnGpuCrashDump(pGpuCrashDump, gpuCrashDumpSize);
+			handle->on_gpu_crash_dump(pGpuCrashDump, gpuCrashDumpSize);
 		}
 
-		void NsightAftermath::ShaderDebugInfoCallback(const void* pShaderDebugInfo, const uint32_t shaderDebugInfoSize, void* pUserData)
-		{
+		void NsightAftermath::shader_debug_info_callback(const void* pShaderDebugInfo, const uint32_t shaderDebugInfoSize, void* pUserData) {
 			auto* handle = static_cast<NsightAftermath*>(pUserData);
-			handle->OnShaderDebugInfo(pShaderDebugInfo, shaderDebugInfoSize);
+			handle->on_shader_debug_info(pShaderDebugInfo, shaderDebugInfoSize);
 		}
 
-		void NsightAftermath::CrashDumpDescriptionCallback(PFN_GFSDK_Aftermath_AddGpuCrashDumpDescription addDescription, void* pUserData)
-		{
+		void NsightAftermath::crash_dump_description_callback(PFN_GFSDK_Aftermath_AddGpuCrashDumpDescription addDescription, void* pUserData) {
 			auto* handle = static_cast<NsightAftermath*>(pUserData);
-			handle->OnCrashDumpDescription(addDescription);
+			handle->on_crash_dump_description(addDescription);
 		}
 
-		void NsightAftermath::ResolveMarkerCallback(const void* pMarkerData, const uint32_t markerDataSize, void* pUserData, void** ppResolvedMarkerData, uint32_t* pResolvedMarkerDataSize)
-		{
+		void NsightAftermath::resolve_marker_callback(const void* pMarkerData, const uint32_t markerDataSize, void* pUserData, void** ppResolvedMarkerData, uint32_t* pResolvedMarkerDataSize) {
 			auto* handle = static_cast<NsightAftermath*>(pUserData);
-			handle->OnResolveMarker(pMarkerData, markerDataSize, ppResolvedMarkerData, pResolvedMarkerDataSize);
+			handle->on_resolve_marker(pMarkerData, markerDataSize, ppResolvedMarkerData, pResolvedMarkerDataSize);
 		}
 
-		void NsightAftermath::ShaderDebugInfoLookupCallback(const GFSDK_Aftermath_ShaderDebugInfoIdentifier* pIdentifier, PFN_GFSDK_Aftermath_SetData setShaderDebugInfo, void* pUserData)
-		{
+		void NsightAftermath::shader_debug_info_lookup_callback(const GFSDK_Aftermath_ShaderDebugInfoIdentifier* pIdentifier, PFN_GFSDK_Aftermath_SetData setShaderDebugInfo, void* pUserData) {
 			auto* handle = static_cast<NsightAftermath*>(pUserData);
-			handle->OnShaderDebugInfoLookup(pIdentifier, setShaderDebugInfo);
+			handle->on_shader_debug_info_lookup(pIdentifier, setShaderDebugInfo);
 		}
 
-		void NsightAftermath::ShaderLookupCallback(const GFSDK_Aftermath_ShaderBinaryHash* pShaderHash, PFN_GFSDK_Aftermath_SetData setShaderBinary, void* pUserData)
-		{
+		void NsightAftermath::shader_lookup_callback(const GFSDK_Aftermath_ShaderBinaryHash* pShaderHash, PFN_GFSDK_Aftermath_SetData setShaderBinary, void* pUserData) {
 			auto* handle = static_cast<NsightAftermath*>(pUserData);
-			handle->OnShaderLookup(pShaderHash, setShaderBinary);
+			handle->on_shader_lookup(pShaderHash, setShaderBinary);
 		}
 
-		void NsightAftermath::ShaderSourceDebugInfoLookupCallback(const GFSDK_Aftermath_ShaderDebugName* pShaderDebugName, PFN_GFSDK_Aftermath_SetData setShaderBinary, void* pUserData)
-		{
+		void NsightAftermath::shader_source_debug_Info_lookup_callback(const GFSDK_Aftermath_ShaderDebugName* pShaderDebugName, PFN_GFSDK_Aftermath_SetData setShaderBinary, void* pUserData) {
 			auto* handle = static_cast<NsightAftermath*>(pUserData);
-			handle->OnShaderSourceDebugInfoLookup(pShaderDebugName, setShaderBinary);
+			handle->on_shader_source_debug_info_lookup(pShaderDebugName, setShaderBinary);
 		}
 	}
 }

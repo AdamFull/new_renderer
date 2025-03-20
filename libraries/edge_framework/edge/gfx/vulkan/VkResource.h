@@ -10,79 +10,62 @@ namespace edge
 		namespace vulkan
 		{
 			template<typename _Ty>
-			uint32_t HandleHash(const _Ty& handle, uint32_t seed = 0u)
+			uint32_t handle_hash(const _Ty& handle, uint32_t seed = 0u)
 			{
 				auto handle_address = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(handle));
 				return murmur_hash(handle_address, seed);
 			}
 
-			// Cast vulkan resource for get it's handle
 			template<typename _Ty>
-			auto& Handle(_Ty& object)
-			{
-				return object.GetHandle();
-			}
-
-			template<typename _Ty>
-			class VulkanResource
-			{
+			class VulkanResource {
 			public:
 				using HandleType = _Ty;
 
 				explicit VulkanResource(_Ty resource, vk::AllocationCallbacks* allocation_callbacks) :
-					handle{ resource },
-					allocation_callbacks{ allocation_callbacks }
-				{
+					handle_{ resource },
+					allocation_callbacks{ allocation_callbacks } {
 				}
 
 				VulkanResource(const VulkanResource&) = delete;
 				VulkanResource& operator=(const VulkanResource&) = delete;
 
 				VulkanResource(VulkanResource&& other) :
-					handle{ std::exchange(other.handle, {}) },
-					allocation_callbacks{ std::exchange(other.allocation_callbacks, {}) }
-				{
+					handle_{ std::exchange(other.handle_, {}) },
+					allocation_callbacks{ std::exchange(other.allocation_callbacks, {}) } {
 				}
 
-				VulkanResource& operator=(VulkanResource&& other)
-				{
-					handle = std::exchange(other.handle, {});
+				VulkanResource& operator=(VulkanResource&& other) {
+					handle_ = std::exchange(other.handle_, {});
 					return *this;
 				}
 
 				virtual ~VulkanResource() = default;
 
-				_Ty& GetHandle()
-				{
-					return handle;
+				_Ty& get_handle() {
+					return handle_;
 				}
 
-				const _Ty& GetHandle() const
-				{
-					return handle;
+				const _Ty& get_handle() const {
+					return handle_;
 				}
 
-				vk::AllocationCallbacks* GetAllocationCallbacks() const
-				{
+				vk::AllocationCallbacks* get_allocation_callbacks() const {
 					return allocation_callbacks;
 				}
 
-				uint32_t Hash() const
-				{
-					return HandleHash(handle);
+				uint32_t hash() const {
+					return handle_hash(handle_);
 				}
 
-				explicit operator bool() const noexcept
-				{
-					return handle;
+				explicit operator bool() const noexcept {
+					return handle_;
 				}
 
-				bool operator!() const noexcept
-				{
-					return !handle;
+				bool operator!() const noexcept {
+					return !handle_;
 				}
 			protected:
-				_Ty handle;
+				_Ty handle_;
 				vk::AllocationCallbacks* allocation_callbacks{ nullptr };
 			};
 		}

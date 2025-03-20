@@ -8,13 +8,11 @@ namespace edge
 	{
 		namespace vulkan
 		{
-			static const char* required_instance_extensions[]
-			{
+			static const char* k_required_instance_extensions[] {
 				VK_KHR_SURFACE_EXTENSION_NAME
 			};
 
-			static const char* required_device_extensions[] =
-			{
+			static const char* k_required_device_extensions[] = {
 				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 				VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
 				VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
@@ -45,8 +43,7 @@ namespace edge
 				VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME
 			};
 
-			static const char* optional_device_extensions[] =
-			{
+			static const char* k_optional_device_extensions[] = {
 				VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
 #if USE_NSIGHT_AFTERMATH
 				VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME,
@@ -54,8 +51,7 @@ namespace edge
 #endif
 			};
 
-			static void EnablePhysicalDeviceFeatures(vk::PhysicalDeviceFeatures& features)
-			{
+			static void enable_physical_device_features(vk::PhysicalDeviceFeatures& features) {
 				features.samplerAnisotropy = true;
 				features.sampleRateShading = true;
 				features.fillModeNonSolid = true;

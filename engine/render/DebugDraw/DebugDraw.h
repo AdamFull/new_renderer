@@ -296,14 +296,14 @@ namespace ImDbg
         constexpr const ImDbgColor YellowGreen = "#9ACD32"_color;
 	}
 
-	void CreateContext();
+	void create_context();
 	void DestroyContext();
 
 	void LoadFont(const uint8_t* data, uint32_t data_size, uint32_t character_size);
 	void GetTexDataAsRGBA32(uint32_t index, uint8_t** out_pixels, int32_t* out_width, int32_t* out_height, int32_t* out_bytes_per_pixel);
 
 	void NewFrame();
-	void EndFrame();
+	void end_frame();
 
 	// 2d drawings
 	void DrawPoint2D(const glm::vec2& position, ImDbgColor color, f32 size = 1.0f);

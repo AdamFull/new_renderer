@@ -4,8 +4,7 @@ namespace edge
 {
 	namespace gfx
 	{
-		std::string to_string(const Format& format)
-		{
+		std::string to_string(const Format& format) {
 			if (format == Format::eR4G4UnormPack8) return "R4G4UnormPack8";
 			if (format == Format::eR4G4B4A4UnormPack16) return "R4G4B4A4UnormPack16";
 			if (format == Format::eB4G4R4A4UnormPack16) return "B4G4R4A4UnormPack16";
@@ -249,8 +248,7 @@ namespace edge
 		}
 
 		template<>
-		Format from_string<Format>(const std::string& str)
-		{
+		Format from_string<Format>(const std::string& str) {
 			if (strcmp(str.c_str(), "R4G4UnormPack8") == 0) return Format::eR4G4UnormPack8;
 			if (strcmp(str.c_str(), "R4G4B4A4UnormPack16") == 0) return Format::eR4G4B4A4UnormPack16;
 			if (strcmp(str.c_str(), "B4G4R4A4UnormPack16") == 0) return Format::eB4G4R4A4UnormPack16;

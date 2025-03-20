@@ -55,7 +55,7 @@ namespace ImDbg
     glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height);
     glm::vec2 WorldToScreen(const glm::vec3& pos);
 
-    void CreateContext()
+    void create_context()
     {
         static constexpr const std::array<ImDbgGeometryType, 3ull> geometry_types{ ImDbgGeometryType::ePoints, ImDbgGeometryType::eLines, ImDbgGeometryType::eTriangles };
 
@@ -233,7 +233,7 @@ namespace ImDbg
         context->drawData.totalVertexCount = 0;
     }
 
-    void EndFrame()
+    void end_frame()
     {
 
     }

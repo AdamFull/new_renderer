@@ -26,27 +26,24 @@ namespace edge
 				VulkanResourceDescriptor& operator=(const VulkanResourceDescriptor&) = delete;
 				VulkanResourceDescriptor& operator=(VulkanResourceDescriptor&&) = delete;
 
-				void UpdateDescriptorSet(uint32_t set, DescriptorSet& descriptor_set);
+				void update_descriptor_set(uint32_t set, DescriptorSet& descriptor_set);
 
-				auto GetFirstSet() const noexcept -> uint32_t
-				{
+				auto get_first_set() const noexcept -> uint32_t {
 					return first_set;
 				}
 
-				auto GetSetCount() const noexcept -> uint32_t
-				{
+				auto get_set_count() const noexcept -> uint32_t {
 					return set_count;
 				}
 
-				void SetResourceName(std::string_view name) const noexcept override;
+				void set_resource_name(std::string_view name) const noexcept override;
 
-				void BindTexture(TextureDescriptor& texture_descriptor) override;
-				void BindBuffer(BufferDescriptor& buffer_descriptor) override;
+				void bind_texture(TextureDescriptor& texture_descriptor) override;
+				void bind_buffer(BufferDescriptor& buffer_descriptor) override;
 
-				void Flush() override;
+				void flush() override;
 
-				[[nodiscard]] auto GetDescriptorSets() const noexcept -> std::array<vk::DescriptorSet, k_max_descriptor_count> const&
-				{
+				[[nodiscard]] auto get_descriptor_sets() const noexcept -> std::array<vk::DescriptorSet, k_max_descriptor_count> const& {
 					return descriptor_sets;
 				}
 

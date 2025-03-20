@@ -49,7 +49,7 @@ namespace engine
 			uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) override;
 			uint32_t AddResource(const edge::gfx::BufferCreateInfo& create_info) override;
 
-			void SetResourceName(uint32_t resource_index, std::string_view name) override;
+			void set_resource_name(uint32_t resource_index, std::string_view name) override;
 
 			RenderResource& GetResource(uint32_t resource_index) override;
 			RenderResource const& GetResource(uint32_t resource_index) const override;

@@ -25,10 +25,10 @@ namespace engine
 			draw_callback{ create_info.draw_callback },
 			enabled_callback{ create_info.enabled_callback }
 		{
-			auto& reflection = shader->GetReflection();
+			auto& reflection = shader->get_reflection();
 			
 			// Create uniform block handlers for resources
-			for (auto it = reflection.shader_resources.Begin(); it != reflection.shader_resources.End(); ++it)
+			for (auto it = reflection.shader_resources.begin(); it != reflection.shader_resources.end(); ++it)
 			{
 				if (it->type == edge::gfx::DescriptorType::eUniformBuffer)
 				{
@@ -44,10 +44,10 @@ namespace engine
 			query_pool_ci.query_count = 2u;
 			query_pool_ci.type = edge::gfx::QueryType::eTimestamp;
 
-			timestamp_query = context.CreateQueryPool(query_pool_ci);
-			timestamp_query->Reset(0u);
+			timestamp_query = context.create_query_pool(query_pool_ci);
+			timestamp_query->reset(0u);
 
-			context.RequestTimestampFrequency(&timestamp_frequency);
+			context.request_timestamp_frequency(&timestamp_frequency);
 
 			// Prepare barriers
 			resource_barriers.buffer_barriers = buffer_barriers.data();
@@ -73,19 +73,19 @@ namespace engine
 			// Collect previous frame data
 			CollectProfileData();
 
-			command_list.BeginMarker(debug_name.c_str(), 0xFFFF11FF);
+			command_list.begin_marker(debug_name.c_str(), 0xFFFF11FF);
 
 			// Reset performance counter
-			command_list.ResetQuery(timestamp_query, 0u, 2u);
-			command_list.BeginQuery(timestamp_query, 0u);
+			command_list.reset_query(timestamp_query, 0u, 2u);
+			command_list.begin_query(timestamp_query, 0u);
 
 			// Bind pipeline
-			command_list.BindPipeline(pipeline);
+			command_list.bind_pipeline(pipeline);
 
 			_Execute(command_list, delta_time);
 
-			command_list.EndQuery(timestamp_query, 1u);
-			command_list.EndMarker();
+			command_list.end_query(timestamp_query, 1u);
+			command_list.end_marker();
 
 			// Update one time flag for single time passes
 			if (one_time)
@@ -117,7 +117,7 @@ namespace engine
 			if (!resource_descriptor)
 			{
 				auto& descriptor_allocator = execution_context.GetCurrentDescriptorAllocator();
-				resource_descriptor = descriptor_allocator.AllocateDescriptors(root_signature);
+				resource_descriptor = descriptor_allocator.allocate_descriptors(root_signature);
 			}
 
 			// Update uniform buffers
@@ -128,7 +128,7 @@ namespace engine
 				// Request memory block for this uniform
 				// TODO: may be request it inside uniform handler?
 				auto uniform_block = execution_context.RequestUniformBlock(resource.size);
-				uniform_block.Update(std::span(handle.Data()));
+				uniform_block.update(std::span(handle.Data()));
 
 				edge::gfx::BufferDescriptor descriptor{};
 				descriptor.type = resource.type;
@@ -139,26 +139,26 @@ namespace engine
 				descriptor.size = uniform_block.GetSize();
 				descriptor.offset = uniform_block.GetOffset();
 
-				resource_descriptor->BindBuffer(descriptor);
+				resource_descriptor->bind_buffer(descriptor);
 			}
 
 			// Upload all resources
-			resource_descriptor->Flush();
+			resource_descriptor->flush();
 
 			edge::gfx::IResourceDescriptor* resource_descriptors[]{ resource_descriptor, nullptr };
 			uint32_t resource_descriptor_count{ 1u };
 
 			if (shared_descriptor)
 			{
-				resource_descriptors[resource_descriptor_count++] = shared_descriptor->GetLatestDescriptors();
+				resource_descriptors[resource_descriptor_count++] = shared_descriptor->get_latest_descriptors();
 			}
 
 			edge::gfx::BindDescriptorsInfo bind_info{};
-			bind_info.pipeline_type = pipeline->GetType();
+			bind_info.pipeline_type = pipeline->get_type();
 			bind_info.resource_descriptors = { resource_descriptors, resource_descriptor_count };
 			bind_info.root_signature = root_signature;
 
-			command_list.BindDescriptors(bind_info);
+			command_list.bind_descriptors(bind_info);
 
 			resource_descriptor = nullptr;
 		}
@@ -166,12 +166,12 @@ namespace engine
 		void ShaderPass::PushConstantRanges(edge::gfx::ICommandList& command_list)
 		{
 			auto& constant_data = constant_block->Data();
-			command_list.PushConstants(shader, root_signature, std::span<const char>(constant_data.data(), constant_data.size()));
+			command_list.push_constants(shader, root_signature, std::span<const char>(constant_data.data(), constant_data.size()));
 		}
 
 		void ShaderPass::DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z)
 		{
-			auto& reflection = shader->GetReflection();
+			auto& reflection = shader->get_reflection();
 			group_x = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_x) / static_cast<float>(reflection.local_sizes[0]))), 1u);
 			group_y = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_y) / static_cast<float>(reflection.local_sizes[1]))), 1u);
 			group_z = std::max(static_cast<uint32_t>(std::ceil(static_cast<float>(group_z) / static_cast<float>(reflection.local_sizes[2]))), 1u);
@@ -183,7 +183,7 @@ namespace engine
 
 			auto& render_resource = execution_context.GetResource(resource_id);
 
-			edge::gfx::ResourceStateFlags new_state = edge::gfx::GetAccessState(access);
+			edge::gfx::ResourceStateFlags new_state = edge::gfx::get_access_state(access);
 
 			auto pass_type = GetPassType();
 			if (pass_type == ShaderPassType::eCompute)
@@ -224,13 +224,16 @@ namespace engine
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			auto& reflection = shader->GetReflection();
-			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const edge::gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
-			if (found != reflection.shader_resources.End())
+			auto& reflection = shader->get_reflection();
+			auto found = std::find_if(reflection.shader_resources.begin(), reflection.shader_resources.end(), 
+				[&binding_point](const edge::gfx::ShaderResource& resource) 
+				{ return resource.name_hash == binding_point; });
+
+			if (found != reflection.shader_resources.end())
 			{
 				auto& render_resource = execution_context.GetResource(resource_id);
 
-				edge::gfx::ResourceStateFlags new_state = edge::gfx::GetAccessState(access);
+				edge::gfx::ResourceStateFlags new_state = edge::gfx::get_access_state(access);
 
 				auto pass_type = GetPassType();
 				if (pass_type == ShaderPassType::eCompute)
@@ -239,7 +242,7 @@ namespace engine
 					new_state |= edge::gfx::ResourceStateFlag::eGraphics;
 
 				const edge::gfx::ShaderResource& refl_resource = *found;
-				new_state |= edge::gfx::GetStateByDescriptorType(refl_resource.type);
+				new_state |= edge::gfx::get_state_by_descriptor_type(refl_resource.type);
 
 				if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage)
 				{
@@ -268,7 +271,7 @@ namespace engine
 		void ShaderPass::CollectProfileData()
 		{
 			uint64_t timestamps[2] = {};
-			timestamp_query->GetData(0u, &timestamps[0]);
+			timestamp_query->get_data(0u, &timestamps[0]);
 
 			uint64_t elapsed_time = timestamps[1] - timestamps[0];
 			if (timestamps[1] <= timestamps[0])
@@ -309,7 +312,7 @@ namespace engine
 		void ShaderPass::ResolveDependencies(edge::gfx::ICommandList& command_list)
 		{
 			// Flush resource barriers
-			command_list.ResourceBarrier(resource_barriers);
+			command_list.resource_barrier(resource_barriers);
 			resource_barriers.buffer_barrier_count = 0;
 			resource_barriers.texture_barrier_count = 0;
 			resource_barriers.memory_barrier_count = 0;
@@ -322,13 +325,16 @@ namespace engine
 			if (!resource_descriptor)
 			{
 				auto& descriptor_allocator = execution_context.GetCurrentDescriptorAllocator();
-				resource_descriptor = descriptor_allocator.AllocateDescriptors(root_signature);
+				resource_descriptor = descriptor_allocator.allocate_descriptors(root_signature);
 			}
 
-			auto& reflection = shader->GetReflection();
+			auto& reflection = shader->get_reflection();
 
-			auto found = std::find_if(reflection.shader_resources.Begin(), reflection.shader_resources.End(), [&binding_point](const edge::gfx::ShaderResource& resource) { return resource.name_hash == binding_point; });
-			if (found != reflection.shader_resources.End())
+			auto found = std::find_if(reflection.shader_resources.begin(), reflection.shader_resources.end(), 
+				[&binding_point](const edge::gfx::ShaderResource& resource) 
+				{ return resource.name_hash == binding_point; });
+
+			if (found != reflection.shader_resources.end())
 			{
 				auto& render_resource = execution_context.GetResource(resource_index);
 
@@ -347,7 +353,7 @@ namespace engine
 					descriptor.subresource_index = subresource_index;
 					descriptor.resource_state = render_resource.GetState();
 
-					resource_descriptor->BindTexture(descriptor);
+					resource_descriptor->bind_texture(descriptor);
 				}
 				else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 				{
@@ -358,9 +364,9 @@ namespace engine
 					descriptor.binding = refl_resource.binding;
 
 					descriptor.buffer = execution_context.GetBuffer(render_resource);
-					descriptor.size = descriptor.buffer->GetSize();
+					descriptor.size = descriptor.buffer->get_size();
 
-					resource_descriptor->BindBuffer(descriptor);
+					resource_descriptor->bind_buffer(descriptor);
 				}
 				else
 				{
@@ -387,13 +393,13 @@ namespace engine
 
 			auto texture = execution_context.GetTexture(target_it);
 
-			group_x = texture->GetWidth();
-			group_y = texture->GetHeight();
+			group_x = texture->get_width();
+			group_y = texture->get_height();
 
 			if(divide_by_locals)
 				DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
 
-			command_list.Dispatch(group_x, group_y, group_z);
+			command_list.dispatch(group_x, group_y, group_z);
 		}
 
 		void ShaderPass::FinalizeTarget(edge::gfx::ICommandList& command_list, uint32_t binding_point, uint32_t target)

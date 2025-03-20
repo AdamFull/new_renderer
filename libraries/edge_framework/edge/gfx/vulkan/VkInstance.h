@@ -17,8 +17,7 @@ namespace edge
 
 			class Instance;
 
-			class InstanceBuilder
-			{
+			class InstanceBuilder {
 			public:
 				std::string application_name{ "app" };
 				uint32_t application_version{ 0u };
@@ -39,36 +38,36 @@ namespace edge
 
 				InstanceBuilder();
 
-				InstanceBuilder& SetApplicationName(std::string_view name);
-				InstanceBuilder& SetApplicationVersion(uint32_t version);
+				InstanceBuilder& set_application_name(std::string_view name);
+				InstanceBuilder& set_application_version(uint32_t version);
 
-				InstanceBuilder& SetEngineName(std::string_view name);
-				InstanceBuilder& SetEngineVersion(uint32_t version);
+				InstanceBuilder& set_engine_name(std::string_view name);
+				InstanceBuilder& set_engine_version(uint32_t version);
 
-				InstanceBuilder& SetApiVersion(uint32_t version);
+				InstanceBuilder& set_api_version(uint32_t version);
 
-				InstanceBuilder& SetRequiredExtensions(std::vector<const char*>&& extensions);
-				InstanceBuilder& AddRequiredExtensions(const std::vector<const char*>& extensions);
-				InstanceBuilder& AddRequiredExtensions(std::span<const char*> extensions);
-				InstanceBuilder& AddRequiredExtension(const char* extension_name);
+				InstanceBuilder& set_required_extensions(std::vector<const char*>&& extensions);
+				InstanceBuilder& add_required_extensions(const std::vector<const char*>& extensions);
+				InstanceBuilder& add_required_extensions(std::span<const char*> extensions);
+				InstanceBuilder& add_required_extension(const char* extension_name);
 
-				InstanceBuilder& SetOptionalExtensions(std::vector<const char*>&& extensions);
-				InstanceBuilder& AddOptionalExtensions(const std::vector<const char*>& extensions);
-				InstanceBuilder& AddOptionalExtension(const char* extension_name);
+				InstanceBuilder& set_optional_extensions(std::vector<const char*>&& extensions);
+				InstanceBuilder& add_optional_extensions(const std::vector<const char*>& extensions);
+				InstanceBuilder& add_optional_extension(const char* extension_name);
 
-				InstanceBuilder& SetValidationLayers(std::vector<const char*>&& layers);
-				InstanceBuilder& AddValidationLayers(const std::vector<const char*>& layers);
-				InstanceBuilder& AddValidationLayer(const char* layer_name);
+				InstanceBuilder& set_validation_layers(std::vector<const char*>&& layers);
+				InstanceBuilder& add_validationLayers(const std::vector<const char*>& layers);
+				InstanceBuilder& add_validation_layer(const char* layer_name);
 
-				InstanceBuilder& SetLayerSettings(std::vector<vk::LayerSettingEXT>&& layer_settings);
-				InstanceBuilder& AddLayerSettings(const std::vector<vk::LayerSettingEXT>& layer_settings);
-				InstanceBuilder& AddLayerSetting(vk::LayerSettingEXT layer_setting);
+				InstanceBuilder& set_layer_settings(std::vector<vk::LayerSettingEXT>&& layer_settings);
+				InstanceBuilder& add_layer_settings(const std::vector<vk::LayerSettingEXT>& layer_settings);
+				InstanceBuilder& add_layer_setting(vk::LayerSettingEXT layer_setting);
 
-				InstanceBuilder& SetHeadless(bool headless);
-				InstanceBuilder& SetAllocationCallbacks(vk::AllocationCallbacks* allocation_callbacks);
+				InstanceBuilder& set_headless(bool headless);
+				InstanceBuilder& set_allocation_callbacks(vk::AllocationCallbacks* allocation_callbacks);
 
-				Instance Build();
-				std::unique_ptr<Instance> BuildUnique();
+				Instance build();
+				std::unique_ptr<Instance> build_unique();
 			};
 
 			/**
@@ -76,7 +75,7 @@ namespace edge
 			 *        Attempting to enable them in order of preference, starting with later Vulkan SDK versions
 			 * @param supported_instance_layers A list of validation layers to check against
 			 */
-			std::vector<const char*> GetOptimalValidationLayers(const std::vector<vk::LayerProperties>& supported_instance_layers);
+			std::vector<const char*> get_optimal_validation_layers(const std::vector<vk::LayerProperties>& supported_instance_layers);
 
 			/**
 			 * @brief A wrapper class for vk::Instance
@@ -84,8 +83,7 @@ namespace edge
 			 * This class is responsible for initializing the dispatcher, enumerating over all available extensions and validation layers
 			 * enabling them if they exist, setting up debug messaging and querying all the physical devices existing on the machine.
 			 */
-			class Instance final : public VulkanResource<vk::Instance>
-			{
+			class Instance final : public VulkanResource<vk::Instance> {
 			public:
 				/**
 				 * @brief Initializes the connection to Vulkan
@@ -115,8 +113,7 @@ namespace edge
 
 				Instance& operator=(Instance&&) = delete;
 
-				auto GetExtensions() const noexcept -> std::vector<const char*> const&
-				{
+				auto get_extensions() const noexcept -> std::vector<const char*> const& {
 					return enabled_extensions;
 				}
 
@@ -124,8 +121,7 @@ namespace edge
 				 * @brief Just returns vulkan api version that was used on init
 				 * @returns Vulkan api version
 				 */
-				auto GetApiVersion() const noexcept -> uint32_t
-				{
+				auto get_api_version() const noexcept -> uint32_t {
 					return api_version;
 				}
 
@@ -133,29 +129,29 @@ namespace edge
 				 * @brief Tries to find the first available discrete GPU
 				 * @returns All physical devices found on
 				 */
-				auto GetAllFoundGpu() const noexcept -> std::vector<std::unique_ptr<PhysicalDevice>> const&
+				auto get_all_found_gpu() const noexcept -> std::vector<std::unique_ptr<PhysicalDevice>> const&
 				{
 					return gpus;
 				}
 
 				/**
-				 * @brief Returns physical device that was selected in method SelectBestDevice
+				 * @brief Returns physical device that was selected in method select_best_device
 				 * @returns Best physical device
 				 */
-				auto GetBestDevice() const -> PhysicalDevice&;
+				auto get_best_device() const -> PhysicalDevice&;
 
 				/**
 				 * @brief Tries to find the first available discrete GPU that can render to the given surface and support
 				 * @param surface to test against
 				 * @param required device extensions
 				 */
-				void SelectBestDevice(vk::SurfaceKHR& surface, const std::vector<const char*>& requested_extensions);
+				void select_best_device(vk::SurfaceKHR& surface, const std::vector<const char*>& requested_extensions);
 
 				/**
 				 * @brief Checks if the given extension is enabled in the vk::Instance
 				 * @param extension An extension to check
 				 */
-				auto IsEnabled(const char* extension) const noexcept -> bool;
+				auto is_enabled(const char* extension) const noexcept -> bool;
 
 			private:
 				/**
@@ -163,7 +159,7 @@ namespace edge
 				* @param Requested extension name
 				* @returns True if extension is supported or enabled
 				*/
-				bool EnableExtension(const char* extension_name);
+				bool enable_extension(const char* extension_name);
 
 			private:
 				/**

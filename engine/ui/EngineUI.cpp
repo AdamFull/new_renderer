@@ -413,7 +413,7 @@ namespace engine
 	EngineUI::EngineUI(edge::Window& window) :
 		window{ window }
 	{
-		ImGui::CreateContext();
+		ImGui::create_context();
 
 		ImGuiIO& io = ImGui::GetIO();
 		IMGUI_CHECKVERSION();
@@ -464,7 +464,7 @@ namespace engine
 
 	EngineUI::~EngineUI()
 	{
-		ImGui::EndFrame();
+		ImGui::end_frame();
 		ImGui::DestroyContext();
 	}
 

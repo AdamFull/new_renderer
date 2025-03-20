@@ -70,8 +70,8 @@ namespace engine
 			// For render script
 			void Set(uint32_t name, const void* raw_data, uint64_t size)
 			{
-				auto var_begin = reflection.shader_variables.Begin() + resource.range_begin;
-				auto var_end = reflection.shader_variables.Begin() + resource.variable_count;
+				auto var_begin = reflection.shader_variables.begin() + resource.range_begin;
+				auto var_end = reflection.shader_variables.begin() + resource.variable_count;
 
 				auto found = std::find_if(var_begin, var_end, [&name](const edge::gfx::ShaderVariable& variable) { return variable.name_hash == name; });
 				if (found == var_end)
@@ -90,10 +90,12 @@ namespace engine
 			template<class _Ty>
 			void Set(uint32_t name, const _Ty& object, uint64_t size = 0ull)
 			{
-				auto var_begin = reflection.shader_variables.Begin() + resource.range_begin;
-				auto var_end = reflection.shader_variables.Begin() + resource.variable_count;
+				auto var_begin = reflection.shader_variables.begin() + resource.range_begin;
+				auto var_end = reflection.shader_variables.begin() + resource.variable_count;
 
-				auto found = std::find_if(var_begin, var_end, [&name](const edge::gfx::ShaderVariable& variable) { return variable.name_hash == name; });
+				auto found = std::find_if(var_begin, var_end, 
+					[&name](const edge::gfx::ShaderVariable& variable) { return variable.name_hash == name; });
+
 				if (found == var_end)
 				{
 					assert(false && "Uniform variable is not found.");
@@ -110,10 +112,12 @@ namespace engine
 			template<class _Ty>
 			_Ty* Get(uint32_t name)
 			{
-				auto var_begin = reflection.shader_variables.Begin() + resource.range_begin;
-				auto var_end = reflection.shader_variables.Begin() + resource.variable_count;
+				auto var_begin = reflection.shader_variables.begin() + resource.range_begin;
+				auto var_end = reflection.shader_variables.begin() + resource.variable_count;
 
-				auto found = std::find_if(var_begin, var_end, [&name](const edge::gfx::ShaderVariable& variable) { return variable.name_hash == name; });
+				auto found = std::find_if(var_begin, var_end, 
+					[&name](const edge::gfx::ShaderVariable& variable) { return variable.name_hash == name; });
+
 				if (found == var_end)
 				{
 					assert(false && "Uniform variable is not found.");

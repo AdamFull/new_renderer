@@ -23,43 +23,43 @@ struct RenderFrame
 	RenderFrame(edge::gfx::IContext& context, edge::gfx::ISwapchain* swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index) :
 		context{ context }
 	{
-		backbuffer = context.CreateSwapchainTexture(swapchain, frame_index);
-		command_pool = context.CreateCommandPool(queue);
-		descriptor_allocator = context.CreateDescriptorAllocator();
+		backbuffer = context.create_swapchain_texture(swapchain, frame_index);
+		command_pool = context.create_command_pool(queue);
+		descriptor_allocator = context.create_descriptor_allocator();
 
-		image_avaliable = context.CreateSemaphore();
-		image_avaliable->SetResourceName(std::format("image_avaliable_{}", frame_index));
+		image_avaliable = context.create_semaphore();
+		image_avaliable->set_resource_name(std::format("image_avaliable_{}", frame_index));
 
-		render_finished = context.CreateSemaphore();
-		render_finished->SetResourceName(std::format("render_finished_{}", frame_index));
+		render_finished = context.create_semaphore();
+		render_finished->set_resource_name(std::format("render_finished_{}", frame_index));
 
-		upload_avaliable = context.CreateSemaphore();
-		render_finished->SetResourceName(std::format("upload_avaliable_{}", frame_index));
+		upload_avaliable = context.create_semaphore();
+		render_finished->set_resource_name(std::format("upload_avaliable_{}", frame_index));
 
-		fence = context.CreateFence();
+		fence = context.create_fence();
 	}
 
 	~RenderFrame()
 	{
-		context.Destroy(backbuffer);
-		context.Destroy(command_pool);
-		context.Destroy(descriptor_allocator);
-		context.Destroy(image_avaliable);
-		context.Destroy(render_finished);
-		context.Destroy(upload_avaliable);
-		context.Destroy(fence);
+		context.destroy(backbuffer);
+		context.destroy(command_pool);
+		context.destroy(descriptor_allocator);
+		context.destroy(image_avaliable);
+		context.destroy(render_finished);
+		context.destroy(upload_avaliable);
+		context.destroy(fence);
 	}
 
 	void UpdateBackbuffer(edge::gfx::ISwapchain* swapchain, uint32_t frame_index)
 	{
-		context.Destroy(backbuffer);
-		backbuffer = context.CreateSwapchainTexture(swapchain, frame_index);
+		context.destroy(backbuffer);
+		backbuffer = context.create_swapchain_texture(swapchain, frame_index);
 	}
 
 	void Reset()
 	{
-		descriptor_allocator->Reset();
-		command_pool->Reset();
+		descriptor_allocator->reset();
+		command_pool->reset();
 	}
 
 	edge::gfx::ITexture* backbuffer{ nullptr };
@@ -89,17 +89,17 @@ public:
 
 	~Application()
 	{
-		queue->WaitIdle();
+		queue->wait_idle();
 
-		auto image_count = swapchain->GetImageCount();
+		auto image_count = swapchain->get_image_count();
 		for (int32_t i = 0; i < image_count; ++i)
 		{
 			render_frames[i] = nullptr;
 		}
 
-		gfx_context->Destroy(swapchain);
+		gfx_context->destroy(swapchain);
 
-		edge::gfx::ResourceUpdater::Shutdown();
+		edge::gfx::ResourceUpdater::shutdown();
 	}
 
     bool Prepare(const edge::ApplicationOptions& options) override
@@ -112,24 +112,24 @@ public:
         gfx_create_info.window = options.window;
 
         // Init graphics context
-        gfx_context = edge::gfx::CreateContext(gfx_create_info);
+        gfx_context = edge::gfx::create_context(gfx_create_info);
 
 		edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
 		resource_updater_init.gfx_context = gfx_context.get();
 		resource_updater_init.filesystem = options.filesystem;
 
-		edge::gfx::ResourceUpdater::Create(resource_updater_init);
+		edge::gfx::ResourceUpdater::create(resource_updater_init);
 
 		// Init everything we need for rendering
-		queue = gfx_context->RequestQueue(edge::gfx::QueueTypeFlag::ePresent);
+		queue = gfx_context->request_queue(edge::gfx::QueueTypeFlag::ePresent);
 
 		edge::gfx::SwapChainCreateInfo swapchain_ci{};
 		swapchain_ci.window = options.window;
 		swapchain_ci.image_count = 2u;
 
-		swapchain = gfx_context->CreateSwapchain(swapchain_ci);
+		swapchain = gfx_context->create_swapchain(swapchain_ci);
 
-		auto image_count = swapchain->GetImageCount();
+		auto image_count = swapchain->get_image_count();
 
 		for (int32_t i = 0; i < image_count; ++i)
 		{
@@ -149,19 +149,19 @@ public:
 			}
 		};
 
-		shader = gfx_context->CreateShader(shader_stages);
+		shader = gfx_context->create_shader(shader_stages);
 
 		// Create root signature
 		edge::gfx::RootSignatureCreateInfo root_sign_ci{};
 		root_sign_ci.shader = shader;
 
-		root_sign = gfx_context->CreateRootSignature(root_sign_ci);
+		root_sign = gfx_context->create_root_signature(root_sign_ci);
 
 		edge::gfx::GraphicsPipelineCreateInfo pipeline_ci{};
 		pipeline_ci.shader = shader;
 		pipeline_ci.root_signature = root_sign;
 
-		pipeline_ci.color_formats[0] = render_frames[0]->backbuffer->GetFormat();
+		pipeline_ci.color_formats[0] = render_frames[0]->backbuffer->get_format();
 		pipeline_ci.color_format_count = 1u;
 
 		pipeline_ci.pipeline_state.rasterization_state.front_face = edge::gfx::FrontFace::eCW;
@@ -187,7 +187,7 @@ public:
 		pipeline_ci.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
 		pipeline_ci.pipeline_state.color_blending_state.attachment_count = 1u;
 
-		pipeline = gfx_context->CreatePipeline(pipeline_ci);
+		pipeline = gfx_context->create_pipeline(pipeline_ci);
 
 		// Create vertex buffers
 		const BasicVertex vertices[] = 
@@ -201,11 +201,11 @@ public:
 		vertex_buffer_ci.usage = edge::gfx::BufferUsageFlag::eVertexBuffer;
 		vertex_buffer_ci.size = sizeof(vertices);
 
-		vertex_buffer = gfx_context->CreateBuffer(vertex_buffer_ci);
+		vertex_buffer = gfx_context->create_buffer(vertex_buffer_ci);
 
 		// Upload vertex data in to buffer
 		edge::gfx::ResourceStateFlags resource_state{};
-		edge::gfx::ResourceUpdater::UpdateBuffer(vertex_buffer, resource_state, { (const uint8_t*)(&vertices[0]), sizeof(vertices) });
+		edge::gfx::ResourceUpdater::update_buffer(vertex_buffer, resource_state, { (const uint8_t*)(&vertices[0]), sizeof(vertices) });
 
 		return true;
     }
@@ -226,14 +226,14 @@ public:
 
 		if (swapchain)
 		{
-			if (!swapchain->AcquireNextImage(acquired_semaphore, nullptr, &active_frame_index))
+			if (!swapchain->acquire_next_image(acquired_semaphore, nullptr, &active_frame_index))
 			{
 				surface_updated = HandleSurfaceChange(true);
 
 				bool acquire_result{ false };
 				if (surface_updated)
 				{
-					acquire_result = swapchain->AcquireNextImage(acquired_semaphore, nullptr, &active_frame_index);
+					acquire_result = swapchain->acquire_next_image(acquired_semaphore, nullptr, &active_frame_index);
 				}
 
 				if (!acquire_result)
@@ -249,8 +249,8 @@ public:
 
 		auto& current_frame = render_frames[active_frame_index];
 
-		auto* command_list = current_frame->command_pool->Allocate();
-		command_list->Begin();
+		auto* command_list = current_frame->command_pool->allocate();
+		command_list->begin();
 
 		edge::gfx::TextureBarrier texture_translation{};
 		texture_translation.texture = current_frame->backbuffer;
@@ -261,7 +261,7 @@ public:
 		vertex_buffer_barrier.buffer = vertex_buffer;
 		vertex_buffer_barrier.src_state = edge::gfx::ResourceStateFlag::eCopyDst;
 		vertex_buffer_barrier.dst_state = edge::gfx::ResourceStateFlag::eVertexRead;
-		vertex_buffer_barrier.range.size = vertex_buffer->GetSize();
+		vertex_buffer_barrier.range.size = vertex_buffer->get_size();
 
 		edge::gfx::ResourceBarrierInfo barrier{};
 		barrier.texture_barriers = &texture_translation;
@@ -269,47 +269,47 @@ public:
 		barrier.buffer_barriers = &vertex_buffer_barrier;
 		barrier.buffer_barrier_count = 1;
 
-		command_list->ResourceBarrier(barrier);
+		command_list->resource_barrier(barrier);
 		barrier.buffer_barrier_count = 0;
 
-		command_list->BindPipeline(pipeline);
+		command_list->bind_pipeline(pipeline);
 
 		uint32_t stride{ 0u };
 		const uint64_t offset{ 0ull };
-		command_list->BindVertexBuffers(std::span{ &vertex_buffer, 1 }, std::span{ &stride, 1 }, std::span{ &offset, 1 });
+		command_list->bind_vertex_buffers(std::span{ &vertex_buffer, 1 }, std::span{ &stride, 1 }, std::span{ &offset, 1 });
 
 		edge::gfx::RenderingInfo rendering_info{};
-		rendering_info.width = current_frame->backbuffer->GetWidth();
-		rendering_info.height = current_frame->backbuffer->GetHeight();
+		rendering_info.width = current_frame->backbuffer->get_width();
+		rendering_info.height = current_frame->backbuffer->get_height();
 		rendering_info.attachments[0].texture = current_frame->backbuffer;
 		rendering_info.attachments[0].texture_state = texture_translation.dst_state;
 		rendering_info.attachments[0].load_op = edge::gfx::LoadOp::eClear;
 		rendering_info.attachments[0].store_op = edge::gfx::StoreOp::eStore;
 		rendering_info.attachment_count = 1;
 
-		command_list->SetViewport(0, 0, rendering_info.width, rendering_info.height, 0.f, 1.f);
-		command_list->SerScissor(0, 0, rendering_info.width, rendering_info.height);
+		command_list->set_viewport(0, 0, rendering_info.width, rendering_info.height, 0.f, 1.f);
+		command_list->set_scissor(0, 0, rendering_info.width, rendering_info.height);
 
-		command_list->BeginRendering(rendering_info);
-		command_list->Draw(3u, 0u, 0u, 1u);
-		command_list->EndRendering();
+		command_list->begin_rendering(rendering_info);
+		command_list->draw(3u, 0u, 0u, 1u);
+		command_list->end_rendering();
 
 		// Prepare image for present
 		texture_translation.src_state = texture_translation.dst_state;
 		texture_translation.dst_state = edge::gfx::ResourceStateFlag::ePresentSrc;
 
-		command_list->ResourceBarrier(barrier);
+		command_list->resource_barrier(barrier);
 
 		std::vector<edge::gfx::SemaphoreSubmitInfo> wait_semaphores{};
 		wait_semaphores.emplace_back(acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput);
 
 		// Submit resource uploader queue
-		edge::gfx::ResourceUpdater::Flush(wait_semaphores, {});
+		edge::gfx::ResourceUpdater::flush(wait_semaphores, {});
 
 		// Here is frame finished
-		command_list->End();
+		command_list->end();
 
-		current_frame->fence->Reset();
+		current_frame->fence->reset();
 
 		try
 		{
@@ -328,7 +328,7 @@ public:
 
 			submit_info.command_lists = { &command_list, 1 };
 
-			queue->Submit(submit_info, current_frame->fence);
+			queue->submit(submit_info, current_frame->fence);
 		}
 		catch (std::exception error)
 		{
@@ -347,10 +347,10 @@ public:
 			present_info.swapchains = { &swapchain, 1 };
 			present_info.image_indices = &active_frame_index;
 
-			queue->Present(present_info);
-			current_frame->fence->Wait();
+			queue->present(present_info);
+			current_frame->fence->wait();
 
-			//current_frame_index = (current_frame_index + 1) % swapchain->GetImageCount();
+			//current_frame_index = (current_frame_index + 1) % swapchain->get_image_count();
 		}
 
 		if (acquired_semaphore)
@@ -368,10 +368,10 @@ private:
 		new_swapchain_ci.width = width;
 		new_swapchain_ci.height = height;
 
-		swapchain = gfx_context->CreateSwapchain(new_swapchain_ci);
-		gfx_context->Destroy(new_swapchain_ci.old_swapchain);
+		swapchain = gfx_context->create_swapchain(new_swapchain_ci);
+		gfx_context->destroy(new_swapchain_ci.old_swapchain);
 		
-		auto image_count = swapchain->GetImageCount();
+		auto image_count = swapchain->get_image_count();
 		auto frame_it = render_frames.begin();
 		for (int32_t i = 0; i < image_count; ++i)
 		{
@@ -400,14 +400,14 @@ private:
 		}
 
 		uint32_t surface_width, surface_height;
-		swapchain->GetSurfaceExtent(surface_width, surface_height);
+		swapchain->get_surface_extent(surface_width, surface_height);
 		if (surface_width == 0xFFFFFFFFu)
 		{
 			return false;
 		}
 
-		auto& current_width = swapchain->GetWidth();
-		auto& current_height = swapchain->GetHeight();
+		auto& current_width = swapchain->get_width();
+		auto& current_height = swapchain->get_height();
 
 		// Only recreate the swapchain if the dimensions have changed;
 		// handle_surface_changes() is called on VK_SUBOPTIMAL_KHR,
@@ -416,7 +416,7 @@ private:
 		{
 			EDGE_PROFILE_ZONE_SCOPED_NAMED("ISwapchain update");
 			// Recreate swapchain
-			queue->WaitIdle();
+			queue->wait_idle();
 			UpdateSwapchain(surface_width, surface_height);
 
 			active_frame_index = 0u;

@@ -22,7 +22,7 @@ namespace edge
 				VulkanSemaphore& operator=(const VulkanSemaphore&) = delete;
 				VulkanSemaphore& operator=(VulkanSemaphore&&) = default;
 
-				void SetResourceName(std::string_view name) const noexcept override;
+				void set_resource_name(std::string_view name) const noexcept override;
 			private:
 				Device& device;
 			};

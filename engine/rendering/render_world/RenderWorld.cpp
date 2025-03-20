@@ -441,39 +441,39 @@ namespace engine
 				shlib::GlobalBufferReference buffers{};
 
 				// Update world matrices buffer
-				buffers.matrixBuffer = world_matrices->GetBuffer()->GetAddress();
+				buffers.matrixBuffer = world_matrices->GetBuffer()->get_address();
 				world_matrices->Flush();
 
 				// Update frustum sides buffer
-				buffers.frustumSidesBuffer = world_frustum->GetBuffer()->GetAddress();
+				buffers.frustumSidesBuffer = world_frustum->GetBuffer()->get_address();
 				world_frustum->Flush();
 
 				// Update buffer with cameras
-				buffers.cameraBuffer = world_cameras->GetBuffer()->GetAddress();
+				buffers.cameraBuffer = world_cameras->GetBuffer()->get_address();
 				world_cameras->Flush();
 
 				// Update mesh infos
-				buffers.meshBuffer = world_meshes->GetBuffer()->GetAddress();
+				buffers.meshBuffer = world_meshes->GetBuffer()->get_address();
 				world_meshes->Flush();
 
-				buffers.submeshBuffer = world_submeshes->GetBuffer()->GetAddress();
+				buffers.submeshBuffer = world_submeshes->GetBuffer()->get_address();
 				world_submeshes->Flush();
 
 				// Update materials
-				buffers.materialBuffer = draw_materials->GetBuffer()->GetAddress();
+				buffers.materialBuffer = draw_materials->GetBuffer()->get_address();
 				draw_materials->Flush();
 
 				// Update lights
-				buffers.lightsBuffer = scene_lights->GetBuffer()->GetAddress();
+				buffers.lightsBuffer = scene_lights->GetBuffer()->get_address();
 				scene_lights->Flush();
 
-				buffers.cascadedShadowBuffer = scene_cascaded_shadows->GetBuffer()->GetAddress();
+				buffers.cascadedShadowBuffer = scene_cascaded_shadows->GetBuffer()->get_address();
 				scene_cascaded_shadows->Flush();
 
-				buffers.omniShadowBuffer = omni_shadows->GetBuffer()->GetAddress();
+				buffers.omniShadowBuffer = omni_shadows->GetBuffer()->get_address();
 				omni_shadows->Flush();
 
-				buffers.spotShadowBuffer = spot_shadows->GetBuffer()->GetAddress();
+				buffers.spotShadowBuffer = spot_shadows->GetBuffer()->get_address();
 				spot_shadows->Flush();
 
 				draw_descriptions->Flush();
@@ -499,7 +499,7 @@ namespace engine
 			}
 		}
 
-		void RenderWorld::EndFrame()
+		void RenderWorld::end_frame()
 		{
 			draw_count = 0;
 			light_count = 0;

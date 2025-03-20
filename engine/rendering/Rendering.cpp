@@ -114,13 +114,13 @@ namespace engine
 			gfx_create_info.render_api = edge::gfx::RenderApi::eVulkan;
 			gfx_create_info.window = window;
 
-			gfx_context = edge::gfx::CreateContext(gfx_create_info);
+			gfx_context = edge::gfx::create_context(gfx_create_info);
 
 			edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
 			resource_updater_init.gfx_context = gfx_context.get();
 			resource_updater_init.filesystem = vfs;
 
-			edge::gfx::ResourceUpdater::Create(resource_updater_init);
+			edge::gfx::ResourceUpdater::create(resource_updater_init);
 
 			render_context = std::make_unique<RenderContext>(*gfx_context, vfs, window);
 
@@ -133,7 +133,7 @@ namespace engine
 
 		Renderer::~Renderer()
 		{
-			edge::gfx::ResourceUpdater::Shutdown();
+			edge::gfx::ResourceUpdater::shutdown();
 		}
 
 		uint32_t Renderer::AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler)
@@ -203,15 +203,15 @@ namespace engine
 			render_context->Begin();
 			render_world->BeginFrame(delta_time);
 #if USE_NSIGHT_AFTERMATH
-			edge::gfx::NsightAftermath::TryBeginFrame();
+			edge::gfx::NsightAftermath::try_begin_frame();
 #endif
 
 			render_context->Execute(delta_time);
 
 #if USE_NSIGHT_AFTERMATH
-			edge::gfx::NsightAftermath::TryEndFrame();
+			edge::gfx::NsightAftermath::try_end_frame();
 #endif
-			render_world->EndFrame();
+			render_world->end_frame();
 			render_context->End();
 		}
 
@@ -300,7 +300,7 @@ namespace engine
 				create_info.mip_map_mode = edge::gfx::Filter::eNearest;
 
 				// TODO: need to cache samplers
-				nearest_sampler = gfx_context->CreateSampler(create_info);
+				nearest_sampler = gfx_context->create_sampler(create_info);
 			}
 
 			edge::gfx::ISampler* linear_sampler{ nullptr };
@@ -311,7 +311,7 @@ namespace engine
 				create_info.mip_map_mode = edge::gfx::Filter::eLinear;
 
 				// TODO: need to cache samplers
-				linear_sampler = gfx_context->CreateSampler(create_info);
+				linear_sampler = gfx_context->create_sampler(create_info);
 			}
 
 			edge::gfx::ISampler* shadow_sampler{ nullptr };
@@ -323,7 +323,7 @@ namespace engine
 				create_info.depth_compare = edge::gfx::CompareOp::eLess;
 
 				// TODO: need to cache samplers
-				shadow_sampler = gfx_context->CreateSampler(create_info);
+				shadow_sampler = gfx_context->create_sampler(create_info);
 			}
 
 			// Load some static textures
@@ -342,7 +342,7 @@ namespace engine
 				create_info.resizable = false;
 
 				brdf_lut_target = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(brdf_lut_target, "brdf_lut_target");
+				render_context->set_resource_name(brdf_lut_target, "brdf_lut_target");
 			}
 
 			uint32_t irradiance_cube_target{ ~0u };
@@ -354,7 +354,7 @@ namespace engine
 				create_info.resizable = false;
 
 				irradiance_cube_target = render_context->AddResource(create_info, linear_sampler);
-				render_context->SetResourceName(irradiance_cube_target, "irradiance_cube_target");
+				render_context->set_resource_name(irradiance_cube_target, "irradiance_cube_target");
 			}
 
 			uint32_t prefiltered_cube_target{ ~0u };
@@ -376,11 +376,11 @@ namespace engine
 					create_info_s.max_lod = static_cast<float>(create_info.levels);
 
 					// TODO: need to cache samplers
-					special_sampler = gfx_context->CreateSampler(create_info_s);
+					special_sampler = gfx_context->create_sampler(create_info_s);
 				}
 
 				prefiltered_cube_target = render_context->AddResource(create_info, special_sampler);
-				render_context->SetResourceName(prefiltered_cube_target, "prefiltered_cube_target");
+				render_context->set_resource_name(prefiltered_cube_target, "prefiltered_cube_target");
 			}
 
 			// Shadow targets
@@ -394,7 +394,7 @@ namespace engine
 				create_info.resizable = false;
 				
 				cascaded_shadows_target = render_context->AddResource(create_info, shadow_sampler);
-				render_context->SetResourceName(cascaded_shadows_target, "cascaded_shadows_target");
+				render_context->set_resource_name(cascaded_shadows_target, "cascaded_shadows_target");
 			}
 
 			uint32_t directional_shadows_target{ ~0u };
@@ -407,7 +407,7 @@ namespace engine
 				create_info.resizable = false;
 
 				directional_shadows_target = render_context->AddResource(create_info, shadow_sampler);
-				render_context->SetResourceName(directional_shadows_target, "directional_shadows_target");
+				render_context->set_resource_name(directional_shadows_target, "directional_shadows_target");
 			}
 
 			uint32_t omni_shadows_target{ ~0u };
@@ -420,7 +420,7 @@ namespace engine
 				create_info.resizable = false;
 
 				omni_shadows_target = render_context->AddResource(create_info, shadow_sampler);
-				render_context->SetResourceName(omni_shadows_target, "omni_shadows_target");
+				render_context->set_resource_name(omni_shadows_target, "omni_shadows_target");
 			}
 
 			auto* backbuffer_texture = render_context->GetTexture(backbuffer_resource);
@@ -429,53 +429,53 @@ namespace engine
 			uint32_t visbuffer_geometry_target{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
-				create_info.width = backbuffer_texture->GetWidth();
-				create_info.height = backbuffer_texture->GetHeight();
+				create_info.width = backbuffer_texture->get_width();
+				create_info.height = backbuffer_texture->get_height();
 				create_info.format = edge::gfx::Format::eR8G8B8A8Unorm;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = true;
 
 				visbuffer_geometry_target = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(visbuffer_geometry_target, "visbuffer_geometry_target");
+				render_context->set_resource_name(visbuffer_geometry_target, "visbuffer_geometry_target");
 			}
 
 			uint32_t visbuffer_vboinst_target{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
-				create_info.width = backbuffer_texture->GetWidth();
-				create_info.height = backbuffer_texture->GetHeight();
+				create_info.width = backbuffer_texture->get_width();
+				create_info.height = backbuffer_texture->get_height();
 				create_info.format = edge::gfx::Format::eR8G8B8A8Unorm;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = true;
 
 				visbuffer_vboinst_target = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(visbuffer_vboinst_target, "visbuffer_vboinst_target");
+				render_context->set_resource_name(visbuffer_vboinst_target, "visbuffer_vboinst_target");
 			}
 
 			uint32_t zbuffer_depth_target{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
-				create_info.width = backbuffer_texture->GetWidth();
-				create_info.height = backbuffer_texture->GetHeight();
+				create_info.width = backbuffer_texture->get_width();
+				create_info.height = backbuffer_texture->get_height();
 				create_info.format = edge::gfx::Format::eD32Sfloat;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 				create_info.resizable = true;
 
 				zbuffer_depth_target = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(zbuffer_depth_target, "zbuffer_depth_target");
+				render_context->set_resource_name(zbuffer_depth_target, "zbuffer_depth_target");
 			}
 
 			uint32_t motion_vectors_target{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
-				create_info.width = backbuffer_texture->GetWidth();
-				create_info.height = backbuffer_texture->GetHeight();
+				create_info.width = backbuffer_texture->get_width();
+				create_info.height = backbuffer_texture->get_height();
 				create_info.format = use_low_precision_velocity ? edge::gfx::Format::eR8G8Unorm : edge::gfx::Format::eR16G16Sfloat;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 
 				motion_vectors_target = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(motion_vectors_target, "motion_vectors_target");
+				render_context->set_resource_name(motion_vectors_target, "motion_vectors_target");
 			}
 
 			uint32_t hdr0{ ~0u };
@@ -483,43 +483,43 @@ namespace engine
 			uint32_t hdr0_history{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
-				create_info.width = backbuffer_texture->GetWidth();
-				create_info.height = backbuffer_texture->GetHeight();
+				create_info.width = backbuffer_texture->get_width();
+				create_info.height = backbuffer_texture->get_height();
 				create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 
 				hdr0 = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(hdr0, "hdr0");
+				render_context->set_resource_name(hdr0, "hdr0");
 
 				hdr1 = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(hdr1, "hdr1");
+				render_context->set_resource_name(hdr1, "hdr1");
 
 				hdr0_history = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(hdr0_history, "hdr0_history");
+				render_context->set_resource_name(hdr0_history, "hdr0_history");
 			}
 
 			uint32_t hdr0_div2{ ~0u };
 			{
 				// TODO: add support for half size targets
 				TextureResourceCreateInfo create_info{};
-				create_info.width = backbuffer_texture->GetWidth() / 2;
-				create_info.height = backbuffer_texture->GetHeight() / 2;
+				create_info.width = backbuffer_texture->get_width() / 2;
+				create_info.height = backbuffer_texture->get_height() / 2;
 				create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 				create_info.scale = 0.5f;
 
 				hdr0_div2 = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(hdr0_div2, "hdr0_div2");
+				render_context->set_resource_name(hdr0_div2, "hdr0_div2");
 			}
 
 			uint32_t bloom_target{ ~0u };
 			{
 				// TODO: add support for half size targets
 				TextureResourceCreateInfo create_info{};
-				create_info.width = backbuffer_texture->GetWidth() / 2;
-				create_info.height = backbuffer_texture->GetHeight() / 2;
+				create_info.width = backbuffer_texture->get_width() / 2;
+				create_info.height = backbuffer_texture->get_height() / 2;
 				create_info.levels = bloom_blur_depth;
 				create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
@@ -527,7 +527,7 @@ namespace engine
 				create_info.scale = 0.5f;
 
 				bloom_target = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(bloom_target, "bloom_target");
+				render_context->set_resource_name(bloom_target, "bloom_target");
 			}
 
 			// Eye adaptation targets
@@ -541,7 +541,7 @@ namespace engine
 				create_info.resizable = false;
 
 				avg_brightness_target = render_context->AddResource(create_info, nearest_sampler);
-				render_context->SetResourceName(avg_brightness_target, "avg_brightness_target");
+				render_context->set_resource_name(avg_brightness_target, "avg_brightness_target");
 			}
 
 			uint32_t histogram_buffer{ ~0u };
@@ -551,7 +551,7 @@ namespace engine
 				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 				histogram_buffer = render_context->AddResource(create_info);
-				render_context->SetResourceName(histogram_buffer, "histogram_buffer");
+				render_context->set_resource_name(histogram_buffer, "histogram_buffer");
 			}
 
 			// Buffer that contains alive comands for draw
@@ -562,7 +562,7 @@ namespace engine
 				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 				alive_commands_buffer = render_context->AddResource(create_info);
-				render_context->SetResourceName(alive_commands_buffer, "alive_commands_buffer");
+				render_context->set_resource_name(alive_commands_buffer, "alive_commands_buffer");
 			}
 
 			// Buffer contains draw indirect commands
@@ -573,7 +573,7 @@ namespace engine
 				create_info.usage = edge::gfx::BufferUsageFlag::eIndirectBuffer;
 
 				indirect_draw_commands = render_context->AddResource(create_info);
-				render_context->SetResourceName(indirect_draw_commands, "indirect_draw_commands");
+				render_context->set_resource_name(indirect_draw_commands, "indirect_draw_commands");
 			}
 
 			uint32_t indirect_count_buffer{ ~0u };
@@ -583,7 +583,7 @@ namespace engine
 				create_info.usage = edge::gfx::BufferUsageFlag::eIndirectBuffer;
 
 				indirect_count_buffer = render_context->AddResource(create_info);
-				render_context->SetResourceName(indirect_count_buffer, "indirect_count_buffer");
+				render_context->set_resource_name(indirect_count_buffer, "indirect_count_buffer");
 			}
 
 			uint32_t alive_bitset_buffer{ ~0u };
@@ -593,7 +593,7 @@ namespace engine
 				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 				alive_bitset_buffer = render_context->AddResource(create_info);
-				render_context->SetResourceName(alive_bitset_buffer, "alive_bitset_buffer");
+				render_context->set_resource_name(alive_bitset_buffer, "alive_bitset_buffer");
 			}
 
 			uint32_t alive_offsets_buffer{ ~0u };
@@ -603,7 +603,7 @@ namespace engine
 				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 				alive_offsets_buffer = render_context->AddResource(create_info);
-				render_context->SetResourceName(alive_offsets_buffer, "alive_offsets_buffer");
+				render_context->set_resource_name(alive_offsets_buffer, "alive_offsets_buffer");
 			}
 
 			// Passes
@@ -677,7 +677,7 @@ namespace engine
 						self.WriteResource(render_label::write_image0, prefiltered_cube_target, ~0u);
 
 						auto target = render_context->GetTexture(prefiltered_cube_target);
-						for (int32_t mip = 0; mip < target->GetMipLevelCount(); ++mip)
+						for (int32_t mip = 0; mip < target->get_mip_level_count(); ++mip)
 						{
 							if (mip == 0)
 							{
@@ -695,17 +695,17 @@ namespace engine
 
 							uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 
-							float layer_roughness = static_cast<float>(mip) / static_cast<float>(target->GetMipLevelCount());
+							float layer_roughness = static_cast<float>(mip) / static_cast<float>(target->get_mip_level_count());
 
 							auto& constants = self.GetConstantBlock();
 							constants.Set(render_label::roughness, layer_roughness);
 							self.PushConstantRanges(command_list);
 
-							group_x = target->GetWidth() >> mip;
-							group_y = target->GetHeight() >> mip;
+							group_x = target->get_width() >> mip;
+							group_y = target->get_height() >> mip;
 							
 							self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-							command_list.Dispatch(group_x, group_y, group_z);
+							command_list.dispatch(group_x, group_y, group_z);
 						}
 
 						self.FinalizeTarget(command_list, render_label::sample_image0, prefiltered_cube_target);
@@ -733,7 +733,7 @@ namespace engine
 						self.ResolveDependencies(command_list);
 
 						auto& pc = self.GetConstantBlock();
-						pc.Set(edge::murmur_hash("draw_counts"), count_buffer->GetAddress());
+						pc.Set(edge::murmur_hash("draw_counts"), count_buffer->get_address());
 						self.PushConstantRanges(command_list);
 
 						self.BindResources(command_list);
@@ -741,7 +741,7 @@ namespace engine
 						uint32_t group_x{ 512u }, group_y{ 1u }, group_z{ 1u };
 
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-						command_list.Dispatch(group_x, group_y, group_z);
+						command_list.dispatch(group_x, group_y, group_z);
 					};
 
 				render_context->AddNode(render_context->CreateNode(create_info));
@@ -766,8 +766,8 @@ namespace engine
 						self.ResolveDependencies(command_list);
 
 						auto& pc = self.GetConstantBlock();
-						pc.Set(edge::murmur_hash("source_descriptions"), draw_commands->GetAddress());
-						pc.Set(edge::murmur_hash("alive_bits"), alive_bits->GetAddress());
+						pc.Set(edge::murmur_hash("source_descriptions"), draw_commands->get_address());
+						pc.Set(edge::murmur_hash("alive_bits"), alive_bits->get_address());
 						self.PushConstantRanges(command_list);
 
 						self.BindResources(command_list);
@@ -776,7 +776,7 @@ namespace engine
 						group_x = render_world->GetDrawCount();
 
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-						command_list.Dispatch(group_x, group_y, group_z);
+						command_list.dispatch(group_x, group_y, group_z);
 					};
 
 				render_context->AddNode(render_context->CreateNode(create_info));
@@ -804,8 +804,8 @@ namespace engine
 						self.ResolveDependencies(command_list);
 			
 						auto& pc = self.GetConstantBlock();
-						pc.Set(edge::murmur_hash("input_buffer"), alive_bits->GetAddress());
-						pc.Set(edge::murmur_hash("output_buffer"), alive_offsets->GetAddress());
+						pc.Set(edge::murmur_hash("input_buffer"), alive_bits->get_address());
+						pc.Set(edge::murmur_hash("output_buffer"), alive_offsets->get_address());
 						pc.Set(edge::murmur_hash("size"), render_world->GetDrawCount());
 						self.PushConstantRanges(command_list);
 			
@@ -815,7 +815,7 @@ namespace engine
 						group_x = render_world->GetDrawCount();
 			
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-						command_list.Dispatch(group_x, group_y, group_z);
+						command_list.dispatch(group_x, group_y, group_z);
 					};
 			
 				render_context->AddNode(render_context->CreateNode(create_info));
@@ -852,12 +852,12 @@ namespace engine
 						self.ResolveDependencies(command_list);
 
 						auto& pc = self.GetConstantBlock();
-						pc.Set(edge::murmur_hash("source_descriptions"), draw_commands->GetAddress());
-						pc.Set(edge::murmur_hash("alive_descriptions"), alive_meshes->GetAddress());
-						pc.Set(edge::murmur_hash("alive_draw_commands"), argument_buffer->GetAddress());
-						pc.Set(edge::murmur_hash("alive_bits"), alive_bits->GetAddress());
-						pc.Set(edge::murmur_hash("alive_offsets"), alive_offsets->GetAddress());
-						pc.Set(edge::murmur_hash("draw_counts"), count_buffer->GetAddress());
+						pc.Set(edge::murmur_hash("source_descriptions"), draw_commands->get_address());
+						pc.Set(edge::murmur_hash("alive_descriptions"), alive_meshes->get_address());
+						pc.Set(edge::murmur_hash("alive_draw_commands"), argument_buffer->get_address());
+						pc.Set(edge::murmur_hash("alive_bits"), alive_bits->get_address());
+						pc.Set(edge::murmur_hash("alive_offsets"), alive_offsets->get_address());
+						pc.Set(edge::murmur_hash("draw_counts"), count_buffer->get_address());
 						self.PushConstantRanges(command_list);
 			
 						self.BindResources(command_list);
@@ -866,7 +866,7 @@ namespace engine
 						group_x = render_world->GetDrawCount();
 			
 						self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-						command_list.Dispatch(group_x, group_y, group_z);
+						command_list.dispatch(group_x, group_y, group_z);
 					};
 			
 				render_context->AddNode(render_context->CreateNode(create_info));
@@ -905,11 +905,11 @@ namespace engine
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 			
-						auto viewport_width = shadow_map->GetWidth();
-						auto viewport_height = shadow_map->GetHeight();
+						auto viewport_width = shadow_map->get_width();
+						auto viewport_height = shadow_map->get_height();
 			
-						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
-						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+						command_list.set_viewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+						command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 			
 						self.ReadResource(alive_commands_buffer, ~0u);
 						self.ReadResource(indirect_draw_commands, ~0u);
@@ -918,7 +918,7 @@ namespace engine
 						self.ResolveDependencies(command_list);
 			
 						auto& geometry_buffer = *geometry_buffers.back();
-						geometry_buffer.BindIndexBuffer(command_list);
+						geometry_buffer.bind_index_buffer(command_list);
 			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
@@ -930,8 +930,8 @@ namespace engine
 			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->get_address());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->get_address());
 			
 						auto& constants = self.GetConstantBlock();
 			
@@ -969,7 +969,7 @@ namespace engine
 								draw_command.argument_offset = camera_id * draw_command.command_stride;
 								draw_command.count_offset = camera_id * sizeof(uint32_t);
 			
-								command_list.DrawIndirect(draw_command);
+								command_list.draw_indirect(draw_command);
 							}
 			
 							shadow_index++;
@@ -1014,11 +1014,11 @@ namespace engine
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 			
-						auto viewport_width = shadow_map->GetWidth();
-						auto viewport_height = shadow_map->GetHeight();
+						auto viewport_width = shadow_map->get_width();
+						auto viewport_height = shadow_map->get_height();
 			
-						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
-						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+						command_list.set_viewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+						command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 			
 						self.ReadResource(alive_commands_buffer, ~0u);
 						self.ReadResource(indirect_draw_commands, ~0u);
@@ -1027,7 +1027,7 @@ namespace engine
 						self.ResolveDependencies(command_list);
 			
 						auto& geometry_buffer = *geometry_buffers.back();
-						geometry_buffer.BindIndexBuffer(command_list);
+						geometry_buffer.bind_index_buffer(command_list);
 			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
@@ -1039,8 +1039,8 @@ namespace engine
 			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->get_address());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->get_address());
 			
 						auto& constants = self.GetConstantBlock();
 			
@@ -1078,7 +1078,7 @@ namespace engine
 								draw_command.argument_offset = camera_id * draw_command.command_stride;
 								draw_command.count_offset = camera_id * sizeof(uint32_t);
 			
-								command_list.DrawIndirect(draw_command);
+								command_list.draw_indirect(draw_command);
 							}
 			
 							shadow_index++;
@@ -1123,11 +1123,11 @@ namespace engine
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 			
-						auto viewport_width = shadow_map->GetWidth();
-						auto viewport_height = shadow_map->GetHeight();
+						auto viewport_width = shadow_map->get_width();
+						auto viewport_height = shadow_map->get_height();
 			
-						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
-						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+						command_list.set_viewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+						command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 			
 						self.ReadResource(alive_commands_buffer, ~0u);
 						self.ReadResource(indirect_draw_commands, ~0u);
@@ -1136,7 +1136,7 @@ namespace engine
 						self.ResolveDependencies(command_list);
 			
 						auto& geometry_buffer = *geometry_buffers.back();
-						geometry_buffer.BindIndexBuffer(command_list);
+						geometry_buffer.bind_index_buffer(command_list);
 			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
@@ -1148,8 +1148,8 @@ namespace engine
 			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->get_address());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->get_address());
 			
 						auto& constants = self.GetConstantBlock();
 			
@@ -1185,7 +1185,7 @@ namespace engine
 							draw_command.argument_offset = camera_id * draw_command.command_stride;
 							draw_command.count_offset = camera_id * sizeof(uint32_t);
 			
-							command_list.DrawIndirect(draw_command);
+							command_list.draw_indirect(draw_command);
 			
 							shadow_index++;
 						}
@@ -1221,11 +1221,11 @@ namespace engine
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
 			
-						auto viewport_width = backbuffer->GetWidth();
-						auto viewport_height = backbuffer->GetHeight();
+						auto viewport_width = backbuffer->get_width();
+						auto viewport_height = backbuffer->get_height();
 			
-						command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
-						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+						command_list.set_viewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+						command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 			
 						self.ReadResource(alive_commands_buffer, ~0u);
 						self.ReadResource(indirect_draw_commands, ~0u);
@@ -1234,7 +1234,7 @@ namespace engine
 						self.ResolveDependencies(command_list);
 			
 						auto& geometry_buffer = *geometry_buffers.back();
-						geometry_buffer.BindIndexBuffer(command_list);
+						geometry_buffer.bind_index_buffer(command_list);
 			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
@@ -1246,8 +1246,8 @@ namespace engine
 			
 						// Bind buffers that uses in draw
 						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->get_address());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->get_address());
 			
 						auto camera_id = render_world->GetResourceId(main_camera_index);
 						auto draw_call_id = camera_id * render_world->GetMeshCount();
@@ -1271,7 +1271,7 @@ namespace engine
 						draw_command.count_offset = draw_call_id * sizeof(uint32_t);
 			
 						self.Begin(command_list);
-						command_list.DrawIndirect(draw_command);
+						command_list.draw_indirect(draw_command);
 						self.End(command_list);
 					};
 			
@@ -1327,7 +1327,7 @@ namespace engine
 						self.ResolveDependencies(command_list);
 			
 						auto& geometry_buffer = *geometry_buffers.back();
-						geometry_buffer.BindIndexBuffer(command_list);
+						geometry_buffer.bind_index_buffer(command_list);
 			
 						auto& buffers = self.GetUniformBlock(render_label::geometry_buffers);
 						buffers.Set(render_label::position, geometry_buffer.GetBufferAddress(VertexAttributeFlag::ePosition));
@@ -1341,8 +1341,8 @@ namespace engine
 						buffers.Set(render_label::indices, geometry_buffer.GetIndexBufferAddress());
 
 						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
-						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->GetAddress());
-						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->GetAddress());
+						draw_data_block.Set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->get_address());
+						draw_data_block.Set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->get_address());
 			
 						auto& constants = self.GetConstantBlock();
 						constants.Set(render_label::call_id, 0u);
@@ -1613,11 +1613,11 @@ namespace engine
 			
 										uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 			
-										group_x = target->GetWidth() >> mip;
-										group_y = target->GetHeight() >> mip;
+										group_x = target->get_width() >> mip;
+										group_y = target->get_height() >> mip;
 			
 										self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-										command_list.Dispatch(group_x, group_y, group_z);
+										command_list.dispatch(group_x, group_y, group_z);
 									}
 								};
 			
@@ -1648,11 +1648,11 @@ namespace engine
 			
 									uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 			
-									group_x = target->GetWidth() >> (mip - 1);
-									group_y = target->GetHeight() >> (mip - 1);
+									group_x = target->get_width() >> (mip - 1);
+									group_y = target->get_height() >> (mip - 1);
 			
 									self.DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
-									command_list.Dispatch(group_x, group_y, group_z);
+									command_list.dispatch(group_x, group_y, group_z);
 								}
 							};
 			
@@ -1755,12 +1755,12 @@ namespace engine
 								uniform.Set(render_label::min_log_lum, postprocess.tonemap.lumMin);
 								uniform.Set(render_label::log_lum_range, log_lum_range);
 								uniform.Set(render_label::time_coeff, time_coeff);
-								uniform.Set(render_label::num_pixels_x, static_cast<float>(texture->GetWidth()));
-								uniform.Set(render_label::num_pixels_y, static_cast<float>(texture->GetHeight()));
+								uniform.Set(render_label::num_pixels_x, static_cast<float>(texture->get_width()));
+								uniform.Set(render_label::num_pixels_y, static_cast<float>(texture->get_height()));
 			
 								self.BindResources(command_list);
 			
-								command_list.Dispatch(1u, 1u, 1u);
+								command_list.dispatch(1u, 1u, 1u);
 							};
 			
 						node->AddNode(std::move(render_context->CreateNode(create_info)));
@@ -1816,12 +1816,12 @@ namespace engine
 			
 						auto* backbuffer = render_context->GetTexture(backbuffer_resource);
 			
-						auto viewport_width = static_cast<float>(backbuffer->GetWidth());
-						auto viewport_height = static_cast<float>(backbuffer->GetHeight());
+						auto viewport_width = static_cast<float>(backbuffer->get_width());
+						auto viewport_height = static_cast<float>(backbuffer->get_height());
 			
 						// Flip viewport
-						command_list.SetViewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
-						command_list.SerScissor(0u, 0u, viewport_width, viewport_height);
+						command_list.set_viewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
+						command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 			
 						self.BindReadResource(render_label::sample_image0, final_target, ~0u);
 			
@@ -1829,7 +1829,7 @@ namespace engine
 						self.BindResources(command_list);
 						
 						self.Begin(command_list);
-						command_list.Draw(3u, 0u, 0u, 1u);
+						command_list.draw(3u, 0u, 0u, 1u);
 						self.End(command_list);
 					};
 			
@@ -1891,7 +1891,7 @@ namespace engine
 					create_info.usage = edge::gfx::BufferUsageFlag::eStorageBufferCPU;
 
 					debug_text_buffer = render_context->AddResource(create_info);
-					render_context->SetResourceName(debug_text_buffer, "debug_text_buffer");
+					render_context->set_resource_name(debug_text_buffer, "debug_text_buffer");
 				}
 
 				
@@ -1923,7 +1923,7 @@ namespace engine
 				debug_text_maker({ 100, 100 }, "Hello World!", text_data);
 
 				auto* text_buffer = render_context->GetBuffer(debug_text_buffer);
-				text_buffer->Update(text_data.data(), text_data.size() * sizeof(shlib::DebugTextData));
+				text_buffer->update(text_data.data(), text_data.size() * sizeof(shlib::DebugTextData));
 
 				create_info.draw_callback = [this,
 					&geometry_buffer,
@@ -1933,9 +1933,9 @@ namespace engine
 						EDGE_PROFILE_ZONE_SCOPED;
 
 						auto* backbuffer = render_context->GetTexture(backbuffer_resource);
-						glm::vec2 viewport_resolution{ backbuffer->GetWidth(), backbuffer->GetHeight() };
+						glm::vec2 viewport_resolution{ backbuffer->get_width(), backbuffer->get_height() };
 
-						command_list.SetViewport(0.f, 0.f, viewport_resolution.x, viewport_resolution.y, 0.f, 1.f);
+						command_list.set_viewport(0.f, 0.f, viewport_resolution.x, viewport_resolution.y, 0.f, 1.f);
 
 						// Bind vertex and index buffers
 						geometry_buffer.Bind(command_list); 
@@ -1943,13 +1943,13 @@ namespace engine
 						auto* text_buffer = render_context->GetBuffer(debug_text_buffer);
 
 						auto& constants = self.GetConstantBlock();
-						constants.Set(edge::murmur_hash("word_data"), text_buffer->GetAddress());
+						constants.Set(edge::murmur_hash("word_data"), text_buffer->get_address());
 						constants.Set(edge::murmur_hash("inv_viewport_resolution"), 1.f / viewport_resolution);
 						self.PushConstantRanges(command_list);
 						self.ResolveDependencies(command_list);
 
 						self.Begin(command_list);
-						command_list.DrawIndexed(6, 0, text_data.size(), 0, 0);
+						command_list.draw_indexed(6, 0, text_data.size(), 0, 0);
 						self.End(command_list);
 					};
 
@@ -2023,10 +2023,10 @@ namespace engine
 
 								auto* backbuffer = render_context->GetTexture(backbuffer_resource);
 
-								auto viewport_width = backbuffer->GetWidth();
-								auto viewport_height = backbuffer->GetHeight();
+								auto viewport_width = backbuffer->get_width();
+								auto viewport_height = backbuffer->get_height();
 
-								command_list.SetViewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+								command_list.set_viewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 
 								// Setup scale and translation:
 								// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
@@ -2118,7 +2118,7 @@ namespace engine
 												continue;
 
 											// Apply scissor/clipping rectangle
-											command_list.SerScissor((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
+											command_list.set_scissor((int32_t)(clip_min.x), (int32_t)(clip_min.y), (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
 
 											// Bind DescriptorSet with font or user texture
 											uint32_t resource_binding{ (uint32_t)pcmd->TextureId };
@@ -2139,7 +2139,7 @@ namespace engine
 												last_bound_resource = resource_binding;
 											}
 
-											command_list.DrawIndexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, 1u, pcmd->VtxOffset + global_vtx_offset, 0u);
+											command_list.draw_indexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, 1u, pcmd->VtxOffset + global_vtx_offset, 0u);
 										}
 									}
 									global_idx_offset += cmd_list->IdxBuffer.Size;

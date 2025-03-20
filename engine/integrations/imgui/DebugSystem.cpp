@@ -137,7 +137,7 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
 
 void CDebugDrawEngineSystem::Update(f32 dt)
 {
-	ImDbg::EndFrame();
+	ImDbg::end_frame();
 }
 
 void CDebugDrawEngineSystem::Render()

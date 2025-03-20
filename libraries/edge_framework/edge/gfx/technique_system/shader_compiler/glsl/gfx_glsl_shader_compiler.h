@@ -10,14 +10,13 @@ namespace edge
 	{
 		class shader_includer;
 
-		class GLSLShaderCompiler final : public IShaderCompiler
-		{
+		class GLSLShaderCompiler final : public IShaderCompiler {
 		public:
 			GLSLShaderCompiler(const ShaderCompilerCreateInfo& create_info);
 			~GLSLShaderCompiler() override;
 
-			auto CollectDependencyHash(const ShaderCompileInfo& compile_info) -> uint32_t override;
-			auto Compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool override;
+			auto collect_dependency_hash(const ShaderCompileInfo& compile_info) -> uint32_t override;
+			auto compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool override;
 		private:
 			fs::VirtualFilesystem* filesystem{ nullptr };
 

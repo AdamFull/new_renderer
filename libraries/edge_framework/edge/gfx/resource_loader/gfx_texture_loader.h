@@ -13,19 +13,18 @@ namespace edge
 	{
 		class StagingBufferAllocator;
 
-		class TextureLoader
-		{
+		class TextureLoader {
 		public:
 			virtual ~TextureLoader() = default;
 
-			auto GetTexture() -> ITexture*;
+			auto get_texture() -> ITexture*;
 
-			virtual auto Upload(ICommandList* cmd_list, StagingBufferAllocator& allocator) -> void = 0;
+			virtual auto upload(ICommandList* cmd_list, StagingBufferAllocator& allocator) -> void = 0;
 		protected:
 			TextureCreateInfo texture_ci{};
 			ITexture* texture{ nullptr };
 		};
 
-		auto MakeTextureLoader(std::string_view path, IContext* gfx_context, fs::VirtualFilesystem& fs) -> std::unique_ptr<TextureLoader>;
+		auto make_texture_loader(std::string_view path, IContext* gfx_context, fs::VirtualFilesystem& fs) -> std::unique_ptr<TextureLoader>;
 	}
 }

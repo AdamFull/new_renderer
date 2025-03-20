@@ -17,30 +17,27 @@ namespace edge
 			class Device;
 			class Allocation;
 
-			class Allocator final : public VulkanResource<vma::Allocator>
-			{
+			class Allocator final : public VulkanResource<vma::Allocator> {
 			public:
 				Allocator(Device& device);
 				~Allocator();
 
-				[[nodiscard]] vk::Buffer CreateBuffer(Allocation& allocation, vk::BufferCreateInfo const& create_info);
-				void DestroyBuffer(Allocation& allocation, vk::Buffer& handle);
-				[[nodiscard]] vk::Image CreateImage(Allocation& allocation, vk::ImageCreateInfo const& create_info);
-				void DestroyImage(Allocation& allocation, vk::Image& image);
+				[[nodiscard]] vk::Buffer create_buffer(Allocation& allocation, vk::BufferCreateInfo const& create_info);
+				void destroy_buffer(Allocation& allocation, vk::Buffer& handle);
+				[[nodiscard]] vk::Image create_image(Allocation& allocation, vk::ImageCreateInfo const& create_info);
+				void destroy_image(Allocation& allocation, vk::Image& image);
 
-				[[nodiscard]] auto GetDevice() noexcept -> Device&
-				{
+				[[nodiscard]] auto get_device() noexcept -> Device& {
 					return device;
 				}
 
 			protected:
-				void PostCreate(Allocation& allocation, vma::AllocationInfo const& allocation_info);
+				void post_create(Allocation& allocation, vma::AllocationInfo const& allocation_info);
 			private:
 				Device& device;
 			};
 
-			class Allocation
-			{
+			class Allocation {
 			public:
 				friend class Allocator;
 
@@ -52,30 +49,30 @@ namespace edge
 				Allocation& operator=(const Allocation&) = delete;
 				Allocation& operator=(Allocation&&) = default;
 
-				[[nodiscard]] auto GetData() const -> uint8_t const*;
-				[[nodiscard]] auto GetMemory() const ->vk::DeviceMemory;
-
-				auto GetDevice() const noexcept -> Device const&
-				{
-					return allocator.GetDevice();
+				[[nodiscard]] auto get_data() const -> uint8_t const* {
+					return mapped_data;
 				}
 
-				auto GetDevice() noexcept -> Device&
-				{
-					return allocator.GetDevice();
+				[[nodiscard]] auto get_memory() const ->vk::DeviceMemory;
+
+				auto get_device() const noexcept -> Device const& {
+					return allocator.get_device();
+				}
+
+				auto get_device() noexcept -> Device& {
+					return allocator.get_device();
 				}
 
 				/**
 				 * @brief Flushes memory if it is HOST_VISIBLE and not HOST_COHERENT
 				 */
-				void Flush(vk::DeviceSize offset = 0, vk::DeviceSize size = VK_WHOLE_SIZE);
+				void flush(vk::DeviceSize offset = 0, vk::DeviceSize size = VK_WHOLE_SIZE);
 
 				/**
 				 * @brief Returns true if the memory is mapped, false otherwise
 				 * @return mapping status
 				 */
-				auto IsMapped() const noexcept -> bool
-				{
+				auto is_mapped() const noexcept -> bool {
 					return mapped_data != nullptr;
 				}
 
@@ -83,34 +80,30 @@ namespace edge
 				 * @brief Maps vulkan memory if it isn't already mapped to an host visible address
 				 * @return Pointer to host visible memory
 				 */
-				[[modiscard]] auto MapMemory() -> uint8_t*;
+				[[modiscard]] auto map_memory() -> uint8_t*;
 
 				/**
 				 * @brief Unmaps vulkan memory from the host visible address
 				 */
-				void UnmapMemory();
+				void unmap_memory();
 
-				explicit operator bool() const noexcept
-				{
+				explicit operator bool() const noexcept {
 					return allocation;
 				}
 
-				bool operator!() const noexcept
-				{
+				bool operator!() const noexcept {
 					return !allocation;
 				}
 
-				auto GetUsage() const noexcept -> vma::MemoryUsage
-				{
+				auto get_usage() const noexcept -> vma::MemoryUsage {
 					return alloc_create_info.usage;
 				}
 
-				auto GetAllocator() noexcept -> Allocator&
-				{
+				auto get_allocator() noexcept -> Allocator& {
 					return allocator;
 				}
 			protected:
-				void Clear();
+				void clear();
 			protected:
 				Allocator& allocator;
 

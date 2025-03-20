@@ -11,7 +11,7 @@ namespace engine
 		public:
 			virtual ~SFXResource() = default;
 
-			virtual ResourceType GetResourceType() const = 0;
+			virtual ResourceType get_resource_type() const = 0;
 		};
 
 		class Buffer : public SFXResource
@@ -19,7 +19,7 @@ namespace engine
 		public:
 			~Buffer() = default;
 
-			ResourceType GetResourceType() const
+			ResourceType get_resource_type() const
 			{
 				return ResourceType::eBuffer;
 			}
@@ -32,7 +32,7 @@ namespace engine
 		public:
 			~Source() = default;
 
-			ResourceType GetResourceType() const
+			ResourceType get_resource_type() const
 			{
 				return ResourceType::eSource;
 			}
@@ -43,7 +43,7 @@ namespace engine
 		public:
 			~Listener() = default;
 
-			ResourceType GetResourceType() const
+			ResourceType get_resource_type() const
 			{
 				return ResourceType::eListener;
 			}

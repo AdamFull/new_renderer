@@ -11,8 +11,7 @@ namespace edge
 		{
 			class Device;
 
-			struct PipelineLayoutCreateInfo
-			{
+			struct PipelineLayoutCreateInfo {
 			public:
 				vk::PipelineLayoutCreateInfo create_info{};
 
@@ -21,12 +20,11 @@ namespace edge
 
 				PipelineLayoutCreateInfo();
 
-				void AddDescriptorSetLayout(vk::DescriptorSetLayout layout);
-				vk::PushConstantRange& AddConstantRange();
+				void add_descriptor_set_layout(vk::DescriptorSetLayout layout);
+				vk::PushConstantRange& add_constant_range();
 			};
 
-			class PipelineLayout final : public VulkanResource<vk::PipelineLayout>
-			{
+			class PipelineLayout final : public VulkanResource<vk::PipelineLayout> {
 			public:
 				PipelineLayout(Device& device, const PipelineLayoutCreateInfo& create_info);
 				~PipelineLayout();
@@ -41,8 +39,7 @@ namespace edge
 			};
 
 
-			class VulkanRootSignature final : public IRootSignature
-			{
+			class VulkanRootSignature final : public IRootSignature {
 			public:
 				friend class VulkanDescriptorAllocator;
 				friend class VulkanCommandList;
@@ -56,16 +53,14 @@ namespace edge
 				VulkanRootSignature& operator=(const VulkanRootSignature&) = delete;
 				VulkanRootSignature& operator=(VulkanRootSignature&&) = delete;
 
-				void SetResourceName(std::string_view name) const noexcept override;
+				void set_resource_name(std::string_view name) const noexcept override;
 
-				[[nodiscard]] auto GetPipelineLayout() noexcept -> PipelineLayout&
-				{
+				[[nodiscard]] auto get_pipeline_layout() noexcept -> PipelineLayout& {
 					return *pipeline_layout;
 				}
 
-				[[nodiscard]] auto GetDescriptorSetLayouts() const noexcept ->
-					std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count> const&
-				{
+				[[nodiscard]] auto get_descriptor_set_layouts() const noexcept ->
+					std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count> const& {
 					return descriptor_set_layouts;
 				}
 			private:

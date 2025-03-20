@@ -6,8 +6,7 @@ namespace edge
 {
     namespace gfx
     {
-        enum class Format
-        {
+        enum class Format {
             eUndefined,
             eR4G4UnormPack8,
             eR4G4B4A4UnormPack16,
@@ -249,37 +248,32 @@ namespace edge
             eAstc12x12SfloatBlock
         };
 
-        uint32_t FormatToVk(Format format);
-        Format FormatFromVk(uint32_t format);
+        uint32_t format_to_vk(Format format);
+        Format format_from_vk(uint32_t format);
 
-        Format FormatFromGLInternal(uint32_t format);
-        Format FormatFromGL(uint32_t format);
+        Format format_from_gl_internal(uint32_t format);
+        Format format_from_gl(uint32_t format);
 
-        inline bool IsDepthOnlyFormat(Format format)
-        {
+        inline bool is_depth_only_format(Format format) {
             return format == Format::eD16Unorm ||
                 format == Format::eD32Sfloat;
         }
 
-        inline bool IsDepthStencilFormat(Format format)
-        {
+        inline bool is_depth_stencil_format(Format format) {
             return format == Format::eD16UnormS8Uint ||
                 format == Format::eD24UnormS8Uint ||
                 format == Format::eD32SfloatS8Uint;
         }
 
-        inline bool IsDepthFormat(Format format)
-        {
-            return IsDepthOnlyFormat(format) || IsDepthStencilFormat(format);
+        inline bool is_depth_format(Format format) {
+            return is_depth_only_format(format) || is_depth_stencil_format(format);
         }
 
-        inline bool IsStencilFormat(Format format)
-        {
-            return !IsDepthOnlyFormat(format) || !IsDepthStencilFormat(format);
+        inline bool IsStencilFormat(Format format) {
+            return !is_depth_only_format(format) || !is_depth_stencil_format(format);
         }
 
-        inline uint64_t GetFormatBlockAlign(Format format)
-        {
+        inline uint64_t get_format_block_align(Format format) {
             switch (format)
             {
                 // 8-bit packed formats

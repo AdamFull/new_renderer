@@ -158,7 +158,7 @@ namespace engine
 			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) = 0;
 			virtual uint32_t AddResource(const edge::gfx::BufferCreateInfo& create_info) = 0;
 
-			virtual void SetResourceName(uint32_t resource_index, std::string_view name) = 0;
+			virtual void set_resource_name(uint32_t resource_index, std::string_view name) = 0;
 
 			virtual RenderResource& GetResource(uint32_t resource_index) = 0;
 			virtual RenderResource const& GetResource(uint32_t resource_index) const = 0;

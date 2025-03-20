@@ -19,7 +19,7 @@ namespace engine
 
 				void Destroy(SFXResource* handle) override;
 
-				Buffer* CreateBuffer(const BufferCreateInfo& create_info) override;
+				Buffer* create_buffer(const BufferCreateInfo& create_info) override;
 
 				Source* CreateSource() override;
 

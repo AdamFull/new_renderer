@@ -2404,13 +2404,13 @@ ImFontAtlas::ImFontAtlas()
 
 ImFontAtlas::~ImFontAtlas()
 {
-    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and end_frame/Render()!");
     Clear();
 }
 
 void    ImFontAtlas::ClearInputData()
 {
-    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and end_frame/Render()!");
     for (ImFontConfig& font_cfg : ConfigData)
         if (font_cfg.FontData && font_cfg.FontDataOwnedByAtlas)
         {
@@ -2433,7 +2433,7 @@ void    ImFontAtlas::ClearInputData()
 
 void    ImFontAtlas::ClearTexData()
 {
-    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and end_frame/Render()!");
     if (TexPixelsAlpha8)
         IM_FREE(TexPixelsAlpha8);
     if (TexPixelsRGBA32)
@@ -2446,7 +2446,7 @@ void    ImFontAtlas::ClearTexData()
 
 void    ImFontAtlas::ClearFonts()
 {
-    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and end_frame/Render()!");
     Fonts.clear_delete();
     TexReady = false;
 }
@@ -2496,7 +2496,7 @@ void    ImFontAtlas::GetTexDataAsRGBA32(unsigned char** out_pixels, int* out_wid
 
 ImFont* ImFontAtlas::AddFont(const ImFontConfig* font_cfg)
 {
-    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and end_frame/Render()!");
     IM_ASSERT(font_cfg->FontData != NULL && font_cfg->FontDataSize > 0);
     IM_ASSERT(font_cfg->SizePixels > 0.0f);
 
@@ -2568,7 +2568,7 @@ ImFont* ImFontAtlas::AddFontDefault(const ImFontConfig* font_cfg_template)
 
 ImFont* ImFontAtlas::AddFontFromFileTTF(const char* filename, float size_pixels, const ImFontConfig* font_cfg_template, const ImWchar* glyph_ranges)
 {
-    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and end_frame/Render()!");
     size_t data_size = 0;
     void* data = ImFileLoadToMemory(filename, "rb", &data_size, 0);
     if (!data)
@@ -2590,7 +2590,7 @@ ImFont* ImFontAtlas::AddFontFromFileTTF(const char* filename, float size_pixels,
 // NB: Transfer ownership of 'ttf_data' to ImFontAtlas, unless font_cfg_template->FontDataOwnedByAtlas == false. Owned TTF buffer will be deleted after Build().
 ImFont* ImFontAtlas::AddFontFromMemoryTTF(void* font_data, int font_data_size, float size_pixels, const ImFontConfig* font_cfg_template, const ImWchar* glyph_ranges)
 {
-    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and end_frame/Render()!");
     ImFontConfig font_cfg = font_cfg_template ? *font_cfg_template : ImFontConfig();
     IM_ASSERT(font_cfg.FontData == NULL);
     IM_ASSERT(font_data_size > 100 && "Incorrect value for font_data_size!"); // Heuristic to prevent accidentally passing a wrong value to font_data_size.
@@ -2685,7 +2685,7 @@ bool ImFontAtlas::GetMouseCursorTexData(ImGuiMouseCursor cursor_type, ImVec2* ou
 
 bool    ImFontAtlas::Build()
 {
-    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and end_frame/Render()!");
 
     // Default font is none are specified
     if (ConfigData.Size == 0)

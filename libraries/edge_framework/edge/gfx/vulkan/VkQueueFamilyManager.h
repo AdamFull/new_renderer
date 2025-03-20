@@ -10,8 +10,7 @@ namespace edge
 	{
 		namespace vulkan
 		{
-			class QueueFamilyManager
-			{
+			class QueueFamilyManager {
 			public:
 				QueueFamilyManager();
 				QueueFamilyManager(Device& device, uint32_t family_index, vk::QueueFamilyProperties properties, vk::Bool32 can_present);
@@ -22,25 +21,21 @@ namespace edge
 				QueueFamilyManager& operator=(const QueueFamilyManager&) = delete;
 				QueueFamilyManager& operator=(QueueFamilyManager&&) = delete;
 
-				auto GetDevice() const noexcept -> Device const&
-				{
+				auto get_device() const noexcept -> Device const& {
 					return *device;
 				}
 
-				auto GetDevice() noexcept -> Device&
-				{
+				auto get_device() noexcept -> Device& {
 					return *device;
 				}
 
-				[[nodiscard]] auto LookUpQueue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) noexcept -> VulkanQueue*;
+				[[nodiscard]] auto look_up_queue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) noexcept -> VulkanQueue*;
 
-				auto GetFamilyIndex() const noexcept -> uint32_t
-				{
+				auto get_family_index() const noexcept -> uint32_t {
 					return family_index;
 				}
 
-				auto GetFlags() const noexcept -> QueueTypeFlags
-				{
+				auto get_flags() const noexcept -> QueueTypeFlags {
 					return flags;
 				}
 			private:

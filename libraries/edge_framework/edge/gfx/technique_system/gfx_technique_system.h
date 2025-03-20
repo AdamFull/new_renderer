@@ -8,29 +8,24 @@ namespace edge
 {
 	namespace gfx
 	{
-		enum class TechniqueType
-		{
+		enum class TechniqueType {
 			eNone,
 			eCompute,
 			eGraphics
 		};
 
-		class TechniqueDatabase
-		{
+		class TechniqueDatabase {
 		public:
-			struct ShaderDesc
-			{
+			struct ShaderDesc {
 				std::string_view path;
 				std::vector<std::string_view> defines;
 				std::vector<std::string_view> permutations;
 			};
 
-			struct TechniqueDesc
-			{
+			struct TechniqueDesc {
 				static constexpr size_t k_max_render_target_count = 8;
 
-				struct ShaderStage
-				{
+				struct ShaderStage {
 					std::string_view path;
 					std::vector<std::string_view> definitions;
 				};
@@ -58,16 +53,14 @@ namespace edge
 				Format stencil_format{};
 			};
 
-			struct Technique
-			{
+			struct Technique {
 				std::string_view name;
 				IShader* shader{ nullptr };
 				IRootSignature* root_signature{ nullptr };
 				IPipeline* pipeline{ nullptr };
 			};
 
-			struct Shader
-			{
+			struct Shader {
 				std::vector<uint8_t> code;
 				uint32_t shader_hash{ 0u };
 				uint32_t dependency_hash{ 0u };
@@ -76,13 +69,13 @@ namespace edge
 			TechniqueDatabase(IContext* gfx_context, fs::VirtualFilesystem* filesystem);
 			~TechniqueDatabase();
 
-			bool Load(std::string_view path);
-			bool Save(std::string_view path);
+			bool load(std::string_view path);
+			bool save(std::string_view path);
 
-			void AddTechnique(std::string_view name, const TechniqueDesc& technique_desc);
-			auto GetTechnique(std::string_view name) -> Technique&;
+			void add_technique(std::string_view name, const TechniqueDesc& technique_desc);
+			auto get_technique(std::string_view name) -> Technique&;
 		private:
-			std::span<const uint8_t> GetOrCompileShader(const TechniqueDesc::ShaderStage& stage);
+			std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage);
 
 			IContext* gfx_context{ nullptr };
 			fs::VirtualFilesystem* filesystem{ nullptr };

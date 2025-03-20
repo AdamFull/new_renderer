@@ -127,8 +127,8 @@ namespace VMA_HPP_NAMESPACE {
     };
   }
 
-  template<class Dispatch = VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>
-  VULKAN_HPP_CONSTEXPR VulkanFunctions functionsFromDispatcher(Dispatch const & dispatch
+  template<class dispatch = VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>
+  VULKAN_HPP_CONSTEXPR VulkanFunctions functionsFromDispatcher(dispatch const & dispatch
     VULKAN_HPP_DEFAULT_DISPATCHER_ASSIGNMENT) VULKAN_HPP_NOEXCEPT {
     return functionsFromDispatcher(&dispatch, &dispatch);
   }

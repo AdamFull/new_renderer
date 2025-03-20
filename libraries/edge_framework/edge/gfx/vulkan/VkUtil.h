@@ -9,8 +9,7 @@ namespace edge
 	{
 		namespace vulkan
 		{
-			inline vk::ShaderStageFlags ShaderStageFlagsToVk(ShaderStageFlags flags)
-			{
+			inline vk::ShaderStageFlags shader_stage_flags_to_vk(ShaderStageFlags flags) {
 				vk::ShaderStageFlags stage_flags{};
 
 				if (flags & ShaderStageFlag::eVertex)
@@ -29,8 +28,7 @@ namespace edge
 				return stage_flags;
 			}
 
-			inline vk::ShaderStageFlagBits ShaderStageFlagToVk(ShaderStageFlag flag)
-			{
+			inline vk::ShaderStageFlagBits shader_stage_flag_to_vk(ShaderStageFlag flag) {
 				if (flag == ShaderStageFlag::eVertex)
 					return vk::ShaderStageFlagBits::eVertex;
 				if (flag == ShaderStageFlag::eTessellationControl)
@@ -47,8 +45,7 @@ namespace edge
 				return vk::ShaderStageFlagBits::eAll;
 			}
 
-			inline vk::PipelineStageFlags2KHR StageFlagsToVk(StageFlags flags)
-			{
+			inline vk::PipelineStageFlags2KHR stage_flags_to_vk(StageFlags flags) {
 				vk::PipelineStageFlags2KHR vk_flags{};
 
 				if (flags & StageFlag::eNone)
@@ -105,63 +102,52 @@ namespace edge
 				return vk_flags;
 			}
 
-			inline vk::ImageLayout ResourceStateToVkImageLayout(ResourceStateFlags flags)
-			{
-				if (flags & (ResourceStateFlag::eCompute | ResourceStateFlag::eGraphics))
-				{
+			inline vk::ImageLayout resource_state_to_vk_image_layout(ResourceStateFlags flags) {
+				if (flags & (ResourceStateFlag::eCompute | ResourceStateFlag::eGraphics)) {
 					if(flags & ResourceStateFlag::eGeneral)
 						return vk::ImageLayout::eGeneral;
 					if(flags & ResourceStateFlag::eSample)
 						return vk::ImageLayout::eShaderReadOnlyOptimal;
 				}
-				else if (flags & ResourceStateFlag::eColorAttachment)
-				{
+				else if (flags & ResourceStateFlag::eColorAttachment) {
 					return vk::ImageLayout::eColorAttachmentOptimal;
 				}
-				else if (eq_(flags, ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment))
-				{
+				else if (eq_(flags, ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment)) {
 					if (flags & ResourceStateFlag::eWrite)
 						return vk::ImageLayout::eDepthStencilAttachmentOptimal;
 					else if (flags & ResourceStateFlag::eRead)
 						return vk::ImageLayout::eDepthStencilReadOnlyOptimal;
 				}
-				else if (flags & ResourceStateFlag::eDepthAttachment)
-				{
+				else if (flags & ResourceStateFlag::eDepthAttachment) {
 					if (flags & ResourceStateFlag::eWrite)
 						return vk::ImageLayout::eDepthAttachmentOptimal;
 					else if (flags & ResourceStateFlag::eRead)
 						return vk::ImageLayout::eDepthReadOnlyOptimal;
 				}
-				else if (flags & ResourceStateFlag::eStencilAttachment)
-				{
+				else if (flags & ResourceStateFlag::eStencilAttachment) {
 					if (flags & ResourceStateFlag::eWrite)
 						return vk::ImageLayout::eStencilAttachmentOptimal;
 					else if (flags & ResourceStateFlag::eRead)
 						return vk::ImageLayout::eStencilReadOnlyOptimal;
 				}
-				else if (flags & ResourceStateFlag::eCopy)
-				{
+				else if (flags & ResourceStateFlag::eCopy) {
 					if (flags & ResourceStateFlag::eRead)
 						return vk::ImageLayout::eTransferSrcOptimal;
 					else if (flags & ResourceStateFlag::eWrite)
 						return vk::ImageLayout::eTransferDstOptimal;
 				}
-				else if (flags & ResourceStateFlag::ePresent)
-				{
+				else if (flags & ResourceStateFlag::ePresent) {
 					return vk::ImageLayout::ePresentSrcKHR;
 				}
 
 				return vk::ImageLayout::eUndefined;
 			}
 
-			inline vk::AccessFlags2KHR ResourceStateToVkAccessFlags(ResourceStateFlags flags)
-			{
+			inline vk::AccessFlags2KHR resource_state_to_vk_access_flags(ResourceStateFlags flags) {
 				vk::AccessFlags2KHR access{};
 
-				if (flags & (ResourceStateFlag::eCompute | ResourceStateFlag::eGraphics))
-				{
-					if (flags & ResourceStateFlag::eRead)
-					{
+				if (flags & (ResourceStateFlag::eCompute | ResourceStateFlag::eGraphics)) {
+					if (flags & ResourceStateFlag::eRead) {
 						access |= vk::AccessFlagBits2KHR::eShaderRead;
 
 						if (flags & ResourceStateFlag::eSample)
@@ -170,8 +156,7 @@ namespace edge
 							access |= vk::AccessFlagBits2KHR::eShaderStorageRead;
 					}
 
-					if (flags & ResourceStateFlag::eWrite)
-					{
+					if (flags & ResourceStateFlag::eWrite) {
 						access |= vk::AccessFlagBits2KHR::eShaderWrite;
 
 						if (flags & ResourceStateFlag::eStorage)
@@ -179,44 +164,38 @@ namespace edge
 					}
 				}
 
-				if (flags & ResourceStateFlag::eColorAttachment)
-				{
+				if (flags & ResourceStateFlag::eColorAttachment) {
 					if (flags & ResourceStateFlag::eRead)
 						access |= vk::AccessFlagBits2KHR::eColorAttachmentRead;
 					if (flags & ResourceStateFlag::eWrite)
 						access |= vk::AccessFlagBits2KHR::eColorAttachmentWrite;
 				}
 
-				if (flags & (ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment))
-				{
+				if (flags & (ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment)) {
 					if (flags & ResourceStateFlag::eRead)
 						access |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentRead;
 					if (flags & ResourceStateFlag::eWrite)
 						access |= vk::AccessFlagBits2KHR::eDepthStencilAttachmentWrite;
 				}
 
-				if (flags & ResourceStateFlag::eCopy)
-				{
+				if (flags & ResourceStateFlag::eCopy) {
 					if (flags & ResourceStateFlag::eRead)
 						access |= vk::AccessFlagBits2KHR::eTransferRead;
 					if (flags & ResourceStateFlag::eWrite)
 						access |= vk::AccessFlagBits2KHR::eTransferWrite;
 				}
 
-				if ((flags & ResourceStateFlag::eIndirect) && !(flags & ResourceStateFlag::eCompute))
-				{
+				if ((flags & ResourceStateFlag::eIndirect) && !(flags & ResourceStateFlag::eCompute)) {
 					if (flags & ResourceStateFlag::eRead)
 						access |= vk::AccessFlagBits2KHR::eIndirectCommandRead;
 				}
 
-				if (flags & ResourceStateFlag::eVertex)
-				{
+				if (flags & ResourceStateFlag::eVertex) {
 					if (flags & ResourceStateFlag::eRead)
 						access |= vk::AccessFlagBits2KHR::eVertexAttributeRead;
 				}
 
-				if (flags & ResourceStateFlag::eIndex)
-				{
+				if (flags & ResourceStateFlag::eIndex) {
 					if (flags & ResourceStateFlag::eRead)
 						access |= vk::AccessFlagBits2KHR::eIndexRead;
 				}
@@ -224,20 +203,17 @@ namespace edge
 				return access;
 			}
 
-			inline vk::PipelineStageFlags2KHR ResourceStateToVkStageFlags(ResourceStateFlags flags)
-			{
+			inline vk::PipelineStageFlags2KHR resource_state_to_vk_stage_flags(ResourceStateFlags flags) {
 				vk::PipelineStageFlags2KHR stages{};
 
 				if (flags & ResourceStateFlag::eCompute)
 					stages |= vk::PipelineStageFlagBits2KHR::eComputeShader;
 				if (flags & ResourceStateFlag::eGraphics)
 					stages |= vk::PipelineStageFlagBits2KHR::eAllGraphics;
-				if (flags & ResourceStateFlag::eColorAttachment)
-				{
+				if (flags & ResourceStateFlag::eColorAttachment) {
 					stages |= vk::PipelineStageFlagBits2KHR::eColorAttachmentOutput;
 				}
-				if (flags & (ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment))
-				{
+				if (flags & (ResourceStateFlag::eDepthAttachment | ResourceStateFlag::eStencilAttachment)) {
 					if (!eq_(flags, ResourceStateFlag::eSample))
 						stages |= vk::PipelineStageFlagBits2KHR::eEarlyFragmentTests | vk::PipelineStageFlagBits2KHR::eLateFragmentTests;
 				}
@@ -256,8 +232,7 @@ namespace edge
 				return stages;
 			}
 
-			inline vk::DescriptorType DescriptorTypeToVk(DescriptorType type)
-			{
+			inline vk::DescriptorType descriptor_type_to_vk(DescriptorType type) {
 				if (type == DescriptorType::eSampler)
 					return vk::DescriptorType::eSampler;
 				else if (type == DescriptorType::eCombinedImageSampler)
@@ -285,8 +260,7 @@ namespace edge
 				return vk::DescriptorType::eSampler;
 			}
 
-			inline vk::Filter FilterToVk(Filter filter)
-			{
+			inline vk::Filter filter_to_vk(Filter filter) {
 				if (filter == Filter::eNearest)
 					return vk::Filter::eNearest;
 				else if (filter == Filter::eLinear)
@@ -296,8 +270,7 @@ namespace edge
 				return vk::Filter::eNearest;
 			}
 
-			inline vk::SamplerMipmapMode MipmapModeToVk(Filter mode)
-			{
+			inline vk::SamplerMipmapMode mipmap_mode_to_vk(Filter mode) {
 				if (mode == Filter::eNearest)
 					return vk::SamplerMipmapMode::eNearest;
 				else if (mode == Filter::eLinear)
@@ -307,8 +280,7 @@ namespace edge
 				return vk::SamplerMipmapMode::eNearest;
 			}
 
-			inline vk::SamplerAddressMode AddressModeToVk(SamplerAddressMode mode)
-			{
+			inline vk::SamplerAddressMode address_mode_to_vk(SamplerAddressMode mode) {
 				if (mode == SamplerAddressMode::eMirror)
 					return vk::SamplerAddressMode::eMirroredRepeat;
 				else if (mode == SamplerAddressMode::eRepeat)
@@ -322,8 +294,7 @@ namespace edge
 				return vk::SamplerAddressMode::eRepeat;
 			}
 
-			inline vk::CompareOp CompareOpToVk(CompareOp op)
-			{
+			inline vk::CompareOp compare_op_to_vk(CompareOp op) {
 				if (op == CompareOp::eNever)
 					return vk::CompareOp::eNever;
 				else if (op == CompareOp::eLess)
@@ -345,8 +316,7 @@ namespace edge
 				return vk::CompareOp::eNever;
 			}
 
-			inline vk::QueryType QueryTypeToVk(QueryType type)
-			{
+			inline vk::QueryType query_type_to_vk(QueryType type) {
 				if (type == QueryType::eTimestamp)
 					return vk::QueryType::eTimestamp;
 				else if (type == QueryType::eOcclusion)
@@ -358,8 +328,7 @@ namespace edge
 				return vk::QueryType::eOcclusion;
 			}
 
-			inline vk::PipelineBindPoint PipelineTypeToVk(PipelineType type)
-			{
+			inline vk::PipelineBindPoint pipeline_type_to_vk(PipelineType type) {
 				if (type == PipelineType::eCompute)
 					return vk::PipelineBindPoint::eCompute;
 				else if (type == PipelineType::eGraphics)
@@ -369,8 +338,7 @@ namespace edge
 				return vk::PipelineBindPoint::eGraphics;
 			}
 
-			inline vk::PrimitiveTopology PrimitiveTopologyToVk(PrimitiveTopology topology)
-			{
+			inline vk::PrimitiveTopology primitive_topology_to_vk(PrimitiveTopology topology) {
 				if (topology == PrimitiveTopology::ePointList)
 					return vk::PrimitiveTopology::ePointList;
 				else if (topology == PrimitiveTopology::eLineList)
@@ -388,8 +356,7 @@ namespace edge
 				return vk::PrimitiveTopology::eTriangleList;
 			}
 
-			inline vk::SampleCountFlagBits SampleCountToVk(SampleCount sample_count)
-			{
+			inline vk::SampleCountFlagBits sample_count_to_vk(SampleCount sample_count) {
 				if (sample_count == SampleCount::e1)
 					return vk::SampleCountFlagBits::e1;
 				else if (sample_count == SampleCount::e2)
@@ -404,8 +371,7 @@ namespace edge
 				return vk::SampleCountFlagBits::e1;
 			}
 
-			inline vk::PolygonMode FillModeToVk(FillMode mode)
-			{
+			inline vk::PolygonMode fill_mode_to_vk(FillMode mode) {
 				if (mode == FillMode::eSolid)
 					return vk::PolygonMode::eFill;
 				else if (mode == FillMode::eWireframe)
@@ -415,8 +381,7 @@ namespace edge
 				return vk::PolygonMode::eFill;
 			}
 
-			inline vk::CullModeFlags CullModeToVk(CullModeFlags flags)
-			{
+			inline vk::CullModeFlags cull_mode_to_vk(CullModeFlags flags) {
 				vk::CullModeFlags cull_mode{};
 
 				if (flags & CullModeFlag::eFront)
@@ -427,8 +392,7 @@ namespace edge
 				return cull_mode;
 			}
 
-			inline vk::FrontFace FrontFaceToVk(FrontFace ff)
-			{
+			inline vk::FrontFace front_face_to_vk(FrontFace ff) {
 				if (ff == FrontFace::eCCW)
 					return vk::FrontFace::eCounterClockwise;
 				else if (ff == FrontFace::eCW)
@@ -438,8 +402,7 @@ namespace edge
 				return vk::FrontFace::eCounterClockwise;
 			}
 
-			inline vk::StencilOp StencilOpToVk(StencilOp op)
-			{
+			inline vk::StencilOp stencil_op_to_vk(StencilOp op) {
 				if (op == StencilOp::eKeep)
 					return vk::StencilOp::eKeep;
 				else if (op == StencilOp::eZero)
@@ -461,8 +424,7 @@ namespace edge
 				return vk::StencilOp::eKeep;
 			}
 
-			inline vk::BlendFactor BlendFactorToVk(BlendFactor blend_factor)
-			{
+			inline vk::BlendFactor blend_factor_to_vk(BlendFactor blend_factor) {
 				if (blend_factor == BlendFactor::eZero)
 					return vk::BlendFactor::eZero;
 				else if (blend_factor == BlendFactor::eOne)
@@ -493,8 +455,7 @@ namespace edge
 				return vk::BlendFactor::eZero;
 			}
 
-			inline vk::BlendOp BlendOpToVk(BlendOp blend_op)
-			{
+			inline vk::BlendOp blend_op_to_vk(BlendOp blend_op) {
 				if (blend_op == BlendOp::eAdd)
 					return vk::BlendOp::eAdd;
 				else if (blend_op == BlendOp::eSubtract)
@@ -509,8 +470,7 @@ namespace edge
 				return vk::BlendOp::eAdd;
 			}
 
-			inline vk::ColorComponentFlags ColorMaskToVk(ColorMaskFlags flags)
-			{
+			inline vk::ColorComponentFlags color_mask_to_vk(ColorMaskFlags flags) {
 				vk::ColorComponentFlags vk_flags{};
 
 				if (flags & ColorMaskFlag::eR)
@@ -525,8 +485,7 @@ namespace edge
 				return vk_flags;
 			}
 
-			inline vk::AttachmentLoadOp LoadOpToVk(LoadOp op)
-			{
+			inline vk::AttachmentLoadOp load_op_to_vk(LoadOp op) {
 				if (op == LoadOp::eLoad)
 					return vk::AttachmentLoadOp::eLoad;
 				else if (op == LoadOp::eClear)
@@ -537,8 +496,7 @@ namespace edge
 				return vk::AttachmentLoadOp::eDontCare;
 			}
 
-			inline vk::AttachmentStoreOp StoreOpToVk(StoreOp op)
-			{
+			inline vk::AttachmentStoreOp store_op_to_vk(StoreOp op) {
 				if (op == StoreOp::eStore)
 					return vk::AttachmentStoreOp::eStore;
 				else if (op == StoreOp::eDontCare)

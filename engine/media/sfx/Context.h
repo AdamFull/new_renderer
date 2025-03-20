@@ -13,13 +13,13 @@ namespace engine
 
 			virtual void Destroy(SFXResource* handle) = 0;
 
-			virtual [[nodiscard]] Buffer* CreateBuffer(const BufferCreateInfo& create_info) = 0;
+			virtual [[nodiscard]] Buffer* create_buffer(const BufferCreateInfo& create_info) = 0;
 
 			virtual [[nodiscard]] Source* CreateSource() = 0;
 
 			virtual [[nodiscard]] Listener* CreateListener() = 0;
 		};
 
-		std::unique_ptr<IContext> CreateContext(const ContextCreateInfo& create_info);
+		std::unique_ptr<IContext> create_context(const ContextCreateInfo& create_info);
 	}
 }

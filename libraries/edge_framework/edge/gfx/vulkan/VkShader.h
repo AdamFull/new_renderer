@@ -11,8 +11,7 @@ namespace edge
 		{
 			class Device;
 
-			class ShaderModule final : public VulkanResource<vk::ShaderModule>
-			{
+			class ShaderModule final : public VulkanResource<vk::ShaderModule> {
 			public:
 				ShaderModule(Device& devices, const ShaderStageInfo& create_info);
 				~ShaderModule();
@@ -22,7 +21,7 @@ namespace edge
 				ShaderModule& operator=(const ShaderModule&) = delete;
 				ShaderModule& operator=(ShaderModule&&) = delete;
 
-				const vk::PipelineShaderStageCreateInfo& GetStageCreateInfo() const;
+				const vk::PipelineShaderStageCreateInfo& get_stage_create_info() const;
 			private:
 				Device& device;
 
@@ -30,8 +29,7 @@ namespace edge
 				vk::PipelineShaderStageCreateInfo stage_create_info{};
 			};
 
-			class VulkanShader final : public IShader
-			{
+			class VulkanShader final : public IShader {
 			public:
 				VulkanShader(Device& device, std::span<const ShaderStageInfo> shader_stages);
 				VulkanShader(VulkanShader&& other);
@@ -41,14 +39,13 @@ namespace edge
 				VulkanShader& operator=(const VulkanShader&) = delete;
 				VulkanShader& operator=(VulkanShader&&) = delete;
 
-				void SetResourceName(std::string_view name) const noexcept override;
+				void set_resource_name(std::string_view name) const noexcept override;
 
-				auto GetModules() const noexcept -> StaticArray<std::unique_ptr<ShaderModule>, 6ull> const&
-				{
+				auto get_modules() const noexcept -> StaticArray<std::unique_ptr<ShaderModule>, 6ull> const& {
 					return shader_modules;
 				}
 			private:
-				void AddReflectionStage(const ShaderStageInfo& create_info);
+				void add_reflection_stage(const ShaderStageInfo& create_info);
 			private:
 				Device& device;
 				StaticArray<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};

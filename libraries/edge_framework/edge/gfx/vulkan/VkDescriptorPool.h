@@ -8,8 +8,7 @@ namespace edge
 	{
 		namespace vulkan
 		{
-			enum class CanAllocateResult
-			{
+			enum class CanAllocateResult {
 				Success,
 				MaxSetsLimit,
 				MaxDescriptorLimit,
@@ -17,8 +16,7 @@ namespace edge
 				Other
 			};
 
-			class DescriptorPool final : public VulkanResource<vk::DescriptorPool>
-			{
+			class DescriptorPool final : public VulkanResource<vk::DescriptorPool> {
 			public:
 				DescriptorPool(Device& device, DescriptorSetLayout& layout, DescriptorPool* previous_pool = nullptr);
 				DescriptorPool(const DescriptorPool&) = delete;
@@ -28,16 +26,15 @@ namespace edge
 				DescriptorPool& operator=(const DescriptorPool&) = delete;
 				DescriptorPool& operator=(DescriptorPool&&) = delete;
 
-				void Reset();
-				auto Allocate(DescriptorSetLayout& layout, std::string_view debug_name = "") -> DescriptorSet&;
-				auto Free(DescriptorSet& descriptor_set) -> vk::Result;
+				void reset();
+				auto allocate(DescriptorSetLayout& layout, std::string_view debug_name = "") -> DescriptorSet&;
+				auto free(DescriptorSet& descriptor_set) -> vk::Result;
 
-				auto IsExpired() const noexcept -> bool
-				{
+				auto is_expired() const noexcept -> bool {
 					return countdown_count < 0;
 				}
 
-				auto CanAllocate(DescriptorSetLayout& layout) noexcept -> CanAllocateResult;
+				auto can_allocate(DescriptorSetLayout& layout) noexcept -> CanAllocateResult;
 			private:
 				Device& device;
 

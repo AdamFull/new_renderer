@@ -18,8 +18,7 @@ namespace edge
 		using ResourceUploadResult = std::pair<IGFXResource*, ResourceStateFlags>;
 		using ResourceUploadFnSign = ResourceUploadResult(ICommandList*, StagingBufferAllocator&);
 
-		struct WorkerContext
-		{
+		struct WorkerContext {
 		public:
 			WorkerContext(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size);
 			~WorkerContext();
@@ -29,8 +28,8 @@ namespace edge
 			WorkerContext(const WorkerContext&) = delete;
 			WorkerContext& operator=(const WorkerContext&) = delete;
 
-			auto AcquireCmdList() -> ICommandList*;
-			auto EndCmd() noexcept -> ICommandList*;
+			auto acquire_cmd_list() -> ICommandList*;
+			auto end_cmd() noexcept -> ICommandList*;
 
 			IContext* gfx_context;
 			ICommandPool* cmd_pool;
@@ -45,9 +44,9 @@ namespace edge
 			UploadContext(IContext* gfx_context);
 			~UploadContext();
 
-			void Reset();
-			void IncrementSemaphore();
-			void AddWorker(const IQueue* queue, uint64_t size);
+			void reset();
+			void increment_semaphore();
+			void add_worker(const IQueue* queue, uint64_t size);
 
 			IContext* gfx_context;
 			IFence* fence;
@@ -68,7 +67,7 @@ namespace edge
 			~UploadingDispatcher();
 
 			template<typename _Fn>
-			auto Submit(_Fn&& task) -> std::shared_ptr<AsyncResourceHandle>
+			auto submit(_Fn&& task) -> std::shared_ptr<AsyncResourceHandle>
 			{
 				auto handle = std::make_shared<AsyncResourceHandle>();
 
@@ -76,8 +75,8 @@ namespace edge
 					std::lock_guard lock(mutex);
 					pending_jobs.emplace([this, handle, 
 						t = std::make_shared<std::packaged_task<ResourceUploadFnSign>>(std::move(task))]() {
-							auto& worker_ctx = GetWorkerContext();
-							ICommandList* cmd = worker_ctx.AcquireCmdList();
+							auto& worker_ctx = get_worker_context();
+							ICommandList* cmd = worker_ctx.acquire_cmd_list();
 							(*t)(cmd, *worker_ctx.allocator);
 
 							auto result = t->get_future().get();
@@ -91,12 +90,12 @@ namespace edge
 				return handle;
 			}
 
-			auto IsSyncNeeded(SemaphoreSubmitInfo& semaphore_submit) -> bool;
-			auto GetWorkerContext() -> WorkerContext&;
+			auto is_sync_needed(SemaphoreSubmitInfo& semaphore_submit) -> bool;
+			auto get_worker_context() -> WorkerContext&;
 		private:
-			auto GetUploadContext() -> UploadContext&;
-			auto Loop(std::stop_token stop_token) -> void;
-			auto RegisterThreadContext() -> size_t;
+			auto get_upload_context() -> UploadContext&;
+			auto loop(std::stop_token stop_token) -> void;
+			auto register_thread_context() -> size_t;
 
 			IContext* gfx_context;
 			const IQueue* queue;

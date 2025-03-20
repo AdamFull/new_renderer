@@ -32,7 +32,6 @@ namespace edge
 		class ITexture;
 		class ISampler;
 		class IShader;
-		class IShaderEffect;
 		class IRootSignature;
 		class IPipeline;
 		class IPipelineCache;
@@ -44,51 +43,44 @@ namespace edge
 		/**
 		* Base structures
 		*/
-		struct ContextCreateInfo
-		{
+		struct ContextCreateInfo {
 			RenderApi render_api{ RenderApi::eVulkan };
 			Window* window{ nullptr };
 			const char* app_name{ nullptr };
 		};
 
-		struct SemaphoreSubmitInfo
-		{
+		struct SemaphoreSubmitInfo {
 			ISemaphore* semaphore{ nullptr };
 			uint64_t value{ 0ull };
 			StageFlags stage;
 		};
 
-		struct SubmitInfo
-		{
+		struct SubmitInfo {
 			std::span<SemaphoreSubmitInfo> wait_semaphore_infos;
 			std::span<ICommandList*> command_lists;
 			std::span<SemaphoreSubmitInfo> signal_semaphore_infos;
 		};
 
-		struct PresentInfo
-		{
+		struct PresentInfo {
 			std::span<ISemaphore*> wait_semaphores;
 			std::span<ISwapchain*> swapchains;
 			const uint32_t* image_indices{ nullptr };
 		};
 
-		struct ShaderStageInfo
-		{
+		struct ShaderStageInfo {
 			ShaderStageFlag stage{};
 			const char* entry_point{ "main" };
 			std::span<const uint8_t> code{};
 		};
 
-		struct RootSignatureCreateInfo
-		{
+		struct RootSignatureCreateInfo {
 			IShader* shader{ nullptr };
 			ISharedDescriptor* shared_descriptor{ nullptr };
 			std::span<ISampler*> immutable_samplers;
 		};
 
 		// Vertex input
-		struct VertexAttributeDescription
-		{
+		struct VertexAttributeDescription {
 			uint32_t location{ 0u };
 			uint32_t binding{ 0u };
 			Format format{ Format::eUndefined };
@@ -98,8 +90,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const VertexAttributeDescription& type);
 		void from_json(const nlohmann::json& json, VertexAttributeDescription& type);
 
-		struct VertexBindingDescription
-		{
+		struct VertexBindingDescription {
 			uint32_t binding{ 0u };
 			uint32_t stride{ 0u };
 		};
@@ -107,8 +98,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const VertexBindingDescription& type);
 		void from_json(const nlohmann::json& json, VertexBindingDescription& type);
 
-		struct VertexLayout
-		{
+		struct VertexLayout {
 			std::array<VertexBindingDescription, 16ull> bindings{};
 			uint32_t binding_count{ 0u };
 			std::array<VertexAttributeDescription, 16ull> attributes{};
@@ -118,8 +108,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const VertexLayout& type);
 		void from_json(const nlohmann::json& json, VertexLayout& type);
 
-		struct RasterizationState
-		{
+		struct RasterizationState {
 			bool depth_clamp{ false };
 			bool discard_enable{ false };
 			FillMode fill_mode{ FillMode::eSolid };
@@ -130,8 +119,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const RasterizationState& type);
 		void from_json(const nlohmann::json& json, RasterizationState& type);
 
-		struct MultisampleState
-		{
+		struct MultisampleState {
 			SampleCount sample_count{ SampleCount::e1 };
 			bool alpha_to_coverage{ false };
 			bool alpha_to_one{ false };
@@ -140,8 +128,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const MultisampleState& type);
 		void from_json(const nlohmann::json& json, MultisampleState& type);
 
-		struct DepthStencilState
-		{
+		struct DepthStencilState {
 			bool depth_test{ false };
 			bool depth_write{ false };
 			CompareOp depth_compare_op{ CompareOp::eNever };
@@ -161,8 +148,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const DepthStencilState& type);
 		void from_json(const nlohmann::json& json, DepthStencilState& type);
 
-		struct ColorBlendAttachment
-		{
+		struct ColorBlendAttachment {
 			bool enable{ false };
 			BlendFactor src_color{ BlendFactor::eOne };
 			BlendFactor dst_color{ BlendFactor::eZero };
@@ -176,8 +162,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const ColorBlendAttachment& type);
 		void from_json(const nlohmann::json& json, ColorBlendAttachment& type);
 
-		struct ColorBlendingState
-		{
+		struct ColorBlendingState {
 			std::array<ColorBlendAttachment, k_max_attachment_count> attachments{};
 			uint32_t attachment_count{ 0u };
 		};
@@ -185,8 +170,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const ColorBlendingState& type);
 		void from_json(const nlohmann::json& json, ColorBlendingState& type);
 
-		struct PipelineState
-		{
+		struct PipelineState {
 			VertexLayout vertex_layout{};
 			RasterizationState rasterization_state{};
 			MultisampleState multisample_state{};
@@ -199,8 +183,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const PipelineState& type);
 		void from_json(const nlohmann::json& json, PipelineState& type);
 
-		struct GraphicsPipelineCreateInfo
-		{
+		struct GraphicsPipelineCreateInfo {
 			IShader* shader{ nullptr };
 			IRootSignature* root_signature{ nullptr };
 			IPipelineCache* pipeline_cache{ nullptr };
@@ -214,15 +197,13 @@ namespace edge
 			Format stencil_format{ Format::eUndefined };
 		};
 
-		struct ComputePipelineCreateInfo
-		{
+		struct ComputePipelineCreateInfo {
 			IShader* shader{ nullptr };
 			IRootSignature* root_signature{ nullptr };
 			IPipelineCache* pipeline_cache{ nullptr };
 		};
 
-		struct ClearColor
-		{
+		struct ClearColor {
 			ClearColor() = default;
 
 			ClearColor(float r, float g, float b, float a) :
@@ -247,8 +228,7 @@ namespace edge
 			uint32_t stencil{ 0u };
 		};
 
-		struct Attachment
-		{
+		struct Attachment {
 			ITexture* texture{ nullptr };
 			ResourceStateFlags texture_state{};
 
@@ -258,8 +238,7 @@ namespace edge
 			ClearColor clear_color{};
 		};
 
-		struct RenderingInfo
-		{
+		struct RenderingInfo {
 			int32_t offset_x{ 0u };
 			int32_t offset_y{ 0u };
 
@@ -275,13 +254,11 @@ namespace edge
 			Attachment stencil_attachment{};
 		};
 
-		struct PipelineCacheCreateInfo
-		{
+		struct PipelineCacheCreateInfo {
 			std::span<uint8_t> data{};
 		};
 
-		struct SwapChainCreateInfo
-		{
+		struct SwapChainCreateInfo {
 			const Window* window{ nullptr };
 			ISwapchain* old_swapchain{ nullptr };
 
@@ -293,8 +270,7 @@ namespace edge
 			Format format{ Format::eUndefined };
 		};
 
-		struct BufferCreateInfo
-		{
+		struct BufferCreateInfo {
 			BufferUsageFlags usage{};
 			size_t size{ 1ull };
 			size_t count{ 1ull };
@@ -303,8 +279,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const BufferCreateInfo& type);
 		void from_json(const nlohmann::json& json, BufferCreateInfo& type);
 
-		struct TextureCreateInfo
-		{
+		struct TextureCreateInfo {
 			TextureUsageFlags usage{};
 
 			uint32_t width{ 1u };
@@ -320,8 +295,7 @@ namespace edge
 		void to_json(nlohmann::json& json, const TextureCreateInfo& type);
 		void from_json(const nlohmann::json& json, TextureCreateInfo& type);
 
-		struct SamplerCreateInfo
-		{
+		struct SamplerCreateInfo {
 			Filter min_filter{ Filter::eNearest };
 			Filter mag_filter{ Filter::eNearest };
 			Filter mip_map_mode{ Filter::eNearest };
@@ -338,29 +312,25 @@ namespace edge
 		void to_json(nlohmann::json& json, const SamplerCreateInfo& type);
 		void from_json(const nlohmann::json& json, SamplerCreateInfo& type);
 
-		struct QueryPoolCreateInfo
-		{
+		struct QueryPoolCreateInfo {
 			QueryType type{};
 			uint32_t query_count{ 0u };
 		};
 
 		// Resource barriers
-		struct BufferRangeInfo
-		{
+		struct BufferRangeInfo {
 			uint64_t size{ 0ull };
 			uint64_t offset{ 0ull };
 		};
 
-		struct BufferBarrier
-		{
+		struct BufferBarrier {
 			IBuffer* buffer{ nullptr };
 			ResourceStateFlags src_state{};
 			ResourceStateFlags dst_state{};
 			BufferRangeInfo range{};
 		};
 
-		struct TextureBarrier
-		{
+		struct TextureBarrier {
 			ITexture* texture{ nullptr };
 			uint32_t subresource_index{ ~0u };
 
@@ -368,14 +338,12 @@ namespace edge
 			ResourceStateFlags dst_state{};
 		};
 
-		struct MemoryBarrier
-		{
+		struct MemoryBarrier {
 			ResourceStateFlags src_state{};
 			ResourceStateFlags dst_state{};
 		};
 
-		struct ResourceBarrierInfo
-		{
+		struct ResourceBarrierInfo {
 			uint32_t buffer_barrier_count{};
 			BufferBarrier* buffer_barriers{ nullptr };
 
@@ -386,8 +354,7 @@ namespace edge
 			MemoryBarrier* memory_barriers{ nullptr };
 		};
 
-		struct IndirectDrawCommand
-		{
+		struct IndirectDrawCommand {
 			bool indexed_draw{ false };
 
 			IBuffer* argument_buffer{ nullptr };
@@ -399,23 +366,20 @@ namespace edge
 			uint64_t count_offset{ 0ull };
 		};
 
-		struct BufferCopyRegion
-		{
+		struct BufferCopyRegion {
 			uint64_t src_offset{ 0ull };
 			uint64_t dst_offset{ 0ull };
 			uint64_t size{ 0ull };
 		};
 
-		struct CopyBufferInfo
-		{
+		struct CopyBufferInfo {
 			IBuffer* src_buffer{ nullptr };
 			IBuffer* dst_buffer{ nullptr };
 
 			std::span<BufferCopyRegion> regions;
 		};
 
-		struct TextureCopyRegion
-		{
+		struct TextureCopyRegion {
 			uint64_t buffer_offset{};
 
 			uint32_t offset_x{ 0u };
@@ -432,37 +396,32 @@ namespace edge
 			uint32_t level{ 0u };
 		};
 
-		struct CopyTextureInfo
-		{
+		struct CopyTextureInfo {
 			IBuffer* src_buffer{ nullptr };
 			ITexture* dst_texture{ nullptr };
 
 			std::span<TextureCopyRegion> copy_regions{};
 		};
 
-		struct BindDescriptorsInfo
-		{
+		struct BindDescriptorsInfo {
 			PipelineType pipeline_type{}; 
 			IRootSignature* root_signature{ nullptr };
 
 			std::span<IResourceDescriptor*> resource_descriptors;
 		};
 
-		struct BindingDescription
-		{
+		struct BindingDescription {
 			DescriptorType type{};
 			uint32_t binding{};
 			uint32_t count{ 1u };
 		};
 
-		struct SharedDescriptorCreateInfo
-		{
+		struct SharedDescriptorCreateInfo {
 			uint32_t first_set{ 0u };
 			std::vector<BindingDescription> descriptions{};
 		};
 
-		struct BufferDescriptor
-		{
+		struct BufferDescriptor {
 			DescriptorType type{};
 
 			IBuffer* buffer{ nullptr };
@@ -474,8 +433,7 @@ namespace edge
 			uint32_t size{ 0u };
 		};
 
-		struct TextureDescriptor
-		{
+		struct TextureDescriptor {
 			DescriptorType type{};
 
 			ITexture* texture{ nullptr };
@@ -488,30 +446,28 @@ namespace edge
 			uint32_t array_index{ 0u };
 		};
 
-		struct RenderResourceDesc
-		{
+		struct RenderResourceDesc {
 			IGFXResource* resource{ nullptr };
 			ResourceStateFlags state{};
 		};
 
-		struct AsyncResourceHandle
-		{
+		struct AsyncResourceHandle {
 			IGFXResource* resource{ nullptr };
 			ResourceStateFlags state{};
 			std::atomic_bool done{ false };
 		};
 
-		uint32_t Hash(const VertexAttributeDescription& desc, uint32_t hash = 0u);
-		uint32_t Hash(const VertexBindingDescription& desc, uint32_t hash = 0u);
-		uint32_t Hash(const VertexLayout& layout, uint32_t hash = 0u);
-		uint32_t Hash(const RasterizationState& state, uint32_t hash = 0u);
-		uint32_t Hash(const MultisampleState& state, uint32_t hash = 0u);
-		uint32_t Hash(const DepthStencilState& state, uint32_t hash = 0u);
-		uint32_t Hash(const ClearColor& color, uint32_t hash = 0u);
-		uint32_t Hash(const ColorBlendAttachment& attachment, uint32_t hash = 0u);
-		uint32_t Hash(const ColorBlendingState& state, uint32_t hash = 0u);
-		uint32_t Hash(const PipelineState& state, uint32_t hash = 0u);
+		uint32_t hash(const VertexAttributeDescription& desc, uint32_t hash = 0u);
+		uint32_t hash(const VertexBindingDescription& desc, uint32_t hash = 0u);
+		uint32_t hash(const VertexLayout& layout, uint32_t hash = 0u);
+		uint32_t hash(const RasterizationState& state, uint32_t hash = 0u);
+		uint32_t hash(const MultisampleState& state, uint32_t hash = 0u);
+		uint32_t hash(const DepthStencilState& state, uint32_t hash = 0u);
+		uint32_t hash(const ClearColor& color, uint32_t hash = 0u);
+		uint32_t hash(const ColorBlendAttachment& attachment, uint32_t hash = 0u);
+		uint32_t hash(const ColorBlendingState& state, uint32_t hash = 0u);
+		uint32_t hash(const PipelineState& state, uint32_t hash = 0u);
 
-		uint32_t Hash(const SamplerCreateInfo& create_info, uint32_t hash = 0u);
+		uint32_t hash(const SamplerCreateInfo& create_info, uint32_t hash = 0u);
 	}
 }

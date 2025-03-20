@@ -13,27 +13,24 @@ namespace edge
 
 	namespace gfx
 	{
-		struct ShaderCompilerCreateInfo
-		{
+		struct ShaderCompilerCreateInfo {
 			fs::VirtualFilesystem* filesystem{ nullptr };
 			std::string_view base_path;
 			std::vector<std::string_view> additional_include_dirs;
 		};
 
-		struct ShaderCompileInfo
-		{
+		struct ShaderCompileInfo {
 			std::string_view path;
 			std::string_view source;
 			std::vector<std::string_view> definitions;
 		};
 
-		class IShaderCompiler
-		{
+		class IShaderCompiler {
 		public:
 			virtual ~IShaderCompiler() = default;
 
-			virtual auto CollectDependencyHash(const ShaderCompileInfo& compile_info) -> uint32_t = 0;
-			virtual auto Compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool = 0;
+			virtual auto collect_dependency_hash(const ShaderCompileInfo& compile_info) -> uint32_t = 0;
+			virtual auto compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool = 0;
 		};
 	}
 }

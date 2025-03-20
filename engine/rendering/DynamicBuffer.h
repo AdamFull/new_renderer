@@ -27,13 +27,13 @@ namespace engine
 				create_info.size = sizeof(_Ty) * capacity;
 				create_info.usage = flags;
 
-				buffer = context.CreateBuffer(create_info);
+				buffer = context.create_buffer(create_info);
 				memory.resize(create_info.size);
 			}
 
 			~DynamicBuffer()
 			{
-				context.Destroy(buffer);
+				context.destroy(buffer);
 			}
 
 			// Mark range as dirty
@@ -72,15 +72,15 @@ namespace engine
 				if (!dirty_ranges.empty())
 				{
 					auto whole_size = memory.size() * sizeof(_Ty);
-					if (buffer->GetSize() < whole_size)
+					if (buffer->get_size() < whole_size)
 					{
 						// Update buffer size
 						edge::gfx::BufferCreateInfo create_info{};
 						create_info.size = whole_size;
 						create_info.usage = usage_flags;
 
-						context.Destroy(buffer);
-						buffer = context.CreateBuffer(create_info);
+						context.destroy(buffer);
+						buffer = context.create_buffer(create_info);
 
 						dirty_ranges.clear();
 						dirty_ranges.emplace_back(0u, static_cast<uint32_t>(memory.size()));
@@ -102,7 +102,7 @@ namespace engine
 					}
 
 					auto upload_size = std::accumulate(merged_ranges.begin(), merged_ranges.end(), 0, [](uint64_t acc, const DirtyRange& item) { return acc + item.count * sizeof(_Ty); });
-					auto updater = edge::gfx::ResourceUpdater::GetBufferUpdater(buffer, upload_size);
+					auto updater = edge::gfx::ResourceUpdater::get_buffer_updater(buffer, upload_size);
 
 					uint64_t src_offset{ 0ull };
 					for (const auto& range : merged_ranges)
@@ -112,13 +112,13 @@ namespace engine
 
 						auto* data_ptr = (const uint8_t*)memory.data();
 
-						updater.InsertRegion(std::span<const uint8_t>(data_ptr + range_offset, range_size), range_offset);
+						updater.insert_region(std::span<const uint8_t>(data_ptr + range_offset, range_size), range_offset);
 
 						src_offset += range_size;
 					}
 					
 					edge::gfx::ResourceStateFlags resource_state{};
-					edge::gfx::ResourceUpdater::SubmitBufferUpdater(updater, resource_state);
+					edge::gfx::ResourceUpdater::submit_buffer_updater(updater, resource_state);
 					dirty_ranges.clear();
 				}
 			}

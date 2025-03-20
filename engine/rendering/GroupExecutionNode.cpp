@@ -29,12 +29,12 @@ namespace engine
 			if (enabled_callback && !enabled_callback())
 				return;
 
-			command_list.BeginMarker(group_name.c_str(), group_color);
+			command_list.begin_marker(group_name.c_str(), group_color);
 
 			for (auto& node : graph_nodes)
 				node->Execute(command_list, delta_time);
 
-			command_list.EndMarker();
+			command_list.end_marker();
 		}
 	}
 }

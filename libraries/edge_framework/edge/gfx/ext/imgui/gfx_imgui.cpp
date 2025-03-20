@@ -187,7 +187,7 @@ namespace edge
 				upload_buffer_ci.usage = BufferUsageFlag::eStagingBuffer;
 
 				gpImguiContext->upload_buffers.push_back({
-					.buffer = context.CreateBuffer(upload_buffer_ci),
+					.buffer = context.create_buffer(upload_buffer_ci),
 					.offset = 0
 					});
 			}
@@ -200,7 +200,7 @@ namespace edge
 
 				auto found = std::find_if(upload_buffers.begin(), upload_buffers.end(), [requested_size](const ImGuiUploadBuffer& block)
 					{
-						return block.buffer->GetSize() - block.offset > requested_size;
+						return block.buffer->get_size() - block.offset > requested_size;
 					});
 
 				if (found != upload_buffers.end())
@@ -214,7 +214,7 @@ namespace edge
 
 				IContext& context = *gpImguiContext->context;
 				return gpImguiContext->upload_buffers.emplace_back(ImGuiUploadBuffer{
-					context.CreateBuffer(upload_buffer_ci), 0 });
+					context.create_buffer(upload_buffer_ci), 0 });
 			}
 
 			static auto RequestUploadBuffer(uint64_t requested_size) -> std::tuple<IBuffer*, uint64_t>
@@ -236,21 +236,21 @@ namespace edge
 
 			static void UpdateBuffer(const ICommandList& command_list, RenderResourceDesc& resource_desc, std::span<const uint8_t> data)
 			{
-				auto* dst_buffer = resource_desc.resource->As<IBuffer*>();
+				auto* dst_buffer = resource_desc.resource->as<IBuffer*>();
 
 				BufferBarrier buffer_barrier{};
 				buffer_barrier.buffer = dst_buffer;
 				buffer_barrier.src_state = resource_desc.state;
 				resource_desc.state = buffer_barrier.dst_state = ResourceStateFlag::eCopyDst;
-				buffer_barrier.range.size = dst_buffer->GetSize();
+				buffer_barrier.range.size = dst_buffer->get_size();
 
 				ResourceBarrierInfo resource_barrier{};
 				resource_barrier.buffer_barriers = &buffer_barrier;
 				resource_barrier.buffer_barrier_count = 1;
-				command_list.ResourceBarrier(resource_barrier);
+				command_list.resource_barrier(resource_barrier);
 
 				auto [src_buffer, src_offset] = RequestUploadBuffer(data.size());
-				src_buffer->Update(data.data(), data.size(), src_offset);
+				src_buffer->update(data.data(), data.size(), src_offset);
 
 				BufferCopyRegion regions[] = {
 					{
@@ -265,12 +265,12 @@ namespace edge
 				copy_buffer_info.dst_buffer = dst_buffer;
 				copy_buffer_info.regions = regions;
 
-				command_list.CopyBuffer(copy_buffer_info);
+				command_list.copy_buffer(copy_buffer_info);
 			}
 
 			static void UpdateTexture(ICommandList& command_list, RenderResourceDesc& resource_desc, int32_t width, int32_t height, std::span<const uint8_t> data)
 			{
-				auto* dst_texture = resource_desc.resource->As<ITexture*>();
+				auto* dst_texture = resource_desc.resource->as<ITexture*>();
 
 				TextureBarrier texture_barrier{};
 				texture_barrier.texture = dst_texture;
@@ -280,10 +280,10 @@ namespace edge
 				ResourceBarrierInfo resource_barrier{};
 				resource_barrier.texture_barriers = &texture_barrier;
 				resource_barrier.texture_barrier_count = 1;
-				command_list.ResourceBarrier(resource_barrier);
+				command_list.resource_barrier(resource_barrier);
 
 				auto [src_buffer, src_offset] = RequestUploadBuffer(data.size());
-				src_buffer->Update(data.data(), data.size(), src_offset);
+				src_buffer->update(data.data(), data.size(), src_offset);
 
 				CopyTextureInfo copy_texture_info{};
 				copy_texture_info.src_buffer = src_buffer;
@@ -293,7 +293,7 @@ namespace edge
 				copy_texture_info.copy_regions[0].size_y = height;
 				//copy_texture_info.copy_region_count = 1;
 
-				command_list.CopyTexture(copy_texture_info);
+				command_list.copy_texture(copy_texture_info);
 			}
 
 			void ImGui_CreateContext(const ImGuiContextCreateInfo& create_info)
@@ -318,12 +318,12 @@ namespace edge
 					}
 				};
 
-				gpImguiContext->shader = context.CreateShader(stage_infos);
+				gpImguiContext->shader = context.create_shader(stage_infos);
 
 				// Create root signature
 				RootSignatureCreateInfo root_sign_ci{};
 				root_sign_ci.shader = gpImguiContext->shader;
-				gpImguiContext->root_signature = context.CreateRootSignature(root_sign_ci);
+				gpImguiContext->root_signature = context.create_root_signature(root_sign_ci);
 
 				// Create rendering pipeline
 				GraphicsPipelineCreateInfo pipeline_ci{};
@@ -359,21 +359,21 @@ namespace edge
 				pipeline_ci.color_formats[0] = create_info.color_format;
 				pipeline_ci.color_format_count = 1;
 
-				gpImguiContext->pipeline = context.CreatePipeline(pipeline_ci);
+				gpImguiContext->pipeline = context.create_pipeline(pipeline_ci);
 
 				constexpr const uint32_t k_startap_vertex_count{ 512u };
 
 				BufferCreateInfo vertex_buffer_ci{};
 				vertex_buffer_ci.size = sizeof(ImDrawVert) * k_startap_vertex_count;
 				vertex_buffer_ci.usage = BufferUsageFlag::eVertexBufferCPU;
-				gpImguiContext->vertex_buffer.resource = context.CreateBuffer(vertex_buffer_ci);
+				gpImguiContext->vertex_buffer.resource = context.create_buffer(vertex_buffer_ci);
 
 				BufferCreateInfo index_buffer_ci{};
 				index_buffer_ci.size = sizeof(ImDrawIdx) * k_startap_vertex_count * 3;
 				index_buffer_ci.usage = BufferUsageFlag::eIndexBufferCPU;
-				gpImguiContext->index_buffer.resource = context.CreateBuffer(index_buffer_ci);
+				gpImguiContext->index_buffer.resource = context.create_buffer(index_buffer_ci);
 
-				ImGui::CreateContext();
+				ImGui::create_context();
 
 				ImGuiIO& io = ImGui::GetIO();
 				IMGUI_CHECKVERSION();
@@ -395,7 +395,7 @@ namespace edge
 				// Destroy texture and create new one
 				if (gpImguiContext->font_texture.resource)
 				{
-					context.Destroy(gpImguiContext->font_texture.resource);
+					context.destroy(gpImguiContext->font_texture.resource);
 					gpImguiContext->font_texture.resource = nullptr;
 					gpImguiContext->font_texture.state = ResourceStateFlag::eUndefined;
 				}
@@ -415,12 +415,12 @@ namespace edge
 				font_texture_ci.height = font_height;
 				font_texture_ci.format = Format::eR8G8B8A8Unorm;
 
-				gpImguiContext->font_texture.resource = context.CreateTexture(font_texture_ci);
+				gpImguiContext->font_texture.resource = context.create_texture(font_texture_ci);
 
 				UpdateTexture(command_list, gpImguiContext->font_texture, font_width, font_height, { font_pixels , upload_size });
 
 				TextureBarrier texture_barrier{};
-				texture_barrier.texture = gpImguiContext->font_texture.resource->As<ITexture*>();
+				texture_barrier.texture = gpImguiContext->font_texture.resource->as<ITexture*>();
 				texture_barrier.src_state = gpImguiContext->font_texture.state;
 				gpImguiContext->font_texture.state = texture_barrier.dst_state = ResourceStateFlag::eShaderReadOnlyResource;
 
@@ -429,7 +429,7 @@ namespace edge
 				resource_barrier.texture_barrier_count = 1u;
 
 				// Transfer to final layout
-				command_list.ResourceBarrier(resource_barrier);
+				command_list.resource_barrier(resource_barrier);
 			}
 
 			static void HandleKeyboardEvent(const KeyInputEvent& input_event)
@@ -562,18 +562,18 @@ namespace edge
 				{
 					static auto try_grow_buffer = [](RenderResourceDesc& resource_desc, int32_t requested_size, BufferUsageFlags usage)
 						{
-							auto* buffer = resource_desc.resource->As<IBuffer*>();
-							if (buffer->GetSize() < requested_size)
+							auto* buffer = resource_desc.resource->as<IBuffer*>();
+							if (buffer->get_size() < requested_size)
 							{
-								gpImguiContext->context->Destroy(resource_desc.resource);
+								gpImguiContext->context->destroy(resource_desc.resource);
 								resource_desc.state = ResourceStateFlag::eUndefined;
 
 								BufferCreateInfo buffer_ci{};
 								buffer_ci.size = requested_size;
 								buffer_ci.usage = usage;
-								resource_desc.resource = gpImguiContext->context->CreateBuffer(buffer_ci);
+								resource_desc.resource = gpImguiContext->context->create_buffer(buffer_ci);
 
-								return resource_desc.resource->As<IBuffer*>();
+								return resource_desc.resource->as<IBuffer*>();
 							}
 
 							return buffer;
@@ -583,13 +583,13 @@ namespace edge
 					uint32_t total_vertices{ 0u };
 					int32_t upload_vertices_size = sizeof(ImDrawVert) * draw_data->TotalVtxCount;
 					auto* vertex_buffer = try_grow_buffer(gpImguiContext->vertex_buffer, upload_vertices_size, BufferUsageFlag::eVertexBufferCPU);
-					auto* vertex_map = vertex_buffer->Map();
+					auto* vertex_map = vertex_buffer->map();
 
 					uint32_t total_indices{ 0u };
 					int32_t upload_indices_size = sizeof(ImDrawIdx) * draw_data->TotalIdxCount;
 					std::vector<BufferCopyRegion> idx_regions{};
 					auto* index_buffer = try_grow_buffer(gpImguiContext->index_buffer, upload_vertices_size, BufferUsageFlag::eIndexBufferCPU);
-					auto* index_map = index_buffer->Map();
+					auto* index_map = index_buffer->map();
 
 					for (int32_t i = 0; i < draw_data->CmdListsCount; i++)
 					{
@@ -601,20 +601,20 @@ namespace edge
 						total_indices += cmd_list->IdxBuffer.Size;
 					}
 
-					vertex_buffer->Unmap();
-					index_buffer->Unmap();
+					vertex_buffer->unmap();
+					index_buffer->unmap();
 
 					const uint32_t stride{ 0u };
 					uint64_t offset{ 0ull };
-					command_list.BindVertexBuffers({ &vertex_buffer, 1 }, { &stride, 1 }, { &offset, 1 });
-					command_list.BindIndexBuffer(index_buffer, sizeof(ImDrawIdx) == 2 ? IndexType::eUint16 : IndexType::eUint32, 0);
+					command_list.bind_vertex_buffers({ &vertex_buffer, 1 }, { &stride, 1 }, { &offset, 1 });
+					command_list.bind_index_buffer(index_buffer, sizeof(ImDrawIdx) == 2 ? IndexType::eUint16 : IndexType::eUint32, 0);
 				}
 
 				// Bind shader
-				command_list.BindPipeline(gpImguiContext->pipeline);
+				command_list.bind_pipeline(gpImguiContext->pipeline);
 
 				// Setup viewport
-				command_list.SetViewport(0.f, 0.f, fb_width, fb_height, 0.f, 1.f);
+				command_list.set_viewport(0.f, 0.f, fb_width, fb_height, 0.f, 1.f);
 
 				// Push constants
 				{
@@ -625,7 +625,7 @@ namespace edge
 					constant_range.pos.y = -1.0f - draw_data->DisplayPos.y * constant_range.scale.y;
 
 					const char* range_ptr = reinterpret_cast<const char*>(&constant_range);
-					command_list.PushConstants(gpImguiContext->shader, gpImguiContext->root_signature, { range_ptr, sizeof(ConstantRange) });
+					command_list.push_constants(gpImguiContext->shader, gpImguiContext->root_signature, { range_ptr, sizeof(ConstantRange) });
 				}
 
 				if (draw_data && (draw_data->TotalVtxCount != 0) && (draw_data->TotalIdxCount != 0))
@@ -653,11 +653,11 @@ namespace edge
 
 				if (gpImguiContext->font_texture.resource)
 				{
-					gpImguiContext->context->Destroy(gpImguiContext->font_texture.resource);
+					gpImguiContext->context->destroy(gpImguiContext->font_texture.resource);
 					gpImguiContext->font_texture.resource = nullptr;
 				}
 
-				ImGui::EndFrame();
+				ImGui::end_frame();
 
 				delete gpImguiContext;
 				gpImguiContext = nullptr;

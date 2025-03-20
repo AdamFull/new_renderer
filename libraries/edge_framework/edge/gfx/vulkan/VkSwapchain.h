@@ -13,8 +13,7 @@ namespace edge
 		{
 			class Device;
 
-			class VulkanSwapchain final : public ISwapchain, public VulkanResource<vk::SwapchainKHR>
-			{
+			class VulkanSwapchain final : public ISwapchain, public VulkanResource<vk::SwapchainKHR> {
 			public:
 				/**
 				 * @brief Constructor to create a swapchain by changing the extent
@@ -62,68 +61,58 @@ namespace edge
 				VulkanSwapchain& operator=(const VulkanSwapchain&) = delete;
 				VulkanSwapchain& operator=(VulkanSwapchain&&) = delete;
 
-				[[nodiscard]] auto IsValid() const noexcept -> bool
-				{
-					return !!handle;
+				[[nodiscard]] auto is_valid() const noexcept -> bool {
+					return !!handle_;
 				}
 
-				Device const& GetDevice() const noexcept
-				{
+				Device const& get_device() const noexcept {
 					return device;
 				}
 
-				void SetResourceName(std::string_view name) const noexcept override;
+				void set_resource_name(std::string_view name) const noexcept override;
 
-				[[nodiscard]] auto AcquireNextImage(ISemaphore* signal_semaphore, IFence* fence, uint32_t* image_index) -> bool override;
+				[[nodiscard]] auto acquire_next_image(ISemaphore* signal_semaphore, IFence* fence, uint32_t* image_index) -> bool override;
 
-				auto GetExtent() const noexcept -> vk::Extent2D const&
-				{
+				auto get_extent() const noexcept -> vk::Extent2D const& {
 					return create_info.imageExtent;
 				}
 
-				auto GetFormat() const noexcept -> vk::Format
-				{
+				auto get_format() const noexcept -> vk::Format {
 					return create_info.imageFormat;
 				}
 
-				[[nodiscard]] auto GetImage(uint32_t index) noexcept -> vk::Image&
-				{
+				[[nodiscard]] auto get_image(uint32_t index) noexcept -> vk::Image& {
 					return images[index];
 				}
 
-				[[nodiscard]] auto GetImages() const noexcept -> std::vector<vk::Image> const&
-				{
+				[[nodiscard]] auto get_images() const noexcept -> std::vector<vk::Image> const& {
 					return images;
 				}
 
-				auto GetTransform() const noexcept -> vk::SurfaceTransformFlagBitsKHR
-				{
+				auto get_transform() const noexcept -> vk::SurfaceTransformFlagBitsKHR {
 					return create_info.preTransform;
 				}
 
-				[[nodiscard]] auto GetSurface() const noexcept -> vk::SurfaceKHR
-				{
+				[[nodiscard]] auto get_surface() const noexcept -> vk::SurfaceKHR {
 					return surface;
 				}
 
-				auto GetUsage() const noexcept -> vk::ImageUsageFlags
-				{
+				auto get_usage() const noexcept -> vk::ImageUsageFlags {
 					return create_info.imageUsage;
 				}
 
-				auto GetPresentMode() const noexcept -> vk::PresentModeKHR
-				{
+				auto get_present_mode() const noexcept -> vk::PresentModeKHR {
 					return create_info.presentMode;
 				}
 
-				auto GetImageCount() const noexcept -> uint32_t override;
+				auto get_image_count() const noexcept -> uint32_t override;
 
-				[[nodiscard]] auto GetImageFormat() const noexcept -> Format override;
+				[[nodiscard]] auto get_image_format() const noexcept -> Format override;
 
-				auto GetWidth() const noexcept -> uint32_t const& override;
-				auto GetHeight() const noexcept -> uint32_t const& override;
+				auto get_width() const noexcept -> uint32_t const& override;
+				auto get_height() const noexcept -> uint32_t const& override;
 
-				void GetSurfaceExtent(uint32_t& width, uint32_t& height) override;
+				void get_surface_extent(uint32_t& width, uint32_t& height) override;
 
 			private:
 				Device& device;

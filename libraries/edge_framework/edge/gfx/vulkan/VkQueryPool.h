@@ -11,8 +11,7 @@ namespace edge
 		{
 			class Device;
 
-			class VulkanQueryPool final : public IQueryPool, public VulkanResource<vk::QueryPool>
-			{
+			class VulkanQueryPool final : public IQueryPool, public VulkanResource<vk::QueryPool> {
 			public:
 				VulkanQueryPool(Device& device, const QueryPoolCreateInfo& create_info);
 				VulkanQueryPool(VulkanQueryPool&& other);
@@ -22,19 +21,17 @@ namespace edge
 				VulkanQueryPool& operator=(const VulkanQueryPool&) = delete;
 				VulkanQueryPool& operator=(VulkanQueryPool&&) = delete;
 
-				void SetResourceName(std::string_view name) const noexcept override;
+				void set_resource_name(std::string_view name) const noexcept override;
 
-				void Reset(uint32_t start_query, uint32_t query_count) override;
-				void GetData(uint32_t query_index, void* data) const override;
-				void GetData(uint64_t first_query, uint32_t query_count, void* data) const override;
+				void reset(uint32_t start_query, uint32_t query_count) override;
+				void get_data(uint32_t query_index, void* data) const override;
+				void get_data(uint64_t first_query, uint32_t query_count, void* data) const override;
 
-				auto GetQueryCount() const noexcept -> uint32_t
-				{
+				auto get_query_count() const noexcept -> uint32_t {
 					return max_query_count;
 				}
 
-				auto GetQueryType() const noexcept -> vk::QueryType
-				{
+				auto get_query_type() const noexcept -> vk::QueryType {
 					return query_type;
 				}
 			private:

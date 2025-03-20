@@ -83,7 +83,7 @@ namespace engine
 
 		GeometryBuffer::~GeometryBuffer()
 		{
-			gfx_context.Destroy(index_data.buffer);
+			gfx_context.destroy(index_data.buffer);
 		}
 
 		void GeometryBuffer::Flush()
@@ -97,7 +97,7 @@ namespace engine
 			}
 		}
 
-		void GeometryBuffer::BindIndexBuffer(edge::gfx::ICommandList& command_list)
+		void GeometryBuffer::bind_index_buffer(edge::gfx::ICommandList& command_list)
 		{
 			if (index_data.buffer)
 			{
@@ -107,28 +107,28 @@ namespace engine
 					buffer_barrier.buffer = index_data.buffer;
 					buffer_barrier.src_state = index_data.state;
 					index_data.state = buffer_barrier.dst_state = edge::gfx::ResourceStateFlag::eIndexRead;
-					buffer_barrier.range.size = index_data.buffer->GetSize();
+					buffer_barrier.range.size = index_data.buffer->get_size();
 
 					edge::gfx::ResourceBarrierInfo resource_barrier{};
 					resource_barrier.buffer_barriers = &buffer_barrier;
 					resource_barrier.buffer_barrier_count = 1;
 
-					command_list.ResourceBarrier(resource_barrier);
+					command_list.resource_barrier(resource_barrier);
 				}
 
-				command_list.BindIndexBuffer(index_data.buffer, edge::gfx::IndexType::eUint16, 0ull);
+				command_list.bind_index_buffer(index_data.buffer, edge::gfx::IndexType::eUint16, 0ull);
 			}
 		}
 
 		void GeometryBuffer::Bind(edge::gfx::ICommandList& command_list)
 		{
-			BindIndexBuffer(command_list);
-			BindVertexBuffers(command_list);
+			bind_index_buffer(command_list);
+			bind_vertex_buffers(command_list);
 		}
 
 		uint64_t GeometryBuffer::GetIndexBufferAddress()
 		{
-			return index_data.buffer->GetAddress();
+			return index_data.buffer->get_address();
 		}
 
 		void GeometryBuffer::AddIndexStreamData(const void* data, uint32_t count, uint32_t stride)
@@ -146,21 +146,21 @@ namespace engine
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			if (!geometry_data.buffer || geometry_data.buffer->GetSize() < geometry_data.data.size())
+			if (!geometry_data.buffer || geometry_data.buffer->get_size() < geometry_data.data.size())
 			{
 				if (geometry_data.buffer)
 				{
-					gfx_context.Destroy(geometry_data.buffer);
+					gfx_context.destroy(geometry_data.buffer);
 				}
 
 				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = geometry_data.data.size();
 				create_info.usage = usage;
 
-				geometry_data.buffer = gfx_context.CreateBuffer(create_info);
+				geometry_data.buffer = gfx_context.create_buffer(create_info);
 			}
 
-			edge::gfx::ResourceUpdater::UpdateBuffer(geometry_data.buffer, geometry_data.state, geometry_data.data);
+			edge::gfx::ResourceUpdater::update_buffer(geometry_data.buffer, geometry_data.state, geometry_data.data);
 		}
 
 
@@ -190,7 +190,7 @@ namespace engine
 
 		InterleavedGeometryBuffer::~InterleavedGeometryBuffer()
 		{
-			gfx_context.Destroy(vertex_data.buffer);
+			gfx_context.destroy(vertex_data.buffer);
 		}
 
 		void InterleavedGeometryBuffer::Flush()
@@ -206,7 +206,7 @@ namespace engine
 			}
 		}
 
-		void InterleavedGeometryBuffer::BindVertexBuffers(edge::gfx::ICommandList& command_list)
+		void InterleavedGeometryBuffer::bind_vertex_buffers(edge::gfx::ICommandList& command_list)
 		{
 			const uint32_t stride{ 0u };
 			uint64_t offset{ 0ull };
@@ -217,22 +217,22 @@ namespace engine
 				buffer_barrier.buffer = vertex_data.buffer;
 				buffer_barrier.src_state = vertex_data.state;
 				vertex_data.state = buffer_barrier.dst_state = edge::gfx::ResourceStateFlag::eVertexRead;
-				buffer_barrier.range.size = vertex_data.buffer->GetSize();
+				buffer_barrier.range.size = vertex_data.buffer->get_size();
 
 				edge::gfx::ResourceBarrierInfo resource_barrier{};
 				resource_barrier.buffer_barriers = &buffer_barrier;
 				resource_barrier.buffer_barrier_count = 1;
 
-				command_list.ResourceBarrier(resource_barrier);
+				command_list.resource_barrier(resource_barrier);
 			}
 
 			assert(vertex_data.buffer && "VERTEX BUFFER IS NOT ALLOCATED");
-			command_list.BindVertexBuffers({ &vertex_data.buffer, 1u }, { &stride, 1u }, { &offset, 1u });
+			command_list.bind_vertex_buffers({ &vertex_data.buffer, 1u }, { &stride, 1u }, { &offset, 1u });
 		}
 
 		uint64_t InterleavedGeometryBuffer::GetBufferAddress(VertexAttributeFlag flag)
 		{
-			return vertex_data.buffer->GetAddress();
+			return vertex_data.buffer->get_address();
 		}
 
 		VertexRange InterleavedGeometryBuffer::AddMesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices)
@@ -287,7 +287,7 @@ namespace engine
 		{
 			for (auto& vert_data : vertex_datas)
 			{
-				gfx_context.Destroy(vert_data.buffer);
+				gfx_context.destroy(vert_data.buffer);
 			}
 		}
 
@@ -307,7 +307,7 @@ namespace engine
 			}
 		}
 
-		void DeinterleavedGeometryBuffer::BindVertexBuffers(edge::gfx::ICommandList& command_list)
+		void DeinterleavedGeometryBuffer::bind_vertex_buffers(edge::gfx::ICommandList& command_list)
 		{
 			uint32_t buffer_count{ 0u };
 			std::array<edge::gfx::IBuffer*, k_max_attribure_description> vertex_buffers{};
@@ -328,22 +328,22 @@ namespace engine
 						barrier.buffer = vert_data.buffer;
 						barrier.src_state = vert_data.state;
 						vert_data.state = barrier.dst_state = edge::gfx::ResourceStateFlag::eVertexRead;
-						barrier.range.size = vert_data.buffer->GetSize();
+						barrier.range.size = vert_data.buffer->get_size();
 					}
 
 					vertex_buffers[buffer_count++] = vert_data.buffer;
 				}
 			}
 
-			command_list.ResourceBarrier(resource_barrier);
-			command_list.BindVertexBuffers({ vertex_buffers.data(), buffer_count }, { strides.data(), buffer_count }, { offsets.data(), buffer_count });
+			command_list.resource_barrier(resource_barrier);
+			command_list.bind_vertex_buffers({ vertex_buffers.data(), buffer_count }, { strides.data(), buffer_count }, { offsets.data(), buffer_count });
 		}
 
 		uint64_t DeinterleavedGeometryBuffer::GetBufferAddress(VertexAttributeFlag flag)
 		{
 			uint32_t index = GetVertexAttributeLocation(flag);
 			assert(vertex_datas[index].buffer && "BUFFER IS NOT ALLOCATED");
-			return vertex_datas[index].buffer->GetAddress();
+			return vertex_datas[index].buffer->get_address();
 		}
 
 		template<typename _From, typename _To, typename _Pred>

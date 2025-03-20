@@ -60,7 +60,7 @@ namespace engine
 				}
 			}
 
-			Buffer* OpenALContext::CreateBuffer(const BufferCreateInfo& create_info)
+			Buffer* OpenALContext::create_buffer(const BufferCreateInfo& create_info)
 			{
 				return new OpenALBuffer(create_info);
 			}

@@ -2,35 +2,27 @@
 #include "VkDevice.h"
 #include "VkDebug.h"
 
-namespace edge
+namespace edge::gfx::vulkan
 {
-	namespace gfx
-	{
-		namespace vulkan
-		{
-			VulkanSemaphore::VulkanSemaphore(Device& device, bool timeline) :
-				VulkanResource{ nullptr, device.GetAllocationCallbacks() },
-				device{ device }
-			{
-				vk::SemaphoreTypeCreateInfo timeline_semaphore_ci{};
-				timeline_semaphore_ci.semaphoreType = timeline ? vk::SemaphoreType::eTimeline : vk::SemaphoreType::eBinary;
-				timeline_semaphore_ci.initialValue = 0;
+	VulkanSemaphore::VulkanSemaphore(Device& device, bool timeline) :
+		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+		device{ device } {
 
-				vk::SemaphoreCreateInfo create_info{};
-				create_info.pNext = &timeline_semaphore_ci;
-				vk::Result result = Handle(device).createSemaphore(&create_info, allocation_callbacks, &handle);
-			}
+		vk::SemaphoreTypeCreateInfo timeline_semaphore_ci{};
+		timeline_semaphore_ci.semaphoreType = timeline ? vk::SemaphoreType::eTimeline : vk::SemaphoreType::eBinary;
+		timeline_semaphore_ci.initialValue = 0;
 
-			VulkanSemaphore::~VulkanSemaphore()
-			{
-				Handle(device).destroySemaphore(handle, allocation_callbacks);
-			}
+		vk::SemaphoreCreateInfo create_info{};
+		create_info.pNext = &timeline_semaphore_ci;
+		vk::Result result = device.get_handle().createSemaphore(&create_info, allocation_callbacks, &handle_);
+	}
 
-			void VulkanSemaphore::SetResourceName(std::string_view name) const noexcept
-			{
-				auto& debug_utils = device.GetDebugUtils();
-				debug_utils.SetDebugName(handle, name);
-			}
-		}
+	VulkanSemaphore::~VulkanSemaphore() {
+		device.get_handle().destroySemaphore(handle_, allocation_callbacks);
+	}
+
+	void VulkanSemaphore::set_resource_name(std::string_view name) const noexcept {
+		auto& debug_utils = device.get_debug_utils();
+		debug_utils.set_debug_name(handle_, name);
 	}
 }

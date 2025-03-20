@@ -14,46 +14,46 @@ namespace edge
 				D3D12Context(const ContextCreateInfo& create_info);
 				~D3D12Context();
 
-				void Destroy(IGFXResource* handle) const override;
+				void destroy(IGFXResource* handle) const override;
 
-				[[nodiscard]] auto CreateFence() const->IFence* override;
+				[[nodiscard]] auto create_fence() const->IFence* override;
 
-				[[nodiscard]] auto CreateTimelineSemaphore() const->ISemaphore* override;
-				[[nodiscard]] auto CreateSemaphore() const->ISemaphore* override;
+				[[nodiscard]] auto create_timeline_semaphore() const->ISemaphore* override;
+				[[nodiscard]] auto create_semaphore() const->ISemaphore* override;
 
-				[[nodiscard]] auto RequestQueue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const-> IQueue* override;
+				[[nodiscard]] auto request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const-> IQueue* override;
 
-				[[nodiscard]] auto CreateSwapchain(const SwapChainCreateInfo& create_info) const->ISwapchain* override;
+				[[nodiscard]] auto create_swapchain(const SwapChainCreateInfo& create_info) const->ISwapchain* override;
 
-				[[nodiscard]] auto CreateCommandPool(const IQueue* queue, CommandPoolResetMode reset_mode) const->ICommandPool* override;
+				[[nodiscard]] auto create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) const->ICommandPool* override;
 
-				[[nodiscard]] auto CreateBuffer(const BufferCreateInfo& create_info) const-> IBuffer* override;
+				[[nodiscard]] auto create_buffer(const BufferCreateInfo& create_info) const-> IBuffer* override;
 
-				[[nodiscard]] auto CreateTexture(const TextureCreateInfo& create_info) const-> ITexture* override;
-				[[nodiscard]] auto CreateSwapchainTexture(ISwapchain* swapchain, uint32_t image_index) const-> ITexture* override;
+				[[nodiscard]] auto create_texture(const TextureCreateInfo& create_info) const-> ITexture* override;
+				[[nodiscard]] auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const-> ITexture* override;
 
-				[[nodiscard]] auto CreateShader(std::span<const ShaderStageInfo> shader_stages) const-> IShader* override;
+				[[nodiscard]] auto create_shader(std::span<const ShaderStageInfo> shader_stages) const-> IShader* override;
 
-				[[nodiscard]] auto CreateRootSignature(const RootSignatureCreateInfo& create_info) const->IRootSignature* override;
+				[[nodiscard]] auto create_root_signature(const RootSignatureCreateInfo& create_info) const->IRootSignature* override;
 
-				[[nodiscard]] auto CreatePipeline(const GraphicsPipelineCreateInfo& create_info) const->IPipeline* override;
-				[[nodiscard]] auto CreatePipeline(const ComputePipelineCreateInfo& create_info) const->IPipeline* override;
+				[[nodiscard]] auto create_pipeline(const GraphicsPipelineCreateInfo& create_info) const->IPipeline* override;
+				[[nodiscard]] auto create_pipeline(const ComputePipelineCreateInfo& create_info) const->IPipeline* override;
 
-				[[nodiscard]] auto CreatePipelineCache(const PipelineCacheCreateInfo& create_info) const->IPipelineCache* override;
+				[[nodiscard]] auto create_pipeline_cache(const PipelineCacheCreateInfo& create_info) const->IPipelineCache* override;
 
-				[[nodiscard]] auto CreateDescriptorAllocator() const->IDescriptorAllocator* override;
+				[[nodiscard]] auto create_descriptor_allocator() const->IDescriptorAllocator* override;
 
-				[[nodiscard]] auto CreateSharedDescriptor(const SharedDescriptorCreateInfo& create_info) const->ISharedDescriptor* override;
+				[[nodiscard]] auto create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) const->ISharedDescriptor* override;
 
-				[[nodiscard]] auto CreateSampler(const SamplerCreateInfo& create_info) const->ISampler* override;
+				[[nodiscard]] auto create_sampler(const SamplerCreateInfo& create_info) const->ISampler* override;
 
-				[[nodiscard]] auto CreateQueryPool(const QueryPoolCreateInfo& create_info) const->IQueryPool* override;
+				[[nodiscard]] auto create_query_pool(const QueryPoolCreateInfo& create_info) const->IQueryPool* override;
 
-				void WaitForFences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const override;
+				void wait_for_fences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const override;
 
-				void RequestMinimalBufferAlignment(BufferUsageFlags usage, uint64_t& alignment) const override;
-				void RequestTimestampFrequency(float* frequency) const override;
-				void RequestMemoryUsage(uint64_t* total_memory, uint64_t* used_memory) const override;
+				void request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment) const override;
+				void request_timestamp_frequency(float* frequency) const override;
+				void request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const override;
 			};
 		}
 	}

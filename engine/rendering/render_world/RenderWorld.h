@@ -50,7 +50,7 @@ namespace engine
 			void AddShadow(const shlib::SpotShadowCommit& shadow_data) override;
 
 			void BeginFrame(float delta_time) override;
-			void EndFrame() override;
+			void end_frame() override;
 
 			edge::gfx::IBuffer* GetDrawBuffer() override;
 			uint32_t GetDrawCount() const override;

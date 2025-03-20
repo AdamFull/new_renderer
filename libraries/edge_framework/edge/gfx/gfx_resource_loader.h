@@ -26,17 +26,16 @@ namespace edge
 		class CommandExecutor;
 		class MipGenerator;
 
-		class BufferUpdater
-		{
+		class BufferUpdater {
 		public:
 			friend class ResourceUpdater;
 
 			BufferUpdater(IBuffer* src_buffer, uint64_t src_offset, uint64_t src_size, IBuffer* dst_buffer);
 
-			void AddRegion(std::span<const uint8_t> data);
-			void InsertRegion(std::span<const uint8_t> data, uint64_t dst_offset);
+			void add_region(std::span<const uint8_t> data);
+			void insert_region(std::span<const uint8_t> data, uint64_t dst_offset);
 		private:
-			void Submit(ICommandList* command_list, ResourceStateFlags& current_state);
+			void submit(ICommandList* command_list, ResourceStateFlags& current_state);
 
 			CopyBufferInfo copy_buffer_info{};
 			uint64_t src_region_size;
@@ -47,14 +46,13 @@ namespace edge
 			std::vector<BufferCopyRegion> copy_regions{};
 		};
 
-		class TextureUpdater
-		{
+		class TextureUpdater {
 		public:
 			friend class ResourceUpdater;
 
 			TextureUpdater(IBuffer* src_buffer, uint64_t src_size, uint64_t src_offset, ITexture* dst_texture);
 		private:
-			void Submit(ICommandList* command_list);
+			void submit(ICommandList* command_list);
 
 			CopyTextureInfo copy_texture_info{};
 			uint64_t src_region_size;
@@ -63,8 +61,7 @@ namespace edge
 			std::vector<TextureCopyRegion> copy_regions{};
 		};
 
-		struct ResourceUpdaterCreateInfo
-		{
+		struct ResourceUpdaterCreateInfo {
 			IContext* gfx_context{ nullptr };
 			fs::VirtualFilesystem* filesystem{ nullptr };
 
@@ -75,27 +72,26 @@ namespace edge
 			uint32_t upload_buffer_count{ 2u };
 		};
 
-		class ResourceUpdater
-		{
+		class ResourceUpdater {
 		public:
-			static void Create(const ResourceUpdaterCreateInfo& create_info);
-			static void Shutdown();
+			static void create(const ResourceUpdaterCreateInfo& create_info);
+			static void shutdown();
 
-			static bool Flush(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores);
+			static bool flush(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores);
 
-			static auto LoadTexture(std::string path) -> std::shared_ptr<AsyncResourceHandle>;
-			static auto LoadTextureSync(std::string path, ResourceStateFlags& state) -> ITexture*;
-			static auto SyncUploads() -> void;
+			static auto load_texture(std::string path) -> std::shared_ptr<AsyncResourceHandle>;
+			static auto load_texture_sync(std::string path, ResourceStateFlags& state) -> ITexture*;
+			static auto sync_uploads() -> void;
 
-			static void UpdateTexture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data);
+			static void update_texture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data);
 
-			static auto GetBufferUpdater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater;
-			static void SubmitBufferUpdater(BufferUpdater& updater, ResourceStateFlags& current_state);
-			static void UpdateBuffer(IBuffer* dst_buffer, ResourceStateFlags& current_state, std::span<const uint8_t> data);
+			static auto get_buffer_updater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater;
+			static void submit_buffer_updater(BufferUpdater& updater, ResourceStateFlags& current_state);
+			static void update_buffer(IBuffer* dst_buffer, ResourceStateFlags& current_state, std::span<const uint8_t> data);
 
-			//static auto GetTextureUpdater(ITexture* dst_texture, uint64_t update_size) -> TextureUpdater;
+			//static auto get_texture_updater(ITexture* dst_texture, uint64_t update_size) -> TextureUpdater;
 		private:
-			static auto LoadTextureImpl(ICommandList* cmd_list, StagingBufferAllocator& allocator, std::string path, ResourceStateFlags& output_state) -> ITexture*;
+			static auto load_texture_impl(ICommandList* cmd_list, StagingBufferAllocator& allocator, std::string path, ResourceStateFlags& output_state) -> ITexture*;
 
 			static IContext* gfx_context;
 			static fs::VirtualFilesystem* filesystem;

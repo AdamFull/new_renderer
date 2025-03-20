@@ -8,8 +8,7 @@ namespace edge
 {
 	namespace gfx
 	{
-		inline ResourceStateFlags GetAccessState(AccessTypeFlags flags)
-		{
+		inline ResourceStateFlags get_access_state(AccessTypeFlags flags) {
 			ResourceStateFlags state_flags{};
 			if (flags & AccessTypeFlag::eRead)
 				state_flags |= ResourceStateFlag::eRead;
@@ -19,8 +18,7 @@ namespace edge
 			return state_flags;
 		}
 
-		inline ResourceStateFlag GetStateByDescriptorType(DescriptorType type)
-		{
+		inline ResourceStateFlag get_state_by_descriptor_type(DescriptorType type) {
 			switch (type)
 			{
 			case DescriptorType::eSampler:
@@ -45,8 +43,7 @@ namespace edge
 			return ResourceStateFlag::eUndefined;
 		}
 
-		inline constexpr uint32_t Hash(ShaderStageFlag flag, uint32_t hash = 0u)
-		{
+		inline constexpr uint32_t hash(ShaderStageFlag flag, uint32_t hash = 0u) {
 			std::string_view enum_string = enum_to_string(flag);
 			return murmur_hash(enum_string, hash);
 		}

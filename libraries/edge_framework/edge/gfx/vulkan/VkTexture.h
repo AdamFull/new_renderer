@@ -9,8 +9,7 @@ namespace edge
 	{
 		namespace vulkan
 		{
-			class VulkanTexture final : public ITexture
-			{
+			class VulkanTexture final : public ITexture {
 			public:
 				VulkanTexture(Allocator& allocator, const TextureCreateInfo& create_info);
 				VulkanTexture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index);
@@ -22,40 +21,35 @@ namespace edge
 				VulkanTexture& operator=(const VulkanTexture&) = delete;
 				VulkanTexture& operator=(VulkanTexture&&) = delete;
 
-				[[nodiscard]] auto GetImage() noexcept -> Image&;
-				[[nodiscard]] auto GetImage() const noexcept -> Image const&;
+				[[nodiscard]] auto get_image() noexcept -> Image&;
+				[[nodiscard]] auto get_image() const noexcept -> Image const&;
 
-				[[nodiscard]] auto GetSubresource(uint32_t subresource = ~0u) -> ImageView&;
-				[[nodiscard]] auto GetSubresource(uint32_t subresource = ~0u) const ->ImageView const&;
+				[[nodiscard]] auto get_subresource(uint32_t subresource = ~0u) -> ImageView&;
+				[[nodiscard]] auto get_subresource(uint32_t subresource = ~0u) const ->ImageView const&;
 
-				void SetResourceName(std::string_view name) const noexcept override;
+				void set_resource_name(std::string_view name) const noexcept override;
 
-				[[nodiscard]] auto GetWidth() const noexcept -> uint32_t override
-				{
-					return image->GetExtent().width;
+				[[nodiscard]] auto get_width() const noexcept -> uint32_t override {
+					return image->get_extent().width;
 				}
 
-				[[nodiscard]] auto GetHeight() const noexcept -> uint32_t override
-				{
-					return image->GetExtent().height;
+				[[nodiscard]] auto get_height() const noexcept -> uint32_t override {
+					return image->get_extent().height;
 				}
 
-				[[nodiscard]] auto GetDepth() const noexcept -> uint32_t override
-				{
-					return image->GetExtent().depth;
+				[[nodiscard]] auto get_depth() const noexcept -> uint32_t override {
+					return image->get_extent().depth;
 				}
 
-				[[nodiscard]] auto GetMipLevelCount() const noexcept -> uint32_t override
-				{
-					return image->GetMipLevelCount();
+				[[nodiscard]] auto get_mip_level_count() const noexcept -> uint32_t override {
+					return image->get_mip_level_count();
 				}
 
-				[[nodiscard]] auto GetArrayLayerCount() const noexcept -> uint32_t override
-				{
-					return image->GetArrayLayerCount();
+				[[nodiscard]] auto get_array_layer_count() const noexcept -> uint32_t override {
+					return image->get_array_layer_count();
 				}
 
-				[[nodiscard]] auto GetFormat() const noexcept -> Format override;
+				[[nodiscard]] auto get_format() const noexcept -> Format override;
 			private:
 				Device& device;
 

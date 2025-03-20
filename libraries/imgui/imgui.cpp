@@ -276,7 +276,7 @@ CODE
  The sub-folders in examples/ contain examples applications following this structure.
 
      // Application init: create a dear imgui context, setup some options, load fonts
-     ImGui::CreateContext();
+     ImGui::create_context();
      ImGuiIO& io = ImGui::GetIO();
      // TODO: Set optional io.ConfigFlags values, e.g. 'io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard' to enable keyboard controls.
      // TODO: Fill optional fields of the io structure later.
@@ -311,7 +311,7 @@ CODE
  EXHIBIT 2: IMPLEMENTING CUSTOM BACKEND / CUSTOM ENGINE
 
      // Application init: create a dear imgui context, setup some options, load fonts
-     ImGui::CreateContext();
+     ImGui::create_context();
      ImGuiIO& io = ImGui::GetIO();
      // TODO: Set optional io.ConfigFlags values, e.g. 'io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard' to enable keyboard controls.
      // TODO: Fill optional fields of the io structure later.
@@ -351,8 +351,8 @@ CODE
         MyGameRender(); // may use any Dear ImGui functions as well!
 
         // Render dear imgui, swap buffers
-        // (You want to try calling EndFrame/Render as late as you can, to be able to use Dear ImGui in your own game rendering code)
-        ImGui::EndFrame();
+        // (You want to try calling end_frame/Render as late as you can, to be able to use Dear ImGui in your own game rendering code)
+        ImGui::end_frame();
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
         MyImGuiRenderFunction(draw_data);
@@ -779,10 +779,10 @@ CODE
  - 2018/02/18 (1.60) - BeginDragDropSource(): temporarily removed the optional mouse_button=0 parameter because it is not really usable in many situations at the moment.
  - 2018/02/16 (1.60) - obsoleted the io.RenderDrawListsFn callback, you can call your graphics engine render function after ImGui::Render(). Use ImGui::GetDrawData() to retrieve the ImDrawData* to display.
  - 2018/02/07 (1.60) - reorganized context handling to be more explicit,
-                       - YOU NOW NEED TO CALL ImGui::CreateContext() AT THE BEGINNING OF YOUR APP, AND CALL ImGui::DestroyContext() AT THE END.
+                       - YOU NOW NEED TO CALL ImGui::create_context() AT THE BEGINNING OF YOUR APP, AND CALL ImGui::DestroyContext() AT THE END.
                        - removed Shutdown() function, as DestroyContext() serve this purpose.
-                       - you may pass a ImFontAtlas* pointer to CreateContext() to share a font atlas between contexts. Otherwise CreateContext() will create its own font atlas instance.
-                       - removed allocator parameters from CreateContext(), they are now setup with SetAllocatorFunctions(), and shared by all contexts.
+                       - you may pass a ImFontAtlas* pointer to create_context() to share a font atlas between contexts. Otherwise create_context() will create its own font atlas instance.
+                       - removed allocator parameters from create_context(), they are now setup with SetAllocatorFunctions(), and shared by all contexts.
                        - removed the default global context and font atlas instance, which were confusing for users of DLL reloading and users of multiple contexts.
  - 2018/01/31 (1.60) - moved sample TTF files from extra_fonts/ to misc/fonts/. If you loaded files directly from the imgui repo you may need to update your paths.
  - 2018/01/11 (1.60) - obsoleted IsAnyWindowHovered() in favor of IsWindowHovered(ImGuiHoveredFlags_AnyWindow). Kept redirection function (will obsolete).
@@ -842,7 +842,7 @@ CODE
                        This helper function will convert an old TitleBg/TitleBgActive color into a new one with the same visual output, given the OLD color and the OLD WindowBg color:
                        ImVec4 ConvertTitleBgCol(const ImVec4& win_bg_col, const ImVec4& title_bg_col) { float new_a = 1.0f - ((1.0f - win_bg_col.w) * (1.0f - title_bg_col.w)), k = title_bg_col.w / new_a; return ImVec4((win_bg_col.x * win_bg_col.w + title_bg_col.x) * k, (win_bg_col.y * win_bg_col.w + title_bg_col.y) * k, (win_bg_col.z * win_bg_col.w + title_bg_col.z) * k, new_a); }
                        If this is confusing, pick the RGB value from title bar from an old screenshot and apply this as TitleBg/TitleBgActive. Or you may just create TitleBgActive from a tweaked TitleBg color.
- - 2016/05/07 (1.49) - removed confusing set of GetInternalState(), GetInternalStateSize(), SetInternalState() functions. Now using CreateContext(), DestroyContext(), GetCurrentContext(), SetCurrentContext().
+ - 2016/05/07 (1.49) - removed confusing set of GetInternalState(), GetInternalStateSize(), SetInternalState() functions. Now using create_context(), DestroyContext(), GetCurrentContext(), SetCurrentContext().
  - 2016/05/02 (1.49) - renamed SetNextTreeNodeOpened() to SetNextTreeNodeOpen(), no redirection.
  - 2016/05/01 (1.49) - obsoleted old signature of CollapsingHeader(const char* label, const char* str_id = NULL, bool display_frame = true, bool default_open = false) as extra parameters were badly designed and rarely used. You can replace the "default_open = true" flag in new API with CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen).
  - 2016/04/26 (1.49) - changed ImDrawList::PushClipRect(ImVec4 rect) to ImDrawList::PushClipRect(Imvec2 min,ImVec2 max,bool intersect_with_current_clip_rect=false). Note that higher-level ImGui::PushClipRect() is preferable because it will clip at logic/widget level, whereas ImDrawList::PushClipRect() only affect your renderer.
@@ -1236,7 +1236,7 @@ static void             UpdateViewportPlatformMonitor(ImGuiViewportP* viewport);
 // - Confused? In a debugger: add GImGui to your watch window and notice how its value changes depending on your current location (which DLL boundary you are in).
 
 // Current context pointer. Implicitly used by all Dear ImGui functions. Always assumed to be != NULL.
-// - ImGui::CreateContext() will automatically set this pointer if it is NULL.
+// - ImGui::create_context() will automatically set this pointer if it is NULL.
 //   Change to a different context by calling ImGui::SetCurrentContext().
 // - Important: Dear ImGui functions are not thread-safe because of this pointer.
 //   If you want thread-safety to allow N threads to access N different contexts:
@@ -3241,7 +3241,7 @@ bool ImGuiListClipper::Step()
 
 ImGuiStyle& ImGui::GetStyle()
 {
-    IM_ASSERT(GImGui != NULL && "No current context. Did you call ImGui::CreateContext() and ImGui::SetCurrentContext() ?");
+    IM_ASSERT(GImGui != NULL && "No current context. Did you call ImGui::create_context() and ImGui::SetCurrentContext() ?");
     return GImGui->Style;
 }
 
@@ -3774,7 +3774,7 @@ void ImGui::GetAllocatorFunctions(ImGuiMemAllocFunc* p_alloc_func, ImGuiMemFreeF
     *p_user_data = GImAllocatorUserData;
 }
 
-ImGuiContext* ImGui::CreateContext(ImFontAtlas* shared_font_atlas)
+ImGuiContext* ImGui::create_context(ImFontAtlas* shared_font_atlas)
 {
     ImGuiContext* prev_ctx = GetCurrentContext();
     ImGuiContext* ctx = IM_NEW(ImGuiContext)(shared_font_atlas);
@@ -3889,7 +3889,7 @@ void ImGui::Shutdown()
     if (!g.Initialized)
         return;
 
-    // Save settings (unless we haven't attempted to load them: CreateContext/DestroyContext without a call to NewFrame shouldn't save an empty file)
+    // Save settings (unless we haven't attempted to load them: create_context/DestroyContext without a call to NewFrame shouldn't save an empty file)
     if (g.SettingsLoaded && g.IO.IniFilename != NULL)
         SaveIniSettingsToDisk(g.IO.IniFilename);
 
@@ -4524,13 +4524,13 @@ const char* ImGui::GetVersion()
 
 ImGuiIO& ImGui::GetIO()
 {
-    IM_ASSERT(GImGui != NULL && "No current context. Did you call ImGui::CreateContext() and ImGui::SetCurrentContext() ?");
+    IM_ASSERT(GImGui != NULL && "No current context. Did you call ImGui::create_context() and ImGui::SetCurrentContext() ?");
     return GImGui->IO;
 }
 
 ImGuiPlatformIO& ImGui::GetPlatformIO()
 {
-    IM_ASSERT(GImGui != NULL && "No current context. Did you call ImGui::CreateContext() and ImGui::SetCurrentContext()?");
+    IM_ASSERT(GImGui != NULL && "No current context. Did you call ImGui::create_context() and ImGui::SetCurrentContext()?");
     return GImGui->PlatformIO;
 }
 
@@ -4894,7 +4894,7 @@ static void SetupDrawListSharedData()
 
 void ImGui::NewFrame()
 {
-    IM_ASSERT(GImGui != NULL && "No current context. Did you call ImGui::CreateContext() and ImGui::SetCurrentContext() ?");
+    IM_ASSERT(GImGui != NULL && "No current context. Did you call ImGui::create_context() and ImGui::SetCurrentContext() ?");
     ImGuiContext& g = *GImGui;
 
     // Remove pending delete hooks before frame start.
@@ -5399,12 +5399,12 @@ static void ImGui::RenderDimmedBackgrounds()
 }
 
 // This is normally called by Render(). You may want to call it directly if you want to avoid calling Render() but the gain will be very minimal.
-void ImGui::EndFrame()
+void ImGui::end_frame()
 {
     ImGuiContext& g = *GImGui;
     IM_ASSERT(g.Initialized);
 
-    // Don't process EndFrame() multiple times.
+    // Don't process end_frame() multiple times.
     if (g.FrameCountEnded == g.FrameCount)
         return;
     IM_ASSERT(g.WithinFrameScope && "Forgot to call ImGui::NewFrame()?");
@@ -5450,7 +5450,7 @@ void ImGui::EndFrame()
     // Drag and Drop: Fallback for missing source tooltip. This is not ideal but better than nothing.
     // If you want to handle source item disappearing: instead of submitting your description tooltip
     // in the BeginDragDropSource() block of the dragged item, you can submit them from a safe single spot
-    // (e.g. end of your item loop, or before EndFrame) by reading payload data.
+    // (e.g. end of your item loop, or before end_frame) by reading payload data.
     // In the typical case, the contents of drag tooltip should be possible to infer solely from payload data.
     if (g.DragDropActive && g.DragDropSourceFrameCount < g.FrameCount && !(g.DragDropSourceFlags & ImGuiDragDropFlags_SourceNoPreviewTooltip))
     {
@@ -5506,7 +5506,7 @@ void ImGui::Render()
     IM_ASSERT(g.Initialized);
 
     if (g.FrameCountEnded != g.FrameCount)
-        EndFrame();
+        end_frame();
     if (g.FrameCountRendered == g.FrameCount)
         return;
     g.FrameCountRendered = g.FrameCount;
@@ -6950,7 +6950,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
     const ImGuiStyle& style = g.Style;
     IM_ASSERT(name != NULL && name[0] != '\0');     // Window name required
     IM_ASSERT(g.WithinFrameScope);                  // Forgot to call ImGui::NewFrame()
-    IM_ASSERT(g.FrameCountEnded != g.FrameCount);   // Called ImGui::Render() or ImGui::EndFrame() and haven't called ImGui::NewFrame() again yet
+    IM_ASSERT(g.FrameCountEnded != g.FrameCount);   // Called ImGui::Render() or ImGui::end_frame() and haven't called ImGui::NewFrame() again yet
 
     // Find or create
     ImGuiWindow* window = FindWindowByName(name);
@@ -9764,7 +9764,7 @@ void ImGui::ResetMouseDragDelta(ImGuiMouseButton button)
 
 // Get desired mouse cursor shape.
 // Important: this is meant to be used by a platform backend, it is reset in ImGui::NewFrame(),
-// updated during the frame, and locked in EndFrame()/Render().
+// updated during the frame, and locked in end_frame()/Render().
 // If you use software rendering by setting io.MouseDrawCursor then Dear ImGui will render those for you
 ImGuiMouseCursor ImGui::GetMouseCursor()
 {
@@ -10324,7 +10324,7 @@ void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
 
     // Clear buttons state when focus is lost
     // - this is useful so e.g. releasing Alt after focus loss on Alt-Tab doesn't trigger the Alt menu toggle.
-    // - we clear in EndFrame() and not now in order allow application/user code polling this flag
+    // - we clear in end_frame() and not now in order allow application/user code polling this flag
     //   (e.g. custom backend may want to clear additional data, custom widgets may want to react with a "canceling" event).
     if (g.IO.AppFocusLost)
     {
@@ -10619,7 +10619,7 @@ static void ImGui::ErrorCheckNewFrameSanityChecks()
     // (We pass an error message in the assert expression to make it visible to programmers who are not using a debugger, as most assert handlers display their argument)
     IM_ASSERT(g.Initialized);
     IM_ASSERT((g.IO.DeltaTime > 0.0f || g.FrameCount == 0)              && "Need a positive DeltaTime!");
-    IM_ASSERT((g.FrameCount == 0 || g.FrameCountEnded == g.FrameCount)  && "Forgot to call Render() or EndFrame() at the end of the previous frame?");
+    IM_ASSERT((g.FrameCount == 0 || g.FrameCountEnded == g.FrameCount)  && "Forgot to call Render() or end_frame() at the end of the previous frame?");
     IM_ASSERT(g.IO.DisplaySize.x >= 0.0f && g.IO.DisplaySize.y >= 0.0f  && "Invalid DisplaySize value!");
     IM_ASSERT(g.IO.Fonts->IsBuilt()                                     && "Font Atlas not built! Make sure you called ImGui_ImplXXXX_NewFrame() function for renderer backend, which should call io.Fonts->GetTexDataAsRGBA32() / GetTexDataAsAlpha8()");
     IM_ASSERT(g.Style.CurveTessellationTol > 0.0f                       && "Invalid style setting!");
@@ -10648,7 +10648,7 @@ static void ImGui::ErrorCheckNewFrameSanityChecks()
     {
         if ((g.IO.BackendFlags & ImGuiBackendFlags_PlatformHasViewports) && (g.IO.BackendFlags & ImGuiBackendFlags_RendererHasViewports))
         {
-            IM_ASSERT((g.FrameCount == 0 || g.FrameCount == g.FrameCountPlatformEnded) && "Forgot to call UpdatePlatformWindows() in main loop after EndFrame()? Check examples/ applications for reference.");
+            IM_ASSERT((g.FrameCount == 0 || g.FrameCount == g.FrameCountPlatformEnded) && "Forgot to call UpdatePlatformWindows() in main loop after end_frame()? Check examples/ applications for reference.");
             IM_ASSERT(g.PlatformIO.Platform_CreateWindow  != NULL && "Platform init didn't install handlers?");
             IM_ASSERT(g.PlatformIO.Platform_DestroyWindow != NULL && "Platform init didn't install handlers?");
             IM_ASSERT(g.PlatformIO.Platform_GetWindowPos  != NULL && "Platform init didn't install handlers?");
@@ -10681,7 +10681,7 @@ static void ImGui::ErrorCheckEndFrameSanityChecks()
 {
     ImGuiContext& g = *GImGui;
 
-    // Verify that io.KeyXXX fields haven't been tampered with. Key mods should not be modified between NewFrame() and EndFrame()
+    // Verify that io.KeyXXX fields haven't been tampered with. Key mods should not be modified between NewFrame() and end_frame()
     // One possible reason leading to this assert is that your backends update inputs _AFTER_ NewFrame().
     // It is known that when some modal native windows called mid-frame takes focus away, some backends such as GLFW will
     // send key release events mid-frame. This would normally trigger this assertion and lead to sheared inputs.
@@ -10691,7 +10691,7 @@ static void ImGui::ErrorCheckEndFrameSanityChecks()
     IM_ASSERT((key_mods == 0 || g.IO.KeyMods == key_mods) && "Mismatching io.KeyCtrl/io.KeyShift/io.KeyAlt/io.KeySuper vs io.KeyMods");
     IM_UNUSED(key_mods);
 
-    // [EXPERIMENTAL] Recover from errors: You may call this yourself before EndFrame().
+    // [EXPERIMENTAL] Recover from errors: You may call this yourself before end_frame().
     //ErrorCheckEndFrameRecover();
 
     // Report when there is a mismatch of Begin/BeginChild vs End/EndChild calls. Important: Remember that the Begin/BeginChild API requires you
@@ -10716,7 +10716,7 @@ static void ImGui::ErrorCheckEndFrameSanityChecks()
 }
 
 // Experimental recovery from incorrect usage of BeginXXX/EndXXX/PushXXX/PopXXX calls.
-// Must be called during or before EndFrame().
+// Must be called during or before end_frame().
 // This is generally flawed as we are not necessarily End/Popping things in the right order.
 // FIXME: Can't recover from inside BeginTabItem/EndTabItem yet.
 // FIXME: Can't recover from interleaved BeginTabBar/Begin
@@ -12902,7 +12902,7 @@ static ImVec2 ImGui::NavCalcPreferredRefPos()
         else
             ref_rect = WindowRectRelToAbs(window, window->NavRectRel[g.NavLayer]);
 
-        // Take account of upcoming scrolling (maybe set mouse pos should be done in EndFrame?)
+        // Take account of upcoming scrolling (maybe set mouse pos should be done in end_frame?)
         if (window->LastFrameActive != g.FrameCount && (window->ScrollTarget.x != FLT_MAX || window->ScrollTarget.y != FLT_MAX))
         {
             ImVec2 next_scroll = CalcNextScrollFromScrollTargetAndClamp(window);
@@ -13419,7 +13419,7 @@ void ImGui::NavMoveRequestApplyResult()
 // Process NavCancel input (to close a popup, get back to parent, clear focus)
 // FIXME: In order to support e.g. Escape to clear a selection we'll need:
 // - either to store the equivalent of ActiveIdUsingKeyInputMask for a FocusScope and test for it.
-// - either to move most/all of those tests to the epilogue/end functions of the scope they are dealing with (e.g. exit child window in EndChild()) or in EndFrame(), to allow an earlier intercept
+// - either to move most/all of those tests to the epilogue/end functions of the scope they are dealing with (e.g. exit child window in EndChild()) or in end_frame(), to allow an earlier intercept
 static void ImGui::NavUpdateCancelRequest()
 {
     ImGuiContext& g = *GImGui;
@@ -13871,7 +13871,7 @@ static const char* GetFallbackWindowNameForWindowingList(ImGuiWindow* window)
     return ImGui::LocalizeGetMsg(ImGuiLocKey_WindowingUntitled);
 }
 
-// Overlay displayed when using CTRL+TAB. Called by EndFrame().
+// Overlay displayed when using CTRL+TAB. Called by end_frame().
 void ImGui::NavUpdateWindowingOverlay()
 {
     ImGuiContext& g = *GImGui;
@@ -14625,7 +14625,7 @@ void ImGui::LoadIniSettingsFromMemory(const char* ini_data, size_t ini_size)
 {
     ImGuiContext& g = *GImGui;
     IM_ASSERT(g.Initialized);
-    //IM_ASSERT(!g.WithinFrameScope && "Cannot be called between NewFrame() and EndFrame()");
+    //IM_ASSERT(!g.WithinFrameScope && "Cannot be called between NewFrame() and end_frame()");
     //IM_ASSERT(g.SettingsLoaded == false && g.FrameCount == 0);
 
     // For user convenience, we allow passing a non zero-terminated string (hence the ini_size parameter).
@@ -15672,12 +15672,12 @@ void ImGui::WindowSyncOwnedViewport(ImGuiWindow* window, ImGuiWindow* parent_win
         window->Viewport->ParentViewportId = g.IO.ConfigViewportsNoDefaultParent ? 0 : IMGUI_VIEWPORT_DEFAULT_ID;
 }
 
-// Called by user at the end of the main loop, after EndFrame()
+// Called by user at the end of the main loop, after end_frame()
 // This will handle the creation/update of all OS windows via function defined in the ImGuiPlatformIO api.
 void ImGui::UpdatePlatformWindows()
 {
     ImGuiContext& g = *GImGui;
-    IM_ASSERT(g.FrameCountEnded == g.FrameCount && "Forgot to call Render() or EndFrame() before UpdatePlatformWindows()?");
+    IM_ASSERT(g.FrameCountEnded == g.FrameCount && "Forgot to call Render() or end_frame() before UpdatePlatformWindows()?");
     IM_ASSERT(g.FrameCountPlatformEnded < g.FrameCount);
     g.FrameCountPlatformEnded = g.FrameCount;
     if (!(g.ConfigFlagsCurrFrame & ImGuiConfigFlags_ViewportsEnable))
@@ -15968,7 +15968,7 @@ void ImGui::DestroyPlatformWindows()
 //    | BeginDockableDragDropTarget()
 //    | - DockNodePreviewDockRender()
 //-----------------------------------------------------------------------------
-// - EndFrame()
+// - end_frame()
 //    | DockContextEndFrame()
 //-----------------------------------------------------------------------------
 
@@ -17414,7 +17414,7 @@ static void ImGui::DockNodeUpdate(ImGuiDockNode* node)
             // But we still it bring it to the front of display. There's no way to choose this precise behavior via window flags.
             // One simple case to ponder if: window A has a toggle to create windows B/C/D. Dock B/C/D together, clear the toggle and enable it again.
             // When reappearing B/C/D will request focus and be moved to the top of the display pile, but they are not linked to the dock host window
-            // during the frame they appear. The dock host window would keep its old display order, and the sorting in EndFrame would move B/C/D back
+            // during the frame they appear. The dock host window would keep its old display order, and the sorting in end_frame would move B/C/D back
             // after the dock host window, losing their top-most status.
             if (node->HostWindow->Appearing)
                 BringWindowToDisplayFront(node->HostWindow);
