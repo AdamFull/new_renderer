@@ -1,3 +1,4 @@
+
 # ngengine (New Generation Engine)
 
 ngengine is a modern game engine focused on advanced rendering techniques and deep exploration of the Vulkan API. Originally started as a hobby project to study the Vulkan API, ngengine has evolved into a comprehensive tool for studying graphics programming and implementing cutting-edge rendering methods.
@@ -11,24 +12,23 @@ ngengine is a modern game engine focused on advanced rendering techniques and de
 - **Vulkan 1.1-1.3 Support**: Full compatibility with Vulkan API versions 1.1 through 1.3.
 - **Computation Support**: Leverage the power of GPUs for general-purpose computing tasks.
 - **Render Graph**: A flexible render graph system for managing rendering pipelines.
-- **Render Config**: Description and configuration of render graphs.
 - **Virtual Filesystem**: Abstraction layer for handling file operations within the engine.
 - **Immediate Mode Debug Draw**: Real-time debugging with 2D and 3D support.
 - **GPU Frustum Culling**: Efficient culling of objects outside the camera’s view using the GPU, applicable to all virtual cameras, including shadow casters.
+- **Multithreaded resource uploading**: Simplified design of parallel resource loader running in COPY queue and in multiple threads to minimize possible delays.
 
 ### In Progress
-- **Reflection-Based Component Editor**: A user-friendly editor for modifying component properties based on reflection.
-- **Virtual Tuning Variables**: Editable variables in the editor that can be used as parameters in the render graph, allowing dynamic adjustments.
+- **Async Compute**: Support for asynchronous computing to optimize rendering performance.
 
 ### Future Plans
 - **Rendering Transparency with Visibility Buffer**: Enhanced transparency handling integrated into the visibility buffer.
 - **DVM (Decoupled Visibility Multisampling)**: Advanced multisampling technique to improve visual quality.
 - **Ray-Traced Shadows**: Implementation of ray tracing for highly realistic shadows.
-- **Async Compute**: Support for asynchronous computing to optimize rendering performance.
 - **Triangle Culling**: Modern approaches to efficiently reject unnecessary triangles.
-- **Multithreaded Command List Filling**: Parallelization of command list creation for improved performance.
 - **Shader Hot Reload**: Real-time shader reloading to streamline the development process.
 - **Reverse-Z**: Enhanced depth precision through reverse-Z technique.
+- **Reflection-Based Component Editor**: A user-friendly editor for modifying component properties based on reflection.
+- **Virtual Tuning Variables**: Editable variables in the editor that can be used as parameters in the render graph, allowing dynamic adjustments.
 
 ## About ngengine
 
