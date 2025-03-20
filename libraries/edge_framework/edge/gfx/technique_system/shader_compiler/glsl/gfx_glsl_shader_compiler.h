@@ -4,23 +4,20 @@
 
 #include <memory>
 
-namespace edge
+namespace edge::gfx
 {
-	namespace gfx
-	{
-		class shader_includer;
+	class shader_includer;
 
-		class GLSLShaderCompiler final : public IShaderCompiler {
-		public:
-			GLSLShaderCompiler(const ShaderCompilerCreateInfo& create_info);
-			~GLSLShaderCompiler() override;
+	class GLSLShaderCompiler final : public IShaderCompiler {
+	public:
+		GLSLShaderCompiler(const ShaderCompilerCreateInfo& create_info);
+		~GLSLShaderCompiler() override;
 
-			auto collect_dependency_hash(const ShaderCompileInfo& compile_info) -> uint32_t override;
-			auto compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool override;
-		private:
-			fs::VirtualFilesystem* filesystem{ nullptr };
+		auto collect_dependency_hash(const ShaderCompileInfo& compile_info) -> uint32_t override;
+		auto compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool override;
+	private:
+		fs::VirtualFilesystem* filesystem{ nullptr };
 
-			std::unique_ptr<shader_includer> includer;
-		};
-	}
+		std::unique_ptr<shader_includer> includer;
+	};
 }

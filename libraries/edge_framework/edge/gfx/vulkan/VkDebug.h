@@ -2,104 +2,98 @@
 
 #include <vulkan/vulkan.hpp>
 
-namespace edge
+namespace edge::gfx::vulkan
 {
-	namespace gfx
-	{
-		namespace vulkan
-		{
-			class Device;
+	class Device;
 
-			/**
-			 * @brief An interface over platform-specific debug extensions.
-			 */
-			class DebugUtils {
-			public:
-				DebugUtils(Device& device);
-				virtual ~DebugUtils() = default;
+	/**
+	 * @brief An interface over platform-specific debug extensions.
+	 */
+	class DebugUtils {
+	public:
+		DebugUtils(Device& device);
+		virtual ~DebugUtils() = default;
 
-				template<typename _Ty>
-				void set_debug_name(const _Ty& object, std::string_view name) const {
-					if (object && !name.empty()) {
-						auto object_id = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
-						auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_id);
+		template<typename _Ty>
+		void set_debug_name(const _Ty& object, std::string_view name) const {
+			if (object && !name.empty()) {
+				auto object_id = reinterpret_cast<uint64_t>(static_cast<_Ty::CType>(object));
+				auto formatted_debug_object_name = std::format("{}:{} | {:x}", vk::to_string(object.objectType), name, object_id);
 
-						set_debug_name(object.objectType, object_id, name);
-					}
-				}
-
-				/**
-				 * @brief Sets the debug name for a Vulkan object.
-				 */
-				virtual void set_debug_name(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const = 0;
-
-				/**
-				 * @brief Tags the given Vulkan object with some data.
-				 */
-				virtual void set_debug_tag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const = 0;
-
-				/**
-				 * @brief Inserts a command to begin a new debug label/marker scope.
-				 */
-				virtual void begin_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const = 0;
-
-				/**
-				 * @brief Inserts a command to end the current debug label/marker scope.
-				 */
-				virtual void end_label(vk::CommandBuffer command_buffer) const = 0;
-
-				/**
-				 * @brief Inserts a (non-scoped) debug label/marker in the command buffer.
-				 */
-				virtual void insert_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const = 0;
-			protected:
-				Device& device;
-			};
-
-			/**
-			 * @brief DebugUtils implemented on top of VK_EXT_debug_utils.
-			 */
-			class DebugUtilsExtDebugUtils final : public DebugUtils {
-			public:
-				DebugUtilsExtDebugUtils(Device& device);
-				~DebugUtilsExtDebugUtils() override = default;
-
-				void set_debug_name(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const override;
-				void set_debug_tag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const override;
-				void begin_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
-				void end_label(vk::CommandBuffer command_buffer) const override;
-				void insert_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
-			};
-
-			/**
-			 * @brief DebugUtils implemented on top of VK_EXT_debug_marker.
-			 */
-			class DebugMarkerExtDebugUtils final : public DebugUtils {
-			public:
-				DebugMarkerExtDebugUtils(Device& device);
-				~DebugMarkerExtDebugUtils() override = default;
-
-				void set_debug_name(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const override;
-				void set_debug_tag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const override;
-				void begin_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
-				void end_label(vk::CommandBuffer command_buffer) const override;
-				void insert_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
-			};
-
-			/**
-			 * @brief No-op DebugUtils.
-			 */
-			class DummyDebugUtils final : public DebugUtils {
-			public:
-				DummyDebugUtils(Device& device);
-				~DummyDebugUtils() override = default;
-
-				inline void set_debug_name(vk::ObjectType, uint64_t, std::string_view) const override {}
-				inline void set_debug_tag(vk::ObjectType, uint64_t, uint64_t, const void*, size_t) const override {}
-				inline void begin_label(vk::CommandBuffer, std::string_view, uint32_t) const override {}
-				inline void end_label(vk::CommandBuffer) const override {}
-				inline void insert_label(vk::CommandBuffer, std::string_view, uint32_t) const override {}
-			};
+				set_debug_name(object.objectType, object_id, name);
+			}
 		}
-	}
+
+		/**
+		 * @brief Sets the debug name for a Vulkan object.
+		 */
+		virtual void set_debug_name(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const = 0;
+
+		/**
+		 * @brief Tags the given Vulkan object with some data.
+		 */
+		virtual void set_debug_tag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const = 0;
+
+		/**
+		 * @brief Inserts a command to begin a new debug label/marker scope.
+		 */
+		virtual void begin_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const = 0;
+
+		/**
+		 * @brief Inserts a command to end the current debug label/marker scope.
+		 */
+		virtual void end_label(vk::CommandBuffer command_buffer) const = 0;
+
+		/**
+		 * @brief Inserts a (non-scoped) debug label/marker in the command buffer.
+		 */
+		virtual void insert_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const = 0;
+	protected:
+		Device& device;
+	};
+
+	/**
+	 * @brief DebugUtils implemented on top of VK_EXT_debug_utils.
+	 */
+	class DebugUtilsExtDebugUtils final : public DebugUtils {
+	public:
+		DebugUtilsExtDebugUtils(Device& device);
+		~DebugUtilsExtDebugUtils() override = default;
+
+		void set_debug_name(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const override;
+		void set_debug_tag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const override;
+		void begin_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
+		void end_label(vk::CommandBuffer command_buffer) const override;
+		void insert_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
+	};
+
+	/**
+	 * @brief DebugUtils implemented on top of VK_EXT_debug_marker.
+	 */
+	class DebugMarkerExtDebugUtils final : public DebugUtils {
+	public:
+		DebugMarkerExtDebugUtils(Device& device);
+		~DebugMarkerExtDebugUtils() override = default;
+
+		void set_debug_name(vk::ObjectType object_type, uint64_t object_handle, std::string_view name) const override;
+		void set_debug_tag(vk::ObjectType object_type, uint64_t object_handle, uint64_t tag_name, const void* tag_data, size_t tag_data_size) const override;
+		void begin_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
+		void end_label(vk::CommandBuffer command_buffer) const override;
+		void insert_label(vk::CommandBuffer command_buffer, std::string_view name, uint32_t color) const override;
+	};
+
+	/**
+	 * @brief No-op DebugUtils.
+	 */
+	class DummyDebugUtils final : public DebugUtils {
+	public:
+		DummyDebugUtils(Device& device);
+		~DummyDebugUtils() override = default;
+
+		inline void set_debug_name(vk::ObjectType, uint64_t, std::string_view) const override {}
+		inline void set_debug_tag(vk::ObjectType, uint64_t, uint64_t, const void*, size_t) const override {}
+		inline void begin_label(vk::CommandBuffer, std::string_view, uint32_t) const override {}
+		inline void end_label(vk::CommandBuffer) const override {}
+		inline void insert_label(vk::CommandBuffer, std::string_view, uint32_t) const override {}
+	};
 }

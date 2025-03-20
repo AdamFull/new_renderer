@@ -75,7 +75,7 @@ namespace engine
 					attachment = &rendering_info.attachments[rendering_info.attachment_count++];
 				}
 
-				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+				auto& barrier = texture_barriers.emplace_back();
 				barrier.texture = execution_context.GetTexture(render_resource);
 				barrier.src_state = render_resource.GetState();
 				barrier.dst_state = new_state;

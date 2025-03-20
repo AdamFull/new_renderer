@@ -3,29 +3,23 @@
 #include "VkResource.h"
 #include "../gfx_base.h"
 
-namespace edge
+namespace edge::gfx::vulkan
 {
-	namespace gfx
-	{
-		namespace vulkan
-		{
-			class Device;
+	class Device;
 
-			class VulkanSampler final : public ISampler, public VulkanResource<vk::Sampler> {
-			public:
-				VulkanSampler(Device& device, const SamplerCreateInfo& create_info);
-				~VulkanSampler();
+	class VulkanSampler final : public ISampler, public VulkanResource<vk::Sampler> {
+	public:
+		VulkanSampler(Device& device, const SamplerCreateInfo& create_info);
+		~VulkanSampler();
 
-				VulkanSampler(VulkanSampler&) = delete;
-				VulkanSampler(VulkanSampler&& other) noexcept;
+		VulkanSampler(VulkanSampler&) = delete;
+		VulkanSampler(VulkanSampler&& other) noexcept;
 
-				VulkanSampler& operator=(const VulkanSampler&) = delete;
-				VulkanSampler& operator=(VulkanSampler&&) = delete;
+		VulkanSampler& operator=(const VulkanSampler&) = delete;
+		VulkanSampler& operator=(VulkanSampler&&) = delete;
 
-				void set_resource_name(std::string_view name) const noexcept override;
-			private:
-				Device& device;
-			};
-		}
-	}
+		void set_resource_name(std::string_view name) const noexcept override;
+	private:
+		Device& device;
+	};
 }

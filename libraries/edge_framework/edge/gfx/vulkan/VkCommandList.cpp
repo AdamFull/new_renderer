@@ -253,16 +253,16 @@ namespace edge::gfx::vulkan
 
 	void VulkanCommandList::resource_barrier(const ResourceBarrierInfo& barrier) const {
 		std::vector<vk::MemoryBarrier2KHR> memory_barriers{};
-		if (barrier.memory_barriers)
-			memory_barriers.resize(barrier.memory_barrier_count);
+		if (!barrier.memory_barriers.empty())
+			memory_barriers.resize(barrier.memory_barriers.size());
 
 		std::vector<vk::BufferMemoryBarrier2KHR> buffer_barriers{};
-		if (barrier.buffer_barriers)
-			buffer_barriers.resize(barrier.buffer_barrier_count);
+		if (!barrier.buffer_barriers.empty())
+			buffer_barriers.resize(barrier.buffer_barriers.size());
 
 		std::vector<vk::ImageMemoryBarrier2KHR> image_barriers{};
-		if (barrier.texture_barriers)
-			image_barriers.resize(barrier.texture_barrier_count);
+		if (!barrier.texture_barriers.empty())
+			image_barriers.resize(barrier.texture_barriers.size());
 
 		vk::DependencyInfoKHR vk_barrier{};
 		vk_barrier.pMemoryBarriers = memory_barriers.data();
@@ -270,7 +270,7 @@ namespace edge::gfx::vulkan
 		vk_barrier.pImageMemoryBarriers = image_barriers.data();
 
 		// Parse memory barriers
-		for (int32_t i = 0; i < barrier.memory_barrier_count; ++i) {
+		for (int32_t i = 0; i < barrier.memory_barriers.size(); ++i) {
 			auto& memory_barrier = barrier.memory_barriers[i];
 
 			auto& vk_memory_barrier = memory_barriers[vk_barrier.memoryBarrierCount++];
@@ -281,7 +281,7 @@ namespace edge::gfx::vulkan
 		}
 
 		// Parse buffer barriers
-		for (int32_t i = 0; i < barrier.buffer_barrier_count; ++i) {
+		for (int32_t i = 0; i < barrier.buffer_barriers.size(); ++i) {
 			auto& buffer_barrier = barrier.buffer_barriers[i];
 			auto* buffer = static_cast<VulkanBuffer*>(buffer_barrier.buffer);
 
@@ -313,7 +313,7 @@ namespace edge::gfx::vulkan
 		}
 
 		// Parse image barriers
-		for (int32_t i = 0; i < barrier.texture_barrier_count; ++i) {
+		for (int32_t i = 0; i < barrier.texture_barriers.size(); ++i) {
 			auto& texture_barrier = barrier.texture_barriers[i];
 			auto* texture = static_cast<VulkanTexture*>(texture_barrier.texture);
 

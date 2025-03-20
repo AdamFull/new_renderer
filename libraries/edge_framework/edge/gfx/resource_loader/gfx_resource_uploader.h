@@ -9,116 +9,113 @@
 
 #include <taskflow/taskflow.hpp>
 
-namespace edge
+namespace edge::gfx
 {
-	namespace gfx
+	class StagingBufferAllocator;
+
+	using ResourceUploadResult = std::pair<IGFXResource*, ResourceStateFlags>;
+	using ResourceUploadFnSign = ResourceUploadResult(ICommandList*, StagingBufferAllocator&);
+
+	struct WorkerContext {
+	public:
+		WorkerContext(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size);
+		~WorkerContext();
+
+		WorkerContext(WorkerContext&& other) noexcept = delete;
+		auto operator=(WorkerContext&& other) noexcept -> WorkerContext & = delete;
+		WorkerContext(const WorkerContext&) = delete;
+		WorkerContext& operator=(const WorkerContext&) = delete;
+
+		auto acquire_cmd_list() -> ICommandList*;
+		auto end_cmd() noexcept -> ICommandList*;
+
+		IContext* gfx_context;
+		ICommandPool* cmd_pool;
+		ICommandList* cmd_list{ nullptr };
+
+		bool recording{ false };
+		std::unique_ptr<StagingBufferAllocator> allocator;
+	};
+
+	struct UploadContext
 	{
-		class StagingBufferAllocator;
+		UploadContext(IContext* gfx_context);
+		~UploadContext();
 
-		using ResourceUploadResult = std::pair<IGFXResource*, ResourceStateFlags>;
-		using ResourceUploadFnSign = ResourceUploadResult(ICommandList*, StagingBufferAllocator&);
+		void reset();
+		void increment_semaphore();
+		void add_worker(const IQueue* queue, uint64_t size);
 
-		struct WorkerContext {
-		public:
-			WorkerContext(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size);
-			~WorkerContext();
+		IContext* gfx_context;
+		IFence* fence;
+		SemaphoreSubmitInfo signal_semaphore{};
 
-			WorkerContext(WorkerContext&& other) noexcept = delete;
-			auto operator=(WorkerContext&& other) noexcept -> WorkerContext & = delete;
-			WorkerContext(const WorkerContext&) = delete;
-			WorkerContext& operator=(const WorkerContext&) = delete;
+		std::vector<std::unique_ptr<WorkerContext>> workers;
+	private:
+		UploadContext(UploadContext&& other) noexcept = delete;
+		auto operator=(UploadContext&& other) noexcept -> UploadContext & = delete;
+		UploadContext(const UploadContext&) = delete;
+		UploadContext& operator=(const UploadContext&) = delete;
+	};
 
-			auto acquire_cmd_list() -> ICommandList*;
-			auto end_cmd() noexcept -> ICommandList*;
+	class UploadingDispatcher
+	{
+	public:
+		UploadingDispatcher(IContext* gfx_context, uint64_t buffer_size = 16 * 1024 * 1024, uint32_t uploader_count = 2);
+		~UploadingDispatcher();
 
-			IContext* gfx_context;
-			ICommandPool* cmd_pool;
-			ICommandList* cmd_list{ nullptr };
-
-			bool recording{ false };
-			std::unique_ptr<StagingBufferAllocator> allocator;
-		};
-
-		struct UploadContext
+		template<typename _Fn>
+		auto submit(_Fn&& task) -> std::shared_ptr<AsyncResourceHandle>
 		{
-			UploadContext(IContext* gfx_context);
-			~UploadContext();
+			auto handle = std::make_shared<AsyncResourceHandle>();
 
-			void reset();
-			void increment_semaphore();
-			void add_worker(const IQueue* queue, uint64_t size);
-
-			IContext* gfx_context;
-			IFence* fence;
-			SemaphoreSubmitInfo signal_semaphore{};
-
-			std::vector<std::unique_ptr<WorkerContext>> workers;
-		private:
-			UploadContext(UploadContext&& other) noexcept = delete;
-			auto operator=(UploadContext&& other) noexcept -> UploadContext & = delete;
-			UploadContext(const UploadContext&) = delete;
-			UploadContext& operator=(const UploadContext&) = delete;
-		};
-
-		class UploadingDispatcher
-		{
-		public:
-			UploadingDispatcher(IContext* gfx_context, uint64_t buffer_size = 16 * 1024 * 1024, uint32_t uploader_count = 2);
-			~UploadingDispatcher();
-
-			template<typename _Fn>
-			auto submit(_Fn&& task) -> std::shared_ptr<AsyncResourceHandle>
 			{
-				auto handle = std::make_shared<AsyncResourceHandle>();
+				std::lock_guard lock(mutex);
+				pending_jobs.emplace([this, handle,
+					t = std::make_shared<std::packaged_task<ResourceUploadFnSign>>(std::move(task))]() {
+						auto& worker_ctx = get_worker_context();
+						ICommandList* cmd = worker_ctx.acquire_cmd_list();
+						(*t)(cmd, *worker_ctx.allocator);
 
-				{
-					std::lock_guard lock(mutex);
-					pending_jobs.emplace([this, handle, 
-						t = std::make_shared<std::packaged_task<ResourceUploadFnSign>>(std::move(task))]() {
-							auto& worker_ctx = get_worker_context();
-							ICommandList* cmd = worker_ctx.acquire_cmd_list();
-							(*t)(cmd, *worker_ctx.allocator);
-
-							auto result = t->get_future().get();
-							handle->resource = result.first;
-							handle->state = result.second;
-						});
-					pending_handles.emplace_back(handle);
-				}
-				cv.notify_one();
-
-				return handle;
+						auto result = t->get_future().get();
+						handle->resource = result.first;
+						handle->state = result.second;
+					});
+				pending_handles.emplace_back(handle);
 			}
+			cv.notify_one();
 
-			auto is_sync_needed(SemaphoreSubmitInfo& semaphore_submit) -> bool;
-			auto get_worker_context() -> WorkerContext&;
-		private:
-			auto get_upload_context() -> UploadContext&;
-			auto loop(std::stop_token stop_token) -> void;
-			auto register_thread_context() -> size_t;
+			return handle;
+		}
 
-			IContext* gfx_context;
-			const IQueue* queue;
+		auto is_sync_needed(SemaphoreSubmitInfo& semaphore_submit) -> bool;
+		auto get_worker_context() -> WorkerContext&;
+	private:
+		auto get_upload_context() -> UploadContext&;
+		auto loop(std::stop_token stop_token) -> void;
+		auto register_thread_context() -> size_t;
 
-			uint64_t buffer_size;
+		IContext* gfx_context;
+		const IQueue* queue;
 
-			tf::Executor executor;
-			tf::Taskflow pending_jobs;
+		uint64_t buffer_size;
 
-			std::atomic_bool sync_needed{};
+		tf::Executor executor;
+		tf::Taskflow pending_jobs;
 
-			std::jthread dispatcher_thread;
-			std::mutex mutex;
-			std::mutex semaphore_mutex;
-			std::condition_variable cv;
+		std::atomic_bool sync_needed{};
 
-			std::vector<std::unique_ptr<UploadContext>> upload_contexts{};
-			uint32_t active_uploader_idx{ 0 };
-			uint32_t last_used_uploader_idx{ 0 };
-			size_t next_worker{ 0ull };
-			std::mutex context_mtx;
+		std::jthread dispatcher_thread;
+		std::mutex mutex;
+		std::mutex semaphore_mutex;
+		std::condition_variable cv;
 
-			std::vector<std::shared_ptr<AsyncResourceHandle>> pending_handles{};
-		};
-	}
+		std::vector<std::unique_ptr<UploadContext>> upload_contexts{};
+		uint32_t active_uploader_idx{ 0 };
+		uint32_t last_used_uploader_idx{ 0 };
+		size_t next_worker{ 0ull };
+		std::mutex context_mtx;
+
+		std::vector<std::shared_ptr<AsyncResourceHandle>> pending_handles{};
+	};
 }

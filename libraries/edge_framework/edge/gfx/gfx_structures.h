@@ -17,7 +17,6 @@ namespace edge
 	namespace gfx
 	{
 		static constexpr uint32_t k_max_descriptor_count{ 8u };
-		
 		static constexpr uint32_t k_max_attachment_count{ 8u };
 
 		class IContext;
@@ -344,14 +343,9 @@ namespace edge
 		};
 
 		struct ResourceBarrierInfo {
-			uint32_t buffer_barrier_count{};
-			BufferBarrier* buffer_barriers{ nullptr };
-
-			uint32_t texture_barrier_count{};
-			TextureBarrier* texture_barriers{ nullptr };
-
-			uint32_t memory_barrier_count{};
-			MemoryBarrier* memory_barriers{ nullptr };
+			std::span<const BufferBarrier> buffer_barriers;
+			std::span<const TextureBarrier> texture_barriers;
+			std::span<const MemoryBarrier> memory_barriers;
 		};
 
 		struct IndirectDrawCommand {

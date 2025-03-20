@@ -254,8 +254,7 @@ namespace edge::gfx
 			texture_barrier.texture = texture;
 
 			ResourceBarrierInfo resource_barrier{};
-			resource_barrier.texture_barriers = &texture_barrier;
-			resource_barrier.texture_barrier_count = 1u;
+			resource_barrier.texture_barriers = { &texture_barrier, 1u };
 
 			uint32_t total_mip_count = texture->get_mip_level_count();
 			for (int32_t mip = 1; mip < total_mip_count;) {
@@ -430,8 +429,7 @@ namespace edge::gfx
 			buffer_barrier.range.size = src_region_size;
 
 			ResourceBarrierInfo resource_barrier{};
-			resource_barrier.buffer_barriers = &buffer_barrier;
-			resource_barrier.buffer_barrier_count = 1;
+			resource_barrier.buffer_barriers = { &buffer_barrier, 1 };
 
 			cmd_list->resource_barrier(resource_barrier);
 		}
@@ -538,8 +536,7 @@ namespace edge::gfx
 		current_state = texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
 
 		ResourceBarrierInfo resource_barrier{};
-		resource_barrier.texture_barriers = &texture_barrier;
-		resource_barrier.texture_barrier_count = 1u;
+		resource_barrier.texture_barriers = { &texture_barrier, 1 };
 
 		// Transfer to intermediate layout
 		cmd_list->resource_barrier(resource_barrier);
@@ -606,8 +603,7 @@ namespace edge::gfx
 		texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
 
 		ResourceBarrierInfo resource_barrier{};
-		resource_barrier.texture_barriers = &texture_barrier;
-		resource_barrier.texture_barrier_count = 1u;
+		resource_barrier.texture_barriers = { &texture_barrier, 1 };
 
 		// Transfer to intermediate layout
 		cmd_list->resource_barrier(resource_barrier);

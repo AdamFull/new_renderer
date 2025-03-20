@@ -11,7 +11,7 @@ namespace edge::gfx::vulkan
 		NsightAftermath() {
 	}
 
-	void VkNsightAftermath::RegisterShaderBinary(std::span<uint8_t> shader_code) {
+	void VkNsightAftermath::register_shader_binary(std::span<uint8_t> shader_code) {
 		// Create shader hash for the shader
 		const GFSDK_Aftermath_SpirvCode shader{ shader_code.data(), uint32_t(shader_code.size()) };
 		GFSDK_Aftermath_ShaderBinaryHash shader_hash;
@@ -21,7 +21,7 @@ namespace edge::gfx::vulkan
 		shader_binary_map[shader_hash] = shader_code;
 	}
 
-	void VkNsightAftermath::RegisterShaderDebugBinary(std::span<uint8_t> stripped_shader_code, std::span<uint8_t> full_shader_code) {
+	void VkNsightAftermath::register_shader_debug_binary(std::span<uint8_t> stripped_shader_code, std::span<uint8_t> full_shader_code) {
 		// Generate shader debug name.
 		GFSDK_Aftermath_ShaderDebugName debugName;
 		const GFSDK_Aftermath_SpirvCode shader{ full_shader_code.data(), uint32_t(full_shader_code.size()) };
@@ -32,7 +32,7 @@ namespace edge::gfx::vulkan
 		shader_full_binary_map[debugName] = full_shader_code;
 	}
 
-	void VkNsightAftermath::SetMarkerImpl(ICommandList* cmd_list, const void* data_idx) {
+	void VkNsightAftermath::set_marker_impl(ICommandList* cmd_list, const void* data_idx) {
 		auto* vk_cmd_list = static_cast<VulkanCommandList*>(cmd_list);
 		auto& handle = vk_cmd_list->GetHandle();
 		handle.setCheckpointNV(data_idx);

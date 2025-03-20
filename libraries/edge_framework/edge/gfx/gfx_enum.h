@@ -2,316 +2,313 @@
 
 #include "../util/Enum.hpp"
 
-namespace edge
+namespace edge::gfx
 {
-	namespace gfx
-	{
-		enum class RenderApi {
-			eAuto,
-			eVulkan,
-			eDirectx12
-		};
+	enum class RenderApi {
+		eAuto,
+		eVulkan,
+		eDirectx12
+	};
 
-		enum class ResourceType {
-			eUnknown,
-			eFence,
-			eSemaphore,
-			eQueue,
-			eSwapchain,
-			eBuffer,
-			eCommandList,
-			eCommandPool,
-			eTexture,
-			eSampler,
-			eShader,
-			eRootSignature,
-			ePipeline,
-			ePipelineCache,
-			eResourceDescriptor,
-			eDescriptorAllocator,
-			eSharedDescriptor,
-			eQueryPool
-		};
+	enum class ResourceType {
+		eUnknown,
+		eFence,
+		eSemaphore,
+		eQueue,
+		eSwapchain,
+		eBuffer,
+		eCommandList,
+		eCommandPool,
+		eTexture,
+		eSampler,
+		eShader,
+		eRootSignature,
+		ePipeline,
+		ePipelineCache,
+		eResourceDescriptor,
+		eDescriptorAllocator,
+		eSharedDescriptor,
+		eQueryPool
+	};
 
-		enum class ShaderStageFlag {
-			eVertex = 1 << 0,
-			eTessellationControl = 1 << 1,
-			eTessellationEvaluation = 1 << 2,
-			eGeometry = 1 << 3,
-			eFragment = 1 << 4,
-			eCompute = 1 << 5,
-			eAllGraphics = eVertex | eTessellationControl | eTessellationEvaluation | eGeometry | eFragment
-		};
+	enum class ShaderStageFlag {
+		eVertex = 1 << 0,
+		eTessellationControl = 1 << 1,
+		eTessellationEvaluation = 1 << 2,
+		eGeometry = 1 << 3,
+		eFragment = 1 << 4,
+		eCompute = 1 << 5,
+		eAllGraphics = eVertex | eTessellationControl | eTessellationEvaluation | eGeometry | eFragment
+	};
 
-		enum class IndexType {
-			eUint16,
-			eUint32
-		};
+	enum class IndexType {
+		eUint16,
+		eUint32
+	};
 
-		enum class QueueTypeFlag {
-			eGraphics = 1 << 0,
-			ePresent = 1 << 1,
-			eCompute = 1 << 2,
-			eTransfer = 1 << 3
-		};
+	enum class QueueTypeFlag {
+		eGraphics = 1 << 0,
+		ePresent = 1 << 1,
+		eCompute = 1 << 2,
+		eTransfer = 1 << 3
+	};
 
-		enum class CommandPoolResetMode {
-			eResetPool,
-			eResetIndividually,
-			eAlwaysAllocate,
-		};
+	enum class CommandPoolResetMode {
+		eResetPool,
+		eResetIndividually,
+		eAlwaysAllocate,
+	};
 
-		enum class StageFlag {
-			eNone = 1 << 0,
-			eTopOfPipe = 1 << 1,
-			eDrawIndirect = 1 << 2,
-			eVertexInput = 1 << 3,
-			eVertexShader = 1 << 4,
-			eTessellationControlShader = 1 << 5,
-			eTessellationEvaluationShader = 1 << 6,
-			eGeometryShader = 1 << 7,
-			eFragmentShader = 1 << 8,
-			eEarlyFragmentTests = 1 << 9,
-			eLateFragmentTests = 1 << 10,
-			eColorAttachmentOutput = 1 << 11,
-			eComputeShader = 1 << 12,
-			eAllTransfer = 1 << 13,
-			eTransfer = 1 << 14,
-			eBottomOfPipe = 1 << 15,
-			eHost = 1 << 16,
-			eAllGraphics = 1 << 17,
-			eAllCommands = 1 << 18,
-			eCopy = 1 << 19,
-			eResolve = 1 << 20,
-			eBlit = 1 << 21,
-			eClear = 1 << 22,
-			eIndexInput = 1 << 23,
-			eVertexAttributeInput = 1 << 24,
-			ePreRasterizationShaders = 1 << 25
-		};
+	enum class StageFlag {
+		eNone = 1 << 0,
+		eTopOfPipe = 1 << 1,
+		eDrawIndirect = 1 << 2,
+		eVertexInput = 1 << 3,
+		eVertexShader = 1 << 4,
+		eTessellationControlShader = 1 << 5,
+		eTessellationEvaluationShader = 1 << 6,
+		eGeometryShader = 1 << 7,
+		eFragmentShader = 1 << 8,
+		eEarlyFragmentTests = 1 << 9,
+		eLateFragmentTests = 1 << 10,
+		eColorAttachmentOutput = 1 << 11,
+		eComputeShader = 1 << 12,
+		eAllTransfer = 1 << 13,
+		eTransfer = 1 << 14,
+		eBottomOfPipe = 1 << 15,
+		eHost = 1 << 16,
+		eAllGraphics = 1 << 17,
+		eAllCommands = 1 << 18,
+		eCopy = 1 << 19,
+		eResolve = 1 << 20,
+		eBlit = 1 << 21,
+		eClear = 1 << 22,
+		eIndexInput = 1 << 23,
+		eVertexAttributeInput = 1 << 24,
+		ePreRasterizationShaders = 1 << 25
+	};
 
-		enum class ResourceStateFlag {
-			eUndefined = 0,
-			eRead = 1 << 0,
-			eWrite = 1 << 1,
-			eCompute = 1 << 2,
-			eGraphics = 1 << 3,
-			eColorAttachment = 1 << 4,
-			eDepthAttachment = 1 << 5,
-			eStencilAttachment = 1 << 6,
-			eIndex = 1 << 7,
-			eVertex = 1 << 8,
-			eSample = 1 << 9,
-			eStorage = 1 << 10,
-			eIndirect = 1 << 11,
-			eGeneral = 1 << 12,
-			eCopy = 1 << 13,
-			ePresent = 1 << 14,
+	enum class ResourceStateFlag {
+		eUndefined = 0,
+		eRead = 1 << 0,
+		eWrite = 1 << 1,
+		eCompute = 1 << 2,
+		eGraphics = 1 << 3,
+		eColorAttachment = 1 << 4,
+		eDepthAttachment = 1 << 5,
+		eStencilAttachment = 1 << 6,
+		eIndex = 1 << 7,
+		eVertex = 1 << 8,
+		eSample = 1 << 9,
+		eStorage = 1 << 10,
+		eIndirect = 1 << 11,
+		eGeneral = 1 << 12,
+		eCopy = 1 << 13,
+		ePresent = 1 << 14,
 
-			eIndexRead = eRead | eGraphics | eIndex,
-			eVertexRead = eRead | eGraphics | eVertex,
+		eIndexRead = eRead | eGraphics | eIndex,
+		eVertexRead = eRead | eGraphics | eVertex,
 
-			// Rendering states
-			eColorAttachmentRead = eRead | eColorAttachment,
-			eColorAttachmentWrite = eWrite | eColorAttachment,
+		// Rendering states
+		eColorAttachmentRead = eRead | eColorAttachment,
+		eColorAttachmentWrite = eWrite | eColorAttachment,
 
-			// Depth targets
-			eDepthAttachmentRead = eRead | eDepthAttachment,
-			eDepthAttachmentWrite = eWrite | eDepthAttachment,
+		// Depth targets
+		eDepthAttachmentRead = eRead | eDepthAttachment,
+		eDepthAttachmentWrite = eWrite | eDepthAttachment,
 
-			eStencilAttachmentRead = eRead | eStencilAttachment,
-			eStencilAttachmentWrite = eWrite | eStencilAttachment,
+		eStencilAttachmentRead = eRead | eStencilAttachment,
+		eStencilAttachmentWrite = eWrite | eStencilAttachment,
 
-			eDepthStencilAttachmentRead = eRead | eDepthAttachment | eStencilAttachment,
-			eDepthStencilAttachmentWrite = eWrite | eDepthAttachment | eStencilAttachment,
+		eDepthStencilAttachmentRead = eRead | eDepthAttachment | eStencilAttachment,
+		eDepthStencilAttachmentWrite = eWrite | eDepthAttachment | eStencilAttachment,
 
-			eShaderReadOnlyResource = eRead | eCompute | eGraphics | eSample,
+		eShaderReadOnlyResource = eRead | eCompute | eGraphics | eSample,
 
-			// Copy states
-			eCopyDst = eWrite | eCopy,
-			eCopySrc = eRead | eCopy,
+		// Copy states
+		eCopyDst = eWrite | eCopy,
+		eCopySrc = eRead | eCopy,
 
-			// Present states
-			ePresentSrc = eRead | ePresent
-		};
+		// Present states
+		ePresentSrc = eRead | ePresent
+	};
 
-		enum class AccessTypeFlag {
-			eRead = 1 << 0,
-			eWrite = 1 << 1,
-			eRW = eRead | eWrite
-		};
+	enum class AccessTypeFlag {
+		eRead = 1 << 0,
+		eWrite = 1 << 1,
+		eRW = eRead | eWrite
+	};
 
-		// For sampler
-		enum class Filter {
-			eNearest,
-			eLinear
-		};
+	// For sampler
+	enum class Filter {
+		eNearest,
+		eLinear
+	};
 
-		enum class SamplerAddressMode {
-			eMirror,
-			eRepeat,
-			eClampToEdge,
-			eClampToBorder
-		};
+	enum class SamplerAddressMode {
+		eMirror,
+		eRepeat,
+		eClampToEdge,
+		eClampToBorder
+	};
 
 
-		enum class CompareOp {
-			eNone,
-			eNever,
-			eLess,
-			eEqual,
-			eLessOrEqual,
-			eGreater,
-			eNotEqual,
-			eGreaterOrEqual,
-			eAlways
-		};
+	enum class CompareOp {
+		eNone,
+		eNever,
+		eLess,
+		eEqual,
+		eLessOrEqual,
+		eGreater,
+		eNotEqual,
+		eGreaterOrEqual,
+		eAlways
+	};
 
-		// For query pool
-		enum class QueryType {
-			eTimestamp,
-			eOcclusion,
-			ePipelineStatistics
-		};
+	// For query pool
+	enum class QueryType {
+		eTimestamp,
+		eOcclusion,
+		ePipelineStatistics
+	};
 
-		enum class BufferUsageFlag {
-			eCopy = 1 << 0,
-			eStorage = 1 << 1,
-			eVertex = 1 << 2,
-			eIndex = 1 << 3,
-			eUniform = 1 << 4,
-			eIndirect = 1 << 5,
-			eGpuOnly = 1 << 6,
-			eCpuToGpu = 1 << 7,
+	enum class BufferUsageFlag {
+		eCopy = 1 << 0,
+		eStorage = 1 << 1,
+		eVertex = 1 << 2,
+		eIndex = 1 << 3,
+		eUniform = 1 << 4,
+		eIndirect = 1 << 5,
+		eGpuOnly = 1 << 6,
+		eCpuToGpu = 1 << 7,
 
-			eHasDeviceAddress = eVertex | eIndex | eStorage | eIndirect,
+		eHasDeviceAddress = eVertex | eIndex | eStorage | eIndirect,
 
-			eStagingBuffer = eCopy,
-			eStorageBufferCPU = eCopy | eStorage | eCpuToGpu,
-			eStorageBuffer = eCopy | eStorage | eGpuOnly,
-			eVertexBufferCPU = eCopy | eVertex | eCpuToGpu,
-			eVertexBuffer = eCopy | eVertex | eGpuOnly,
-			eIndexBufferCPU = eCopy | eIndex | eCpuToGpu,
-			eIndexBuffer = eCopy | eIndex | eGpuOnly,
-			eUniformBuffer = eCopy | eUniform | eCpuToGpu,
-			eIndirectBuffer = eCopy | eStorage | eIndirect | eGpuOnly
-		};
+		eStagingBuffer = eCopy,
+		eStorageBufferCPU = eCopy | eStorage | eCpuToGpu,
+		eStorageBuffer = eCopy | eStorage | eGpuOnly,
+		eVertexBufferCPU = eCopy | eVertex | eCpuToGpu,
+		eVertexBuffer = eCopy | eVertex | eGpuOnly,
+		eIndexBufferCPU = eCopy | eIndex | eCpuToGpu,
+		eIndexBuffer = eCopy | eIndex | eGpuOnly,
+		eUniformBuffer = eCopy | eUniform | eCpuToGpu,
+		eIndirectBuffer = eCopy | eStorage | eIndirect | eGpuOnly
+	};
 
-		enum class TextureUsageFlag {
-			eCubemap = 1 << 0,
-			eTransferable = 1 << 1,
-			eSamplable = 1 << 2,
-			eStorage = 1 << 3,
-			eRenderTarget = 1 << 4
-		};
+	enum class TextureUsageFlag {
+		eCubemap = 1 << 0,
+		eTransferable = 1 << 1,
+		eSamplable = 1 << 2,
+		eStorage = 1 << 3,
+		eRenderTarget = 1 << 4
+	};
 
-		enum class PipelineType {
-			eCompute,
-			eGraphics
-		};
+	enum class PipelineType {
+		eCompute,
+		eGraphics
+	};
 
-		enum class PrimitiveTopology {
-			ePointList,
-			eLineList,
-			eLineStrip,
-			eTriangleList,
-			eTriangleStrip,
-			ePatchList
-		};
+	enum class PrimitiveTopology {
+		ePointList,
+		eLineList,
+		eLineStrip,
+		eTriangleList,
+		eTriangleStrip,
+		ePatchList
+	};
 
-		enum class SampleCount {
-			e1 = 1,
-			e2 = 2,
-			e4 = 4,
-			e8 = 8,
-			e16 = 16
-		};
+	enum class SampleCount {
+		e1 = 1,
+		e2 = 2,
+		e4 = 4,
+		e8 = 8,
+		e16 = 16
+	};
 
-		enum class FillMode {
-			eSolid,
-			eWireframe
-		};
+	enum class FillMode {
+		eSolid,
+		eWireframe
+	};
 
-		enum class CullModeFlag {
-			eNone = 0,
-			eFront = 1 << 0,
-			eBack = 1 << 1
-		};
+	enum class CullModeFlag {
+		eNone = 0,
+		eFront = 1 << 0,
+		eBack = 1 << 1
+	};
 
-		enum class FrontFace {
-			eCCW,
-			eCW
-		};
+	enum class FrontFace {
+		eCCW,
+		eCW
+	};
 
-		enum class StencilOp {
-			eKeep,
-			eZero,
-			eReplace,
-			eIncrementAndClamp,
-			eDecrementAndClamp,
-			eInvert,
-			eIncrementAndWrap,
-			eDecrementAndWrap
-		};
+	enum class StencilOp {
+		eKeep,
+		eZero,
+		eReplace,
+		eIncrementAndClamp,
+		eDecrementAndClamp,
+		eInvert,
+		eIncrementAndWrap,
+		eDecrementAndWrap
+	};
 
-		enum class BlendFactor {
-			eZero,
-			eOne,
-			eSrcColor,
-			eOneMinusSrcColor,
-			eDstColor,
-			eOneMinusDstColor,
-			eSrcAlpha,
-			eOneMinusSrcAlpha,
-			eDstAlpha,
-			eOneMinusDstAlpha,
-			eConstantAlpha,
-			eOneMinusConstantAlpha,
-			eSrcAlphaSaturate
-		};
+	enum class BlendFactor {
+		eZero,
+		eOne,
+		eSrcColor,
+		eOneMinusSrcColor,
+		eDstColor,
+		eOneMinusDstColor,
+		eSrcAlpha,
+		eOneMinusSrcAlpha,
+		eDstAlpha,
+		eOneMinusDstAlpha,
+		eConstantAlpha,
+		eOneMinusConstantAlpha,
+		eSrcAlphaSaturate
+	};
 
-		enum class BlendOp {
-			eAdd,
-			eSubtract,
-			eReverseSubtract,
-			eMin,
-			eMax
-		};
+	enum class BlendOp {
+		eAdd,
+		eSubtract,
+		eReverseSubtract,
+		eMin,
+		eMax
+	};
 
-		enum class ColorMaskFlag {
-			eR = 1 << 0,
-			eG = 1 << 1,
-			eB = 1 << 2,
-			eA = 1 << 3,
-			eAll = eR | eG | eB | eA
-		};
+	enum class ColorMaskFlag {
+		eR = 1 << 0,
+		eG = 1 << 1,
+		eB = 1 << 2,
+		eA = 1 << 3,
+		eAll = eR | eG | eB | eA
+	};
 
-		enum class LoadOp {
-			eLoad,
-			eClear,
-			eDontCare
-		};
+	enum class LoadOp {
+		eLoad,
+		eClear,
+		eDontCare
+	};
 
-		enum class StoreOp {
-			eStore,
-			eDontCare,
-			eNone
-		};
+	enum class StoreOp {
+		eStore,
+		eDontCare,
+		eNone
+	};
 
-		enum class DescriptorType {
-			eSampler,
-			eCombinedImageSampler,
-			eSampledImage,
-			eStorageImage,
-			eUniformTexelBuffer,
-			eStorageTexelBuffer,
-			eUniformBuffer,
-			eStorageBuffer,
-			eUniformBufferDynamic,
-			eStorageBufferDynamic,
-			eInputAttachment,
-		};
-	}
+	enum class DescriptorType {
+		eSampler,
+		eCombinedImageSampler,
+		eSampledImage,
+		eStorageImage,
+		eUniformTexelBuffer,
+		eStorageTexelBuffer,
+		eUniformBuffer,
+		eStorageBuffer,
+		eUniformBufferDynamic,
+		eStorageBufferDynamic,
+		eInputAttachment,
+	};
 }
 
 // Meta data registration

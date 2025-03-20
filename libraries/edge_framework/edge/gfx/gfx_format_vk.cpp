@@ -4,7 +4,7 @@
 
 namespace edge::gfx
 {
-	static constexpr uint32_t format_to_vk_map[] = {
+	static constexpr uint32_t k_format_to_vk_map[] = {
 		VK_FORMAT_UNDEFINED,
 		VK_FORMAT_R4G4_UNORM_PACK8,
 		VK_FORMAT_R4G4B4A4_UNORM_PACK16,
@@ -246,7 +246,7 @@ namespace edge::gfx
 		VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK,
 	};
 
-	static constexpr Format vk_to_format_map[] = {
+	static constexpr Format k_vk_to_format_map[] = {
 		Format::eUndefined,
 		Format::eR4G4UnormPack8,
 		Format::eR4G4B4A4UnormPack16,
@@ -489,11 +489,11 @@ namespace edge::gfx
 	};
 
 	uint32_t format_to_vk(Format format) {
-		return format_to_vk_map[static_cast<uint32_t>(format)];
+		return k_format_to_vk_map[static_cast<uint32_t>(format)];
 	}
 
 	Format format_from_vk(uint32_t format) {
-		return vk_to_format_map[format];
+		return k_vk_to_format_map[format];
 	}
 
 	Format format_from_gl_internal(uint32_t format) {

@@ -48,11 +48,6 @@ namespace engine
 			timestamp_query->reset(0u);
 
 			context.request_timestamp_frequency(&timestamp_frequency);
-
-			// Prepare barriers
-			resource_barriers.buffer_barriers = buffer_barriers.data();
-			resource_barriers.texture_barriers = texture_barriers.data();
-			resource_barriers.memory_barriers = memory_barriers.data();
 		}
 
 		ShaderPass::~ShaderPass()
@@ -197,7 +192,7 @@ namespace engine
 				if (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget)
 					new_state |= edge::gfx::ResourceStateFlag::eGeneral;
 
-				auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+				auto& barrier = texture_barriers.emplace_back();
 				barrier.texture = execution_context.GetTexture(render_resource);
 				barrier.subresource_index = sebresource_id;
 				barrier.src_state = render_resource.GetState();
@@ -211,7 +206,7 @@ namespace engine
 				if (render_resource.resource_type & RenderResourceTypeFlag::eIndirectBuffer)
 					new_state |= edge::gfx::ResourceStateFlag::eIndirect;
 
-				auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
+				auto& barrier = buffer_barriers.emplace_back();
 				barrier.buffer = execution_context.GetBuffer(render_resource);
 				barrier.src_state = render_resource.GetState();
 				barrier.dst_state = new_state;
@@ -250,7 +245,7 @@ namespace engine
 					if(render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget)
 						new_state |= edge::gfx::ResourceStateFlag::eGeneral;
 
-					auto& barrier = texture_barriers[resource_barriers.texture_barrier_count++];
+					auto& barrier = texture_barriers.emplace_back();
 					barrier.texture = execution_context.GetTexture(render_resource);
 					barrier.subresource_index = sebresource_id;
 					barrier.src_state = render_resource.GetState();
@@ -258,7 +253,7 @@ namespace engine
 				}
 				else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 				{
-					auto& barrier = buffer_barriers[resource_barriers.buffer_barrier_count++];
+					auto& barrier = buffer_barriers.emplace_back();
 					barrier.buffer = execution_context.GetBuffer(render_resource);
 					barrier.src_state = render_resource.GetState();
 					barrier.dst_state = new_state;
@@ -312,10 +307,16 @@ namespace engine
 		void ShaderPass::ResolveDependencies(edge::gfx::ICommandList& command_list)
 		{
 			// Flush resource barriers
+			// Prepare barriers
+			resource_barriers.buffer_barriers = buffer_barriers;
+			resource_barriers.texture_barriers = texture_barriers;
+			resource_barriers.memory_barriers = memory_barriers;
+
 			command_list.resource_barrier(resource_barriers);
-			resource_barriers.buffer_barrier_count = 0;
-			resource_barriers.texture_barrier_count = 0;
-			resource_barriers.memory_barrier_count = 0;
+
+			buffer_barriers.clear();
+			texture_barriers.clear();
+			memory_barriers.clear();
 		}
 
 		void ShaderPass::BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index)

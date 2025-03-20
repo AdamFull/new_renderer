@@ -230,9 +230,9 @@ namespace engine
 
 			// Per frame barriers
 
-			std::array<edge::gfx::BufferBarrier, 64ull> buffer_barriers{};
-			std::array<edge::gfx::TextureBarrier, 64ull> texture_barriers{};
-			std::array<edge::gfx::MemoryBarrier, 64ull> memory_barriers{};
+			std::vector<edge::gfx::BufferBarrier> buffer_barriers{};
+			std::vector<edge::gfx::TextureBarrier> texture_barriers{};
+			std::vector<edge::gfx::MemoryBarrier> memory_barriers{};
 			edge::gfx::ResourceBarrierInfo resource_barriers{};
 		};
 	}

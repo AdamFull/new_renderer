@@ -4,87 +4,84 @@
 
 #include "shader_compiler/gfx_shader_compiler.h"
 
-namespace edge
+namespace edge::gfx
 {
-	namespace gfx
-	{
-		enum class TechniqueType {
-			eNone,
-			eCompute,
-			eGraphics
+	enum class TechniqueType {
+		eNone,
+		eCompute,
+		eGraphics
+	};
+
+	class TechniqueDatabase {
+	public:
+		struct ShaderDesc {
+			std::string_view path;
+			std::vector<std::string_view> defines;
+			std::vector<std::string_view> permutations;
 		};
 
-		class TechniqueDatabase {
-		public:
-			struct ShaderDesc {
+		struct TechniqueDesc {
+			static constexpr size_t k_max_render_target_count = 8;
+
+			struct ShaderStage {
 				std::string_view path;
-				std::vector<std::string_view> defines;
-				std::vector<std::string_view> permutations;
+				std::vector<std::string_view> definitions;
 			};
 
-			struct TechniqueDesc {
-				static constexpr size_t k_max_render_target_count = 8;
+			TechniqueType type{};
+			ISharedDescriptor* shared_descriptor{ nullptr };
+			std::vector<ShaderStage> stages{};
 
-				struct ShaderStage {
-					std::string_view path;
-					std::vector<std::string_view> definitions;
-				};
+			struct {
+				std::vector<VertexAttributeDescription> attributes;
+				std::vector<VertexBindingDescription> bindings;
+			} vertex_layout;
 
-				TechniqueType type{};
-				ISharedDescriptor* shared_descriptor{ nullptr };
-				std::vector<ShaderStage> stages{};
+			std::vector<ColorBlendAttachment> color_blending_attachments;
 
-				struct {
-					std::vector<VertexAttributeDescription> attributes;
-					std::vector<VertexBindingDescription> bindings;
-				} vertex_layout;
+			RasterizationState rasterization_state{};
+			MultisampleState multisample_state{};
+			DepthStencilState depth_stencil_state{};
 
-				std::vector<ColorBlendAttachment> color_blending_attachments;
+			PrimitiveTopology primitive_topology{ PrimitiveTopology::ePointList };
 
-				RasterizationState rasterization_state{};
-				MultisampleState multisample_state{};
-				DepthStencilState depth_stencil_state{};
+			std::vector<Format> color_formats{};
 
-				PrimitiveTopology primitive_topology{ PrimitiveTopology::ePointList };
-
-				std::vector<Format> color_formats{};
-
-				Format depth_format{};
-				Format stencil_format{};
-			};
-
-			struct Technique {
-				std::string_view name;
-				IShader* shader{ nullptr };
-				IRootSignature* root_signature{ nullptr };
-				IPipeline* pipeline{ nullptr };
-			};
-
-			struct Shader {
-				std::vector<uint8_t> code;
-				uint32_t shader_hash{ 0u };
-				uint32_t dependency_hash{ 0u };
-			};
-
-			TechniqueDatabase(IContext* gfx_context, fs::VirtualFilesystem* filesystem);
-			~TechniqueDatabase();
-
-			bool load(std::string_view path);
-			bool save(std::string_view path);
-
-			void add_technique(std::string_view name, const TechniqueDesc& technique_desc);
-			auto get_technique(std::string_view name) -> Technique&;
-		private:
-			std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage);
-
-			IContext* gfx_context{ nullptr };
-			fs::VirtualFilesystem* filesystem{ nullptr };
-			IPipelineCache* pipeline_cache{ nullptr };
-
-			std::unique_ptr<IShaderCompiler> shader_compiler;
-
-			std::unordered_map<uint32_t, Shader> shaders;
-			std::unordered_map<std::string_view, Technique> techniques;
+			Format depth_format{};
+			Format stencil_format{};
 		};
-	}
+
+		struct Technique {
+			std::string_view name;
+			IShader* shader{ nullptr };
+			IRootSignature* root_signature{ nullptr };
+			IPipeline* pipeline{ nullptr };
+		};
+
+		struct Shader {
+			std::vector<uint8_t> code;
+			uint32_t shader_hash{ 0u };
+			uint32_t dependency_hash{ 0u };
+		};
+
+		TechniqueDatabase(IContext* gfx_context, fs::VirtualFilesystem* filesystem);
+		~TechniqueDatabase();
+
+		bool load(std::string_view path);
+		bool save(std::string_view path);
+
+		void add_technique(std::string_view name, const TechniqueDesc& technique_desc);
+		auto get_technique(std::string_view name) -> Technique&;
+	private:
+		std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage);
+
+		IContext* gfx_context{ nullptr };
+		fs::VirtualFilesystem* filesystem{ nullptr };
+		IPipelineCache* pipeline_cache{ nullptr };
+
+		std::unique_ptr<IShaderCompiler> shader_compiler;
+
+		std::unordered_map<uint32_t, Shader> shaders;
+		std::unordered_map<std::string_view, Technique> techniques;
+	};
 }

@@ -245,8 +245,7 @@ namespace edge
 				buffer_barrier.range.size = dst_buffer->get_size();
 
 				ResourceBarrierInfo resource_barrier{};
-				resource_barrier.buffer_barriers = &buffer_barrier;
-				resource_barrier.buffer_barrier_count = 1;
+				resource_barrier.buffer_barriers = { &buffer_barrier, 1 };
 				command_list.resource_barrier(resource_barrier);
 
 				auto [src_buffer, src_offset] = RequestUploadBuffer(data.size());
@@ -278,8 +277,7 @@ namespace edge
 				resource_desc.state = texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
 
 				ResourceBarrierInfo resource_barrier{};
-				resource_barrier.texture_barriers = &texture_barrier;
-				resource_barrier.texture_barrier_count = 1;
+				resource_barrier.texture_barriers = { &texture_barrier, 1 };
 				command_list.resource_barrier(resource_barrier);
 
 				auto [src_buffer, src_offset] = RequestUploadBuffer(data.size());
@@ -425,8 +423,7 @@ namespace edge
 				gpImguiContext->font_texture.state = texture_barrier.dst_state = ResourceStateFlag::eShaderReadOnlyResource;
 
 				ResourceBarrierInfo resource_barrier{};
-				resource_barrier.texture_barriers = &texture_barrier;
-				resource_barrier.texture_barrier_count = 1u;
+				resource_barrier.texture_barriers = { &texture_barrier, 1 };
 
 				// Transfer to final layout
 				command_list.resource_barrier(resource_barrier);

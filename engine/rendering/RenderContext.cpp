@@ -770,8 +770,7 @@ namespace engine
 
 			edge::gfx::TextureBarrier texture_barrier{};
 			edge::gfx::ResourceBarrierInfo resource_barriers{};
-			resource_barriers.texture_barriers = &texture_barrier;
-			resource_barriers.texture_barrier_count = 1;
+			resource_barriers.texture_barriers = { &texture_barrier, 1 };
 
 			texture_barrier.texture = current_frame->backbuffer;
 			// TODO: get current resource state from resource itself
@@ -926,8 +925,7 @@ namespace engine
 			if (!texture_barriers.empty())
 			{
 				edge::gfx::ResourceBarrierInfo resource_barrier{};
-				resource_barrier.texture_barriers = texture_barriers.data();
-				resource_barrier.texture_barrier_count = texture_barriers.size();
+				resource_barrier.texture_barriers = texture_barriers;
 
 				current_command_list->resource_barrier(resource_barrier);
 			}

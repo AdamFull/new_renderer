@@ -264,13 +264,11 @@ public:
 		vertex_buffer_barrier.range.size = vertex_buffer->get_size();
 
 		edge::gfx::ResourceBarrierInfo barrier{};
-		barrier.texture_barriers = &texture_translation;
-		barrier.texture_barrier_count = 1u;
-		barrier.buffer_barriers = &vertex_buffer_barrier;
-		barrier.buffer_barrier_count = 1;
+		barrier.texture_barriers = { &texture_translation, 1 };
+		barrier.buffer_barriers = { &vertex_buffer_barrier, 1 };
 
 		command_list->resource_barrier(barrier);
-		barrier.buffer_barrier_count = 0;
+		barrier.buffer_barriers = {};
 
 		command_list->bind_pipeline(pipeline);
 

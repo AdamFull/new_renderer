@@ -2,32 +2,26 @@
 
 #include "VkDescriptorSetLayout.h"
 
-namespace edge
+namespace edge::gfx::vulkan
 {
-	namespace gfx
-	{
-		namespace vulkan
-		{
-			class Device;
+	class Device;
 
-			class DescriptorSet final : public VulkanResource<vk::DescriptorSet> {
-			public:
-				friend class DescriptorPool;
+	class DescriptorSet final : public VulkanResource<vk::DescriptorSet> {
+	public:
+		friend class DescriptorPool;
 
-				DescriptorSet();
-				DescriptorSet(vk::DescriptorSet handle, const PoolSizes& sizes);
+		DescriptorSet();
+		DescriptorSet(vk::DescriptorSet handle, const PoolSizes& sizes);
 
-				DescriptorSet(const DescriptorSet&) = delete;
+		DescriptorSet(const DescriptorSet&) = delete;
 
-				DescriptorSet(DescriptorSet&& other);
+		DescriptorSet(DescriptorSet&& other);
 
-				~DescriptorSet() = default;
+		~DescriptorSet() = default;
 
-				DescriptorSet& operator=(const DescriptorSet&) = delete;
-				DescriptorSet& operator=(DescriptorSet&&) = delete;
-			private:
-				PoolSizes used_sizes;
-			};
-		}
-	}
+		DescriptorSet& operator=(const DescriptorSet&) = delete;
+		DescriptorSet& operator=(DescriptorSet&&) = delete;
+	private:
+		PoolSizes used_sizes;
+	};
 }
