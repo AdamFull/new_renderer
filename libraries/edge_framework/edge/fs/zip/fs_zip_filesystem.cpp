@@ -45,11 +45,13 @@ namespace edge
 
 		auto ZipFilesystem::OpenFile(std::string_view path, FileModeFlags mode) -> IFile*
 		{
+			std::lock_guard<std::mutex> lock(mutex);
 			return new ZipFile(zip_handle, path, mode);
 		}
 
 		auto ZipFilesystem::FileSize(std::string_view path) -> size_t
 		{
+			std::lock_guard<std::mutex> lock(mutex);
 			zip_stat_t st;
 			if (zip_stat(zip_handle, path.data(), ZIP_FL_ENC_GUESS | ZIP_FL_NOCASE, &st) == 0)
 				return st.size;
@@ -71,6 +73,8 @@ namespace edge
 
 		auto ZipFilesystem::Exists(std::string_view path) -> bool
 		{
+			std::lock_guard<std::mutex> lock(mutex);
+
 			if (!zip_handle)
 				return false;
 
@@ -79,6 +83,8 @@ namespace edge
 
 		auto ZipFilesystem::IsDirectory(std::string_view path) -> bool
 		{
+			std::lock_guard<std::mutex> lock(mutex);
+
 			if (!zip_handle)
 				return false;
 
@@ -91,6 +97,8 @@ namespace edge
 
 		auto ZipFilesystem::IsFile(std::string_view path) -> bool
 		{
+			std::lock_guard<std::mutex> lock(mutex);
+
 			if (!zip_handle)
 				return false;
 
@@ -109,6 +117,7 @@ namespace edge
 
 		auto ZipFilesystem::Walk(std::string_view path, bool recursive) -> IDirectoryIterator*
 		{
+			std::lock_guard<std::mutex> lock(mutex);
 			return new ZipDirectoryIterator(zip_handle, path, recursive);
 		}
 	}

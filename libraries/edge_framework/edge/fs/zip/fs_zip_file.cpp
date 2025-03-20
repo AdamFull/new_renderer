@@ -112,6 +112,7 @@ namespace edge
 
 		auto ZipFile::Close() -> void
 		{
+			std::lock_guard<std::mutex> lock(mutex);
 			if (file_handle)
 			{
 				zip_fclose(file_handle);
@@ -129,6 +130,7 @@ namespace edge
 
 		auto ZipFile::Seek(uint64_t offset, SeekOrigin origin) -> int64_t
 		{
+			std::lock_guard<std::mutex> lock(mutex);
 			if (zip_fseek(file_handle, static_cast<long>(offset), static_cast<int>(origin)) != 0)
 				return -1;
 			return zip_ftell(file_handle);
@@ -136,6 +138,7 @@ namespace edge
 
 		auto ZipFile::Tell() -> int64_t
 		{
+			std::lock_guard<std::mutex> lock(mutex);
 			if (!file_handle)
 				return -1;
 
@@ -144,6 +147,7 @@ namespace edge
 
 		auto ZipFile::Read(void* buffer, uint64_t size) -> int64_t
 		{
+			std::lock_guard<std::mutex> lock(mutex);
 			if (!file_handle)
 				return -1;
 

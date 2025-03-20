@@ -42,6 +42,7 @@ namespace edge
 
 		auto ZipDirectoryIterator::Next() -> void
 		{
+			std::lock_guard<std::mutex> lock(mutex);
 			++current_index;
 
 			while (current_index < entry_count) 

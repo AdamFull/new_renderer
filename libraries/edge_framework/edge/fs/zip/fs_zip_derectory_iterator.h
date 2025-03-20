@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <string_view>
+#include <mutex>
 
 typedef struct zip zip_t;
 
@@ -33,6 +34,8 @@ namespace edge
 			int32_t entry_count{ 0 };
 
 			std::string_view current_entry;
+
+			std::mutex mutex;
 		};
 	}
 }

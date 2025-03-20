@@ -2,6 +2,8 @@
 
 #include "../fs_file.h"
 
+#include <mutex>
+
 typedef struct zip zip_t;
 typedef struct zip_file zip_file_t;
 typedef struct zip_stat zip_stat_t;
@@ -28,6 +30,8 @@ namespace edge
 			zip_t* zip_handle{ nullptr };
 			zip_file_t* file_handle{ nullptr };
 			zip_stat_t* file_stat{ nullptr };
+
+			std::mutex mutex;
 		};
 	}
 }

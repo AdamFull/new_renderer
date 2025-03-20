@@ -2,6 +2,8 @@
 
 #include "../fs_filesystem.h"
 
+#include <mutex>
+
 typedef struct zip zip_t;
 
 namespace edge
@@ -29,6 +31,8 @@ namespace edge
 			auto Walk(std::string_view path, bool recursive = false) -> IDirectoryIterator* override;
 		private:
 			zip_t* zip_handle{ nullptr };
+
+			std::mutex mutex;
 		};
 	}
 }
