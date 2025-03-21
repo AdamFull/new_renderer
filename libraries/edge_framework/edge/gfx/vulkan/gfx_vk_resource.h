@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "../../util/Hash.hpp"
+#include "../../util/utl_hash.hpp"
 
 namespace edge::gfx::vulkan
 {

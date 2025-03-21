@@ -3,7 +3,7 @@
 #include "../../EntityManager.h"
 #include "../components/components.h"
 
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 #include <execution>
 
 using namespace engine::world::ecs;

@@ -7,7 +7,7 @@
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
 	auto context = std::make_unique<edge::win64::WindowsRuntimeContext>(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-	return RuntimeMain(*context);
+	return runtime_main(*context);
 }
 #elif defined(PLATFORM_ANDROID)
 #include "runtime/android/rt_android_runtime_context.h"
@@ -16,7 +16,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 void android_main(android_app* state)
 {
 	auto context = std::make_unique<edge::android::AndroidRuntimeContext>(state);
-	RuntimeMain(*context);
+	runtime_main(*context);
 }
 
 #else

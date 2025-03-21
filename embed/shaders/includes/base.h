@@ -7,7 +7,7 @@
 
 #include <cstdint>
 #include <array>
-#include <edge/util/Hash.hpp>
+#include <edge/util/utl_hash.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/packing.hpp>

@@ -1,6 +1,6 @@
 #include "ImFontManager.h"
 
-#include <edge/util/Hash.hpp>
+#include <edge/util/utl_hash.hpp>
 
 #include <imgui.h>
 

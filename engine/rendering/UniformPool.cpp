@@ -2,8 +2,8 @@
 
 #include <edge/gfx/gfx_context.h>
 
-#include <edge/util/Memory.hpp>
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_memory.hpp>
+#include <edge/util/utl_profiler.h>
 
 namespace engine
 {

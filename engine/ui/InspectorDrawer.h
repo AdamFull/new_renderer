@@ -1,6 +1,6 @@
 #pragma once
 
-#include <edge/util/Enum.hpp>
+#include <edge/util/utl_enum.hpp>
 #include "Attributes.h"
 #include "ImGuiElements.h"
 

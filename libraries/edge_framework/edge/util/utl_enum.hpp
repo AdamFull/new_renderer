@@ -13,16 +13,13 @@
 
 #include "Serialization.hpp"
 
-namespace edge
-{
+namespace edge {
 	template <typename FlagBitsType>
-	struct FlagTraits
-	{
+	struct FlagTraits {
 	};
 
 	template <typename BitType>
-	class flags
-	{
+	class flags {
 	public:
 		using MaskType = typename std::underlying_type<BitType>::type;
 
@@ -39,93 +36,77 @@ namespace edge
 #if defined(HAS_SPACESHIP_OPERATOR)
 		auto operator<=>(flags<BitType> const&) const = default;
 #else
-		constexpr bool operator<(flags<BitType> const& rhs) const noexcept
-		{
+		constexpr bool operator<(flags<BitType> const& rhs) const noexcept {
 			return m_mask < rhs.m_mask;
 		}
 
-		constexpr bool operator<=(flags<BitType> const& rhs) const noexcept
-		{
+		constexpr bool operator<=(flags<BitType> const& rhs) const noexcept {
 			return m_mask <= rhs.m_mask;
 		}
 
-		constexpr bool operator>(flags<BitType> const& rhs) const noexcept
-		{
+		constexpr bool operator>(flags<BitType> const& rhs) const noexcept {
 			return m_mask > rhs.m_mask;
 		}
 
-		constexpr bool operator>=(flags<BitType> const& rhs) const noexcept
-		{
+		constexpr bool operator>=(flags<BitType> const& rhs) const noexcept {
 			return m_mask >= rhs.m_mask;
 		}
 
-		constexpr bool operator==(flags<BitType> const& rhs) const noexcept
-		{
+		constexpr bool operator==(flags<BitType> const& rhs) const noexcept {
 			return m_mask == rhs.m_mask;
 		}
 
-		constexpr bool operator!=(flags<BitType> const& rhs) const noexcept
-		{
+		constexpr bool operator!=(flags<BitType> const& rhs) const noexcept {
 			return m_mask != rhs.m_mask;
 		}
 #endif
 
 		// logical operator
-		constexpr bool operator!() const noexcept
-		{
+		constexpr bool operator!() const noexcept {
 			return !m_mask;
 		}
 
 		// bitwise operators
-		constexpr flags<BitType> operator&(flags<BitType> const& rhs) const noexcept
-		{
+		constexpr flags<BitType> operator&(flags<BitType> const& rhs) const noexcept {
 			return flags<BitType>(m_mask & rhs.m_mask);
 		}
 
-		constexpr flags<BitType> operator|(flags<BitType> const& rhs) const noexcept
-		{
+		constexpr flags<BitType> operator|(flags<BitType> const& rhs) const noexcept {
 			return flags<BitType>(m_mask | rhs.m_mask);
 		}
 
-		constexpr flags<BitType> operator^(flags<BitType> const& rhs) const noexcept
-		{
+		constexpr flags<BitType> operator^(flags<BitType> const& rhs) const noexcept {
 			return flags<BitType>(m_mask ^ rhs.m_mask);
 		}
 
-		constexpr flags<BitType> operator~() const noexcept
-		{
+		constexpr flags<BitType> operator~() const noexcept {
 			return flags<BitType>(m_mask ^ FlagTraits<BitType>::allflags);
 		}
 
 		// assignment operators
 		constexpr flags<BitType>& operator=(flags<BitType> const& rhs) noexcept = default;
 
-		constexpr flags<BitType>& operator|=(flags<BitType> const& rhs) noexcept
-		{
+		constexpr flags<BitType>& operator|=(flags<BitType> const& rhs) noexcept {
 			m_mask |= rhs.m_mask;
 			return *this;
 		}
 
-		constexpr flags<BitType>& operator&=(flags<BitType> const& rhs) noexcept
-		{
+		constexpr flags<BitType>& operator&=(flags<BitType> const& rhs) noexcept {
 			m_mask &= rhs.m_mask;
 			return *this;
 		}
 
-		constexpr flags<BitType>& operator^=(flags<BitType> const& rhs) noexcept
-		{
+		constexpr flags<BitType>& operator^=(flags<BitType> const& rhs) noexcept {
 			m_mask ^= rhs.m_mask;
 			return *this;
 		}
 
 		// cast operators
-		explicit constexpr operator bool() const noexcept
-		{
+		explicit constexpr operator bool() const noexcept {
 			return !!m_mask;
 		}
 
-		explicit constexpr operator MaskType() const noexcept
-		{
+		explicit constexpr operator MaskType() const noexcept {
 			return m_mask;
 		}
 
@@ -134,60 +115,51 @@ namespace edge
 	};
 
 	template<typename BitType>
-	inline flags<BitType> and_(flags<BitType> l, flags<BitType> r)
-	{
+	inline flags<BitType> and_(flags<BitType> l, flags<BitType> r) {
 		return l & r;
 	}
 
 	template<typename BitType>
-	inline flags<BitType> and_(flags<BitType> l, BitType r)
-	{
+	inline flags<BitType> and_(flags<BitType> l, BitType r) {
 		return l & r;
 	}
 
 
 	template<typename BitType>
-	inline flags<BitType> or_(flags<BitType> l, flags<BitType> r)
-	{
+	inline flags<BitType> or_(flags<BitType> l, flags<BitType> r) {
 		return l | r;
 	}
 
 	template<typename BitType>
-	inline flags<BitType> or_(flags<BitType> l, BitType r)
-	{
+	inline flags<BitType> or_(flags<BitType> l, BitType r) {
 		return l | r;
 	}
 
 
 	template<typename BitType>
-	inline flags<BitType> xor_(flags<BitType> l, BitType r)
-	{
+	inline flags<BitType> xor_(flags<BitType> l, BitType r) {
 		return l ^ r;
 	}
 
 	template<typename BitType>
-	inline flags<BitType> xor_(flags<BitType> l, flags<BitType> r)
-	{
+	inline flags<BitType> xor_(flags<BitType> l, flags<BitType> r) {
 		return l ^ r;
 	}
 
 
 	template<typename BitType>
-	inline bool eq_(flags<BitType> l, flags<BitType> r)
-	{
+	inline bool eq_(flags<BitType> l, flags<BitType> r) {
 		return and_(l, r) == r;
 	}
 
 	template<typename BitType>
-	inline bool eq_(flags<BitType> l, BitType r)
-	{
+	inline bool eq_(flags<BitType> l, BitType r) {
 		return and_(l, r) == r;
 	}
 
 
 	template<typename BitType>
-	inline flags<BitType> not_(flags<BitType> f)
-	{
+	inline flags<BitType> not_(flags<BitType> f) {
 		return ~f;
 	}
 
@@ -199,10 +171,8 @@ namespace edge
 	constexpr bool has_enum_metadata = !enum_metadata<_Enum>.empty();
 
 	template <typename _Enum>
-	inline constexpr std::string_view enum_to_string(_Enum value)
-	{
-		for (const auto& [e, str] : enum_metadata<_Enum>)
-		{
+	inline constexpr std::string_view enum_to_string(_Enum value) {
+		for (const auto& [e, str] : enum_metadata<_Enum>) {
 			if (e == value)
 				return str;
 		}
@@ -211,10 +181,8 @@ namespace edge
 	}
 
 	template <typename _Enum>
-	inline constexpr _Enum enum_from_string(std::string_view value)
-	{
-		for (const auto& [e, str] : enum_metadata<_Enum>)
-		{
+	inline constexpr _Enum enum_from_string(std::string_view value) {
+		for (const auto& [e, str] : enum_metadata<_Enum>) {
 			if (value.compare(str) == 0)
 				return e;
 		}
@@ -222,8 +190,7 @@ namespace edge
 	}
 
 	template<class _Ty, class _ReturnType = typename std::underlying_type<_Ty>::type>
-	inline constexpr _ReturnType enum_cast(_Ty enum_value)
-	{
+	inline constexpr _ReturnType enum_cast(_Ty enum_value) {
 		return static_cast<_ReturnType>(enum_value);
 	}
 }
@@ -231,58 +198,49 @@ namespace edge
 #if !defined(HAS_SPACESHIP_OPERATOR)
 // relational operators only needed for pre C++20
 template <typename BitType>
-constexpr bool operator<(BitType bit, edge::flags<BitType> const& flags) noexcept
-{
+constexpr bool operator<(BitType bit, edge::flags<BitType> const& flags) noexcept {
 	return flags.operator>(bit);
 }
 
 template <typename BitType>
-constexpr bool operator<=(BitType bit, edge::flags<BitType> const& flags) noexcept
-{
+constexpr bool operator<=(BitType bit, edge::flags<BitType> const& flags) noexcept {
 	return flags.operator>=(bit);
 }
 
 template <typename BitType>
-constexpr bool operator>(BitType bit, edge::flags<BitType> const& flags) noexcept
-{
+constexpr bool operator>(BitType bit, edge::flags<BitType> const& flags) noexcept {
 	return flags.operator<(bit);
 }
 
 template <typename BitType>
-constexpr bool operator>=(BitType bit, edge::flags<BitType> const& flags) noexcept
-{
+constexpr bool operator>=(BitType bit, edge::flags<BitType> const& flags) noexcept {
 	return flags.operator<=(bit);
 }
 
 template <typename BitType>
-constexpr bool operator==(BitType bit, edge::flags<BitType> const& flags) noexcept
-{
+constexpr bool operator==(BitType bit, edge::flags<BitType> const& flags) noexcept {
 	return flags.operator==(bit);
 }
 
 template <typename BitType>
-constexpr bool operator!=(BitType bit, edge::flags<BitType> const& flags) noexcept
-{
+constexpr bool operator!=(BitType bit, edge::flags<BitType> const& flags) noexcept {
 	return flags.operator!=(bit);
 }
 #endif
 
 // bitwise operators
 template <typename BitType>
-constexpr edge::flags<BitType> operator&(BitType bit, edge::flags<BitType> const& flags) noexcept
-{
+constexpr edge::flags<BitType> operator&(BitType bit, edge::flags<BitType> const& flags) noexcept {
 	return flags.operator&(bit);
 }
 
 template <typename BitType>
-constexpr edge::flags<BitType> operator|(BitType bit, edge::flags<BitType> const& flags) noexcept
-{
+constexpr edge::flags<BitType> operator|(BitType bit, edge::flags<BitType> const& flags) noexcept {
 	return flags.operator|(bit);
 }
 
 template <typename BitType>
-constexpr edge::flags<BitType> operator^(BitType bit, edge::flags<BitType> const& flags) noexcept
-{
+constexpr edge::flags<BitType> operator^(BitType bit, edge::flags<BitType> const& flags) noexcept {
 	return flags.operator^(bit);
 }
 

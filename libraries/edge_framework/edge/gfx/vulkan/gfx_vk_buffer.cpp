@@ -3,8 +3,8 @@
 #include "gfx_vk_device.h"
 #include "gfx_vk_debug.h"
 
-#include "../../util/util.h"
-#include "../../util/memory.hpp"
+#include "../../util/utl_base.h"
+#include "../../util/utl_memory.hpp"
 
 namespace edge::gfx::vulkan
 {
@@ -93,12 +93,12 @@ namespace edge::gfx::vulkan
 
 	auto VulkanBuffer::update(const void* data, uint64_t size, uint64_t offset) -> uint64_t {
 		if (persistent) {
-			engine::util::Copy(mapped_data, offset, data, size, 0ull);
+			engine::util::copy(mapped_data, offset, data, size, 0ull);
 			flush();
 		}
 		else {
 			map_memory();
-			engine::util::Copy(mapped_data, offset, data, size, 0ull);
+			engine::util::copy(mapped_data, offset, data, size, 0ull);
 			flush();
 			unmap_memory();
 		}

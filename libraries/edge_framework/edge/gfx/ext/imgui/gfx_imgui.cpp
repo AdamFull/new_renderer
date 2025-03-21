@@ -3,7 +3,7 @@
 #include "../../gfx_context.h"
 #include "../../../runtime/rt_input_events.h"
 #include "../../../runtime/rt_window.h"
-#include "../../../util/Profiler.h"
+#include "../../../util/utl_profiler.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>

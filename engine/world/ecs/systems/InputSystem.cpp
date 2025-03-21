@@ -7,7 +7,7 @@
 
 #include <engine/InputManager.h>
 
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 
 constexpr const f32 mouse_scale{ 50.f };
 constexpr const f32 movement_scale{ 2.f };

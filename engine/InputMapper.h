@@ -1,7 +1,7 @@
 #pragma once
 
 #include <reactive/function.h>
-#include <edge/util/Hash.hpp>
+#include <edge/util/utl_hash.hpp>
 #include <edge/runtime/rt_input_events.h>
 
 namespace engine

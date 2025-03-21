@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <span>
 
-#include "../util/Enum.hpp"
+#include "../util/utl_enum.hpp"
 
 namespace edge::fs {
 	enum class FileModeFlag {

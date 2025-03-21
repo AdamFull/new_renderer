@@ -9,7 +9,7 @@
 
 #include <entt/entt.hpp>
 
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 
 namespace engine
 {

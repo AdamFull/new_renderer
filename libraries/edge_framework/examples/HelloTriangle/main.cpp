@@ -1,6 +1,6 @@
 #include <edge/Edge.h>
 #include <edge/util/Logger.h>
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 
 #include <edge/gfx/gfx_context.h>
 #include <edge/gfx/gfx_resource_loader.h>
@@ -444,7 +444,7 @@ private:
 	edge::gfx::IBuffer* vertex_buffer{ nullptr };
 };
 
-int RuntimeMain(const edge::IRuntimeContext& context)
+int runtime_main(const edge::IRuntimeContext& context)
 {
     auto runtime = edge::create_application_context(context);
 

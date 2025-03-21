@@ -12,8 +12,8 @@
 #include <utility>
 
 #include <standart_library.h>
-#include <edge/util/String.hpp>
-#include <edge/util/Enum.hpp>
+#include <edge/util/utl_string.hpp>
+#include <edge/util/utl_enum.hpp>
 
 namespace icon
 {

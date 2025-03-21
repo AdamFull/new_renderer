@@ -7,7 +7,7 @@
 #include "../components/PointLightComponent.h"
 #include "../components/SpotLightComponent.h"
 
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 
 using namespace engine::render;
 

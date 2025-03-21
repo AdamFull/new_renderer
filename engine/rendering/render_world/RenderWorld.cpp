@@ -3,7 +3,7 @@
 
 #include <glm/gtx/quaternion.hpp>
 
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 
 #include "../Globals.h"
 

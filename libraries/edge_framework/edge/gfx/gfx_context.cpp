@@ -8,7 +8,7 @@
 #include <vulkan/gfx_vk_context.h>
 #endif
 
-#include "../util/Enum.hpp"
+#include "../util/utl_enum.hpp"
 
 namespace edge::gfx
 {

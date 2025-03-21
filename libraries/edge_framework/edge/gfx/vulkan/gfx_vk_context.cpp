@@ -2,7 +2,7 @@
 #include "gfx_vk_config.h"
 
 #include "../../util/Logger.h"
-#include "../../util/Profiler.h"
+#include "../../util/utl_profiler.h"
 #include "../../runtime/rt_window.h"
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)

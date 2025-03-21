@@ -8,7 +8,7 @@
 #include "rt_runtime_context.h"
 #include "../util/Logger.h"
 
-#include "../util/Profiler.h"
+#include "../util/utl_profiler.h"
 
 #ifdef CreateWindow
 #undef CreateWindow

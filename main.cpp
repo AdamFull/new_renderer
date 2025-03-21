@@ -284,7 +284,7 @@ private:
 
 };
 
-int RuntimeMain(const edge::IRuntimeContext& context)
+int runtime_main(const edge::IRuntimeContext& context)
 {
     auto runtime = edge::create_application_context(context);
 

@@ -1,7 +1,7 @@
 #include "gfx_vk_descriptor_pool.h"
 #include "gfx_vk_device.h"
 
-#include "../../util/Profiler.h"
+#include "../../util/utl_profiler.h"
 
 namespace edge::gfx::vulkan
 {

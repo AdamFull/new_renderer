@@ -1,30 +1,26 @@
 #pragma once
 
-#include "Hash.hpp"
+#include "utl_hash.hpp"
 
-namespace edge
-{
+namespace edge {
 	// String conversion
 	template<typename _Ty, typename _Traits = std::char_traits<_Ty>, typename _Allocator = std::allocator<_Ty>>
 	inline std::string to_utf8(const std::basic_string<_Ty, _Traits, _Allocator>& str) {}
 
 	template<>
-	inline std::string to_utf8<wchar_t>(const std::wstring& str)
-	{
+	inline std::string to_utf8<wchar_t>(const std::wstring& str) {
 		std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
 		return converter.to_bytes(str);
 	}
 
 	template<>
-	inline std::string to_utf8<char16_t>(const std::u16string& str)
-	{
+	inline std::string to_utf8<char16_t>(const std::u16string& str) {
 		std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
 		return converter.to_bytes(str);
 	}
 
 	template<>
-	inline std::string to_utf8<char32_t>(const std::u32string& str)
-	{
+	inline std::string to_utf8<char32_t>(const std::u32string& str) {
 		std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter;
 		return converter.to_bytes(str);
 	}
@@ -33,29 +29,25 @@ namespace edge
 	inline std::basic_string<_Ty, _Traits, _Allocator> from_utf8(const std::string& str) {}
 
 	template<>
-	inline std::wstring from_utf8<wchar_t>(const std::string& str)
-	{
+	inline std::wstring from_utf8<wchar_t>(const std::string& str) {
 		std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
 		return converter.from_bytes(str);
 	}
 
 	template<>
-	inline std::u16string from_utf8<char16_t>(const std::string& str)
-	{
+	inline std::u16string from_utf8<char16_t>(const std::string& str) {
 		std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
 		return converter.from_bytes(str);
 	}
 
 	template<>
-	inline std::u32string from_utf8<char32_t>(const std::string& str)
-	{
+	inline std::u32string from_utf8<char32_t>(const std::string& str) {
 		std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter;
 		return converter.from_bytes(str);
 	}
 
 	// https://gist.github.com/tomykaira/f0fd86b6c73063283afe550bc5d77594
-	inline std::string to_base64(const uint8_t* data, size_t size)
-	{
+	inline std::string to_base64(const uint8_t* data, size_t size) {
 		static constexpr char sEncodingTable[] = {
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 		'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -68,8 +60,7 @@ namespace edge
 		size_t i;
 		char* p = const_cast<char*>(ret.c_str());
 
-		for (i = 0; size > 2 && i < size - 2; i += 3) 
-		{
+		for (i = 0; size > 2 && i < size - 2; i += 3)  {
 			*p++ = sEncodingTable[(data[i] >> 2) & 0x3F];
 			*p++ = sEncodingTable[((data[i] & 0x3) << 4) |
 				((int)(data[i + 1] & 0xF0) >> 4)];
@@ -77,11 +68,10 @@ namespace edge
 				((int)(data[i + 2] & 0xC0) >> 6)];
 			*p++ = sEncodingTable[data[i + 2] & 0x3F];
 		}
-		if (i < size) 
-		{
+
+		if (i < size)  {
 			*p++ = sEncodingTable[(data[i] >> 2) & 0x3F];
-			if (i == (size - 1)) 
-			{
+			if (i == (size - 1))  {
 				*p++ = sEncodingTable[((data[i] & 0x3) << 4)];
 				*p++ = '=';
 			}
@@ -96,8 +86,7 @@ namespace edge
 		return ret;
 	}
 
-	inline std::vector<uint8_t> from_base64(const std::string& data)
-	{
+	inline std::vector<uint8_t> from_base64(const std::string& data) {
 		static constexpr unsigned char kDecodingTable[] = {
 		64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
 		64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
@@ -128,8 +117,7 @@ namespace edge
 		std::vector<uint8_t> out;
 		out.resize(out_len);
 
-		for (size_t i = 0, j = 0; i < in_len;) 
-		{
+		for (size_t i = 0, j = 0; i < in_len;)  {
 			uint32_t a = data[i] == '='
 				? 0 & i++
 				: kDecodingTable[static_cast<int>(data[i++])];
@@ -157,8 +145,7 @@ namespace edge
 		return out;
 	}
 
-	namespace impl
-	{
+	namespace impl {
 		/// Base declaration of our constexpr string_view concatenation helper
 		template <std::string_view const&, typename, std::string_view const&, typename>
 		struct concat;
@@ -169,8 +156,7 @@ namespace edge
 			std::size_t... I1,
 			std::string_view const& S2,
 			std::size_t... I2>
-		struct concat<S1, std::index_sequence<I1...>, S2, std::index_sequence<I2...>>
-		{
+		struct concat<S1, std::index_sequence<I1...>, S2, std::index_sequence<I2...>> {
 			static constexpr const char value[]{ S1[I1]..., S2[I2]..., 0 };
 		};
 	} // namespace impl
@@ -180,16 +166,14 @@ namespace edge
 
 	/// When no strings are given, provide an empty literal
 	template <>
-	struct join<>
-	{
+	struct join<> {
 		static constexpr std::string_view value = "";
 	};
 
 	/// Base case for recursion where we reach a pair of strings, we concatenate
 	/// them to produce a new constexpr string
 	template <std::string_view const& S1, std::string_view const& S2>
-	struct join<S1, S2>
-	{
+	struct join<S1, S2> {
 		static constexpr std::string_view value =
 			impl::concat<S1,
 			std::make_index_sequence<S1.size()>,
@@ -200,8 +184,7 @@ namespace edge
 	/// Main recursive definition for constexpr joining, pass the tail down to our
 	/// base case specialisation
 	template <std::string_view const& S, std::string_view const&... Rest>
-	struct join<S, Rest...>
-	{
+	struct join<S, Rest...> {
 		static constexpr std::string_view value =
 			join<S, join<Rest...>::value>::value;
 	};
@@ -212,8 +195,7 @@ namespace edge
 
 
 	template<typename _Ty, typename _HashType>
-	class id_string
-	{
+	class id_string {
 	public:
 		using value_type = std::basic_string<_Ty, std::char_traits<_Ty>, std::allocator<_Ty>>;
 		using hash_type = _HashType;
@@ -221,36 +203,30 @@ namespace edge
 		id_string() noexcept : _hash(0) {}
 
 		id_string(const value_type& str)
-			: _hash(compute_hash(str))
-		{
+			: _hash(compute_hash(str)) {
 			_store_string(_hash, str);
 		}
 
 		id_string(const value_type& str, hash_type hash)
-			: _hash(hash)
-		{
+			: _hash(hash) {
 			_store_string(_hash, str);
 		}
 
 		// Copy constructor
 		id_string(const id_string& other)
-			: _hash(other._hash)
-		{
+			: _hash(other._hash) {
 		}
 
 		// Assignment operator
-		id_string& operator=(const id_string& other)
-		{
-			if (this != &other && _hash != other._hash && _hash != 0)
-			{
+		id_string& operator=(const id_string& other) {
+			if (this != &other && _hash != other._hash && _hash != 0) {
 				_hash = other._hash;
 				_store_string(_hash, other.c_str());
 			}
 			return *this;
 		}
 
-		const _Ty* c_str() const
-		{
+		const _Ty* c_str() const {
 			auto it = _string_pool().find(_hash);
 			if (it != _string_pool().end())
 				return it->second.c_str();
@@ -258,8 +234,7 @@ namespace edge
 			return nullptr;
 		}
 
-		const value_type& str() const
-		{
+		const value_type& str() const {
 			static value_type empty{ "" };
 
 			auto it = _string_pool().find(_hash);
@@ -269,38 +244,31 @@ namespace edge
 			return empty;
 		}
 
-		hash_type hash() const 
-		{
+		hash_type hash() const  {
 			return _hash;
 		}
 
-		bool valid() const
-		{
+		bool valid() const {
 			return _hash != 0;
 		}
 
 	private:
 		hash_type _hash;
 
-		static hash_type compute_hash(const value_type& str)
-		{
-			if constexpr (sizeof(hash_type) == sizeof(uint32_t))
-			{
+		static hash_type compute_hash(const value_type& str) {
+			if constexpr (sizeof(hash_type) == sizeof(uint32_t)) {
 				return murmur_hash((char*)str.data(), str.size() * sizeof(_Ty), 0);
 			}
-			else if constexpr (sizeof(hash_type) == sizeof(uint64_t))
-			{
+			else if constexpr (sizeof(hash_type) == sizeof(uint64_t)) {
 				return murmur_hash_64((char*)str.data(), str.size() * sizeof(_Ty), 0);
 			}
 		}
 
-		static void _store_string(hash_type hash, const value_type& str)
-		{
+		static void _store_string(hash_type hash, const value_type& str) {
 			_string_pool()[hash] = str;
 		}
 
-		static std::unordered_map<hash_type, std::string>& _string_pool()
-		{
+		static std::unordered_map<hash_type, std::string>& _string_pool() {
 			static std::unordered_map<hash_type, value_type> pool;
 			return pool;
 		}

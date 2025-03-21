@@ -3,7 +3,7 @@
 #include <edge/gfx/gfx_context.h>
 #include <edge/gfx/gfx_resource_loader.h>
 
-#include <edge/util/util.h>
+#include <edge/util/utl_base.h>
 
 namespace engine
 {

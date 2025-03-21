@@ -4,7 +4,7 @@
 
 #include "gfx_vk_util.h"
 
-#include "../../util/Profiler.h"
+#include "../../util/utl_profiler.h"
 
 namespace edge::gfx::vulkan
 {

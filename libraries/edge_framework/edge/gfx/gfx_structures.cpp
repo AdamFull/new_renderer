@@ -1,6 +1,6 @@
 #include "gfx_structures.h"
 #include "../util/Serialization.hpp"
-#include "../util/Hash.hpp"
+#include "../util/utl_hash.hpp"
 
 namespace edge::gfx
 {

@@ -2,7 +2,7 @@
 
 #include "../gfx_context.h"
 
-#include "../../util/Memory.hpp"
+#include "../../util/utl_memory.hpp"
 
 namespace edge::gfx
 {

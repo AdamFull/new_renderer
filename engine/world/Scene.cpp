@@ -11,13 +11,13 @@
 #include "../rendering/Rendering.h"
 #include <edge/gfx/gfx_context.h>
 
-#include <edge/util/util.h>
+#include <edge/util/utl_base.h>
 #include <edge/fs/fs_helper.h>
 #include <edge/util/Logger.h>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <edge/fs/fs_virtual_filesystem.h>
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 
 #include "EntityManager.h"
 
@@ -741,7 +741,7 @@ namespace engine
 						assert(accessor.componentType == easygltf::base::enumerators::component_type::float_type);
 
 						f32* buf = new f32[accessor.count];
-						util::Copy(buf, stream.data, stream.count * sizeof(f32));
+						util::copy(buf, stream.data, stream.count * sizeof(f32));
 						for (uint64_t index = 0; index < stream.count; index++)
 							sampler.inputs.push_back(buf[index]);
 
@@ -766,7 +766,7 @@ namespace engine
 						if (accessor.type == easygltf::base::enumerators::accessor_type::vec3_type)
 						{
 							glm::vec3* buf = new glm::vec3[stream.count];
-							util::Copy(buf, stream.data, stream.count * sizeof(glm::vec3));
+							util::copy(buf, stream.data, stream.count * sizeof(glm::vec3));
 							for (uint64_t index = 0; index < stream.count; index++)
 								sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
 
@@ -775,7 +775,7 @@ namespace engine
 						else if (accessor.type == easygltf::base::enumerators::accessor_type::vec4_type)
 						{
 							glm::vec4* buf = new glm::vec4[stream.count];
-							util::Copy(buf, stream.data, stream.count * sizeof(glm::vec4));
+							util::copy(buf, stream.data, stream.count * sizeof(glm::vec4));
 							for (uint64_t index = 0; index < stream.count; index++)
 								sampler.outputsVec4.push_back(buf[index]);
 
@@ -851,7 +851,7 @@ namespace engine
 					const easygltf::Accessor& accessor = root.accessors[source.inverseBindMatrices];
 					auto stream = root.getStream(accessor);
 					skin.inverseBindMatrices.resize(stream.count);
-					util::Copy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
+					util::copy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
 				}
 
 				root_component.skins.emplace_back(skin);

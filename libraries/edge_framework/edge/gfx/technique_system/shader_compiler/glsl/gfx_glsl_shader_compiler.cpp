@@ -4,7 +4,7 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/build_info.h>
 
-#include "../../../../util/Hash.hpp"
+#include "../../../../util/utl_hash.hpp"
 #include "../../../../util/Logger.h"
 #include "../../../../fs/fs_helper.h"
 #include "../../../../fs/fs_virtual_filesystem.h"

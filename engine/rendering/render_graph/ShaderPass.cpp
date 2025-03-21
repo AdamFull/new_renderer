@@ -5,9 +5,9 @@
 #include <edge/gfx/gfx_util.h>
 
 #include <edge/util/Logger.h>
-#include <edge/util/Hash.hpp>
+#include <edge/util/utl_hash.hpp>
 
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 
 namespace engine
 {

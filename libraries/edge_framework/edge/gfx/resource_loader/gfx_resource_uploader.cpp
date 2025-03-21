@@ -1,7 +1,7 @@
 #include "gfx_resource_uploader.h"
 
 #include "../../util/Logger.h"
-#include "../../util/Profiler.h"
+#include "../../util/utl_profiler.h"
 
 #include "gfx_staging_allocator.h"
 

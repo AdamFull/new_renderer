@@ -27,7 +27,7 @@
 
 #include <imgui.h>
 #include <imdbg.h>
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 
 #include <edge/fs/fs_virtual_filesystem.h>
 

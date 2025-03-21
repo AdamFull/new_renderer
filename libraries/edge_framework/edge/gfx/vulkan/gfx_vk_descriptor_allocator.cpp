@@ -4,7 +4,7 @@
 #include "gfx_vk_root_signature.h"
 #include "gfx_vk_resource_descriptor.h"
 
-#include "../../util/Profiler.h"
+#include "../../util/utl_profiler.h"
 
 namespace edge::gfx::vulkan
 {

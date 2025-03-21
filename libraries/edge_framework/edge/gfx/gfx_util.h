@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gfx_structures.h"
-#include "../util/Hash.hpp"
+#include "../util/utl_hash.hpp"
 #include <cassert>
 
 namespace edge::gfx {

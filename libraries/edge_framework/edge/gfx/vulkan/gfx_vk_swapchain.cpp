@@ -10,7 +10,7 @@
 
 #include <glm/glm.hpp>
 
-#include "../../util/Profiler.h"
+#include "../../util/utl_profiler.h"
 
 namespace edge::gfx::vulkan
 {

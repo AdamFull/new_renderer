@@ -5,7 +5,7 @@
 #include "../components/CameraComponent.h"
 #include "../components/TransformComponent.h"
 
-#include <edge/util/Profiler.h>
+#include <edge/util/utl_profiler.h>
 
 using namespace engine::world::ecs;
 

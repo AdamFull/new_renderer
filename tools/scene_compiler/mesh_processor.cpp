@@ -5,8 +5,8 @@
 
 #include <meshoptimizer.h>
 
-#include <edge/util/Hash.hpp>
-#include <edge/util/util.h>
+#include <edge/util/utl_hash.hpp>
+#include <edge/util/utl_base.h>
 
 using namespace mesh_compiler;
 
@@ -141,11 +141,11 @@ template<class _Ty>
 void copy_element(const uint8_t* src, double& dst)
 {
 	if constexpr(std::is_same_v<_Ty, double>)
-		engine::util::Copy(&dst, src, sizeof(_Ty));
+		engine::util::copy(&dst, src, sizeof(_Ty));
 	else
 	{
 		_Ty temp{};
-		engine::util::Copy(&temp, src, sizeof(_Ty));
+		engine::util::copy(&temp, src, sizeof(_Ty));
 		dst = static_cast<double>(temp);
 	}
 }
@@ -216,21 +216,21 @@ void read_index_stream(const easygltf::Stream& stream, std::vector<uint32_t>& in
 	{
 		// 32bit index
 		std::vector<uint32_t> temp(stream.count);
-		engine::util::Copy(temp.data(), stream.data, stream.stride * stream.count);
+		engine::util::copy(temp.data(), stream.data, stream.stride * stream.count);
 		indices.insert(indices.end(), temp.begin(), temp.end());
 	}
 	else if (stream.stride == 2ull)
 	{
 		// 16bit index
 		std::vector<uint16_t> temp(stream.count);
-		engine::util::Copy(temp.data(), stream.data, stream.stride * stream.count);
+		engine::util::copy(temp.data(), stream.data, stream.stride * stream.count);
 		indices.insert(indices.end(), temp.begin(), temp.end());
 	}
 	else if (stream.stride == 1ull)
 	{
 		// 8bit index
 		std::vector<uint8_t> temp(stream.count);
-		engine::util::Copy(temp.data(), stream.data, stream.stride * stream.count);
+		engine::util::copy(temp.data(), stream.data, stream.stride * stream.count);
 		indices.insert(indices.end(), temp.begin(), temp.end());
 	}
 }
@@ -448,11 +448,11 @@ void CGLTFEditor::apply()
 					temp.insert(temp.end(), primitive.indices.begin(), primitive.indices.end());
 
 					buffer.data.resize(buffer.count * buffer.stride);
-					engine::util::Copy(&buffer.data[0], &temp[0], buffer.data.size());
+					engine::util::copy(&buffer.data[0], &temp[0], buffer.data.size());
 				} break;
 				case 4ull: {
 					buffer.data.resize(buffer.count * buffer.stride);
-					engine::util::Copy(&buffer.data[0], &primitive.indices[0], buffer.data.size());
+					engine::util::copy(&buffer.data[0], &primitive.indices[0], buffer.data.size());
 				} break;
 				}
 

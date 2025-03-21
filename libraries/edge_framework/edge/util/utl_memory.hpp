@@ -4,39 +4,31 @@
 #include <memory>
 #include <atomic>
 
-namespace edge
-{
-	namespace error_code
-	{
+namespace edge {
+	namespace error_code {
 		constexpr const size_t ok = 0ull;
 		constexpr const size_t bad_alloc = (~0ull) - (size_t)(1 << 0);
 	}
 
-	inline constexpr void* ptr_offset(void* ptr, size_t offset)
-	{
+	inline constexpr void* ptr_offset(void* ptr, size_t offset) {
 		return (void*)((char*)ptr + offset);
 	}
 
-	inline constexpr const void* ptr_offset(const void* ptr, size_t offset)
-	{
+	inline constexpr const void* ptr_offset(const void* ptr, size_t offset) {
 		return (const void*)((const char*)ptr + offset);
 	}
 
-	inline constexpr std::ptrdiff_t ptr_distance(const void* start, const void* end)
-	{
+	inline constexpr std::ptrdiff_t ptr_distance(const void* start, const void* end) {
 		return (const char*)end - (const char*)start;
 	}
 
-	inline constexpr std::size_t aligned_size(std::size_t size, std::size_t alignment)
-	{
+	inline constexpr std::size_t aligned_size(std::size_t size, std::size_t alignment) {
 		return (size + alignment - 1) & ~(alignment - 1);
 	}
 
 	template<class _Ty>
-	inline void release_ptr(const std::allocator<_Ty>& alloc, _Ty*& ptr, size_t count = 1ull)
-	{
-		if (ptr)
-		{
+	inline void release_ptr(const std::allocator<_Ty>& alloc, _Ty*& ptr, size_t count = 1ull) {
+		if (ptr) {
 			alloc.destroy(ptr);
 			alloc.deallocate(ptr, count);
 			ptr = nullptr;
@@ -44,28 +36,23 @@ namespace edge
 	}
 
 	template<class _Ty>
-	inline void release_ptr(_Ty*& ptr)
-	{
-		if (ptr)
-		{
+	inline void release_ptr(_Ty*& ptr) {
+		if (ptr) {
 			delete ptr;
 			ptr = nullptr;
 		}
 	}
 
 	template<class _Ty>
-	inline void release_arr(_Ty*& ptr)
-	{
-		if (ptr)
-		{
+	inline void release_arr(_Ty*& ptr) {
+		if (ptr) {
 			delete[] ptr;
 			ptr = nullptr;
 		}
 	}
 
 
-	class raw_memory_view
-	{
+	class raw_memory_view {
 	public:
 		constexpr raw_memory_view() noexcept : data_{ nullptr }, size_{ 0ull } {}
 
@@ -93,27 +80,23 @@ namespace edge
 
 		// Runtime check functions
 		template<typename _Ty>
-		constexpr _Ty* as(std::size_t byte_offset)
-		{
+		constexpr _Ty* as(std::size_t byte_offset) {
 			assert((byte_offset + sizeof(_Ty) < size_) && "Pointer is out of bounds");
 			return (_Ty*)get(byte_offset);
 		}
 
 		template<typename _Ty>
-		constexpr const _Ty* as(std::size_t byte_offset) const
-		{
+		constexpr const _Ty* as(std::size_t byte_offset) const {
 			assert((byte_offset + sizeof(_Ty) < size_) && "Pointer is out of bounds");
 			return (_Ty*)get(byte_offset);
 		}
 
-		constexpr void* get(std::size_t byte_offset)
-		{
+		constexpr void* get(std::size_t byte_offset) {
 			assert((byte_offset < size_) && "Index out of bounds");
 			return ptr_offset(data_, byte_offset);
 		}
 
-		constexpr const void* get(std::size_t byte_offset) const
-		{
+		constexpr const void* get(std::size_t byte_offset) const {
 			assert((byte_offset < size_) && "Index out of bounds");
 			return ptr_offset(data_, byte_offset);
 		}
@@ -127,8 +110,7 @@ namespace edge
 		std::size_t size_{};
 	};
 
-	class buffer
-	{
+	class buffer {
 	public:
 		buffer(std::size_t size, std::size_t align = alignof(std::max_align_t));
 		~buffer();
@@ -147,23 +129,19 @@ namespace edge
 	};
 
 	template<size_t _Size, size_t _Alignment = alignof(std::max_align_t)>
-	class small_buffer
-	{
+	class small_buffer {
 	public:
 		constexpr small_buffer() {}
 
-		constexpr bool valid() const
-		{
+		constexpr bool valid() const {
 			return true;
 		}
 
-		constexpr std::size_t size()
-		{
+		constexpr std::size_t size() {
 			return aligned_size(_Size, _Alignment);
 		}
 
-		constexpr raw_memory_view get_raw_memory_view()
-		{
+		constexpr raw_memory_view get_raw_memory_view() {
 			return raw_memory_view(memory);
 		}
 	private:
@@ -173,28 +151,24 @@ namespace edge
 
 	// Memory allocator concept
 	template <typename _Pool>
-	concept memory_pool = requires(_Pool pool, std::size_t count, std::size_t size, void* ptr)
-	{
+	concept memory_pool = requires(_Pool pool, std::size_t count, std::size_t size, void* ptr) {
 		{ pool.allocate(count, size) } -> std::same_as<void*>;
 		{ pool.deallocate(ptr, count, size) };
 		{ pool.max_size() } -> std::same_as<std::size_t>;
 	};
 
 	template<size_t _Size, size_t _Alignment = alignof(std::max_align_t)>
-	class ring_memory_pool
-	{
+	class ring_memory_pool {
 	public:
 		constexpr ring_memory_pool()
 			: head_(0ull), tail_(0ull) {}
 
-		[[nodiscard]] inline constexpr void* allocate(std::size_t count, std::size_t size)
-		{
+		[[nodiscard]] inline constexpr void* allocate(std::size_t count, std::size_t size) {
 			std::size_t allocation_size = aligned_size(count * size, _Alignment);
 			std::size_t current_tail = tail_.load(std::memory_order_relaxed);
 			std::size_t next_tail = (current_tail + allocation_size) % _Size;
 
-			if (next_tail == head_.load(std::memory_order_acquire))
-			{
+			if (next_tail == head_.load(std::memory_order_acquire)) {
 				// Buffer is full
 				return nullptr;
 			}
@@ -204,8 +178,7 @@ namespace edge
 			return ptr;
 		}
 
-		constexpr void deallocate(void* ptr, std::size_t count, std::size_t size)
-		{
+		constexpr void deallocate(void* ptr, std::size_t count, std::size_t size) {
 			// In a lock-free ring buffer, deallocation is typically a no-op,
 			// as we only move the head and tail pointers. However, we can implement
 			// a safety check if needed. The below code does not deallocate memory
@@ -222,8 +195,7 @@ namespace edge
 			head_.store((current_head + allocation_size) % _Size, std::memory_order_release);
 		}
 
-		inline constexpr std::size_t max_size() const
-		{
+		inline constexpr std::size_t max_size() const {
 			return buffer_.size();
 		}
 
@@ -234,17 +206,14 @@ namespace edge
 	};
 
 	template<size_t _InitialSize, size_t _Alignment = alignof(std::max_align_t)>
-	class dynamic_memory_pool
-	{
+	class dynamic_memory_pool {
 	public:
-		struct free_block
-		{
+		struct free_block {
 			std::size_t size{};
 			free_block* next{ nullptr };
 		};
 
-		constexpr dynamic_memory_pool() throw()
-		{
+		constexpr dynamic_memory_pool() throw() {
 			auto mem_view = buffer_.get_raw_memory_view();
 
 			free_list_ = mem_view.as<free_block>(0ull);
@@ -252,20 +221,16 @@ namespace edge
 			free_list_->next = nullptr;
 		}
 
-		[[nodiscard]] inline void* allocate(std::size_t count, std::size_t size)
-		{
+		[[nodiscard]] inline void* allocate(std::size_t count, std::size_t size) {
 			std::size_t allocation_size = aligned_size(count * size, _Alignment);
 
 			free_block* prev = nullptr;
 			free_block* current = free_list_;
 
 			// Looking for free blocks
-			while (current)
-			{
-				if (current->size >= allocation_size)
-				{
-					if (current->size > allocation_size + sizeof(free_block))
-					{
+			while (current) {
+				if (current->size >= allocation_size) {
+					if (current->size > allocation_size + sizeof(free_block)) {
 						free_block* new_block = reinterpret_cast<free_block*>(ptr_offset(current, allocation_size));
 						new_block->size = current->size - allocation_size - sizeof(free_block);
 						new_block->next = current->next;
@@ -288,8 +253,7 @@ namespace edge
 			return allocate(count, size);
 		}
 
-		inline void* deallocate(void* ptr, std::size_t count, std::size_t size)
-		{
+		inline void* deallocate(void* ptr, std::size_t count, std::size_t size) {
 			std::size_t allocation_size = aligned_size(count * size, _Alignment);
 
 			free_block* block = reinterpret_cast<free_block*>(ptr_offset(ptr, -static_cast<ptrdiff_t>(sizeof(free_block))));
@@ -298,8 +262,7 @@ namespace edge
 			free_block* current = free_list_;
 			free_block* prev = nullptr;
 
-			while (current && current < block)
-			{
+			while (current && current < block) {
 				prev = current;
 				current = current->next;
 			}
@@ -314,13 +277,11 @@ namespace edge
 			merge_blocks();
 		}
 
-		inline constexpr std::size_t max_size() const
-		{
+		inline constexpr std::size_t max_size() const {
 			return buffer_.size();
 		}
 	protected:
-		void grow(std::size_t required_size)
-		{
+		void grow(std::size_t required_size) {
 			std::size_t current_size = buffer_.size();
 			std::size_t new_size = current_size * 2ull;
 
@@ -345,14 +306,11 @@ namespace edge
 			merge_blocks();
 		}
 
-		void merge_blocks()
-		{
+		void merge_blocks() {
 			free_block* current = free_list_;
 
-			while (current && current->next)
-			{
-				if (ptr_offset(current, current->size + sizeof(free_block)) == current->next)
-				{
+			while (current && current->next) {
+				if (ptr_offset(current, current->size + sizeof(free_block)) == current->next) {
 					current->size += current->next->size + sizeof(free_block);
 					current->next = current->next->next;
 				}
@@ -367,16 +325,14 @@ namespace edge
 	};
 
 	template<typename _Ty, memory_pool _Pool>
-	class allocator
-	{
+	class allocator {
 	public:
 		using value_type = _Ty;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 
 		template<typename _Other>
-		struct rebind
-		{
+		struct rebind {
 			using other = allocator<_Other, _Pool>;
 		};
 
@@ -385,8 +341,7 @@ namespace edge
 		template<typename _Other>
 		constexpr allocator(const allocator<_Other, _Pool>& other) noexcept : pool_(other.pool_) {}
 
-		[[nodiscard]] constexpr _Ty* allocate(std::size_t n)
-		{
+		[[nodiscard]] constexpr _Ty* allocate(std::size_t n) {
 			void* ptr = pool_.allocate(n, sizeof(_Ty));
 			if (!ptr)
 				throw std::bad_alloc();
@@ -394,20 +349,17 @@ namespace edge
 			return static_cast<_Ty*>(ptr);
 		}
 
-		constexpr void deallocate(_Ty* p, std::size_t n)
-		{
+		constexpr void deallocate(_Ty* p, std::size_t n) {
 			pool_.deallocate(p, n, sizeof(_Ty));
 		}
 
 		template<typename... _Args>
-		constexpr void construct(_Ty* p, _Args&&... args)
-		{
+		constexpr void construct(_Ty* p, _Args&&... args) {
 			if constexpr (!std::is_trivial_v<_Ty>)
 				::new (static_cast<void*>(p)) _Ty(std::forward<_Args>(args)...);
 		}
 
-		constexpr void destroy(_Ty* p)
-		{
+		constexpr void destroy(_Ty* p) {
 			if constexpr (!std::is_trivial_v<_Ty>)
 				p->~_Ty();
 		}
@@ -415,14 +367,12 @@ namespace edge
 		inline size_type max_size() const throw() { return pool_.max_size() / sizeof(_Ty); }
 
 		template <typename U>
-		bool operator==(const allocator<U, _Pool>& other) const noexcept
-		{
+		bool operator==(const allocator<U, _Pool>& other) const noexcept {
 			return &pool_ == &other.pool_;
 		}
 
 		template <typename U>
-		bool operator!=(const allocator<U, _Pool>& other) const noexcept
-		{
+		bool operator!=(const allocator<U, _Pool>& other) const noexcept {
 			return !(*this == other);
 		}
 	private:
@@ -435,8 +385,7 @@ namespace edge
 
 // Specialization of allocator_traits for allocator
 template<typename _Ty, edge::memory_pool _Pool>
-struct std::allocator_traits<edge::allocator<_Ty, _Pool>>
-{
+struct std::allocator_traits<edge::allocator<_Ty, _Pool>> {
 	using allocator_type = edge::allocator<_Ty, _Pool>;
 	using value_type = typename allocator_type::value_type;
 	using pointer = value_type*;
@@ -449,34 +398,28 @@ struct std::allocator_traits<edge::allocator<_Ty, _Pool>>
 	template<typename _Other>
 	using rebind_alloc = edge::allocator<_Other, _Pool>;
 
-	static pointer allocate(allocator_type& a, size_type n)
-	{
+	static pointer allocate(allocator_type& a, size_type n) {
 		return a.allocate(n, sizeof(_Ty));
 	}
 
-	static void deallocate(allocator_type& a, pointer p, size_type n)
-	{
+	static void deallocate(allocator_type& a, pointer p, size_type n) {
 		a.deallocate(p, n, sizeof(_Ty));
 	}
 
 	template<typename... Args>
-	static void construct(allocator_type& a, _Ty* p, Args&&... args)
-	{
+	static void construct(allocator_type& a, _Ty* p, Args&&... args) {
 		::new (static_cast<void*>(p)) _Ty(std::forward<Args>(args)...);
 	}
 
-	static void destroy(allocator_type& a, _Ty* p)
-	{
+	static void destroy(allocator_type& a, _Ty* p) {
 		p->~_Ty();
 	}
 
-	static size_type max_size(const allocator_type& a) noexcept
-	{
+	static size_type max_size(const allocator_type& a) noexcept {
 		return std::numeric_limits<size_type>::max() / sizeof(value_type);
 	}
 
-	static allocator_type select_on_container_copy_construction(const allocator_type& rhs)
-	{
+	static allocator_type select_on_container_copy_construction(const allocator_type& rhs) {
 		return rhs;
 	}
 };
