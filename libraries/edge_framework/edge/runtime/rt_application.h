@@ -21,7 +21,6 @@ namespace edge {
 	struct ApplicationOptions {
 		bool benchmark_enabled;
 		Window* window;
-		fs::VirtualFilesystem* filesystem;
 	};
 
 	class Application {

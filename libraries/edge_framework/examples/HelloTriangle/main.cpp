@@ -116,7 +116,6 @@ public:
 
 		edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
 		resource_updater_init.gfx_context = gfx_context.get();
-		resource_updater_init.filesystem = options.filesystem;
 
 		edge::gfx::ResourceUpdater::create(resource_updater_init);
 

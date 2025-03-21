@@ -59,9 +59,9 @@ namespace engine
 		app_windows.emplace_back(std::make_unique<InspectorWindow>("Inspector"));
 		app_windows.emplace_back(std::make_unique<PostProcessWindow>("PostProcess"));
 
-		renderer = std::make_unique<render::Renderer>(options.window, options.filesystem);
+		renderer = std::make_unique<render::Renderer>(options.window);
 
-		scene = std::make_unique<world::Scene>(options.filesystem, *renderer);
+		scene = std::make_unique<world::Scene>(*renderer);
 		//scene = std::make_unique<world::Scene>(vfs.get());
 		scene->Load("/root/meshes/sponza/Sponza.gltf");
 		//scene->Load("/root/meshes/CesiumMan/CesiumMan.gltf");

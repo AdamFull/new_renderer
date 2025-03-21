@@ -13,11 +13,6 @@ namespace edge
 {
 	class Window;
 
-	namespace fs
-	{
-		class VirtualFilesystem;
-	}
-
 	namespace gfx
 	{
 		class TechniqueDatabase;
@@ -34,7 +29,7 @@ namespace engine
 		class RenderContext final : public ExecutionContext
 		{
 		public:
-			RenderContext(edge::gfx::IContext& gfx_context, edge::fs::VirtualFilesystem* filesystem, edge::Window* window);
+			RenderContext(edge::gfx::IContext& gfx_context, edge::Window* window);
 			~RenderContext();
 
 			RenderContext(const RenderContext&) = delete;

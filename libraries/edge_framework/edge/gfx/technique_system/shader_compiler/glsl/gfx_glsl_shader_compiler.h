@@ -16,8 +16,6 @@ namespace edge::gfx
 		auto collect_dependency_hash(const ShaderCompileInfo& compile_info) -> uint32_t override;
 		auto compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool override;
 	private:
-		fs::VirtualFilesystem* filesystem{ nullptr };
-
 		std::unique_ptr<shader_includer> includer;
 	};
 }

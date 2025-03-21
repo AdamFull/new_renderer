@@ -26,13 +26,10 @@ namespace edge {
 			return ExitCode::FatalError;
 		}
 
-		// Initialize filesystem
-		filesystem = std::make_unique<fs::VirtualFilesystem>();
-
 		// Mount default engine root filesystem
-		filesystem->mount("/root", new fs::NativeFilesystem("./"));
-		filesystem->mount("/source", new fs::NativeFilesystem("./../../../"));
-		filesystem->mount("/resources", new fs::ZipFilesystem("resources.zip"));
+		fs::mount("/root", new fs::NativeFilesystem("./"));
+		fs::mount("/source", new fs::NativeFilesystem("./../../../"));
+		fs::mount("/resources", new fs::ZipFilesystem("resources.zip"));
 
 		return 0;
 	}
@@ -193,7 +190,6 @@ namespace edge {
 		ApplicationOptions options{};
 		options.benchmark_enabled = false;
 		options.window = window.get();
-		options.filesystem = filesystem.get();
 
 		if (!app->prepare(options)) {
 			EDGE_LOGE("[Runtime] Failed to prepare app.");

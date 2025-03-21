@@ -7,10 +7,6 @@
 namespace edge {
 	class IRuntimeContext;
 
-	namespace fs {
-		class VirtualFilesystem;
-	}
-
 	enum ExitCode {
 		Success = 0, /* App executed as expected */
 		Close,       /* App has been requested to close at initialization */
@@ -103,7 +99,6 @@ namespace edge {
 		void set_window_properties(const Window::OptionalProperties& properties);
 	protected:
 		std::unique_ptr<Window> window{ nullptr };
-		std::unique_ptr<fs::VirtualFilesystem> filesystem{};
 
 		std::unique_ptr<Application> app{ nullptr };
 

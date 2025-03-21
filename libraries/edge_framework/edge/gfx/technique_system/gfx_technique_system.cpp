@@ -15,12 +15,9 @@ namespace edge::gfx
 {
 	constexpr const std::string_view k_frame_graph_cache_path = "/root/fgcache";
 
-	TechniqueDatabase::TechniqueDatabase(IContext* gfx_context, fs::VirtualFilesystem* filesystem) :
-		gfx_context{ gfx_context },
-		filesystem{ filesystem } {
-
+	TechniqueDatabase::TechniqueDatabase(IContext* gfx_context) :
+		gfx_context{ gfx_context } {
 		ShaderCompilerCreateInfo compiler_ci{};
-		compiler_ci.filesystem = filesystem;
 		//TODO: get this data from database ci
 		compiler_ci.base_path = "/source/embed/shaders";
 		compiler_ci.additional_include_dirs = { "includes" };
@@ -28,7 +25,7 @@ namespace edge::gfx
 		shader_compiler = std::make_unique<GLSLShaderCompiler>(compiler_ci);
 
 		std::vector<uint8_t> pipeline_cache_data{};
-		if (filesystem->exists(k_frame_graph_cache_path) && filesystem->read_file(k_frame_graph_cache_path, pipeline_cache_data)) {
+		if (fs::exists(k_frame_graph_cache_path) && fs::read_file(k_frame_graph_cache_path, pipeline_cache_data)) {
 		}
 
 		PipelineCacheCreateInfo pipeline_cache_ci{};
@@ -53,7 +50,7 @@ namespace edge::gfx
 			std::vector<uint8_t> data(cache_size, '\0');
 			pipeline_cache->get_data(cache_size, data.data());
 
-			filesystem->write_file(k_frame_graph_cache_path, data);
+			fs::write_file(k_frame_graph_cache_path, data);
 		}
 
 		gfx_context->destroy(pipeline_cache);
@@ -61,10 +58,10 @@ namespace edge::gfx
 	}
 
 	bool TechniqueDatabase::load(std::string_view path) {
-		if (!filesystem->exists(path))
+		if (!fs::exists(path))
 			return false;
 
-		auto* file = filesystem->open_file(path, fs::FileModeFlag::eRead | fs::FileModeFlag::eBin);
+		auto* file = fs::open_file(path, fs::FileModeFlag::eRead | fs::FileModeFlag::eBin);
 
 		size_t shader_count;
 		file->read(shader_count);
@@ -88,7 +85,7 @@ namespace edge::gfx
 	}
 
 	bool TechniqueDatabase::save(std::string_view path) {
-		auto* file = filesystem->open_file(path, fs::FileModeFlag::eWrite | fs::FileModeFlag::eBin);
+		auto* file = fs::open_file(path, fs::FileModeFlag::eWrite | fs::FileModeFlag::eBin);
 
 		size_t shader_count = shaders.size();
 
@@ -217,7 +214,7 @@ namespace edge::gfx
 
 #if defined(DEVELOPMENT) || defined(EMBEDDED_SHADER_COMPILER)
 		std::string shader_source{};
-		filesystem->read_file(stage.path, shader_source);
+		fs::read_file(stage.path, shader_source);
 
 		ShaderCompileInfo shader_compile_info{};
 		shader_compile_info.path = stage.path;

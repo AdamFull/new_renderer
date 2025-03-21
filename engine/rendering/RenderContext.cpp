@@ -81,7 +81,7 @@ namespace engine
 			edge::gfx::IContext& context;
 		};
 
-		RenderContext::RenderContext(edge::gfx::IContext& gfx_context, edge::fs::VirtualFilesystem* filesystem, edge::Window* window) :
+		RenderContext::RenderContext(edge::gfx::IContext& gfx_context, edge::Window* window) :
 			context{ gfx_context },
 			window{ *window }
 		{
@@ -148,7 +148,7 @@ namespace engine
 
 			current_frame = render_frames[active_frame_index].get();
 
-			technique_db = std::make_unique<edge::gfx::TechniqueDatabase>(&gfx_context, filesystem);
+			technique_db = std::make_unique<edge::gfx::TechniqueDatabase>(&gfx_context);
 			technique_db->load("/root/tdbcache");
 
 			// Register "culling" techniques

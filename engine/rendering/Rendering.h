@@ -8,11 +8,6 @@
 
 namespace edge
 {
-	namespace fs
-	{
-		class VirtualFilesystem;
-	}
-
 	class Window;
 }
 
@@ -23,7 +18,7 @@ namespace engine
 		class Renderer : public IRenderer
 		{
 		public:
-			Renderer(edge::Window* window, edge::fs::VirtualFilesystem* vfs);
+			Renderer(edge::Window* window);
 			~Renderer();
 
 			uint32_t AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) override;

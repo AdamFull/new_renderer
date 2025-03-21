@@ -457,13 +457,11 @@ namespace edge::gfx
 	};
 
 	IContext* ResourceUpdater::gfx_context{ nullptr };
-	fs::VirtualFilesystem* ResourceUpdater::filesystem{ nullptr };
 	std::unique_ptr<CommandExecutor> ResourceUpdater::updater{};
 	std::unique_ptr<UploadingDispatcher> ResourceUpdater::uploading_dispatcher{};
 
 	void ResourceUpdater::create(const ResourceUpdaterCreateInfo& create_info) {
 		ResourceUpdater::gfx_context = create_info.gfx_context;
-		ResourceUpdater::filesystem = create_info.filesystem;
 
 		auto update_queue = gfx_context->request_queue(QueueTypeFlag::eGraphics);
 		update_queue->set_resource_name("UPDATE");
@@ -588,7 +586,7 @@ namespace edge::gfx
 		EDGE_LOGT("[ResourceUpdater] Loading texture \"{}\"", path);
 		cmd_list->begin_marker(path, 0xFFFFFFFF);
 
-		auto texture_loader = make_texture_loader(path, gfx_context, *filesystem);
+		auto texture_loader = make_texture_loader(path, gfx_context);
 
 		ITexture* dst_texture = texture_loader->get_texture();
 		dst_texture->set_resource_name(path);

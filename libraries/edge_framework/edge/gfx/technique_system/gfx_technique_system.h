@@ -64,7 +64,7 @@ namespace edge::gfx
 			uint32_t dependency_hash{ 0u };
 		};
 
-		TechniqueDatabase(IContext* gfx_context, fs::VirtualFilesystem* filesystem);
+		TechniqueDatabase(IContext* gfx_context);
 		~TechniqueDatabase();
 
 		bool load(std::string_view path);
@@ -76,7 +76,6 @@ namespace edge::gfx
 		std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage);
 
 		IContext* gfx_context{ nullptr };
-		fs::VirtualFilesystem* filesystem{ nullptr };
 		IPipelineCache* pipeline_cache{ nullptr };
 
 		std::unique_ptr<IShaderCompiler> shader_compiler;

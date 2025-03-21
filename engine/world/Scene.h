@@ -5,14 +5,6 @@
 
 #include <entt/fwd.hpp>
 
-namespace edge
-{
-	namespace fs
-	{
-		class VirtualFilesystem;
-	}
-}
-
 namespace engine
 {
 	namespace world
@@ -28,7 +20,7 @@ namespace engine
 		class Scene final
 		{
 		public:
-			Scene(edge::fs::VirtualFilesystem* vfs, render::IRenderer& renderer);
+			Scene(render::IRenderer& renderer);
 			~Scene();
 
 			void Load(std::string_view path);
@@ -47,8 +39,6 @@ namespace engine
 			void LoadSkins(const easygltf::FGLTFRoot& root);
 		private:
 			render::IRenderer& renderer;
-
-			edge::fs::VirtualFilesystem* vfs{ nullptr };
 
 			SceneLoadedResources resources{};
 			std::unordered_map<uint32_t, entt::entity> node_to_entity{};

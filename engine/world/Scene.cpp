@@ -156,12 +156,12 @@ namespace engine
 		class VFSWrapper : public easygltf::IFilesystemWrapper
 		{
 		public:
-			VFSWrapper(edge::fs::VirtualFilesystem* vfs) : vfs(vfs) {}
+			VFSWrapper() {}
 			~VFSWrapper() override = default;
 
 			bool exists(std::string_view path) override
 			{
-				return vfs->exists(path);
+				return edge::fs::exists(path);
 			}
 
 			std::string expandFilePath(std::string_view path) override
@@ -172,20 +172,18 @@ namespace engine
 
 			bool readFile(std::string_view path, std::vector<uint8_t>& data) override
 			{
-				return vfs->read_file(path, data);
+				return edge::fs::read_file(path, data);
 			}
 
 			bool writeFile(std::string_view path, const std::vector<uint8_t>& data) override
 			{
-				return vfs->write_file(path, data);
+				return edge::fs::write_file(path, data);
 			}
 
 			uint64_t fileSize(std::string_view path) override
 			{
-				return vfs->file_size(path);
+				return edge::fs::file_size(path);
 			}
-		private:
-			edge::fs::VirtualFilesystem* vfs{ nullptr };
 		};
 
 		edge::gfx::Filter GetSamplerFilter(int32_t filter)
@@ -249,8 +247,7 @@ namespace engine
 			return create_info;
 		}
 
-		Scene::Scene(edge::fs::VirtualFilesystem* vfs, render::IRenderer& renderer) :
-			vfs{ vfs },
+		Scene::Scene(render::IRenderer& renderer) :
 			renderer{ renderer }
 		{
 			EntityManager::RegisterSystem<ecs::CInputSystem>();
@@ -272,7 +269,7 @@ namespace engine
 		void Scene::Load(std::string_view path)
 		{
 			easygltf::CGLTFLoader loader{};
-			loader.setFilesystemWrapper(std::make_unique<VFSWrapper>(vfs));
+			loader.setFilesystemWrapper(std::make_unique<VFSWrapper>());
 
 			easygltf::FGLTFRoot root{};
 			if (!loader.load(path, root))

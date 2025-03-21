@@ -103,7 +103,7 @@ namespace engine
 		uint32_t main_camera_index{ ~0u };
 		PostProcessData postprocess{};
 
-		Renderer::Renderer(edge::Window* window, edge::fs::VirtualFilesystem* vfs)
+		Renderer::Renderer(edge::Window* window)
 		{
 			edge::gfx::ContextCreateInfo gfx_create_info{};
 			gfx_create_info.app_name = "MyVulkanEngine";
@@ -114,11 +114,10 @@ namespace engine
 
 			edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
 			resource_updater_init.gfx_context = gfx_context.get();
-			resource_updater_init.filesystem = vfs;
 
 			edge::gfx::ResourceUpdater::create(resource_updater_init);
 
-			render_context = std::make_unique<RenderContext>(*gfx_context, vfs, window);
+			render_context = std::make_unique<RenderContext>(*gfx_context, window);
 
 			render_world = std::make_unique<RenderWorld>(*this);
 

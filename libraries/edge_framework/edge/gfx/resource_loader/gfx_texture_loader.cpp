@@ -158,11 +158,11 @@ namespace edge::gfx
 		ktxTexture* ktxtexture{ nullptr };
 	};
 
-	auto make_texture_loader(std::string_view path, IContext* gfx_context, fs::VirtualFilesystem& fs) -> std::unique_ptr<TextureLoader> {
+	auto make_texture_loader(std::string_view path, IContext* gfx_context) -> std::unique_ptr<TextureLoader> {
 		std::unique_ptr<TextureLoader> texture_loader;
 
 		std::vector<uint8_t> data{};
-		fs.read_file(path, data);
+		fs::read_file(path, data);
 
 		auto ext = fs::get_ext(path);
 		auto ext_hash = murmur_hash(ext.data(), ext.size(), 0);

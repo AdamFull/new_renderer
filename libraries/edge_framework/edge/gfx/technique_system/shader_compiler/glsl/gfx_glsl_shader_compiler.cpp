@@ -21,8 +21,7 @@ namespace edge::gfx
 	// Just copy of https://github.com/KhronosGroup/glslang/blob/main/StandAlone/DirStackFileIncluder.h
 	class shader_includer : public glslang::TShader::Includer {
 	public:
-		shader_includer(fs::VirtualFilesystem* fs, std::string_view base_path) :
-			fs{ fs },
+		shader_includer(std::string_view base_path) :
 			base_path{ base_path } {
 
 			directoryStack.reserve(16);
@@ -72,7 +71,6 @@ namespace edge::gfx
 	protected:
 		std::vector<std::string> directoryStack;
 		int externalLocalDirectoryCount;
-		fs::VirtualFilesystem* fs;
 		std::string base_path;
 
 		uint32_t hash{ 0u };
@@ -93,7 +91,7 @@ namespace edge::gfx
 				std::replace(path.begin(), path.end(), '\\', '/');
 
 				std::string* file_data = new std::string;
-				if (fs->exists(path) && fs->read_file(path, *file_data)) {
+				if (fs::exists(path) && fs::read_file(path, *file_data)) {
 					directoryStack.emplace_back(getDirectory(path));
 
 					if (collect_hash) {
@@ -292,14 +290,13 @@ namespace edge::gfx
 		return shader;
 	}
 
-	GLSLShaderCompiler::GLSLShaderCompiler(const ShaderCompilerCreateInfo& create_info) :
-		filesystem{ create_info.filesystem } {
+	GLSLShaderCompiler::GLSLShaderCompiler(const ShaderCompilerCreateInfo& create_info) {
 		if (!glslang::InitializeProcess()) {
 			EDGE_LOGE("Failed to initialize glslang process.");
 			return;
 		}
 
-		includer = std::make_unique<shader_includer>(filesystem, create_info.base_path);
+		includer = std::make_unique<shader_includer>(create_info.base_path);
 
 		for (std::string_view include_dir : create_info.additional_include_dirs)
 			includer->pushExternalLocalDirectory(include_dir.data());
