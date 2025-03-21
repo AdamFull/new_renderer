@@ -54,8 +54,6 @@ namespace edge::gfx {
 	};
 
 	struct ResourceUpdaterCreateInfo {
-		IContext* gfx_context{ nullptr };
-
 		uint64_t update_buffer_size{ 16ull * 1024ull * 1024ull };
 		uint32_t update_buffer_count{ 1u };
 
@@ -83,8 +81,6 @@ namespace edge::gfx {
 		//static auto get_texture_updater(ITexture* dst_texture, uint64_t update_size) -> TextureUpdater;
 	private:
 		static auto load_texture_impl(ICommandList* cmd_list, StagingBufferAllocator& allocator, std::string path, ResourceStateFlags& output_state) -> ITexture*;
-
-		static IContext* gfx_context;
 
 		static std::unique_ptr<CommandExecutor> updater;
 		//static std::unique_ptr<CommandExecutor> uploader;

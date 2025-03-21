@@ -20,7 +20,6 @@ namespace engine
 			pipeline{ create_info.pipeline },
 			shared_descriptor{ create_info.shared_descriptor },
 			execution_context{ execution_context },
-			context{ execution_context.GetContext() },
 			one_time{ create_info.one_time },
 			draw_callback{ create_info.draw_callback },
 			enabled_callback{ create_info.enabled_callback }
@@ -44,10 +43,10 @@ namespace engine
 			query_pool_ci.query_count = 2u;
 			query_pool_ci.type = edge::gfx::QueryType::eTimestamp;
 
-			timestamp_query = context.create_query_pool(query_pool_ci);
+			timestamp_query = edge::gfx::create_query_pool(query_pool_ci);
 			timestamp_query->reset(0u);
 
-			context.request_timestamp_frequency(&timestamp_frequency);
+			edge::gfx::request_timestamp_frequency(&timestamp_frequency);
 		}
 
 		ShaderPass::~ShaderPass()

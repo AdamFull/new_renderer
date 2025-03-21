@@ -12,7 +12,7 @@ namespace engine
 		class InterleavedGeometryBuffer final : public GeometryBuffer
 		{
 		public:
-			InterleavedGeometryBuffer(edge::gfx::IContext& gfx_context, const GeometryBufferCreateInfo& create_info);
+			InterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info);
 			~InterleavedGeometryBuffer();
 
 			void Flush() override;
@@ -31,7 +31,7 @@ namespace engine
 		class DeinterleavedGeometryBuffer final : public GeometryBuffer
 		{
 		public:
-			DeinterleavedGeometryBuffer(edge::gfx::IContext& gfx_context, const GeometryBufferCreateInfo& create_info);
+			DeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info);
 			~DeinterleavedGeometryBuffer();
 
 			void Flush() override;

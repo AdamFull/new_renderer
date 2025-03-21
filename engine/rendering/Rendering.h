@@ -30,8 +30,6 @@ namespace engine
 
 			void Render(float delta_time) override;
 
-			edge::gfx::IContext& GetContext() override;
-
 			uint32_t RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			uint32_t RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) override;
 			GeometryBuffer& LookUpGeometryBuffer(uint32_t geometry_buffer_id) override;
@@ -45,7 +43,6 @@ namespace engine
 			void BuildFrameGraph();
 			void BuildGraph();
 		private:
-			std::unique_ptr<edge::gfx::IContext> gfx_context{};
 			std::unique_ptr<ExecutionContext> render_context{};
 			std::unique_ptr<IRenderWorld> render_world{};
 

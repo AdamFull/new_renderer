@@ -24,8 +24,6 @@ namespace engine
 
 			virtual void AddMaterial(const shlib::Material& material) = 0;
 
-			virtual edge::gfx::IContext& GetContext() = 0;
-
 			virtual uint32_t RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
 			virtual uint32_t RequestDeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) = 0;
 			virtual GeometryBuffer& LookUpGeometryBuffer(uint32_t geometry_buffer_id) = 0;

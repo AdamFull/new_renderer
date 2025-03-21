@@ -18,7 +18,7 @@ namespace edge::gfx
 
 	class STBTextureLoader final : public TextureLoader {
 	public:
-		STBTextureLoader(IContext* gfx_context, std::span<const uint8_t> data) {
+		STBTextureLoader(std::span<const uint8_t> data) {
 			int32_t image_width, image_height, image_channel_count;
 			image_data = stbi_load_from_memory(data.data(), data.size(), &image_width, &image_height, &image_channel_count, STBI_rgb_alpha);
 
@@ -30,7 +30,7 @@ namespace edge::gfx
 			//texture_ci.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(image_width, image_height)))) + 1u;
 			texture_ci.levels = 1;
 
-			texture = gfx_context->create_texture(texture_ci);
+			texture = create_texture(texture_ci);
 		}
 
 		~STBTextureLoader() override {
@@ -67,7 +67,7 @@ namespace edge::gfx
 	class KTXTextureLoader final : public TextureLoader
 	{
 	public:
-		KTXTextureLoader(IContext* gfx_context, std::span<const uint8_t> data) {
+		KTXTextureLoader(std::span<const uint8_t> data) {
 			auto ktxresult = ktxTexture_CreateFromMemory(data.data(), data.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxtexture);
 			assert(ktxresult == KTX_SUCCESS && "FAILED TO OPEN KTX IMAGE");
 			if (ktxresult != KTX_SUCCESS)
@@ -112,7 +112,7 @@ namespace edge::gfx
 			} break;
 			}
 
-			texture = gfx_context->create_texture(texture_ci);
+			texture = create_texture(texture_ci);
 		}
 
 		~KTXTextureLoader() override {
@@ -158,7 +158,7 @@ namespace edge::gfx
 		ktxTexture* ktxtexture{ nullptr };
 	};
 
-	auto make_texture_loader(std::string_view path, IContext* gfx_context) -> std::unique_ptr<TextureLoader> {
+	auto make_texture_loader(std::string_view path) -> std::unique_ptr<TextureLoader> {
 		std::unique_ptr<TextureLoader> texture_loader;
 
 		std::vector<uint8_t> data{};
@@ -169,8 +169,8 @@ namespace edge::gfx
 		switch (ext_hash)
 		{
 		case fs::format::ktx:
-		case fs::format::ktx2: { texture_loader = std::make_unique<KTXTextureLoader>(gfx_context, data); } break;
-		default: { texture_loader = std::make_unique<STBTextureLoader>(gfx_context, data); } break;
+		case fs::format::ktx2: { texture_loader = std::make_unique<KTXTextureLoader>(data); } break;
+		default: { texture_loader = std::make_unique<STBTextureLoader>(data); } break;
 		}
 
 		return texture_loader;

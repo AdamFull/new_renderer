@@ -23,13 +23,7 @@ namespace edge::gfx::d3d12
 		return nullptr;
 	}
 
-	auto D3D12Context::create_timeline_semaphore() const -> ISemaphore*
-	{
-		assert(false && "NOT IMPLEMENTED");
-		return nullptr;
-	}
-
-	auto D3D12Context::create_semaphore() const -> ISemaphore*
+	auto D3D12Context::create_semaphore(SemaphoreType type) const -> ISemaphore*
 	{
 		assert(false && "NOT IMPLEMENTED");
 		return nullptr;

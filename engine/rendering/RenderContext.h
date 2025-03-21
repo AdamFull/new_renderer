@@ -29,7 +29,7 @@ namespace engine
 		class RenderContext final : public ExecutionContext
 		{
 		public:
-			RenderContext(edge::gfx::IContext& gfx_context, edge::Window* window);
+			RenderContext(edge::Window* window);
 			~RenderContext();
 
 			RenderContext(const RenderContext&) = delete;
@@ -59,9 +59,6 @@ namespace engine
 			void Begin() override;
 			void End() override;
 
-			edge::gfx::IContext& GetContext() override;
-			edge::gfx::IContext const& GetContext() const override;
-
 			edge::gfx::ITexture* GetTexture(uint32_t resource_index) override;
 			edge::gfx::ITexture* GetTexture(const RenderResource& render_resource) override;
 
@@ -88,8 +85,6 @@ namespace engine
 			void UpdateRenderTargets();
 			void UpdateResources();
 		private:
-			edge::gfx::IContext& context;
-
 			const edge::Window& window;
 			const edge::gfx::IQueue* queue;
 

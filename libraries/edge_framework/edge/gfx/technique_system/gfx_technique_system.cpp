@@ -15,8 +15,7 @@ namespace edge::gfx
 {
 	constexpr const std::string_view k_frame_graph_cache_path = "/root/fgcache";
 
-	TechniqueDatabase::TechniqueDatabase(IContext* gfx_context) :
-		gfx_context{ gfx_context } {
+	TechniqueDatabase::TechniqueDatabase() {
 		ShaderCompilerCreateInfo compiler_ci{};
 		//TODO: get this data from database ci
 		compiler_ci.base_path = "/source/embed/shaders";
@@ -31,14 +30,14 @@ namespace edge::gfx
 		PipelineCacheCreateInfo pipeline_cache_ci{};
 		pipeline_cache_ci.data = pipeline_cache_data;
 
-		pipeline_cache = gfx_context->create_pipeline_cache(pipeline_cache_ci);
+		pipeline_cache = create_pipeline_cache(pipeline_cache_ci);
 	}
 
 	TechniqueDatabase::~TechniqueDatabase() {
 		for (auto& [name, technique] : techniques) {
-			gfx_context->destroy(technique.pipeline);
-			gfx_context->destroy(technique.root_signature);
-			gfx_context->destroy(technique.shader);
+			destroy(technique.pipeline);
+			destroy(technique.root_signature);
+			destroy(technique.shader);
 		}
 
 		techniques.clear();
@@ -53,7 +52,7 @@ namespace edge::gfx
 			fs::write_file(k_frame_graph_cache_path, data);
 		}
 
-		gfx_context->destroy(pipeline_cache);
+		destroy(pipeline_cache);
 		pipeline_cache = nullptr;
 	}
 
@@ -139,13 +138,13 @@ namespace edge::gfx
 				});
 		}
 
-		IShader* shader = gfx_context->create_shader(shader_stages);
+		IShader* shader = create_shader(shader_stages);
 		shader->set_resource_name(name);
 
 		RootSignatureCreateInfo root_sign_ci{};
 		root_sign_ci.shader = shader;
 		root_sign_ci.shared_descriptor = technique_desc.shared_descriptor;
-		IRootSignature* root_signature = gfx_context->create_root_signature(root_sign_ci);
+		IRootSignature* root_signature = create_root_signature(root_sign_ci);
 		root_signature->set_resource_name(name);
 
 		IPipeline* pipeline{ nullptr };
@@ -154,7 +153,7 @@ namespace edge::gfx
 			pipeline_ci.shader = shader;
 			pipeline_ci.root_signature = root_signature;
 			pipeline_ci.pipeline_cache = pipeline_cache;
-			pipeline = gfx_context->create_pipeline(pipeline_ci);
+			pipeline = create_pipeline(pipeline_ci);
 		}
 		else if (technique_desc.type == TechniqueType::eGraphics) {
 			GraphicsPipelineCreateInfo pipeline_ci{};
@@ -185,7 +184,7 @@ namespace edge::gfx
 
 			pipeline_ci.depth_format = technique_desc.depth_format;
 			pipeline_ci.stencil_format = technique_desc.stencil_format;
-			pipeline = gfx_context->create_pipeline(pipeline_ci);
+			pipeline = create_pipeline(pipeline_ci);
 		}
 
 		pipeline->set_resource_name(name);

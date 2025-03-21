@@ -110,14 +110,12 @@ namespace engine
 			gfx_create_info.render_api = edge::gfx::RenderApi::eVulkan;
 			gfx_create_info.window = window;
 
-			gfx_context = edge::gfx::create_context(gfx_create_info);
+			edge::gfx::make_context(gfx_create_info);
 
 			edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
-			resource_updater_init.gfx_context = gfx_context.get();
-
 			edge::gfx::ResourceUpdater::create(resource_updater_init);
 
-			render_context = std::make_unique<RenderContext>(*gfx_context, window);
+			render_context = std::make_unique<RenderContext>(window);
 
 			render_world = std::make_unique<RenderWorld>(*this);
 
@@ -129,6 +127,7 @@ namespace engine
 		Renderer::~Renderer()
 		{
 			edge::gfx::ResourceUpdater::shutdown();
+			edge::gfx::shutdown_context();
 		}
 
 		uint32_t Renderer::AddRenderResource(std::string_view path, edge::gfx::ISampler* sampler)
@@ -210,11 +209,6 @@ namespace engine
 			render_context->End();
 		}
 
-		edge::gfx::IContext& Renderer::GetContext()
-		{
-			return *gfx_context;
-		}
-
 		uint32_t Renderer::RequestInterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
 		{
 			uint32_t hash = Hash(create_info);
@@ -224,7 +218,7 @@ namespace engine
 				return found->second;
 			}
 
-			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<InterleavedGeometryBuffer>(*gfx_context, create_info));
+			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<InterleavedGeometryBuffer>(create_info));
 			return interleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
 		}
 
@@ -236,7 +230,7 @@ namespace engine
 				return found->second;
 			}
 
-			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(*gfx_context, create_info));
+			auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(create_info));
 			return deinterleaved_geometry_buffers[hash] = geometry_buffers.size() - 1ull;
 		}
 
@@ -295,7 +289,7 @@ namespace engine
 				create_info.mip_map_mode = edge::gfx::Filter::eNearest;
 
 				// TODO: need to cache samplers
-				nearest_sampler = gfx_context->create_sampler(create_info);
+				nearest_sampler = edge::gfx::create_sampler(create_info);
 			}
 
 			edge::gfx::ISampler* linear_sampler{ nullptr };
@@ -306,7 +300,7 @@ namespace engine
 				create_info.mip_map_mode = edge::gfx::Filter::eLinear;
 
 				// TODO: need to cache samplers
-				linear_sampler = gfx_context->create_sampler(create_info);
+				linear_sampler = edge::gfx::create_sampler(create_info);
 			}
 
 			edge::gfx::ISampler* shadow_sampler{ nullptr };
@@ -318,7 +312,7 @@ namespace engine
 				create_info.depth_compare = edge::gfx::CompareOp::eLess;
 
 				// TODO: need to cache samplers
-				shadow_sampler = gfx_context->create_sampler(create_info);
+				shadow_sampler = edge::gfx::create_sampler(create_info);
 			}
 
 			// Load some static textures
@@ -371,7 +365,7 @@ namespace engine
 					create_info_s.max_lod = static_cast<float>(create_info.levels);
 
 					// TODO: need to cache samplers
-					special_sampler = gfx_context->create_sampler(create_info_s);
+					special_sampler = edge::gfx::create_sampler(create_info_s);
 				}
 
 				prefiltered_cube_target = render_context->AddResource(create_info, special_sampler);

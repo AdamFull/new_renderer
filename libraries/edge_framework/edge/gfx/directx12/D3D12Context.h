@@ -4,7 +4,7 @@
 
 namespace edge::gfx::d3d12
 {
-	class D3D12Context final : public IContext
+	class D3D12Context final : public IGFXContext
 	{
 	public:
 		D3D12Context(const ContextCreateInfo& create_info);
@@ -14,8 +14,7 @@ namespace edge::gfx::d3d12
 
 		[[nodiscard]] auto create_fence() const->IFence* override;
 
-		[[nodiscard]] auto create_timeline_semaphore() const->ISemaphore* override;
-		[[nodiscard]] auto create_semaphore() const->ISemaphore* override;
+		[[nodiscard]] auto create_semaphore(SemaphoreType type) const->ISemaphore* override;
 
 		[[nodiscard]] auto request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const->IQueue* override;
 

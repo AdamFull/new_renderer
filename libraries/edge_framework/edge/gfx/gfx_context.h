@@ -5,17 +5,58 @@
 
 namespace edge::gfx
 {
+	void make_context(const ContextCreateInfo& create_info);
+	void shutdown_context();
+
+	void destroy(IGFXResource* handle);
+
+	[[nodiscard]] auto create_fence() -> IFence*;
+	[[nodiscard]] auto create_semaphore(SemaphoreType sem_type) -> ISemaphore*;
+
+	[[nodiscard]] auto request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) -> IQueue const*;
+
+	[[nodiscard]] auto create_swapchain(const SwapChainCreateInfo& create_info) -> ISwapchain*;
+
+	[[nodiscard]] auto create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode = CommandPoolResetMode::eAlwaysAllocate) -> ICommandPool*;
+
+	[[nodiscard]] auto create_buffer(const BufferCreateInfo& create_info) -> IBuffer*;
+
+	[[nodiscard]] auto create_texture(const TextureCreateInfo& create_info) -> ITexture*;
+	[[nodiscard]] auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) -> ITexture*;
+
+	[[nodiscard]] auto create_shader(std::span<const ShaderStageInfo> shader_stages) -> IShader*;
+
+	[[nodiscard]] auto create_root_signature(const RootSignatureCreateInfo& create_info) -> IRootSignature*;
+
+	[[nodiscard]] auto create_pipeline(const GraphicsPipelineCreateInfo& create_info) -> IPipeline*;
+	[[nodiscard]] auto create_pipeline(const ComputePipelineCreateInfo& create_info) -> IPipeline*;
+
+	[[nodiscard]] auto create_pipeline_cache(const PipelineCacheCreateInfo& create_info) -> IPipelineCache*;
+
+	[[nodiscard]] auto create_descriptor_allocator() -> IDescriptorAllocator*;
+
+	[[nodiscard]] auto create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) -> ISharedDescriptor*;
+
+	[[nodiscard]] auto create_sampler(const SamplerCreateInfo& create_info) -> ISampler*;
+
+	[[nodiscard]] auto create_query_pool(const QueryPoolCreateInfo& create_info) -> IQueryPool*;
+
+	void wait_for_fences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max());
+
+	void request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment);
+	void request_timestamp_frequency(float* frequency);
+	void request_memory_usage(uint64_t* total_memory, uint64_t* used_memory);
+
 	// TODO: may be return pointers here and add release function also
-	class IContext {
+	class IGFXContext {
 	public:
-		virtual ~IContext() = default;
+		virtual ~IGFXContext() = default;
 
 		virtual void destroy(IGFXResource* handle) const = 0;
 
 		[[nodiscard]] virtual auto create_fence() const->IFence* = 0;
 
-		[[nodiscard]] virtual auto create_timeline_semaphore() const->ISemaphore* = 0;
-		[[nodiscard]] virtual auto create_semaphore() const->ISemaphore* = 0;
+		[[nodiscard]] virtual auto create_semaphore(SemaphoreType type) const->ISemaphore* = 0;
 
 		[[nodiscard]] virtual auto request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const->IQueue const* = 0;
 
@@ -51,6 +92,4 @@ namespace edge::gfx
 		virtual void request_timestamp_frequency(float* frequency) const = 0;
 		virtual void request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const = 0;
 	};
-
-	std::unique_ptr<IContext> create_context(const ContextCreateInfo& create_info);
 }

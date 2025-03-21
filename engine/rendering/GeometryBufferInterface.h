@@ -75,7 +75,7 @@ namespace engine
 		class GeometryBuffer
 		{
 		public:
-			GeometryBuffer(edge::gfx::IContext& gfx_context);
+			GeometryBuffer();
 			virtual ~GeometryBuffer();
 
 			virtual void Flush();
@@ -100,7 +100,6 @@ namespace engine
 		protected:
 			void TryFlushBuffer(GeometryData& geometry_data, edge::gfx::BufferUsageFlags usage);
 		protected:
-			edge::gfx::IContext& gfx_context;
 			edge::gfx::VertexLayout vertex_layout{};
 			GeometryData index_data{};
 		};

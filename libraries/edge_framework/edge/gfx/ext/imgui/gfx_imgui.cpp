@@ -160,7 +160,6 @@ namespace edge
 
 			struct ImGuiContext
 			{
-				IContext* context{ nullptr };
 				Window* window{ nullptr };
 
 				IShader* shader{ nullptr };
@@ -180,14 +179,12 @@ namespace edge
 			{
 				assert(gpImguiContext && "ImGui Context is not initialized.");
 
-				IContext& context = *gpImguiContext->context;
-
 				BufferCreateInfo upload_buffer_ci{};
 				upload_buffer_ci.size = k_upload_buffer_size;
 				upload_buffer_ci.usage = BufferUsageFlag::eStagingBuffer;
 
 				gpImguiContext->upload_buffers.push_back({
-					.buffer = context.create_buffer(upload_buffer_ci),
+					.buffer = create_buffer(upload_buffer_ci),
 					.offset = 0
 					});
 			}
@@ -212,9 +209,8 @@ namespace edge
 				upload_buffer_ci.size = k_upload_buffer_size;
 				upload_buffer_ci.usage = BufferUsageFlag::eStagingBuffer;
 
-				IContext& context = *gpImguiContext->context;
 				return gpImguiContext->upload_buffers.emplace_back(ImGuiUploadBuffer{
-					context.create_buffer(upload_buffer_ci), 0 });
+					create_buffer(upload_buffer_ci), 0 });
 			}
 
 			static auto RequestUploadBuffer(uint64_t requested_size) -> std::tuple<IBuffer*, uint64_t>
@@ -296,10 +292,7 @@ namespace edge
 
 			void ImGui_CreateContext(const ImGuiContextCreateInfo& create_info)
 			{
-				IContext& context = *create_info.gfx_context;
-
 				gpImguiContext = new ImGuiContext;
-				gpImguiContext->context = create_info.gfx_context;
 				gpImguiContext->window = create_info.window;
 
 				InitUploader();
@@ -316,12 +309,12 @@ namespace edge
 					}
 				};
 
-				gpImguiContext->shader = context.create_shader(stage_infos);
+				gpImguiContext->shader = create_shader(stage_infos);
 
 				// Create root signature
 				RootSignatureCreateInfo root_sign_ci{};
 				root_sign_ci.shader = gpImguiContext->shader;
-				gpImguiContext->root_signature = context.create_root_signature(root_sign_ci);
+				gpImguiContext->root_signature = create_root_signature(root_sign_ci);
 
 				// Create rendering pipeline
 				GraphicsPipelineCreateInfo pipeline_ci{};
@@ -348,28 +341,28 @@ namespace edge
 
 				// Alpha blending setup
 				pipeline_ci.pipeline_state.color_blending_state.attachments[0].enable = true;
-				pipeline_ci.pipeline_state.color_blending_state.attachments[0].src_color = edge::gfx::BlendFactor::eSrcAlpha;
-				pipeline_ci.pipeline_state.color_blending_state.attachments[0].dst_color = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
-				pipeline_ci.pipeline_state.color_blending_state.attachments[0].src_alpha = edge::gfx::BlendFactor::eOneMinusSrcAlpha;
-				pipeline_ci.pipeline_state.color_blending_state.attachments[0].dst_alpha = edge::gfx::BlendFactor::eZero;
+				pipeline_ci.pipeline_state.color_blending_state.attachments[0].src_color = BlendFactor::eSrcAlpha;
+				pipeline_ci.pipeline_state.color_blending_state.attachments[0].dst_color = BlendFactor::eOneMinusSrcAlpha;
+				pipeline_ci.pipeline_state.color_blending_state.attachments[0].src_alpha = BlendFactor::eOneMinusSrcAlpha;
+				pipeline_ci.pipeline_state.color_blending_state.attachments[0].dst_alpha = BlendFactor::eZero;
 				pipeline_ci.pipeline_state.color_blending_state.attachment_count = 1;
 
 				pipeline_ci.color_formats[0] = create_info.color_format;
 				pipeline_ci.color_format_count = 1;
 
-				gpImguiContext->pipeline = context.create_pipeline(pipeline_ci);
+				gpImguiContext->pipeline = create_pipeline(pipeline_ci);
 
 				constexpr const uint32_t k_startap_vertex_count{ 512u };
 
 				BufferCreateInfo vertex_buffer_ci{};
 				vertex_buffer_ci.size = sizeof(ImDrawVert) * k_startap_vertex_count;
 				vertex_buffer_ci.usage = BufferUsageFlag::eVertexBufferCPU;
-				gpImguiContext->vertex_buffer.resource = context.create_buffer(vertex_buffer_ci);
+				gpImguiContext->vertex_buffer.resource = create_buffer(vertex_buffer_ci);
 
 				BufferCreateInfo index_buffer_ci{};
 				index_buffer_ci.size = sizeof(ImDrawIdx) * k_startap_vertex_count * 3;
 				index_buffer_ci.usage = BufferUsageFlag::eIndexBufferCPU;
-				gpImguiContext->index_buffer.resource = context.create_buffer(index_buffer_ci);
+				gpImguiContext->index_buffer.resource = create_buffer(index_buffer_ci);
 
 				ImGui::create_context();
 
@@ -388,12 +381,10 @@ namespace edge
 				EDGE_PROFILE_ZONE_SCOPED;
 				assert(gpImguiContext && "ImGui Context is not initialized.");
 
-				auto& context = *gpImguiContext->context;
-
 				// Destroy texture and create new one
 				if (gpImguiContext->font_texture.resource)
 				{
-					context.destroy(gpImguiContext->font_texture.resource);
+					destroy(gpImguiContext->font_texture.resource);
 					gpImguiContext->font_texture.resource = nullptr;
 					gpImguiContext->font_texture.state = ResourceStateFlag::eUndefined;
 				}
@@ -413,7 +404,7 @@ namespace edge
 				font_texture_ci.height = font_height;
 				font_texture_ci.format = Format::eR8G8B8A8Unorm;
 
-				gpImguiContext->font_texture.resource = context.create_texture(font_texture_ci);
+				gpImguiContext->font_texture.resource = create_texture(font_texture_ci);
 
 				UpdateTexture(command_list, gpImguiContext->font_texture, font_width, font_height, { font_pixels , upload_size });
 
@@ -552,8 +543,6 @@ namespace edge
 				if (fb_width <= 0 || fb_height <= 0)
 					return;
 
-				auto& context = *gpImguiContext->context;
-				
 				// Upload and bind vertex buffers
 				if (draw_data->TotalVtxCount > 0)
 				{
@@ -562,13 +551,13 @@ namespace edge
 							auto* buffer = resource_desc.resource->as<IBuffer*>();
 							if (buffer->get_size() < requested_size)
 							{
-								gpImguiContext->context->destroy(resource_desc.resource);
+								destroy(resource_desc.resource);
 								resource_desc.state = ResourceStateFlag::eUndefined;
 
 								BufferCreateInfo buffer_ci{};
 								buffer_ci.size = requested_size;
 								buffer_ci.usage = usage;
-								resource_desc.resource = gpImguiContext->context->create_buffer(buffer_ci);
+								resource_desc.resource = create_buffer(buffer_ci);
 
 								return resource_desc.resource->as<IBuffer*>();
 							}
@@ -650,7 +639,7 @@ namespace edge
 
 				if (gpImguiContext->font_texture.resource)
 				{
-					gpImguiContext->context->destroy(gpImguiContext->font_texture.resource);
+					destroy(gpImguiContext->font_texture.resource);
 					gpImguiContext->font_texture.resource = nullptr;
 				}
 

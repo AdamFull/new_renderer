@@ -14,23 +14,21 @@ namespace engine
 		RenderWorld::RenderWorld(IRenderer& renderer) :
 			renderer{ renderer }
 		{
-			auto& gfx_context = renderer.GetContext();
+			draw_descriptions = std::make_unique<DynamicBuffer<shlib::DrawDescription>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			world_meshes = std::make_unique<DynamicBuffer<shlib::Mesh>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			world_submeshes = std::make_unique<DynamicBuffer<shlib::SubMesh>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
-			draw_descriptions = std::make_unique<DynamicBuffer<shlib::DrawDescription>>(gfx_context, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-			world_meshes = std::make_unique<DynamicBuffer<shlib::Mesh>>(gfx_context, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-			world_submeshes = std::make_unique<DynamicBuffer<shlib::SubMesh>>(gfx_context, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			scene_lights = std::make_unique<DynamicBuffer<shlib::LightCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
-			scene_lights = std::make_unique<DynamicBuffer<shlib::LightCommit>>(gfx_context, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			scene_cascaded_shadows = std::make_unique<DynamicBuffer<shlib::CascadedShadowCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			omni_shadows = std::make_unique<DynamicBuffer<shlib::OmniShadowCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			spot_shadows = std::make_unique<DynamicBuffer<shlib::SpotShadowCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
-			scene_cascaded_shadows = std::make_unique<DynamicBuffer<shlib::CascadedShadowCommit>>(gfx_context, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-			omni_shadows = std::make_unique<DynamicBuffer<shlib::OmniShadowCommit>>(gfx_context, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-			spot_shadows = std::make_unique<DynamicBuffer<shlib::SpotShadowCommit>>(gfx_context, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			draw_materials = std::make_unique<DynamicBuffer<shlib::Material>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
-			draw_materials = std::make_unique<DynamicBuffer<shlib::Material>>(gfx_context, 16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-
-			world_cameras = std::make_unique<DynamicBuffer<shlib::Camera>>(gfx_context, 8ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-			world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(gfx_context, 64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-			world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(gfx_context, 64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			world_cameras = std::make_unique<DynamicBuffer<shlib::Camera>>(8ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+			world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 		}
 
 		std::tuple<uint32_t, shlib::Camera&> RenderWorld::CreateCamera()

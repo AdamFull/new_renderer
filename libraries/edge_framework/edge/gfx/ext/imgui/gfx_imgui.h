@@ -9,13 +9,10 @@ namespace edge
 
 	namespace gfx
 	{
-		class IContext;
-
 		namespace ext
 		{
 			struct ImGuiContextCreateInfo
 			{
-				IContext* gfx_context{ nullptr };
 				Window* window{ nullptr };
 				Format color_format{ Format::eUndefined };
 			};

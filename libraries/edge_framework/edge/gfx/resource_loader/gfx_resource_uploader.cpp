@@ -11,14 +11,13 @@
 
 namespace edge::gfx
 {
-	WorkerContext::WorkerContext(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size) :
-		gfx_context{ gfx_context } {
-		allocator = std::make_unique<ArenaStagingAllocator>(gfx_context, buffer_size);
-		cmd_pool = gfx_context->create_command_pool(queue);
+	WorkerContext::WorkerContext(const IQueue* queue, uint64_t buffer_size) {
+		allocator = std::make_unique<ArenaStagingAllocator>(buffer_size);
+		cmd_pool = create_command_pool(queue);
 	}
 
 	WorkerContext::~WorkerContext() {
-		gfx_context->destroy(cmd_pool);
+		destroy(cmd_pool);
 	}
 
 	auto WorkerContext::acquire_cmd_list() -> ICommandList* {
@@ -50,18 +49,17 @@ namespace edge::gfx
 
 
 
-	UploadContext::UploadContext(IContext* gfx_context) :
-		gfx_context{ gfx_context } {
-		fence = gfx_context->create_fence();
-		signal_semaphore.semaphore = gfx_context->create_timeline_semaphore();
+	UploadContext::UploadContext() {
+		fence = create_fence();
+		signal_semaphore.semaphore = create_semaphore(SemaphoreType::eTimeline);
 		signal_semaphore.value = 0;
 		signal_semaphore.stage = StageFlag::eTransfer;
 	}
 
 	UploadContext::~UploadContext() {
 		fence->wait();
-		gfx_context->destroy(fence);
-		gfx_context->destroy(signal_semaphore.semaphore);
+		destroy(fence);
+		destroy(signal_semaphore.semaphore);
 	}
 
 	void UploadContext::reset() {
@@ -74,20 +72,19 @@ namespace edge::gfx
 	}
 
 	void UploadContext::add_worker(const IQueue* queue, uint64_t size) {
-		workers.emplace_back(std::make_unique<WorkerContext>(gfx_context, queue, size));
+		workers.emplace_back(std::make_unique<WorkerContext>(queue, size));
 	}
 
 
-	UploadingDispatcher::UploadingDispatcher(IContext* gfx_context, uint64_t buffer_size, uint32_t uploader_count) :
-		gfx_context{ gfx_context },
+	UploadingDispatcher::UploadingDispatcher(uint64_t buffer_size, uint32_t uploader_count) :
 		buffer_size{ buffer_size },
 		executor{ 2 } {
 
-		queue = gfx_context->request_queue(QueueTypeFlag::eTransfer, QueueTypeFlag::eGraphics | QueueTypeFlag::eCompute);
+		queue = request_queue(QueueTypeFlag::eTransfer, QueueTypeFlag::eGraphics | QueueTypeFlag::eCompute);
 		queue->set_resource_name("UPLOAD");
 
 		for (int32_t i = 0; i < uploader_count; ++i)
-			upload_contexts.emplace_back(std::make_unique<UploadContext>(gfx_context));
+			upload_contexts.emplace_back(std::make_unique<UploadContext>());
 		
 		dispatcher_thread = std::jthread([this](std::stop_token stop_token) { loop(stop_token); });
 	}

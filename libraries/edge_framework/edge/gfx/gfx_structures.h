@@ -15,7 +15,6 @@ namespace edge
 		static constexpr uint32_t k_max_descriptor_count{ 8u };
 		static constexpr uint32_t k_max_attachment_count{ 8u };
 
-		class IContext;
 		class IGFXResource;
 		class IFence;
 		class ISemaphore;

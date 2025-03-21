@@ -9,7 +9,7 @@ namespace engine
 		class UniformPoolFrame final
 		{
 		public:
-			UniformPoolFrame(edge::gfx::IContext& context, uint64_t whole_size);
+			UniformPoolFrame(uint64_t whole_size);
 
 			UniformPoolFrame(const UniformPoolFrame&) = delete;
 			UniformPoolFrame(UniformPoolFrame&& other);
@@ -23,8 +23,6 @@ namespace engine
 			bool HasEnoughtSpace(uint64_t requested_size) const;
 			edge::gfx::BufferSuballocation RequestBlock(uint64_t requested_size);
 		private:
-			edge::gfx::IContext& context;
-
 			edge::gfx::IBuffer* buffer{ nullptr };
 			mutable uint64_t size_remain{ 0ull };
 
@@ -34,7 +32,7 @@ namespace engine
 		class UniformPool final
 		{
 		public:
-			UniformPool(edge::gfx::IContext& context, uint64_t frame_size = 4096ull);
+			UniformPool(uint64_t frame_size = 4096ull);
 
 			UniformPool(const UniformPool&) = delete;
 			UniformPool(UniformPool&& other);
@@ -46,8 +44,6 @@ namespace engine
 			void Reset();
 			edge::gfx::BufferSuballocation RequestBlock(uint64_t requested_size);
 		private:
-			edge::gfx::IContext& context;
-
 			uint64_t minimal_alignment{ 1ull };
 			uint64_t frame_size{ 4096ull };
 			std::vector<std::unique_ptr<UniformPoolFrame>> pool_frames;

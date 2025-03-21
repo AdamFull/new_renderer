@@ -20,40 +20,39 @@ struct BasicVertex
 
 struct RenderFrame
 {
-	RenderFrame(edge::gfx::IContext& context, edge::gfx::ISwapchain* swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index) :
-		context{ context }
+	RenderFrame(edge::gfx::ISwapchain* swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index)
 	{
-		backbuffer = context.create_swapchain_texture(swapchain, frame_index);
-		command_pool = context.create_command_pool(queue);
-		descriptor_allocator = context.create_descriptor_allocator();
+		backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
+		command_pool = edge::gfx::create_command_pool(queue);
+		descriptor_allocator = edge::gfx::create_descriptor_allocator();
 
-		image_avaliable = context.create_semaphore();
+		image_avaliable = edge::gfx::create_semaphore(edge::gfx::SemaphoreType::eBinary);
 		image_avaliable->set_resource_name(std::format("image_avaliable_{}", frame_index));
 
-		render_finished = context.create_semaphore();
+		render_finished = edge::gfx::create_semaphore(edge::gfx::SemaphoreType::eBinary);
 		render_finished->set_resource_name(std::format("render_finished_{}", frame_index));
 
-		upload_avaliable = context.create_semaphore();
+		upload_avaliable = edge::gfx::create_semaphore(edge::gfx::SemaphoreType::eBinary);
 		render_finished->set_resource_name(std::format("upload_avaliable_{}", frame_index));
 
-		fence = context.create_fence();
+		fence = edge::gfx::create_fence();
 	}
 
 	~RenderFrame()
 	{
-		context.destroy(backbuffer);
-		context.destroy(command_pool);
-		context.destroy(descriptor_allocator);
-		context.destroy(image_avaliable);
-		context.destroy(render_finished);
-		context.destroy(upload_avaliable);
-		context.destroy(fence);
+		edge::gfx::destroy(backbuffer);
+		edge::gfx::destroy(command_pool);
+		edge::gfx::destroy(descriptor_allocator);
+		edge::gfx::destroy(image_avaliable);
+		edge::gfx::destroy(render_finished);
+		edge::gfx::destroy(upload_avaliable);
+		edge::gfx::destroy(fence);
 	}
 
 	void UpdateBackbuffer(edge::gfx::ISwapchain* swapchain, uint32_t frame_index)
 	{
-		context.destroy(backbuffer);
-		backbuffer = context.create_swapchain_texture(swapchain, frame_index);
+		edge::gfx::destroy(backbuffer);
+		backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
 	}
 
 	void Reset()
@@ -69,9 +68,6 @@ struct RenderFrame
 	edge::gfx::ISemaphore* render_finished{ nullptr };
 	edge::gfx::ISemaphore* upload_avaliable{ nullptr };
 	edge::gfx::IFence* fence{ nullptr };
-
-private:
-	edge::gfx::IContext& context;
 };
 
 
@@ -97,9 +93,10 @@ public:
 			render_frames[i] = nullptr;
 		}
 
-		gfx_context->destroy(swapchain);
+		edge::gfx::destroy(swapchain);
 
 		edge::gfx::ResourceUpdater::shutdown();
+		edge::gfx::shutdown_context();
 	}
 
     bool prepare(const edge::ApplicationOptions& options) override
@@ -112,27 +109,25 @@ public:
         gfx_create_info.window = options.window;
 
         // Init graphics context
-        gfx_context = edge::gfx::create_context(gfx_create_info);
+		edge::gfx::make_context(gfx_create_info);
 
 		edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
-		resource_updater_init.gfx_context = gfx_context.get();
-
 		edge::gfx::ResourceUpdater::create(resource_updater_init);
 
 		// Init everything we need for rendering
-		queue = gfx_context->request_queue(edge::gfx::QueueTypeFlag::ePresent);
+		queue = edge::gfx::request_queue(edge::gfx::QueueTypeFlag::ePresent);
 
 		edge::gfx::SwapChainCreateInfo swapchain_ci{};
 		swapchain_ci.window = options.window;
 		swapchain_ci.image_count = 2u;
 
-		swapchain = gfx_context->create_swapchain(swapchain_ci);
+		swapchain = edge::gfx::create_swapchain(swapchain_ci);
 
 		auto image_count = swapchain->get_image_count();
 
 		for (int32_t i = 0; i < image_count; ++i)
 		{
-			render_frames[i] = std::make_unique<RenderFrame>(*gfx_context, swapchain, queue, i);
+			render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
 		}
 
 		// Create shader and pipeline
@@ -148,13 +143,13 @@ public:
 			}
 		};
 
-		shader = gfx_context->create_shader(shader_stages);
+		shader = edge::gfx::create_shader(shader_stages);
 
 		// Create root signature
 		edge::gfx::RootSignatureCreateInfo root_sign_ci{};
 		root_sign_ci.shader = shader;
 
-		root_sign = gfx_context->create_root_signature(root_sign_ci);
+		root_sign = edge::gfx::create_root_signature(root_sign_ci);
 
 		edge::gfx::GraphicsPipelineCreateInfo pipeline_ci{};
 		pipeline_ci.shader = shader;
@@ -186,7 +181,7 @@ public:
 		pipeline_ci.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
 		pipeline_ci.pipeline_state.color_blending_state.attachment_count = 1u;
 
-		pipeline = gfx_context->create_pipeline(pipeline_ci);
+		pipeline = edge::gfx::create_pipeline(pipeline_ci);
 
 		// Create vertex buffers
 		const BasicVertex vertices[] = 
@@ -200,7 +195,7 @@ public:
 		vertex_buffer_ci.usage = edge::gfx::BufferUsageFlag::eVertexBuffer;
 		vertex_buffer_ci.size = sizeof(vertices);
 
-		vertex_buffer = gfx_context->create_buffer(vertex_buffer_ci);
+		vertex_buffer = edge::gfx::create_buffer(vertex_buffer_ci);
 
 		// Upload vertex data in to buffer
 		edge::gfx::ResourceStateFlags resource_state{};
@@ -365,8 +360,8 @@ private:
 		new_swapchain_ci.width = width;
 		new_swapchain_ci.height = height;
 
-		swapchain = gfx_context->create_swapchain(new_swapchain_ci);
-		gfx_context->destroy(new_swapchain_ci.old_swapchain);
+		swapchain = edge::gfx::create_swapchain(new_swapchain_ci);
+		edge::gfx::destroy(new_swapchain_ci.old_swapchain);
 		
 		auto image_count = swapchain->get_image_count();
 		auto frame_it = render_frames.begin();
@@ -379,7 +374,7 @@ private:
 			else
 			{
 				// Create a new frame if the new swapchain has more images than current frames
-				render_frames[i] = std::make_unique<RenderFrame>(*gfx_context, swapchain, queue, i);
+				render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
 			}
 
 			++frame_it;
@@ -424,8 +419,6 @@ private:
 		return false;
 	}
 private:
-    std::unique_ptr<edge::gfx::IContext> gfx_context{};
-
 	edge::Window* window{ nullptr };
 
 	const edge::gfx::IQueue* queue;

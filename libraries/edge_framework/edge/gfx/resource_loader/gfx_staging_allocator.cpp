@@ -6,122 +6,105 @@
 
 namespace edge::gfx
 {
-		StagingBufferAllocator::StagingBufferAllocator(IContext* gfx_context) :
-			gfx_context{ gfx_context } {
+	auto StagingBufferAllocator::allocate_buffer(uint64_t size, std::string_view name) -> IBuffer* {
+		BufferCreateInfo create_info{};
+		create_info.size = size;
+		create_info.usage = BufferUsageFlag::eStagingBuffer;
+
+		auto* new_buffer = create_buffer(create_info);
+
+		if (!name.empty()) {
+			new_buffer->set_resource_name(name);
 		}
 
-		StagingBufferAllocator::StagingBufferAllocator(StagingBufferAllocator&& other) noexcept :
-			gfx_context{ std::exchange(other.gfx_context, nullptr) } {
+		return new_buffer;
+	}
+
+	// Dummy allocator
+	DummyStagingAllocator::DummyStagingAllocator(uint64_t size) :
+		StagingBufferAllocator{} {
+	}
+
+	DummyStagingAllocator::~DummyStagingAllocator() {
+		reset();
+	}
+
+	DummyStagingAllocator::DummyStagingAllocator(DummyStagingAllocator&& other) noexcept :
+		buffers{ std::exchange(other.buffers, {}) } {
+	}
+
+	auto DummyStagingAllocator::operator=(DummyStagingAllocator&& other) noexcept -> DummyStagingAllocator& {
+		buffers = std::exchange(other.buffers, {});
+
+		return *this;
+	}
+
+	auto DummyStagingAllocator::allocate(uint64_t requested_size, uint64_t alignment) -> Suballocation {
+		uint64_t size = aligned_size(requested_size, alignment);
+		return { buffers.emplace_back(allocate_buffer(size)), 0ull };
+	}
+
+	auto DummyStagingAllocator::reset() -> void {
+		for (auto& buffer : buffers) {
+			destroy(buffer);
 		}
+	}
 
-		auto StagingBufferAllocator::operator=(StagingBufferAllocator&& other) noexcept -> StagingBufferAllocator& {
-			gfx_context = std::exchange(other.gfx_context, nullptr);
-			return *this;
+	// Arena allocator
+	ArenaStagingAllocator::ArenaStagingAllocator(uint64_t size) :
+		StagingBufferAllocator{} {
+		add_block(size);
+	}
+
+	ArenaStagingAllocator::~ArenaStagingAllocator() {
+		for (auto& block : blocks) {
+			destroy(block.buffer);
 		}
+	}
 
-		auto StagingBufferAllocator::allocate_buffer(uint64_t size, std::string_view name) -> IBuffer* {
-			BufferCreateInfo create_info{};
-			create_info.size = size;
-			create_info.usage = BufferUsageFlag::eStagingBuffer;
+	ArenaStagingAllocator::ArenaStagingAllocator(ArenaStagingAllocator&& other) noexcept :
+		block_size{ std::exchange(other.block_size, 0ull) },
+		blocks{ std::exchange(other.blocks, {}) } {
+	}
 
-			auto* new_buffer = gfx_context->create_buffer(create_info);
+	auto ArenaStagingAllocator::operator=(ArenaStagingAllocator&& other) noexcept -> ArenaStagingAllocator& {
+		block_size = std::exchange(other.block_size, 0ull);
+		blocks = std::exchange(other.blocks, {});
 
-			if (!name.empty()) {
-				new_buffer->set_resource_name(name);
-			}
+		return *this;
+	}
 
-			return new_buffer;
-		}
+	auto ArenaStagingAllocator::allocate(uint64_t requested_size, uint64_t alignment) -> Suballocation {
 
-		// Dummy allocator
-		DummyStagingAllocator::DummyStagingAllocator(IContext* gfx_context, uint64_t size) :
-			StagingBufferAllocator{ gfx_context } {
-		}
+		uint64_t size = aligned_size(requested_size, alignment);
+		Block& block = get_block(size);
+		block.used += size;
+		return { block.buffer, aligned_size(block.used - size, alignment) };
+	}
 
-		DummyStagingAllocator::~DummyStagingAllocator() {
-			reset();
-		}
+	auto ArenaStagingAllocator::reset() -> void {
+		for (auto& block : blocks)
+			block.used = 0;
+	}
 
-		DummyStagingAllocator::DummyStagingAllocator(DummyStagingAllocator&& other) noexcept :
-			StagingBufferAllocator{ std::move(other) },
-			buffers{ std::exchange(other.buffers, {}) } {
-		}
+	auto ArenaStagingAllocator::get_block(uint64_t requested_size) -> Block& {
+		auto found_block = std::find_if(blocks.begin(), blocks.end(), [requested_size](const Block& block) {
+			return  block.buffer->get_size() - block.used > requested_size;
+			});
 
-		auto DummyStagingAllocator::operator=(DummyStagingAllocator&& other) noexcept -> DummyStagingAllocator& {
-			StagingBufferAllocator::operator=(std::move(other));
-			buffers = std::exchange(other.buffers, {});
+		if (found_block != blocks.end())
+			return *found_block;
 
-			return *this;
-		}
+		return add_block(std::max(block_size, requested_size));
+	}
 
-		auto DummyStagingAllocator::allocate(uint64_t requested_size, uint64_t alignment) -> Suballocation {
-			uint64_t size = aligned_size(requested_size, alignment);
-			return { buffers.emplace_back(allocate_buffer(size)), 0ull };
-		}
+	auto ArenaStagingAllocator::add_block(uint64_t size) -> Block&
+	{
+		auto& block = blocks.emplace_back(Block{
+			.buffer = allocate_buffer(size, "arena_staging_buffer"),
+			.used = 0ull
+			});
 
-		auto DummyStagingAllocator::reset() -> void {
-			for (auto& buffer : buffers) {
-				gfx_context->destroy(buffer);
-			}
-		}
-
-		// Arena allocator
-		ArenaStagingAllocator::ArenaStagingAllocator(IContext* gfx_context, uint64_t size) :
-			StagingBufferAllocator{ gfx_context } {
-			add_block(size);
-		}
-
-		ArenaStagingAllocator::~ArenaStagingAllocator() {
-			for (auto& block : blocks) {
-				gfx_context->destroy(block.buffer);
-			}
-		}
-
-		ArenaStagingAllocator::ArenaStagingAllocator(ArenaStagingAllocator&& other) noexcept :
-			StagingBufferAllocator{ std::move(other) },
-			block_size{ std::exchange(other.block_size, 0ull) },
-			blocks{ std::exchange(other.blocks, {}) } {
-		}
-
-		auto ArenaStagingAllocator::operator=(ArenaStagingAllocator&& other) noexcept -> ArenaStagingAllocator& {
-			StagingBufferAllocator::operator=(std::move(other));
-			block_size = std::exchange(other.block_size, 0ull);
-			blocks = std::exchange(other.blocks, {});
-
-			return *this;
-		}
-
-		auto ArenaStagingAllocator::allocate(uint64_t requested_size, uint64_t alignment) -> Suballocation {
-
-			uint64_t size = aligned_size(requested_size, alignment);
-			Block& block = get_block(size);
-			block.used += size;
-			return { block.buffer, aligned_size(block.used - size, alignment) };
-		}
-
-		auto ArenaStagingAllocator::reset() -> void {
-			for (auto& block : blocks)
-				block.used = 0;
-		}
-
-		auto ArenaStagingAllocator::get_block(uint64_t requested_size) -> Block& {
-			auto found_block = std::find_if(blocks.begin(), blocks.end(), [requested_size](const Block& block) {
-				return  block.buffer->get_size() - block.used > requested_size;
-				});
-
-			if (found_block != blocks.end())
-				return *found_block;
-
-			return add_block(std::max(block_size, requested_size));
-		}
-
-		auto ArenaStagingAllocator::add_block(uint64_t size) -> Block&
-		{
-			auto& block = blocks.emplace_back(Block{
-				.buffer = allocate_buffer(size, "arena_staging_buffer"),
-				.used = 0ull
-				});
-
-			return block;
-		}
+		return block;
+	}
 }

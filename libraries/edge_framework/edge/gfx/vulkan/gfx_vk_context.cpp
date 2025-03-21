@@ -208,12 +208,8 @@ namespace edge::gfx::vulkan
 		return new VulkanFence(*device);
 	}
 
-	auto VulkanContext::create_timeline_semaphore() const -> ISemaphore* {
-		return new VulkanSemaphore(*device, true);
-	}
-
-	auto VulkanContext::create_semaphore() const -> ISemaphore* {
-		return new VulkanSemaphore(*device);
+	auto VulkanContext::create_semaphore(SemaphoreType type) const -> ISemaphore* {
+		return new VulkanSemaphore(*device, type == SemaphoreType::eTimeline);
 	}
 
 	auto VulkanContext::request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue) const -> IQueue* {

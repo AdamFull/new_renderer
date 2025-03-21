@@ -17,7 +17,7 @@ namespace edge::gfx::vulkan
 	class Allocator;
 	class Allocation;
 
-	class VulkanContext final : public IContext {
+	class VulkanContext final : public IGFXContext {
 	public:
 		VulkanContext(const ContextCreateInfo& create_info);
 		~VulkanContext();
@@ -26,8 +26,7 @@ namespace edge::gfx::vulkan
 
 		[[nodiscard]] auto create_fence() const->IFence* override;
 
-		[[nodiscard]] auto create_timeline_semaphore() const->ISemaphore* override;
-		[[nodiscard]] auto create_semaphore() const->ISemaphore* override;
+		[[nodiscard]] auto create_semaphore(SemaphoreType type) const->ISemaphore* override;
 
 		[[nodiscard]] auto request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const->IQueue* override;
 

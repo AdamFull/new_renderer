@@ -200,7 +200,6 @@ namespace engine
 			virtual void _Execute(edge::gfx::ICommandList& command_list, float delta_time) = 0;
 		protected:
 			ExecutionContext& execution_context;
-			edge::gfx::IContext& context;
 
 			std::string debug_name{};
 			bool one_time{ false };

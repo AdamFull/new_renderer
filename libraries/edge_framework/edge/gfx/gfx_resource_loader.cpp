@@ -23,33 +23,30 @@
 namespace edge::gfx
 {
 	struct CommandNode {
-		CommandNode(IContext* gfx_context, const IQueue* queue, std::string_view name) :
-			gfx_context{ gfx_context },
+		CommandNode(const IQueue* queue, std::string_view name) :
 			queue{ queue } {
 
-			fence = gfx_context->create_fence();
+			fence = create_fence();
 			fence->set_resource_name(name);
-			semaphore = gfx_context->create_timeline_semaphore();
+			semaphore = create_semaphore(SemaphoreType::eTimeline);
 			semaphore->set_resource_name(name);
-			cmd_pool = gfx_context->create_command_pool(queue);
+			cmd_pool = create_command_pool(queue);
 			cmd_pool->set_resource_name(name);
 		}
 
 		virtual ~CommandNode() {
-			gfx_context->destroy(fence);
-			gfx_context->destroy(semaphore);
-			gfx_context->destroy(cmd_pool);
+			destroy(fence);
+			destroy(semaphore);
+			destroy(cmd_pool);
 		}
 
 		CommandNode(CommandNode&& other) noexcept :
-			gfx_context{ std::exchange(other.gfx_context, nullptr) },
 			fence{ std::exchange(other.fence, nullptr) },
 			semaphore{ std::exchange(other.semaphore, nullptr) },
 			cmd_list{ std::exchange(other.cmd_list, nullptr) },
 			cmd_pool{ std::exchange(other.cmd_pool, nullptr) } { }
 
 		auto operator=(CommandNode&& other) noexcept -> CommandNode& {
-			gfx_context = std::exchange(other.gfx_context, nullptr);
 			fence = std::exchange(other.fence, nullptr);
 			semaphore = std::exchange(other.semaphore, nullptr);
 			cmd_list = std::exchange(other.cmd_list, nullptr);
@@ -100,7 +97,6 @@ namespace edge::gfx
 			recording = false;
 		}
 
-		IContext* gfx_context;
 		const IQueue* queue;
 
 		IFence* fence;
@@ -113,9 +109,9 @@ namespace edge::gfx
 	};
 
 	struct UploaderNode : CommandNode {
-		UploaderNode(IContext* gfx_context, const IQueue* queue, uint64_t size, std::string_view name) :
-			CommandNode{ gfx_context, queue, name } {
-			allocator = std::make_unique<ArenaStagingAllocator>(gfx_context, size);
+		UploaderNode(const IQueue* queue, uint64_t size, std::string_view name) :
+			CommandNode{ queue, name } {
+			allocator = std::make_unique<ArenaStagingAllocator>(size);
 		}
 
 		UploaderNode(UploaderNode&& other) noexcept :
@@ -138,8 +134,7 @@ namespace edge::gfx
 
 	class CommandExecutor {
 	public:
-		CommandExecutor(IContext* gfx_context, const IQueue* queue, StageFlag stage, std::string_view name) :
-			gfx_context{ gfx_context },
+		CommandExecutor(const IQueue* queue, StageFlag stage, std::string_view name) :
 			queue{ queue },
 			stage{ stage },
 			name{ name } {
@@ -165,7 +160,6 @@ namespace edge::gfx
 			return *nodes[active_node_index];
 		}
 	protected:
-		IContext* gfx_context;
 		const IQueue* queue;
 		std::vector<std::unique_ptr<CommandNode>> nodes;
 		uint32_t active_node_index{ 0 };
@@ -176,8 +170,8 @@ namespace edge::gfx
 
 	class MipGenerator : public CommandExecutor {
 	public:
-		MipGenerator(IContext* gfx_context, const IQueue* queue, uint32_t generator_count) :
-			CommandExecutor{ gfx_context, queue, StageFlag::eComputeShader, "MIP_GENERATOR" } {
+		MipGenerator(const IQueue* queue, uint32_t generator_count) :
+			CommandExecutor{ queue, StageFlag::eComputeShader, "MIP_GENERATOR" } {
 			const std::span<const uint8_t> mip_generate_shaders[] = {
 				{ reinterpret_cast<const uint8_t*>(MipGeneratorShader), MipGeneratorShader_size },
 				{ reinterpret_cast<const uint8_t*>(MipGeneratorShaderMip2), MipGeneratorShaderMip2_size },
@@ -196,26 +190,26 @@ namespace edge::gfx
 					}
 				};
 
-				shader_instance.shader = gfx_context->create_shader(shader_stages);
+				shader_instance.shader = create_shader(shader_stages);
 
 				RootSignatureCreateInfo root_sign_ci{};
 				root_sign_ci.shader = shader_instance.shader;
 
-				shader_instance.root_signature = gfx_context->create_root_signature(root_sign_ci);
+				shader_instance.root_signature = create_root_signature(root_sign_ci);
 
 				ComputePipelineCreateInfo pipeline_ci{};
 				pipeline_ci.shader = shader_instance.shader;
 				pipeline_ci.root_signature = shader_instance.root_signature;
 
-				shader_instance.pipeline = gfx_context->create_pipeline(pipeline_ci);
+				shader_instance.pipeline = create_pipeline(pipeline_ci);
 			}
 
 			// Create descriptor allocator for allocate descriptors in mip passes
-			descriptor_allocator = gfx_context->create_descriptor_allocator();
+			descriptor_allocator = create_descriptor_allocator();
 
 			for (int32_t i = 0; i < generator_count; ++i) {
 				auto debug_name = std::format("MIP_GENERAOTR_{}", i);
-				nodes.emplace_back(std::make_unique<CommandNode>(gfx_context, queue, debug_name));
+				nodes.emplace_back(std::make_unique<CommandNode>(queue, debug_name));
 			}
 
 			// Also we need linear sampler 
@@ -225,18 +219,18 @@ namespace edge::gfx
 			sampler_ci.mag_filter = Filter::eLinear;
 			sampler_ci.mip_map_mode = Filter::eLinear;
 
-			linear_sampler = gfx_context->create_sampler(sampler_ci);
+			linear_sampler = create_sampler(sampler_ci);
 		}
 
 		~MipGenerator() {
 			// Delete mip generation resources
 			for (int32_t i = 0; i < shader_instances.size(); ++i) {
-				gfx_context->destroy(shader_instances[i].pipeline);
-				gfx_context->destroy(shader_instances[i].root_signature);
-				gfx_context->destroy(shader_instances[i].shader);
+				destroy(shader_instances[i].pipeline);
+				destroy(shader_instances[i].root_signature);
+				destroy(shader_instances[i].shader);
 			}
 
-			gfx_context->destroy(descriptor_allocator);
+			destroy(descriptor_allocator);
 		}
 
 		ResourceStateFlags write_commands(ITexture* texture, std::string_view path) {
@@ -436,11 +430,11 @@ namespace edge::gfx
 
 	class ResourceLoader final : public CommandExecutor {
 	public:
-		ResourceLoader(IContext* gfx_context, const IQueue* queue, uint32_t node_count, uint64_t buffer_size, std::string_view name = {}) :
-			CommandExecutor{ gfx_context, queue, StageFlag::eTransfer, name } {
+		ResourceLoader(const IQueue* queue, uint32_t node_count, uint64_t buffer_size, std::string_view name = {}) :
+			CommandExecutor{ queue, StageFlag::eTransfer, name } {
 			for (int32_t i = 0; i < node_count; ++i) {
 				auto debug_name = std::format("{}_{}", name, i);
-				nodes.emplace_back(std::make_unique<UploaderNode>(gfx_context, queue, buffer_size, debug_name));
+				nodes.emplace_back(std::make_unique<UploaderNode>(queue, buffer_size, debug_name));
 			}
 		}
 
@@ -456,22 +450,20 @@ namespace edge::gfx
 		}
 	};
 
-	IContext* ResourceUpdater::gfx_context{ nullptr };
 	std::unique_ptr<CommandExecutor> ResourceUpdater::updater{};
 	std::unique_ptr<UploadingDispatcher> ResourceUpdater::uploading_dispatcher{};
 
 	void ResourceUpdater::create(const ResourceUpdaterCreateInfo& create_info) {
-		ResourceUpdater::gfx_context = create_info.gfx_context;
 
-		auto update_queue = gfx_context->request_queue(QueueTypeFlag::eGraphics);
+		auto update_queue = request_queue(QueueTypeFlag::eGraphics);
 		update_queue->set_resource_name("UPDATE");
-		updater = std::make_unique<ResourceLoader>(gfx_context, update_queue, create_info.update_buffer_count, create_info.update_buffer_size, "UPDATER");
+		updater = std::make_unique<ResourceLoader>(update_queue, create_info.update_buffer_count, create_info.update_buffer_size, "UPDATER");
 
-		//auto compute_queue = gfx_context->request_queue(QueueTypeFlag::eCompute, QueueTypeFlag::eGraphics);
+		//auto compute_queue = request_queue(QueueTypeFlag::eCompute, QueueTypeFlag::eGraphics);
 		//compute_queue->set_resource_name("COMPUTE_ASYNC");
-		//mip_generator = std::make_unique<MipGenerator>(gfx_context, compute_queue, create_info.buffer_count);
+		//mip_generator = std::make_unique<MipGenerator>(compute_queue, create_info.buffer_count);
 
-		uploading_dispatcher = std::make_unique<UploadingDispatcher>(gfx_context, create_info.upload_buffer_size, create_info.upload_buffer_count);
+		uploading_dispatcher = std::make_unique<UploadingDispatcher>(create_info.upload_buffer_size, create_info.upload_buffer_count);
 	}
 
 	void ResourceUpdater::shutdown() {
@@ -586,7 +578,7 @@ namespace edge::gfx
 		EDGE_LOGT("[ResourceUpdater] Loading texture \"{}\"", path);
 		cmd_list->begin_marker(path, 0xFFFFFFFF);
 
-		auto texture_loader = make_texture_loader(path, gfx_context);
+		auto texture_loader = make_texture_loader(path);
 
 		ITexture* dst_texture = texture_loader->get_texture();
 		dst_texture->set_resource_name(path);

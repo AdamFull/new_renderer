@@ -10,6 +10,11 @@ namespace edge::gfx
 		eDirectx12
 	};
 
+	enum class SemaphoreType {
+		eBinary,
+		eTimeline
+	};
+
 	enum class ResourceType {
 		eUnknown,
 		eFence,

@@ -17,5 +17,5 @@ namespace edge::gfx {
 		ITexture* texture{ nullptr };
 	};
 
-	auto make_texture_loader(std::string_view path, IContext* gfx_context) -> std::unique_ptr<TextureLoader>;
+	auto make_texture_loader(std::string_view path) -> std::unique_ptr<TextureLoader>;
 }

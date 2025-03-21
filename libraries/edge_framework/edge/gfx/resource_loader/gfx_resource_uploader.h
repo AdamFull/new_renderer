@@ -18,7 +18,7 @@ namespace edge::gfx
 
 	struct WorkerContext {
 	public:
-		WorkerContext(IContext* gfx_context, const IQueue* queue, uint64_t buffer_size);
+		WorkerContext(const IQueue* queue, uint64_t buffer_size);
 		~WorkerContext();
 
 		WorkerContext(WorkerContext&& other) noexcept = delete;
@@ -29,7 +29,6 @@ namespace edge::gfx
 		auto acquire_cmd_list() -> ICommandList*;
 		auto end_cmd() noexcept -> ICommandList*;
 
-		IContext* gfx_context;
 		ICommandPool* cmd_pool;
 		ICommandList* cmd_list{ nullptr };
 
@@ -39,14 +38,13 @@ namespace edge::gfx
 
 	struct UploadContext
 	{
-		UploadContext(IContext* gfx_context);
+		UploadContext();
 		~UploadContext();
 
 		void reset();
 		void increment_semaphore();
 		void add_worker(const IQueue* queue, uint64_t size);
 
-		IContext* gfx_context;
 		IFence* fence;
 		SemaphoreSubmitInfo signal_semaphore{};
 
@@ -61,7 +59,7 @@ namespace edge::gfx
 	class UploadingDispatcher
 	{
 	public:
-		UploadingDispatcher(IContext* gfx_context, uint64_t buffer_size = 16 * 1024 * 1024, uint32_t uploader_count = 2);
+		UploadingDispatcher(uint64_t buffer_size = 16 * 1024 * 1024, uint32_t uploader_count = 2);
 		~UploadingDispatcher();
 
 		template<typename _Fn>
@@ -95,7 +93,6 @@ namespace edge::gfx
 		auto loop(std::stop_token stop_token) -> void;
 		auto register_thread_context() -> size_t;
 
-		IContext* gfx_context;
 		const IQueue* queue;
 
 		uint64_t buffer_size;

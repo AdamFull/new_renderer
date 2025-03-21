@@ -175,9 +175,6 @@ namespace engine
 			virtual void Begin() = 0;
 			virtual void End() = 0;
 
-			virtual edge::gfx::IContext& GetContext() = 0;
-			virtual edge::gfx::IContext const& GetContext() const = 0;
-
 			virtual edge::gfx::ITexture* GetTexture(uint32_t resource_index) = 0;
 			virtual edge::gfx::ITexture* GetTexture(const RenderResource& render_resource) = 0;
 

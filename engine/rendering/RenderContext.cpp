@@ -27,38 +27,37 @@ namespace engine
 		class RenderContext::RenderFrame
 		{
 		public:
-			RenderFrame(edge::gfx::IContext& context, edge::gfx::ISwapchain* swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index) :
-				context{ context }
+			RenderFrame(edge::gfx::ISwapchain* swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index)
 			{
-				backbuffer = context.create_swapchain_texture(swapchain, frame_index);
-				command_pool = context.create_command_pool(queue);
-				descriptor_allocator = context.create_descriptor_allocator();
-				uniform_pool = std::make_unique<UniformPool>(context, 16384ull);
-				image_avaliable = context.create_semaphore();
+				backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
+				command_pool = edge::gfx::create_command_pool(queue);
+				descriptor_allocator = edge::gfx::create_descriptor_allocator();
+				uniform_pool = std::make_unique<UniformPool>(16384ull);
+				image_avaliable = edge::gfx::create_semaphore(edge::gfx::SemaphoreType::eBinary);
 				image_avaliable->set_resource_name(std::format("image_avaliable_{}", frame_index));
-				render_finished = context.create_semaphore();
+				render_finished = edge::gfx::create_semaphore(edge::gfx::SemaphoreType::eBinary);
 				render_finished->set_resource_name(std::format("render_finished_{}", frame_index));
-				upload_avaliable = context.create_semaphore();
+				upload_avaliable = edge::gfx::create_semaphore(edge::gfx::SemaphoreType::eBinary);
 				render_finished->set_resource_name(std::format("upload_avaliable_{}", frame_index));
-				fence = context.create_fence();
+				fence = edge::gfx::create_fence();
 			}
 
 			~RenderFrame()
 			{
-				context.destroy(backbuffer);
-				context.destroy(command_pool);
-				context.destroy(descriptor_allocator);
-				context.destroy(image_avaliable);
-				context.destroy(render_finished);
-				context.destroy(upload_avaliable);
-				context.destroy(fence);
+				edge::gfx::destroy(backbuffer);
+				edge::gfx::destroy(command_pool);
+				edge::gfx::destroy(descriptor_allocator);
+				edge::gfx::destroy(image_avaliable);
+				edge::gfx::destroy(render_finished);
+				edge::gfx::destroy(upload_avaliable);
+				edge::gfx::destroy(fence);
 				uniform_pool.reset();
 			}
 
 			void UpdateBackbuffer(edge::gfx::ISwapchain* swapchain, uint32_t frame_index)
 			{
-				context.destroy(backbuffer);
-				backbuffer = context.create_swapchain_texture(swapchain, frame_index);
+				edge::gfx::destroy(backbuffer);
+				backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
 			}
 
 			void Reset()
@@ -76,30 +75,26 @@ namespace engine
 			edge::gfx::ISemaphore* render_finished{ nullptr };
 			edge::gfx::ISemaphore* upload_avaliable{ nullptr };
 			edge::gfx::IFence* fence{ nullptr };
-
-		private:
-			edge::gfx::IContext& context;
 		};
 
-		RenderContext::RenderContext(edge::gfx::IContext& gfx_context, edge::Window* window) :
-			context{ gfx_context },
+		RenderContext::RenderContext(edge::Window* window) :
 			window{ *window }
 		{
 			// Select queue that can present
-			queue = context.request_queue(edge::gfx::QueueTypeFlag::ePresent | edge::gfx::QueueTypeFlag::eGraphics);
+			queue = edge::gfx::request_queue(edge::gfx::QueueTypeFlag::ePresent | edge::gfx::QueueTypeFlag::eGraphics);
 			queue->set_resource_name("GRAPHICS");
 			
 			edge::gfx::SwapChainCreateInfo swapchain_ci{};
 			swapchain_ci.window = window;
 			swapchain_ci.image_count = 3u;
 
-			swapchain = context.create_swapchain(swapchain_ci);
+			swapchain = edge::gfx::create_swapchain(swapchain_ci);
 
 			auto image_count = swapchain->get_image_count();
 
 			for (int32_t i = 0; i < image_count; ++i)
 			{
-				render_frames[i] = std::make_unique<RenderFrame>(context, swapchain, queue, i);
+				render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
 			}
 
 			// Create default image sampler
@@ -109,16 +104,16 @@ namespace engine
 			sampler_ci.mag_filter = edge::gfx::Filter::eLinear;
 			sampler_ci.mip_map_mode = edge::gfx::Filter::eLinear;
 
-			default_sampler = context.create_sampler(sampler_ci);
+			default_sampler = edge::gfx::create_sampler(sampler_ci);
 
 			// Create timestamp query for collecting pass info
 			edge::gfx::QueryPoolCreateInfo query_pool_ci{};
 			query_pool_ci.type = edge::gfx::QueryType::eTimestamp;
 			query_pool_ci.query_count = 2u;
-			timestamp_query = context.create_query_pool(query_pool_ci);
+			timestamp_query = edge::gfx::create_query_pool(query_pool_ci);
 			timestamp_query->reset(0u);
 
-			context.request_timestamp_frequency(&timestamp_frequency);
+			edge::gfx::request_timestamp_frequency(&timestamp_frequency);
 
 			// TODO: now it creates just default one
 			edge::gfx::SharedDescriptorCreateInfo shared_descriptor_ci{};
@@ -128,7 +123,7 @@ namespace engine
 			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eSampledImage, 3u, shlib::MAX_SAMPLED_TEXTURES);
 			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eSampler, 4u, shlib::MAX_SAMPLED_TEXTURES);
 
-			shared_descriptor = context.create_shared_descriptor(shared_descriptor_ci);
+			shared_descriptor = edge::gfx::create_shared_descriptor(shared_descriptor_ci);
 
 			edge::gfx::TextureCreateInfo dummy_texture_ci{};
 			dummy_texture_ci.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eTransferable;
@@ -136,7 +131,7 @@ namespace engine
 			dummy_texture_ci.height = 4;
 			dummy_texture_ci.format = edge::gfx::Format::eR8G8B8A8Unorm;
 
-			dummy_texture = context.create_texture(dummy_texture_ci);
+			dummy_texture = edge::gfx::create_texture(dummy_texture_ci);
 			dummy_texture->set_resource_name("dummy texture");
 
 			uint8_t dummy_data[64] = { 0 };
@@ -144,11 +139,11 @@ namespace engine
 			edge::gfx::ResourceUpdater::update_texture(dummy_texture, resource_state, dummy_data);
 
 			// Create uniform pool
-			global_uniform_pool = std::make_unique<UniformPool>(context);
+			global_uniform_pool = std::make_unique<UniformPool>();
 
 			current_frame = render_frames[active_frame_index].get();
 
-			technique_db = std::make_unique<edge::gfx::TechniqueDatabase>(&gfx_context);
+			technique_db = std::make_unique<edge::gfx::TechniqueDatabase>();
 			technique_db->load("/root/tdbcache");
 
 			// Register "culling" techniques
@@ -542,25 +537,25 @@ namespace engine
 				render_frames[i] = nullptr;
 			}
 
-			context.destroy(swapchain);
+			edge::gfx::destroy(swapchain);
 
-			context.destroy(default_sampler);
-			context.destroy(shared_descriptor);
-			context.destroy(timestamp_query);
+			edge::gfx::destroy(default_sampler);
+			edge::gfx::destroy(shared_descriptor);
+			edge::gfx::destroy(timestamp_query);
 
 			for (auto& texture_object : static_textures.Data())
 			{
-				context.destroy(texture_object.texture);
+				edge::gfx::destroy(texture_object.texture);
 			}
 
 			for (auto& texture_object : render_targets.Data())
 			{
-				context.destroy(texture_object.texture);
+				edge::gfx::destroy(texture_object.texture);
 			}
 
 			for (auto& buffer_object : buffers.Data())
 			{
-				context.destroy(buffer_object.buffer);
+				edge::gfx::destroy(buffer_object.buffer);
 			}
 		}
 
@@ -606,7 +601,7 @@ namespace engine
 			texture_create_info.levels = create_info.levels;
 			texture_create_info.format = create_info.format;
 			
-			edge::gfx::ITexture* texture = context.create_texture(texture_create_info);
+			edge::gfx::ITexture* texture = edge::gfx::create_texture(texture_create_info);
 			edge::gfx::ResourceUpdater::update_texture(texture, new_resource.current_state, texture_data);
 			new_resource.resource_id = static_textures.Add(TextureObject{ texture, default_sampler });
 			
@@ -637,7 +632,7 @@ namespace engine
 			texture_create_info.format = create_info.format;
 
 			TextureObject texture_object{};
-			texture_object.texture = context.create_texture(texture_create_info);
+			texture_object.texture = edge::gfx::create_texture(texture_create_info);
 			texture_object.sampler = sampler ? sampler : default_sampler;
 			texture_object.usage = create_info.usage;
 			texture_object.resizable = create_info.resizable;
@@ -654,7 +649,7 @@ namespace engine
 
 		uint32_t RenderContext::AddResource(const edge::gfx::BufferCreateInfo& create_info)
 		{
-			edge::gfx::IBuffer* buffer = context.create_buffer(create_info);
+			edge::gfx::IBuffer* buffer = edge::gfx::create_buffer(create_info);
 			auto handle = buffers.Add(BufferObject{ buffer });
 			if (create_info.usage != edge::gfx::BufferUsageFlag::eStagingBuffer && create_info.usage != edge::gfx::BufferUsageFlag::eUniformBuffer)
 			{
@@ -1008,16 +1003,6 @@ namespace engine
 			frame_active = false;
 		}
 
-		edge::gfx::IContext& RenderContext::GetContext()
-		{
-			return context;
-		}
-
-		edge::gfx::IContext const& RenderContext::GetContext() const
-		{
-			return context;
-		}
-
 		edge::gfx::ITexture* RenderContext::GetTexture(uint32_t resource_index)
 		{
 			auto& render_resource = render_resources[resource_index];
@@ -1142,8 +1127,8 @@ namespace engine
 			new_swapchain_ci.width = width;
 			new_swapchain_ci.height = height;
 
-			swapchain = context.create_swapchain(new_swapchain_ci);
-			context.destroy(new_swapchain_ci.old_swapchain);
+			swapchain = edge::gfx::create_swapchain(new_swapchain_ci);
+			edge::gfx::destroy(new_swapchain_ci.old_swapchain);
 			UpdateResources();
 		}
 
@@ -1154,8 +1139,8 @@ namespace engine
 			new_swapchain_ci.old_swapchain = swapchain;
 			new_swapchain_ci.image_count = image_count;
 
-			swapchain = context.create_swapchain(new_swapchain_ci);
-			context.destroy(new_swapchain_ci.old_swapchain);
+			swapchain = edge::gfx::create_swapchain(new_swapchain_ci);
+			edge::gfx::destroy(new_swapchain_ci.old_swapchain);
 			UpdateResources();
 		}
 
@@ -1233,8 +1218,8 @@ namespace engine
 					create_info.height = height * target.scale;
 				}
 
-				context.destroy(target.texture);
-				target.texture = context.create_texture(create_info);
+				edge::gfx::destroy(target.texture);
+				target.texture = edge::gfx::create_texture(create_info);
 
 			}
 		}
@@ -1255,7 +1240,7 @@ namespace engine
 				else
 				{
 					// Create a new frame if the new swapchain has more images than current frames
-					render_frames[i] = std::make_unique<RenderFrame>(context, swapchain, queue, i);
+					render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
 				}
 
 				++frame_it;

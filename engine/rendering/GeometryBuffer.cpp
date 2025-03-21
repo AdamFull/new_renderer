@@ -76,14 +76,13 @@ namespace engine
 
 
 
-		GeometryBuffer::GeometryBuffer(edge::gfx::IContext& gfx_context) :
-			gfx_context{ gfx_context }
+		GeometryBuffer::GeometryBuffer()
 		{
 		}
 
 		GeometryBuffer::~GeometryBuffer()
 		{
-			gfx_context.destroy(index_data.buffer);
+			edge::gfx::destroy(index_data.buffer);
 		}
 
 		void GeometryBuffer::Flush()
@@ -149,14 +148,14 @@ namespace engine
 			{
 				if (geometry_data.buffer)
 				{
-					gfx_context.destroy(geometry_data.buffer);
+					edge::gfx::destroy(geometry_data.buffer);
 				}
 
 				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = geometry_data.data.size();
 				create_info.usage = usage;
 
-				geometry_data.buffer = gfx_context.create_buffer(create_info);
+				geometry_data.buffer = edge::gfx::create_buffer(create_info);
 			}
 
 			edge::gfx::ResourceUpdater::update_buffer(geometry_data.buffer, geometry_data.state, geometry_data.data);
@@ -164,8 +163,8 @@ namespace engine
 
 
 
-		InterleavedGeometryBuffer::InterleavedGeometryBuffer(edge::gfx::IContext& gfx_context, const GeometryBufferCreateInfo& create_info) :
-			GeometryBuffer{ gfx_context }
+		InterleavedGeometryBuffer::InterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) :
+			GeometryBuffer{}
 		{
 			uint32_t offset{ 0u };
 
@@ -189,7 +188,7 @@ namespace engine
 
 		InterleavedGeometryBuffer::~InterleavedGeometryBuffer()
 		{
-			gfx_context.destroy(vertex_data.buffer);
+			edge::gfx::destroy(vertex_data.buffer);
 		}
 
 		void InterleavedGeometryBuffer::Flush()
@@ -263,8 +262,7 @@ namespace engine
 		}
 
 
-		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(edge::gfx::IContext& gfx_context, const GeometryBufferCreateInfo& create_info) :
-			GeometryBuffer{ gfx_context }
+		DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info)
 		{
 			for (auto& desc : create_info.attribute_descriptions)
 			{
@@ -285,7 +283,7 @@ namespace engine
 		{
 			for (auto& vert_data : vertex_datas)
 			{
-				gfx_context.destroy(vert_data.buffer);
+				edge::gfx::destroy(vert_data.buffer);
 			}
 		}
 

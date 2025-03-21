@@ -19,21 +19,20 @@ namespace engine
 				uint32_t count;
 			};
 
-			DynamicBuffer(edge::gfx::IContext& gfx_context, uint64_t capacity = 64u, edge::gfx::BufferUsageFlags flags = {}) :
-				context{ gfx_context },
+			DynamicBuffer(uint64_t capacity = 64u, edge::gfx::BufferUsageFlags flags = {}) :
 				usage_flags{ flags }
 			{
 				edge::gfx::BufferCreateInfo create_info{};
 				create_info.size = sizeof(_Ty) * capacity;
 				create_info.usage = flags;
 
-				buffer = context.create_buffer(create_info);
+				buffer = edge::gfx::create_buffer(create_info);
 				memory.resize(create_info.size);
 			}
 
 			~DynamicBuffer()
 			{
-				context.destroy(buffer);
+				edge::gfx::destroy(buffer);
 			}
 
 			// Mark range as dirty
@@ -79,8 +78,8 @@ namespace engine
 						create_info.size = whole_size;
 						create_info.usage = usage_flags;
 
-						context.destroy(buffer);
-						buffer = context.create_buffer(create_info);
+						edge::gfx::destroy(buffer);
+						buffer = edge::gfx::create_buffer(create_info);
 
 						dirty_ranges.clear();
 						dirty_ranges.emplace_back(0u, static_cast<uint32_t>(memory.size()));
@@ -123,8 +122,6 @@ namespace engine
 				}
 			}
 		private:
-			edge::gfx::IContext& context;
-
 			edge::gfx::BufferUsageFlags usage_flags{};
 
 			edge::gfx::IBuffer* buffer{ nullptr };

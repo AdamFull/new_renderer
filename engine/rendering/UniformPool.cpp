@@ -11,20 +11,18 @@ namespace engine
 	{
 		constexpr int32_t k_max_frames_idle{ 300 };
 
-		UniformPoolFrame::UniformPoolFrame(edge::gfx::IContext& context, uint64_t whole_size) :
-			context{ context },
+		UniformPoolFrame::UniformPoolFrame(uint64_t whole_size) :
 			expired_countdown{ k_max_frames_idle }
 		{
 			edge::gfx::BufferCreateInfo create_info{};
 			create_info.usage = edge::gfx::BufferUsageFlag::eUniformBuffer;
 			create_info.size = whole_size;
 
-			buffer = context.create_buffer(create_info);
+			buffer = edge::gfx::create_buffer(create_info);
 			size_remain = buffer->get_size();
 		}
 
 		UniformPoolFrame::UniformPoolFrame(UniformPoolFrame&& other) :
-			context{ context },
 			buffer{ std::exchange(other.buffer, {}) },
 			size_remain{ std::exchange(other.size_remain, {}) },
 			expired_countdown{ std::exchange(other.expired_countdown, {}) }
@@ -34,7 +32,7 @@ namespace engine
 
 		UniformPoolFrame::~UniformPoolFrame()
 		{
-			context.destroy(buffer);
+			edge::gfx::destroy(buffer);
 		}
 
 		bool UniformPoolFrame::IsExpired() const
@@ -62,17 +60,15 @@ namespace engine
 		}
 
 
-		UniformPool::UniformPool(edge::gfx::IContext& context, uint64_t frame_size) :
-			context{ context },
+		UniformPool::UniformPool(uint64_t frame_size) :
 			frame_size{ frame_size }
 		{
-			context.request_minimal_buffer_alignment(edge::gfx::BufferUsageFlag::eUniformBuffer, minimal_alignment);
+			edge::gfx::request_minimal_buffer_alignment(edge::gfx::BufferUsageFlag::eUniformBuffer, minimal_alignment);
 
-			pool_frames.emplace_back(std::make_unique<UniformPoolFrame>(context, frame_size));
+			pool_frames.emplace_back(std::make_unique<UniformPoolFrame>(frame_size));
 		}
 
 		UniformPool::UniformPool(UniformPool&& other) :
-			context{ other.context },
 			frame_size{ std::exchange(other.frame_size, {}) },
 			pool_frames{ std::exchange(other.pool_frames, {}) }
 		{
@@ -107,7 +103,7 @@ namespace engine
 				return (*found)->RequestBlock(aligned_size);
 			}
 
-			auto& new_pool = pool_frames.emplace_back(std::make_unique<UniformPoolFrame>(context, frame_size));
+			auto& new_pool = pool_frames.emplace_back(std::make_unique<UniformPoolFrame>(frame_size));
 			return new_pool->RequestBlock(aligned_size);
 		}
 	}
