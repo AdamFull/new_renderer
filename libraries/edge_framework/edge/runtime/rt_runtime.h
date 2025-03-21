@@ -1,31 +1,23 @@
 #pragma once
 
-#include "Application.h"
-#include "Window.h"
+#include "rt_application.h"
+#include "rt_window.h"
 #include "../util/Performance.h"
 
-#ifdef CreateWindow
-#undef CreateWindow
-#endif
-
-namespace edge
-{
+namespace edge {
 	class IRuntimeContext;
 
-	namespace fs
-	{
+	namespace fs {
 		class VirtualFilesystem;
 	}
 
-	enum ExitCode
-	{
+	enum ExitCode {
 		Success = 0, /* App executed as expected */
 		Close,       /* App has been requested to close at initialization */
 		FatalError   /* App encountered an unexpected error */
 	};
 
-	class Runtime
-	{
+	class Runtime {
 	public:
 		Runtime(const IRuntimeContext& context);
 
@@ -35,13 +27,13 @@ namespace edge
 		 * @brief Initialize the platform
 		 * @return An exit code representing the outcome of initialization
 		 */
-		virtual auto Initialize() -> int32_t;
+		virtual auto initialize() -> int32_t;
 
 		/**
 		 * @brief Handles the main update and render loop
 		 * @return An exit code representing the outcome of the loop
 		 */
-		auto MainLoop() -> int32_t;
+		auto main_loop() -> int32_t;
 
 		/**
 		 * @brief Handles the update and render of a frame.
@@ -49,74 +41,66 @@ namespace edge
 		 * frame-looping mechanism, typically tied to platform screen refeshes.
 		 * @return An exit code representing the outcome of the loop
 		 */
-		auto MainLoopFrame() -> int32_t;
+		auto main_loop_frame() -> int32_t;
 
 		/**
 		 * @brief Runs the application for one frame
 		 */
-		void Update();
+		void update();
 
 		/**
 		 * @brief Terminates the platform and the application
 		 * @param code Determines how the platform should exit
 		 */
-		virtual void Terminate(int32_t code);
+		virtual void terminate(int32_t code);
 
 		/**
 		 * @brief Requests to close the platform at the next available point
 		 */
-		virtual void Close();
+		virtual void close();
 
-		virtual void OnResize(uint32_t width, uint32_t height);
+		virtual void on_resize(uint32_t width, uint32_t height);
 
-		virtual void OnInputEvent(const InputEvent& input_event);
+		virtual void on_input_event(const InputEvent& input_event);
 
-		auto GetWindow() const noexcept -> Window&
-		{
+		auto get_window() const noexcept -> Window& {
 			return *window;
 		}
 
-		auto GetApp() const noexcept -> Application&
-		{
+		auto get_app() const noexcept -> Application& {
 			return *app;
 		}
 
-		auto GetApp() noexcept -> Application&
-		{
+		auto get_app() noexcept -> Application& {
 			return *app;
 		}
 
-		void SetLastError(const std::string& error);
+		void set_last_error(const std::string& error);
 
-		void SetFocus(bool focused) noexcept
-		{
+		void set_focus(bool focused) noexcept {
 			this->focused = focused;
 		}
 
-		void RequestApplication(ApplicationCreateInfo* app_ci) noexcept
-		{
+		void request_application(ApplicationCreateInfo* app_ci) noexcept {
 			app_create_info = app_ci;
 		}
 
-		auto AppRequested() const noexcept -> bool
-		{
+		auto app_requested() const noexcept -> bool {
 			return app_create_info != nullptr;
 		}
 
-		auto StartApp() -> bool;
+		auto start_app() -> bool;
 
 		// Force the application to always render even if it is not in focus
-		void ForceRender(bool should_always_render) noexcept
-		{
+		void force_render(bool should_always_render) noexcept {
 			always_render = should_always_render;
 		}
 
-		void DisableInputProcessing() noexcept
-		{
+		void disable_input_processing() noexcept {
 			process_input_events = false;
 		}
 
-		void SetWindowProperties(const Window::OptionalProperties& properties);
+		void set_window_properties(const Window::OptionalProperties& properties);
 	protected:
 		std::unique_ptr<Window> window{ nullptr };
 		std::unique_ptr<fs::VirtualFilesystem> filesystem{};
@@ -130,13 +114,13 @@ namespace edge
 		 *
 		 * @param properties Preferred window configuration
 		 */
-		virtual void CreateWindow(const Window::Properties& properties) = 0;
+		virtual void create_window(const Window::Properties& properties) = 0;
 
-		void OnUpdate(float delta_time);
-		void OnAppError(const std::string& app_id);
-		void OnAppStart(const std::string& app_id);
-		void OnAppClose(const std::string& app_id);
-		void OnClose();
+		void on_update(float delta_time);
+		void on_app_error(const std::string& app_id);
+		void on_app_start(const std::string& app_id);
+		void on_app_close(const std::string& app_id);
+		void on_close();
 
 		const float fixed_delta_time{ 0.02f };
 		float accumulated_frame_time{ 0.0f };

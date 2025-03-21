@@ -39,7 +39,7 @@ void CInputMapper::Update(float dt)
 		// Test for pressed keys
 		bool is_passes{ true };
 		for (const auto& key : action.keys)
-			is_passes = is_passes && m_keyDecoder.Test(key);
+			is_passes = is_passes && m_keyDecoder.test(key);
 
 		//if (is_passes)
 		//{
@@ -73,7 +73,7 @@ void CInputMapper::Update(float dt)
 			for (auto& [key, value] : axis.keyValue)
 			{
 				float axis_value{ 0.f };
-				if (m_keyDecoder.Test(key))
+				if (m_keyDecoder.test(key))
 					axis_value = value;
 
 				for (auto& callback : axis.callbacks)
@@ -100,7 +100,7 @@ void CInputMapper::Update(float dt)
 	}
 }
 
-void CInputMapper::OnInputEvent(const edge::InputEvent& input_event)
+void CInputMapper::on_input_event(const edge::InputEvent& input_event)
 {
 
 }

@@ -10,7 +10,7 @@
 
 #include <engine/InputManager.h>
 
-#include <edge/runtime/Window.h>
+#include <edge/runtime/rt_window.h>
 
 namespace engine
 {
@@ -470,7 +470,7 @@ namespace engine
 
 	void EngineUI::NewFrame(float delta_time)
 	{
-		auto& extent = window.GetExtent();
+		auto& extent = window.get_extent();
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize = ImVec2(static_cast<float>(extent.width), static_cast<float>(extent.height));
@@ -482,7 +482,7 @@ namespace engine
 	void EngineUI::OnAnyInput(const edge::InputEvent& input_event)
 	{
 
-		switch (input_event.GetSource())
+		switch (input_event.get_source())
 		{
 		case edge::EventSource::Keyboard:
 		{
@@ -509,12 +509,12 @@ namespace engine
 
 	void EngineUI::HandleKeyboardInput(const edge::KeyInputEvent& input_event)
 	{
-		auto action = input_event.GetAction();
+		auto action = input_event.get_action();
 		if (action != edge::KeyAction::Down && action != edge::KeyAction::Up)
 			return;
 
 		ImGuiIO& io = ImGui::GetIO();
-		ImGuiKey imgui_key = KeyCodeToImGuiKey(input_event.GetCode());
+		ImGuiKey imgui_key = KeyCodeToImGuiKey(input_event.get_code());
 		io.AddKeyEvent(imgui_key, (action == edge::KeyAction::Down));
 		//io.SetKeyEventNativeData(imgui_key, keycode, scancode);
 	}
@@ -522,19 +522,19 @@ namespace engine
 	void EngineUI::HandleCharacterInput(const edge::CharacterInputEvent& input_event)
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		io.AddInputCharacter(input_event.GetCharacterCode());
+		io.AddInputCharacter(input_event.get_character_code());
 	}
 
 	void EngineUI::HandleMouseInput(const edge::MouseButtonInputEvent& input_event)
 	{
-		auto action = input_event.GetAction();
+		auto action = input_event.get_action();
 		switch (action)
 		{
 		case edge::MouseAction::Down:
 		case edge::MouseAction::Up:
 		{
 			int button{ -1 };
-			switch (input_event.GetButton())
+			switch (input_event.get_button())
 			{
 			case edge::KeyCode::MouseLeft:
 				button = 0;
@@ -557,14 +557,14 @@ namespace engine
 
 			// TODO: do update only when window is focused
 
-			io.AddMousePosEvent(input_event.GetValueX(), input_event.GetValueY());
-			last_mouse_x = input_event.GetValueX();
-			last_mouse_y = input_event.GetValueY();
+			io.AddMousePosEvent(input_event.get_value_x(), input_event.get_value_y());
+			last_mouse_x = input_event.get_value_x();
+			last_mouse_y = input_event.get_value_y();
 		} break;
 		case edge::MouseAction::Scroll:
 		{
 			ImGuiIO& io = ImGui::GetIO();
-			io.AddMouseWheelEvent(input_event.GetValueX(), input_event.GetValueY());
+			io.AddMouseWheelEvent(input_event.get_value_x(), input_event.get_value_y());
 		} break;
 		default:
 			break;

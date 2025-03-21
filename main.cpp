@@ -286,21 +286,21 @@ private:
 
 int RuntimeMain(const edge::IRuntimeContext& context)
 {
-    auto runtime = edge::CreateApplicationContext(context);
+    auto runtime = edge::create_application_context(context);
 
     edge::ApplicationCreateInfo app_ci{};
     app_ci.name = "MyApp";
     app_ci.app_allocator = []() { return std::make_unique<MyApp>(); };
     
-    runtime->RequestApplication(&app_ci);
+    runtime->request_application(&app_ci);
     
-    auto code = runtime->Initialize();
+    auto code = runtime->initialize();
     if (code == edge::ExitCode::Success)
     {
-    	code = runtime->MainLoop();
+    	code = runtime->main_loop();
     }
     
-    runtime->Terminate(code);
+    runtime->terminate(code);
 
     return 0;
 }

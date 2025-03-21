@@ -33,23 +33,23 @@ namespace engine
 
 	}
 
-	void EngineApplication::OnInputEvent(const edge::InputEvent& input_event)
+	void EngineApplication::on_input_event(const edge::InputEvent& input_event)
 	{
 		InputManager::DispatchInputEvent(input_event);
 	}
 
-	void EngineApplication::Finish()
+	void EngineApplication::finish()
 	{
 		ImDbg::DestroyContext();
 	}
 
-	bool EngineApplication::OnResize(uint32_t width, uint32_t height)
+	bool EngineApplication::on_resize(uint32_t width, uint32_t height)
 	{
 		//m_pRenderInterface->UpdateSurfaceSize(width, height);
 		return true;
 	}
 
-	bool EngineApplication::Prepare(const edge::ApplicationOptions& options)
+	bool EngineApplication::prepare(const edge::ApplicationOptions& options)
 	{
 		ImDbg::create_context();
 
@@ -69,7 +69,7 @@ namespace engine
 		return true;
 	}
 
-	void EngineApplication::Update(float delta_time)
+	void EngineApplication::update(float delta_time)
 	{
 		EDGE_PROFILE_ZONE_SCOPED;
 

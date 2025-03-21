@@ -1,9 +1,7 @@
 #pragma once
 
-namespace edge
-{
-	class NativeSurface
-	{
+namespace edge {
+	class NativeSurface {
 	public:
 		virtual ~NativeSurface() = default;
 	};

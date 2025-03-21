@@ -4,30 +4,25 @@
 #include <string>
 #include <vector>
 
-#include "NativeSurface.h"
+#include "rt_native_surface.h"
 
-namespace edge
-{
+namespace edge {
 	/**
 	 * @brief An interface class, declaring the behaviour of a Window
 	 */
-	class Window
-	{
+	class Window {
 	public:
-		struct Extent
-		{
+		struct Extent {
 			uint32_t width;
 			uint32_t height;
 		};
 
-		struct OptionalExtent
-		{
+		struct OptionalExtent {
 			std::optional<uint32_t> width;
 			std::optional<uint32_t> height;
 		};
 
-		enum class Mode
-		{
+		enum class Mode {
 			Headless,
 			Fullscreen,
 			FullscreenBorderless,
@@ -35,15 +30,13 @@ namespace edge
 			Default
 		};
 
-		enum class Vsync
-		{
+		enum class Vsync {
 			OFF,
 			ON,
 			Default
 		};
 
-		struct OptionalProperties
-		{
+		struct OptionalProperties {
 			std::optional<std::string> title;
 			std::optional<Mode> mode;
 			std::optional<bool> resizable;
@@ -51,8 +44,7 @@ namespace edge
 			OptionalExtent extent;
 		};
 
-		struct Properties
-		{
+		struct Properties {
 			std::string title = "";
 			Mode mode = Mode::Default;
 			bool resizable = true;
@@ -72,36 +64,34 @@ namespace edge
 		 * @brief Gets current platform native surface
 		 * @returns A pointer to native surface handle
 		 */
-		[[nodiscard]] auto GetNativeSurface() const noexcept -> NativeSurface*
-		{
+		[[nodiscard]] auto get_native_surface() const noexcept -> NativeSurface* {
 			return native_surface;
 		}
 
 		/**
 		 * @brief Checks if the window should be closed
 		 */
-		[[nodiscard]] virtual auto ShouldClose() const noexcept -> bool = 0;
+		[[nodiscard]] virtual auto should_close() const noexcept -> bool = 0;
 
 		/**
 		 * @brief Handles the processing of all underlying window events
 		 */
-		virtual void ProcessEvents() {}
+		virtual void process_events() {}
 
 		/**
 		 * @brief Requests to close the window
 		 */
-		virtual void Close() = 0;
+		virtual void close() = 0;
 
 		/**
 		 * @return The dot-per-inch scale factor
 		 */
-		[[nodiscard]] virtual auto GetDpiFactor() const noexcept -> float = 0;
+		[[nodiscard]] virtual auto get_dpi_factor() const noexcept -> float = 0;
 
 		/**
 		 * @return The scale factor for systems with heterogeneous window and pixel coordinates
 		 */
-		[[nodiscard]] virtual auto GetContentScaleFactor() const noexcept -> float
-		{
+		[[nodiscard]] virtual auto get_content_scale_factor() const noexcept -> float {
 			return 1.0f;
 		}
 
@@ -109,7 +99,7 @@ namespace edge
 		 * @brief Windows title setter
 		 * @param new_title New window title
 		 */
-		virtual void SetTitle(std::string_view new_title) const = 0;
+		virtual void set_title(std::string_view new_title) const = 0;
 
 		/**
 		 * @brief Attempt to Resize the window - not guaranteed to change
@@ -117,22 +107,19 @@ namespace edge
 		 * @param extent The preferred window extent
 		 * @return Extent The new window extent
 		 */
-		[[nodiscard]] auto Resize(const Extent& extent) noexcept -> Extent;
+		[[nodiscard]] auto resize(const Extent& extent) noexcept -> Extent;
 
-		[[nodiscard]] virtual auto GetRequiredSurfaceExtensions() const ->std::vector<const char*> = 0;
+		[[nodiscard]] virtual auto get_required_surface_extensions() const ->std::vector<const char*> = 0;
 
-		[[nodiscard]] auto GetExtent() const noexcept -> Extent const&
-		{
+		[[nodiscard]] auto get_extent() const noexcept -> Extent const& {
 			return properties.extent;
 		}
 
-		[[nodiscard]] auto GetWindowMode() const noexcept -> Mode
-		{
+		[[nodiscard]] auto get_window_mode() const noexcept -> Mode {
 			return properties.mode;
 		}
 
-		inline const Properties& GetProperties() const
-		{
+		inline const Properties& get_properties() const {
 			return properties;
 		}
 

@@ -1,11 +1,11 @@
-#include "Runtime.h"
+#include "rt_runtime.h"
 
 // Filesystem headers
 #include "../fs/fs_virtual_filesystem.h"
 #include "../fs/native/fs_native_filesystem.h"
 #include "../fs/zip/fs_zip_filesystem.h"
 
-#include "RuntimeContext.h"
+#include "rt_runtime_context.h"
 #include "../util/Logger.h"
 
 #include "../util/Profiler.h"
@@ -14,18 +14,14 @@
 #undef CreateWindow
 #endif
 
-namespace edge
-{
-	Runtime::Runtime(const IRuntimeContext& context)
-	{
+namespace edge {
+	Runtime::Runtime(const IRuntimeContext& context) {
 	}
 
-	auto Runtime::Initialize() -> int32_t
-	{
-		CreateWindow(window_properties);
+	auto Runtime::initialize() -> int32_t {
+		create_window(window_properties);
 
-		if (!window)
-		{
+		if (!window) {
 			EDGE_LOGE("Window creation failed!");
 			return ExitCode::FatalError;
 		}
@@ -41,29 +37,24 @@ namespace edge
 		return 0;
 	}
 
-	auto Runtime::MainLoop() -> int32_t
-	{
+	auto Runtime::main_loop() -> int32_t {
 		int32_t exit_code = ExitCode::Success;
-		while ((exit_code == ExitCode::Success) && !window->ShouldClose() && !close_requested)
-		{
-			exit_code = MainLoopFrame();
+		while ((exit_code == ExitCode::Success) && !window->should_close() && !close_requested) {
+			exit_code = main_loop_frame();
 		}
 
 		return exit_code;
 	}
 
-	auto Runtime::MainLoopFrame() -> int32_t
-	{
+	auto Runtime::main_loop_frame() -> int32_t {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		//try
 		{
 			// Load the requested app
-			if (AppRequested())
-			{
-				if (!StartApp())
-				{
-					throw std::runtime_error("Failed to load requested application");
+			if (app_requested()) {
+				if (!start_app()) {
+					EDGE_LOGE("[Runtime] Failed to load requested application");
 				}
 
 				// Compensate for load times of the app by rendering the first frame pre-emptively
@@ -71,21 +62,19 @@ namespace edge
 				//app->Update(0.01667f);
 			}
 
-			if (!app)
-			{
+			if (!app) {
 				return -1;
 			}
 
-			Update();
+			update();
 
-			if (app->ShouldClose())
-			{
-				std::string id = app->GetName();
-				OnAppClose(id);
-				app->Finish();
+			if (app->should_close()) {
+				std::string id = app->get_name();
+				on_app_close(id);
+				app->finish();
 			}
 
-			window->ProcessEvents();
+			window->process_events();
 
 			counter.Frame();
 		}
@@ -103,140 +92,120 @@ namespace edge
 		return 0;
 	}
 
-	void Runtime::Update()
-	{
+	void Runtime::update() {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto delta_time = counter.GetFrameTime();
 
-		auto new_windows_name = std::format("{} [{:.2f} fps; {:.2f} ms]", app->GetName(), counter.GetFps(), delta_time);
+		auto new_windows_name = std::format("{} [{:.2f} fps; {:.2f} ms]", app->get_name(), counter.GetFps(), delta_time);
 		//auto winname = std::format("Vulkan App {} fps ({:.2f} ms); {} gpu fps ({:.2f} ms); gpu memory ({:.2f}/{:.2f} Gb)", cpuCounter.fps(), cpuCounter.delta_time() * 1000.f, gpuCounter.fps(), gpuCounter.delta_time() * 1000.f, used_gpu_memory, total_gpu_memory);
-		window->SetTitle(new_windows_name);
+		window->set_title(new_windows_name);
 
-		if (focused || always_render)
-		{
+		if (focused || always_render) {
 			//ui->NewFrame(delta_time);
-			OnUpdate(delta_time);
+			on_update(delta_time);
 
 			accumulated_frame_time += delta_time;
-			while (accumulated_frame_time > fixed_delta_time)
-			{
-				app->FixedUpdate(fixed_delta_time);
+			while (accumulated_frame_time > fixed_delta_time) {
+				app->fixed_update(fixed_delta_time);
 				accumulated_frame_time -= fixed_delta_time;
 			}
 
-			app->Update(delta_time);
+			app->update(delta_time);
 		}
 
 		EDGE_PROFILE_FRAME_MARK;
 	}
 
-	void Runtime::Terminate(int32_t code)
-	{
-		if (app)
-		{
-			std::string id = app->GetName();
-			OnAppClose(id);
-			app->Finish();
+	void Runtime::terminate(int32_t code) {
+		if (app) {
+			std::string id = app->get_name();
+			on_app_close(id);
+			app->finish();
 		}
 
 		app.reset();
 		window.reset();
 
-		OnClose();
+		on_close();
 	}
 
-	void Runtime::Close()
-	{
-		if (window)
-		{
-			window->Close();
+	void Runtime::close() {
+		if (window) {
+			window->close();
 		}
 
 		// Fallback incase a window is not yet in use
 		close_requested = true;
 	}
 
-	void Runtime::OnResize(uint32_t width, uint32_t height)
-	{
+	void Runtime::on_resize(uint32_t width, uint32_t height) {
 		auto extent = Window::Extent{ std::max<uint32_t>(width, 420), std::max<uint32_t>(height, 320) };
-		if ((window) && (width > 0) && (height > 0))
-		{
-			auto actual_extent = window->Resize(extent);
+		if ((window) && (width > 0) && (height > 0)) {
+			auto actual_extent = window->resize(extent);
 
-			if (app)
-			{
-				app->OnResize(actual_extent.width, actual_extent.height);
+			if (app) {
+				app->on_resize(actual_extent.width, actual_extent.height);
 			}
 		}
 	}
 
-	void Runtime::OnInputEvent(const InputEvent& input_event)
-	{
-		if (process_input_events && app)
-		{
-			app->OnInputEvent(input_event);
+	void Runtime::on_input_event(const InputEvent& input_event) {
+		if (process_input_events && app) {
+			app->on_input_event(input_event);
 		}
 
-		if (input_event.GetSource() == EventSource::Keyboard)
-		{
+		if (input_event.get_source() == EventSource::Keyboard) {
 			const auto& key_event = static_cast<const KeyInputEvent&>(input_event);
 
-			if (key_event.GetCode() == KeyCode::Back || key_event.GetCode() == KeyCode::Escape)
-			{
-				Close();
+			if (key_event.get_code() == KeyCode::Back || key_event.get_code() == KeyCode::Escape) {
+				close();
 			}
 		}
 	}
 
-	void Runtime::SetLastError(const std::string& error)
-	{
+	void Runtime::set_last_error(const std::string& error) {
 
 	}
 
-	auto Runtime::StartApp() -> bool
-	{
+	auto Runtime::start_app() -> bool {
 		auto* app_ci = app_create_info;
 		app_create_info = nullptr;
 
-		if (app)
-		{
+		if (app) {
 			auto execution_time = counter.ElapsedSeconds();
-			EDGE_LOGI("Closing App (Runtime: {:.1f})", execution_time);
+			EDGE_LOGI("[Runtime] Closing App (Runtime: {:.1f})", execution_time);
 
-			auto app_id = app->GetName();
+			auto app_id = app->get_name();
 
-			app->Finish();
+			app->finish();
 		}
 
 		app = app_ci->app_allocator();
 
-		if (!app)
-		{
-			EDGE_LOGE("Failed to create a valid vulkan app.");
+		if (!app) {
+			EDGE_LOGE("[Runtime] Failed to create a valid app.");
 			return false;
 		}
 
-		app->SetName(app_ci->name);
+		app->set_name(app_ci->name);
 
 		ApplicationOptions options{};
 		options.benchmark_enabled = false;
 		options.window = window.get();
 		options.filesystem = filesystem.get();
 
-		if (!app->Prepare(options))
-		{
-			EDGE_LOGE("Failed to prepare vulkan app.");
+		if (!app->prepare(options)) {
+			EDGE_LOGE("[Runtime] Failed to prepare app.");
 			return false;
 		}
 
-		OnAppStart(app_ci->name);
+		on_app_start(app_ci->name);
 
 		return true;
 	}
 
-	void Runtime::SetWindowProperties(const Window::OptionalProperties& properties)
-	{
+	void Runtime::set_window_properties(const Window::OptionalProperties& properties) {
 		window_properties.title = properties.title.has_value() ? properties.title.value() : window_properties.title;
 		window_properties.mode = properties.mode.has_value() ? properties.mode.value() : window_properties.mode;
 		window_properties.resizable = properties.resizable.has_value() ? properties.resizable.value() : window_properties.resizable;
@@ -245,27 +214,23 @@ namespace edge
 		window_properties.extent.height = properties.extent.height.has_value() ? properties.extent.height.value() : window_properties.extent.height;
 	}
 
-	void Runtime::OnUpdate(float delta_time)
-	{
+	void Runtime::on_update(float delta_time) {
 
 	}
 
-	void Runtime::OnAppError(const std::string& app_id)
-	{
+	void Runtime::on_app_error(const std::string& app_id) {
 
 	}
 
-	void Runtime::OnAppStart(const std::string& app_id)
-	{
+	void Runtime::on_app_start(const std::string& app_id) {
 
 	}
 
-	void Runtime::OnAppClose(const std::string& app_id)
-	{
+	void Runtime::on_app_close(const std::string& app_id) {
 
 	}
 
-	void Runtime::OnClose()
+	void Runtime::on_close()
 	{
 
 	}

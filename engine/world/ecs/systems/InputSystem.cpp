@@ -38,13 +38,13 @@ void CInputSystem::__Update(f32 fDt)
 	glm::vec3 orbitCenter{ 0.0f, 0.0f, 0.0f };
 	f32 orbitDistance{ 10.0f };
 
-	if (key_decoder.Test(edge::KeyCode::W)) movF = 1.f;
-	if (key_decoder.Test(edge::KeyCode::S)) movF = -1.f;
-	if (key_decoder.Test(edge::KeyCode::A)) movR = -1.f;
-	if (key_decoder.Test(edge::KeyCode::D)) movR = 1.f;
-	if (key_decoder.Test(edge::KeyCode::Space)) movU = 1.f;
-	if (key_decoder.Test(edge::KeyCode::LeftControl)) movU = -1.f;
-	if (key_decoder.Test(edge::KeyCode::MouseMiddle))
+	if (key_decoder.test(edge::KeyCode::W)) movF = 1.f;
+	if (key_decoder.test(edge::KeyCode::S)) movF = -1.f;
+	if (key_decoder.test(edge::KeyCode::A)) movR = -1.f;
+	if (key_decoder.test(edge::KeyCode::D)) movR = 1.f;
+	if (key_decoder.test(edge::KeyCode::Space)) movU = 1.f;
+	if (key_decoder.test(edge::KeyCode::LeftControl)) movU = -1.f;
+	if (key_decoder.test(edge::KeyCode::MouseMiddle))
 		allowRotation = true;
 
 	f32 dX = (curX - oldX) * fDt;
@@ -103,7 +103,7 @@ void CInputSystem::__Update(f32 fDt)
 
 void CInputSystem::OnAnyInput(const edge::InputEvent& input_event)
 {
-	switch (input_event.GetSource())
+	switch (input_event.get_source())
 	{
 	case edge::EventSource::Keyboard:
 	{
@@ -125,22 +125,22 @@ void CInputSystem::OnAnyInput(const edge::InputEvent& input_event)
 
 void CInputSystem::HandleKeyboardInput(const edge::KeyInputEvent& input_event)
 {
-	key_decoder.Update(input_event.GetCode(), input_event.GetAction() == edge::KeyAction::Down || input_event.GetAction() == edge::KeyAction::Repeat);
+	key_decoder.update(input_event.get_code(), input_event.get_action() == edge::KeyAction::Down || input_event.get_action() == edge::KeyAction::Repeat);
 }
 
 void CInputSystem::HandleMouseInput(const edge::MouseButtonInputEvent& input_event)
 {
-	switch (input_event.GetAction())
+	switch (input_event.get_action())
 	{
 	case edge::MouseAction::Down:
 	case edge::MouseAction::Up:
 	{
-		key_decoder.Update(input_event.GetButton(), input_event.GetAction() == edge::MouseAction::Down);
+		key_decoder.update(input_event.get_button(), input_event.get_action() == edge::MouseAction::Down);
 	} break;
 	case edge::MouseAction::Move:
 	{
-		curX = remap(input_event.GetValueX(), 0.f, input_event.GetMaxX(), -1.f, 1.f);
-		curY = remap(input_event.GetValueY(), 0.f, input_event.GetMaxY(), -1.f, 1.f);
+		curX = remap(input_event.get_value_x(), 0.f, input_event.get_max_x(), -1.f, 1.f);
+		curY = remap(input_event.get_value_y(), 0.f, input_event.get_max_y(), -1.f, 1.f);
 	} break;
 	case edge::MouseAction::Scroll:
 	{

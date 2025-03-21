@@ -1,4 +1,4 @@
-#include "GlfwWindow.h"
+#include "rt_glfw_window.h"
 
 #include <unordered_map>
 
@@ -7,23 +7,19 @@
 #include <GLFW/glfw3native.h>
 
 #include "../../util/Logger.h"
-#include "../Runtime.h"
+#include "../rt_runtime.h"
 
-#include "GlfwNativeSurface.h"
+#include "rt_glfw_native_surface.h"
 
-namespace edge
-{
+namespace edge {
 	namespace
 	{
-		void ErrorCallback(int error, const char* description)
-		{
+		void error_callback(int error, const char* description) {
 			EDGE_LOGE("GLFW Error (code {}): {}", error, description);
 		}
 
-		inline KeyCode TranslateKeyCode(int key)
-		{
-			static const std::unordered_map<int, KeyCode> key_lookup =
-			{
+		inline KeyCode translate_key_code(int key) {
+			static const std::unordered_map<int, KeyCode> key_lookup = {
 				{GLFW_KEY_SPACE, KeyCode::Space},
 				{GLFW_KEY_APOSTROPHE, KeyCode::Apostrophe},
 				{GLFW_KEY_COMMA, KeyCode::Comma},
@@ -129,51 +125,40 @@ namespace edge
 			};
 
 			auto key_it = key_lookup.find(key);
-
-			if (key_it == key_lookup.end())
-			{
+			if (key_it == key_lookup.end()) {
 				return KeyCode::Unknown;
 			}
 
 			return key_it->second;
 		}
 
-		inline KeyAction TranslateKeyAction(int action)
-		{
-			if (action == GLFW_PRESS)
-			{
+		inline KeyAction translate_key_action(int action) {
+			if (action == GLFW_PRESS) {
 				return KeyAction::Down;
 			}
-			else if (action == GLFW_RELEASE)
-			{
+			else if (action == GLFW_RELEASE) {
 				return KeyAction::Up;
 			}
-			else if (action == GLFW_REPEAT)
-			{
+			else if (action == GLFW_REPEAT) {
 				return KeyAction::Repeat;
 			}
 
 			return KeyAction::Unknown;
 		}
 
-		inline KeyCode TranslateMouseButton(int button)
-		{
-			if (button < GLFW_MOUSE_BUTTON_4)
-			{
+		inline KeyCode translate_mouse_button(int button) {
+			if (button < GLFW_MOUSE_BUTTON_4) {
 				return static_cast<KeyCode>(button + static_cast<int32_t>(KeyCode::MouseLeft));
 			}
 
 			return KeyCode::Unknown;
 		}
 
-		inline MouseAction TranslateMouseAction(int action)
-		{
-			if (action == GLFW_PRESS)
-			{
+		inline MouseAction translate_mouse_action(int action) {
+			if (action == GLFW_PRESS) {
 				return MouseAction::Down;
 			}
-			else if (action == GLFW_RELEASE)
-			{
+			else if (action == GLFW_RELEASE) {
 				return MouseAction::Up;
 			}
 
@@ -182,116 +167,97 @@ namespace edge
 	}
 
 	// Callbacks
-	void GlfwWindow::WindowCloseCallback(GLFWwindow* window)
-	{
+	void GlfwWindow::window_close_callback(GLFWwindow* window) {
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 	}
 
-	void GlfwWindow::WindowSizeCallback(GLFWwindow* window, int width, int height)
-	{
-		if (auto runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
-		{
-			runtime->OnResize(width, height);
+	void GlfwWindow::window_size_callback(GLFWwindow* window, int width, int height) {
+		if (auto runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window))) {
+			runtime->on_resize(width, height);
 		}
 	}
 
-	void GlfwWindow::WindowFocusCallback(GLFWwindow* window, int focused)
-	{
-		if (auto runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
-		{
-			runtime->SetFocus(focused);
+	void GlfwWindow::window_focus_callback(GLFWwindow* window, int focused) {
+		if (auto runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window))) {
+			runtime->set_focus(focused);
 		}
 	}
 
-	void GlfwWindow::KeyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/)
-	{
-		KeyCode   key_code = TranslateKeyCode(key);
-		KeyAction key_action = TranslateKeyAction(action);
+	void GlfwWindow::key_callback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/) {
+		KeyCode   key_code = translate_key_code(key);
+		KeyAction key_action = translate_key_action(action);
 
-		if (auto runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
-		{
-			runtime->OnInputEvent(KeyInputEvent{ key_code, key_action });
+		if (auto runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window))) {
+			runtime->on_input_event(KeyInputEvent{ key_code, key_action });
 		}
 	}
 
-	void GlfwWindow::CursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
-	{
-		if (auto* runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
-		{
+	void GlfwWindow::cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+		if (auto* runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window))) {
 			int32_t width{}, height{};
 			glfwGetWindowSize(window, &width, &height);
 
-			runtime->OnInputEvent(MouseButtonInputEvent{
+			runtime->on_input_event(MouseButtonInputEvent{
 				KeyCode::Unknown, MouseAction::Move,
 				static_cast<float>(xpos), static_cast<float>(ypos),
 				static_cast<float>(width), static_cast<float>(height) });
 		}
 	}
 
-	void GlfwWindow::MouseButtonCallback(GLFWwindow* window, int button, int action, int /*mods*/)
-	{
-		MouseAction mouse_action = TranslateMouseAction(action);
+	void GlfwWindow::mouse_button_callback(GLFWwindow* window, int button, int action, int /*mods*/) {
+		MouseAction mouse_action = translate_mouse_action(action);
 
-		if (auto* runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
-		{
+		if (auto* runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window))) {
 			double xpos, ypos;
 			glfwGetCursorPos(window, &xpos, &ypos);
 
 			int32_t width{}, height{};
 			glfwGetWindowSize(window, &width, &height);
 
-			runtime->OnInputEvent(MouseButtonInputEvent{ TranslateMouseButton(button), mouse_action,
+			runtime->on_input_event(MouseButtonInputEvent{ translate_mouse_button(button), mouse_action,
 				static_cast<float>(xpos), static_cast<float>(ypos),
 				static_cast<float>(width), static_cast<float>(height) });
 		}
 	}
 
-	void GlfwWindow::MouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-	{
-		if (auto* runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
-		{
-			runtime->OnInputEvent(MouseButtonInputEvent{
+	void GlfwWindow::mouse_scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+		if (auto* runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window))) {
+			runtime->on_input_event(MouseButtonInputEvent{
 				KeyCode::Unknown, MouseAction::Scroll,
 				static_cast<float>(xoffset), static_cast<float>(yoffset),
 				0.f, 0.f});
 		}
 	}
 
-	void GlfwWindow::CharacterInputCallback(GLFWwindow* window, uint32_t codepoint)
-	{
-		if (auto runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window)))
-		{
-			runtime->OnInputEvent(CharacterInputEvent{ codepoint });
+	void GlfwWindow::character_input_callback(GLFWwindow* window, uint32_t codepoint) {
+		if (auto runtime = reinterpret_cast<Runtime*>(glfwGetWindowUserPointer(window))) {
+			runtime->on_input_event(CharacterInputEvent{ codepoint });
 		}
 	}
 	
 	GlfwWindow::GlfwWindow(Runtime* runtime, const Window::Properties& properties) :
-		Window(properties)
-	{
+		Window(properties) {
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
 		glfwInitHint(GLFW_X11_XCB_VULKAN_SURFACE, false);
 #endif
 
-		if (!glfwInit())
-		{
-			throw std::runtime_error("GLFW couldn't be initialized.");
+		if (!glfwInit()) {
+			EDGE_LOGE("[GlfwWindow] GLFW couldn't be initialized.");
+			return;
 		}
 
-		glfwSetErrorCallback(ErrorCallback);
+		glfwSetErrorCallback(error_callback);
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-		switch (properties.mode)
-		{
-		case Window::Mode::Fullscreen:
-		{
+		switch (properties.mode) {
+		case Window::Mode::Fullscreen: {
 			auto* monitor = glfwGetPrimaryMonitor();
 			const auto* mode = glfwGetVideoMode(monitor);
 			handle = glfwCreateWindow(mode->width, mode->height, properties.title.c_str(), monitor, NULL);
 			break;
 		}
 
-		case Window::Mode::FullscreenBorderless:
-		{
+		case Window::Mode::FullscreenBorderless: {
 			auto* monitor = glfwGetPrimaryMonitor();
 			const auto* mode = glfwGetVideoMode(monitor);
 			glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -302,8 +268,7 @@ namespace edge
 			break;
 		}
 
-		case Window::Mode::FullscreenStretch:
-		{
+		case Window::Mode::FullscreenStretch: {
 			throw std::runtime_error("Cannot support stretch mode on this platform.");
 			break;
 		}
@@ -313,57 +278,52 @@ namespace edge
 			break;
 		}
 
-		Resize(Extent{ properties.extent.width, properties.extent.height });
+		resize(Extent{ properties.extent.width, properties.extent.height });
 
-		if (!handle)
-		{
-			throw std::runtime_error("Couldn't create glfw window.");
+		if (!handle) {
+			EDGE_LOGE("[GlfwWindow] Couldn't create glfw window.");
+			return;
 		}
 
 		glfwSetWindowUserPointer(handle, runtime);
 
-		glfwSetWindowCloseCallback(handle, &GlfwWindow::WindowCloseCallback);
-		glfwSetWindowSizeCallback(handle, &GlfwWindow::WindowSizeCallback);
-		glfwSetWindowFocusCallback(handle, &GlfwWindow::WindowFocusCallback);
-		glfwSetKeyCallback(handle, &GlfwWindow::KeyCallback);
-		glfwSetCursorPosCallback(handle, &GlfwWindow::CursorPositionCallback);
-		glfwSetMouseButtonCallback(handle, &GlfwWindow::MouseButtonCallback);
-		glfwSetScrollCallback(handle, &GlfwWindow::MouseScrollCallback);
-		glfwSetCharCallback(handle, &GlfwWindow::CharacterInputCallback);
+		glfwSetWindowCloseCallback(handle, &GlfwWindow::window_close_callback);
+		glfwSetWindowSizeCallback(handle, &GlfwWindow::window_size_callback);
+		glfwSetWindowFocusCallback(handle, &GlfwWindow::window_focus_callback);
+		glfwSetKeyCallback(handle, &GlfwWindow::key_callback);
+		glfwSetCursorPosCallback(handle, &GlfwWindow::cursor_position_callback);
+		glfwSetMouseButtonCallback(handle, &GlfwWindow::mouse_button_callback);
+		glfwSetScrollCallback(handle, &GlfwWindow::mouse_scroll_callback);
+		glfwSetCharCallback(handle, &GlfwWindow::character_input_callback);
 
 		glfwSetInputMode(handle, GLFW_STICKY_KEYS, 1);
 		glfwSetInputMode(handle, GLFW_STICKY_MOUSE_BUTTONS, 1);
 
-		native_surface = MakeGlfwNativeSurface(handle);
+		native_surface = make_glfw_native_surface(handle);
 	}
 
-	GlfwWindow::~GlfwWindow()
-	{
+	GlfwWindow::~GlfwWindow() {
 		delete native_surface;
 		native_surface = nullptr;
 
 		glfwTerminate();
 	}
 
-	bool GlfwWindow::ShouldClose() const noexcept
-	{
+	bool GlfwWindow::should_close() const noexcept {
 		return glfwWindowShouldClose(handle);
 	}
 
-	void GlfwWindow::ProcessEvents()
-	{
+	void GlfwWindow::process_events() {
 		glfwPollEvents();
 	}
 
-	void GlfwWindow::Close()
-	{
+	void GlfwWindow::close() {
 		glfwSetWindowShouldClose(handle, GLFW_TRUE);
 	}
 
 	/// @brief It calculates the dpi factor using the density from GLFW physical size
 	/// <a href="https://www.glfw.org/docs/latest/monitor_guide.html#monitor_size">GLFW docs for dpi</a>
-	auto GlfwWindow::GetDpiFactor() const noexcept -> float
-	{
+	auto GlfwWindow::get_dpi_factor() const noexcept -> float {
 		auto primary_monitor = glfwGetPrimaryMonitor();
 		auto vidmode = glfwGetVideoMode(primary_monitor);
 
@@ -379,13 +339,11 @@ namespace edge
 		return dpi_factor;
 	}
 
-	void GlfwWindow::SetTitle(std::string_view new_title) const
-	{
+	void GlfwWindow::set_title(std::string_view new_title) const {
 		glfwSetWindowTitle(handle, new_title.data());
 	}
 
-	auto GlfwWindow::GetContentScaleFactor() const noexcept -> float
-	{
+	auto GlfwWindow::get_content_scale_factor() const noexcept -> float {
 		int fb_width, fb_height;
 		glfwGetFramebufferSize(handle, &fb_width, &fb_height);
 		int win_width, win_height;
@@ -397,8 +355,7 @@ namespace edge
 		return static_cast<float>(fb_width) / win_width;
 	}
 
-	auto GlfwWindow::GetRequiredSurfaceExtensions() const -> std::vector<const char*>
-	{
+	auto GlfwWindow::get_required_surface_extensions() const -> std::vector<const char*> {
 		uint32_t glfw_extension_count{ 0 };
 		const char** names = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 		return { names, names + glfw_extension_count };

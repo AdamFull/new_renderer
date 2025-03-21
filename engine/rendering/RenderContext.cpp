@@ -12,7 +12,7 @@
 #include "render_graph/RenderPass.h"
 #include "render_graph/ComputePass.h"
 
-#include <edge/runtime/Window.h>
+#include <edge/runtime/rt_window.h>
 
 #include <edge/gfx/gfx_util.h>
 #include <edge/gfx/gfx_context.h>

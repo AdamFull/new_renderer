@@ -1,6 +1,6 @@
 #pragma once
 
-#include <edge/runtime/Application.h>
+#include <edge/runtime/rt_application.h>
 #include "rendering/RendererInterface.h"
 
 #include "InputMapper.h"
@@ -22,19 +22,19 @@ namespace engine
 
 		virtual ~EngineApplication() override;
 	protected:
-		void OnInputEvent(const edge::InputEvent& input_event) override;
-		void Finish() override;
-		bool OnResize(uint32_t width, uint32_t height) override;
+		void on_input_event(const edge::InputEvent& input_event) override;
+		void finish() override;
+		bool on_resize(uint32_t width, uint32_t height) override;
 
 		/**
 		* @brief Additional sample initialization
 		*/
-		bool Prepare(const edge::ApplicationOptions& options) override;
+		bool prepare(const edge::ApplicationOptions& options) override;
 
 		/**
 		 * @brief Main loop sample events
 		 */
-		void Update(float delta_time) override;
+		void update(float delta_time) override;
 	private:
 		std::unique_ptr<EngineUI> ui{};
 		std::unique_ptr<render::IRenderer> renderer{};

@@ -1,17 +1,17 @@
 #include "Edge.h"
 
 #if defined(PLATFORM_WINDOWS)
-#include "runtime/win64/WindowsRuntimeContext.h"
-#include "runtime/win64/WindowsRuntime.h"
+#include "runtime/win64/rt_windows_runtime_context.h"
+#include "runtime/win64/rt_windows_runtime.h"
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
-	auto context = std::make_unique<edge::win32::WindowsRuntimeContext>(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	auto context = std::make_unique<edge::win64::WindowsRuntimeContext>(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 	return RuntimeMain(*context);
 }
 #elif defined(PLATFORM_ANDROID)
-#include "runtime/android/AndroidRuntimeContext.h"
-#include "runtime/android/AndroidRuntime.h"
+#include "runtime/android/rt_android_runtime_context.h"
+#include "runtime/android/rt_android_runtime.h"
 
 void android_main(android_app* state)
 {
@@ -31,10 +31,10 @@ int main(int argc, char* argv[])
 
 namespace edge
 {
-	std::unique_ptr<Runtime> CreateApplicationContext(const IRuntimeContext& context)
+	std::unique_ptr<Runtime> create_application_context(const IRuntimeContext& context)
 	{
 #if defined(PLATFORM_WINDOWS)
-		return std::make_unique<win32::WindowsRuntime>(context);
+		return std::make_unique<win64::WindowsRuntime>(context);
 #elif defined(PLATFORM_ANDROID)
 		return std::make_unique<android::AndroidRuntime>(context);
 #else

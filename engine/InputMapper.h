@@ -2,7 +2,7 @@
 
 #include <reactive/function.h>
 #include <edge/util/Hash.hpp>
-#include <edge/runtime/InputEvents.h>
+#include <edge/runtime/rt_input_events.h>
 
 namespace engine
 {
@@ -39,7 +39,7 @@ namespace engine
 		void Create();
 		void Update(f32 dt);
 
-		void OnInputEvent(const edge::InputEvent& input_event);
+		void on_input_event(const edge::InputEvent& input_event);
 
 		template<class... _Args>
 		void RegisterAction(const char* action_name, _Args&& ...args)
@@ -100,7 +100,7 @@ namespace engine
 		template<class... _Args>
 		void UnpackAxisValues(std::unordered_map<edge::KeyCode, f32>& map, _Args&&... args) { static_assert(true, "Incorrect argument types. Should be EKeyCode:f32."); }
 	private:
-		edge::CKeyDecoder m_keyDecoder{};
+		edge::KeyDecoder m_keyDecoder{};
 
 		std::unordered_map<uint64_t, FInputAction> m_inputActions{};
 		std::unordered_map<uint64_t, FInputAxis> m_inputAxis{};

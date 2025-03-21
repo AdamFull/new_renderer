@@ -5,30 +5,26 @@
 #include <functional>
 #include <memory>
 
-#include "InputEvents.h"
+#include "rt_input_events.h"
 
 #include "../fs/fs_virtual_filesystem.h"
 
-namespace edge
-{
+namespace edge {
 	class Window;
 	class Application;
 
-	struct ApplicationCreateInfo
-	{
+	struct ApplicationCreateInfo {
 		std::string name;
 		std::function<std::unique_ptr<Application>()> app_allocator;
 	};
 
-	struct ApplicationOptions
-	{
+	struct ApplicationOptions {
 		bool benchmark_enabled;
 		Window* window;
 		fs::VirtualFilesystem* filesystem;
 	};
 
-	class Application
-	{
+	class Application {
 	public:
 		Application() = default;
 
@@ -37,51 +33,46 @@ namespace edge
 		/**
 		* @brief Prepares the application for execution
 		*/
-		virtual auto Prepare(const ApplicationOptions& options) -> bool;
+		virtual auto prepare(const ApplicationOptions& options) -> bool;
 
 		/**
 		 * @brief Updates the application 50 times per second
 		 * @param delta_time Fixed time tick
 		 */
-		virtual void FixedUpdate(float delta_time) {}
+		virtual void fixed_update(float delta_time) {}
 
 		/**
 		 * @brief Updates the application
 		 * @param delta_time The time since the last update
 		 */
-		virtual void Update(float delta_time) {}
+		virtual void update(float delta_time) {}
 
 		/**
 		 * @brief Handles cleaning up the application
 		 */
-		virtual void Finish() {}
+		virtual void finish() {}
 
-		virtual auto OnResize(uint32_t width, uint32_t height) -> bool
-		{
+		virtual auto on_resize(uint32_t width, uint32_t height) -> bool {
 			return true;
 		}
 
-		virtual void OnInputEvent(const InputEvent& input_event) {}
+		virtual void on_input_event(const InputEvent& input_event) {}
 
-		inline auto ShouldClose() const noexcept -> bool
-		{
+		inline auto should_close() const noexcept -> bool {
 			return requested_close;
 		}
 
 		// request the app to close
 		// does not guarantee that the app will close immediately
-		inline void Close()
-		{
+		inline void close() {
 			requested_close = true;
 		}
 
-		void SetName(std::string_view _name)
-		{
+		void set_name(std::string_view _name) {
 			name = _name;
 		}
 
-		auto GetName() const noexcept -> std::string const&
-		{
+		auto get_name() const noexcept -> std::string const& {
 			return name;
 		}
 

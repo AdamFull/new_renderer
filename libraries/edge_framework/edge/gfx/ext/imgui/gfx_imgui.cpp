@@ -1,8 +1,8 @@
 #include "gfx_imgui.h"
 
 #include "../../gfx_context.h"
-#include "../../../runtime/InputEvents.h"
-#include "../../../runtime/Window.h"
+#include "../../../runtime/rt_input_events.h"
+#include "../../../runtime/rt_window.h"
 #include "../../../util/Profiler.h"
 
 #include <imgui.h>
@@ -431,12 +431,12 @@ namespace edge
 
 			static void HandleKeyboardEvent(const KeyInputEvent& input_event)
 			{
-				auto action = input_event.GetAction();
+				auto action = input_event.get_action();
 				if (action != edge::KeyAction::Down && action != edge::KeyAction::Up)
 					return;
 
 				ImGuiIO& io = ImGui::GetIO();
-				ImGuiKey imgui_key = KeyCodeToImGuiKey(input_event.GetCode());
+				ImGuiKey imgui_key = KeyCodeToImGuiKey(input_event.get_code());
 				io.AddKeyEvent(imgui_key, (action == KeyAction::Down));
 				//io.SetKeyEventNativeData(imgui_key, keycode, scancode);
 			}
@@ -444,19 +444,19 @@ namespace edge
 			static void HandleCharacterEvent(const edge::CharacterInputEvent& input_event)
 			{
 				ImGuiIO& io = ImGui::GetIO();
-				io.AddInputCharacter(input_event.GetCharacterCode());
+				io.AddInputCharacter(input_event.get_character_code());
 			}
 
 			static void HandleMouseEvent(const edge::MouseButtonInputEvent& input_event)
 			{
-				auto action = input_event.GetAction();
+				auto action = input_event.get_action();
 				switch (action)
 				{
 				case edge::MouseAction::Down:
 				case edge::MouseAction::Up:
 				{
 					int button{ -1 };
-					switch (input_event.GetButton())
+					switch (input_event.get_button())
 					{
 					case edge::KeyCode::MouseLeft:
 						button = 0;
@@ -478,12 +478,12 @@ namespace edge
 					ImGuiIO& io = ImGui::GetIO();
 					// TODO: do update only when window is focused
 
-					io.AddMousePosEvent(input_event.GetValueX(), input_event.GetValueY());
+					io.AddMousePosEvent(input_event.get_value_x(), input_event.get_value_y());
 				} break;
 				case edge::MouseAction::Scroll:
 				{
 					ImGuiIO& io = ImGui::GetIO();
-					io.AddMouseWheelEvent(input_event.GetValueX(), input_event.GetValueY());
+					io.AddMouseWheelEvent(input_event.get_value_x(), input_event.get_value_y());
 				} break;
 				default:
 					break;
@@ -494,7 +494,7 @@ namespace edge
 			{
 				assert(gpImguiContext && "ImGui Context is not initialized.");
 
-				switch (input_event.GetSource())
+				switch (input_event.get_source())
 				{
 				case edge::EventSource::Keyboard:
 				{
@@ -524,7 +524,7 @@ namespace edge
 			{
 				assert(gpImguiContext && "ImGui Context is not initialized.");
 
-				auto& extent = gpImguiContext->window->GetExtent();
+				auto& extent = gpImguiContext->window->get_extent();
 
 				ImGuiIO& io = ImGui::GetIO();
 				io.DisplaySize = ImVec2(static_cast<float>(extent.width), static_cast<float>(extent.height));

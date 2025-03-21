@@ -2,7 +2,7 @@
 
 #include <interface/EngineSystem.h>
 #include <engine/rendering/RendererInterface.h>
-#include <edge/runtime/InputEvents.h>
+#include <edge/runtime/rt_input_events.h>
 
 namespace engine
 {

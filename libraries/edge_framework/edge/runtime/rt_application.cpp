@@ -1,11 +1,9 @@
-#include "Application.h"
+#include "rt_application.h"
 
 #include <cassert>
 
-namespace edge
-{
-	auto Application::Prepare(const ApplicationOptions& options) -> bool
-	{
+namespace edge {
+	auto Application::prepare(const ApplicationOptions& options) -> bool {
 		assert(options.window != nullptr && "Window must be valid");
 
 		//auto& _debug_info = get_debug_info();

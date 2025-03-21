@@ -1,6 +1,6 @@
 #pragma once
 
-#include <edge/runtime/InputEvents.h>
+#include <edge/runtime/rt_input_events.h>
 #include "BaseSystem.h"
 
 #include <reactive/function.h>
@@ -31,7 +31,7 @@ namespace engine
 				void HandleMouseInput(const edge::MouseButtonInputEvent& input_event);
 				void HandleTouchInput(const edge::TouchInputEvent& input_event);
 			private:
-				edge::CKeyDecoder key_decoder{};
+				edge::KeyDecoder key_decoder{};
 				f32 m_deltaTime{ 0.f };
 				f32 oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
 

@@ -102,7 +102,7 @@ public:
 		edge::gfx::ResourceUpdater::shutdown();
 	}
 
-    bool Prepare(const edge::ApplicationOptions& options) override
+    bool prepare(const edge::ApplicationOptions& options) override
     {
 		window = options.window;
 
@@ -210,7 +210,7 @@ public:
 		return true;
     }
 
-    void Update(float delta_time) override
+    void update(float delta_time) override
     {
 		EDGE_PROFILE_ZONE_SCOPED;
 
@@ -446,21 +446,21 @@ private:
 
 int RuntimeMain(const edge::IRuntimeContext& context)
 {
-    auto runtime = edge::CreateApplicationContext(context);
+    auto runtime = edge::create_application_context(context);
 
     edge::ApplicationCreateInfo app_ci{};
     app_ci.name = "EdgeHelloTriangle";
     app_ci.app_allocator = []() { return std::make_unique<Application>(); };
 
-    runtime->RequestApplication(&app_ci);
+    runtime->request_application(&app_ci);
 
-    auto code = runtime->Initialize();
+    auto code = runtime->initialize();
     if (code == edge::ExitCode::Success)
     {
-        code = runtime->MainLoop();
+        code = runtime->main_loop();
     }
 
-    runtime->Terminate(code);
+    runtime->terminate(code);
 
     return 0;
 }

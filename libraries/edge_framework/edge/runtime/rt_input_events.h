@@ -4,27 +4,21 @@
 #include <cstdint>
 #include <bitset>
 
-namespace edge
-{
-	enum class EventSource
-	{
+namespace edge {
+	enum class EventSource {
 		Keyboard,
 		Character,
 		Mouse,
 		Touchscreen
 	};
 
-	class InputEvent
-	{
+	class InputEvent {
 	public:
 		InputEvent(EventSource source) :
-			source{ source }
-		{
-
+			source{ source } {
 		}
 
-		[[nodiscard]] auto GetSource() const noexcept -> EventSource
-		{
+		[[nodiscard]] auto get_source() const noexcept -> EventSource {
 			return source;
 		}
 
@@ -32,8 +26,7 @@ namespace edge
 		EventSource source;
 	};
 
-	enum class KeyCode
-	{
+	enum class KeyCode {
 		Unknown,
 		Space,
 		Apostrophe, /* ' */
@@ -146,31 +139,26 @@ namespace edge
 		Count
 	};
 
-	enum class KeyAction
-	{
+	enum class KeyAction {
 		Down,
 		Up,
 		Repeat,
 		Unknown
 	};
 
-	class KeyInputEvent final : public InputEvent
-	{
+	class KeyInputEvent final : public InputEvent {
 	public:
 		KeyInputEvent(KeyCode code, KeyAction action) :
 			InputEvent{ EventSource::Keyboard },
 			code{ code },
-			action{ action }
-		{
+			action{ action } {
 		}
 
-		[[nodiscard]] auto GetCode() const noexcept -> KeyCode
-		{
+		[[nodiscard]] auto get_code() const noexcept -> KeyCode {
 			return code;
 		}
 
-		[[nodiscard]] auto GetAction() const noexcept -> KeyAction
-		{
+		[[nodiscard]] auto get_action() const noexcept -> KeyAction {
 			return action;
 		}
 
@@ -179,25 +167,21 @@ namespace edge
 		KeyAction action;
 	};
 
-	class CharacterInputEvent final : public InputEvent
-	{
+	class CharacterInputEvent final : public InputEvent {
 	public:
 		CharacterInputEvent(uint32_t charcode) :
 			InputEvent{ EventSource::Character },
-			character_code{ charcode }
-		{
+			character_code{ charcode } {
 		}
 
-		[[nodiscard]] auto GetCharacterCode() const noexcept -> uint32_t
-		{
+		[[nodiscard]] auto get_character_code() const noexcept -> uint32_t {
 			return character_code;
 		}
 	private:
 		uint32_t character_code;
 	};
 
-	enum class MouseAction
-	{
+	enum class MouseAction {
 		Down,
 		Up,
 		Move,
@@ -205,8 +189,7 @@ namespace edge
 		Unknown
 	};
 
-	class MouseButtonInputEvent final : public InputEvent
-	{
+	class MouseButtonInputEvent final : public InputEvent {
 	public:
 		MouseButtonInputEvent(KeyCode button, MouseAction action, float value_x, float value_y, float max_x, float max_y) :
 			InputEvent{ EventSource::Mouse },
@@ -215,37 +198,30 @@ namespace edge
 			value_x{ value_x },
 			value_y{ value_y },
 			max_x{ max_x },
-			max_y{ max_y }
-		{
+			max_y{ max_y } {
 		}
 
-		[[nodiscard]] auto GetButton() const noexcept -> KeyCode
-		{
+		[[nodiscard]] auto get_button() const noexcept -> KeyCode {
 			return button;
 		}
 
-		[[nodiscard]] auto GetAction() const noexcept -> MouseAction
-		{
+		[[nodiscard]] auto get_action() const noexcept -> MouseAction {
 			return action;
 		}
 
-		[[nodiscard]] auto GetValueX() const noexcept -> float
-		{
+		[[nodiscard]] auto get_value_x() const noexcept -> float {
 			return value_x;
 		}
 
-		[[nodiscard]] auto GetValueY() const noexcept -> float
-		{
+		[[nodiscard]] auto get_value_y() const noexcept -> float {
 			return value_y;
 		}
 
-		[[nodiscard]] auto GetMaxX() const noexcept -> float
-		{
+		[[nodiscard]] auto get_max_x() const noexcept -> float {
 			return max_x;
 		}
 
-		[[nodiscard]] auto GetMaxY() const noexcept -> float
-		{
+		[[nodiscard]] auto get_max_y() const noexcept -> float {
 			return max_y;
 		}
 
@@ -258,8 +234,7 @@ namespace edge
 		float max_x, max_y;
 	};
 
-	enum class TouchAction
-	{
+	enum class TouchAction {
 		Down,
 		Up,
 		Move,
@@ -269,8 +244,7 @@ namespace edge
 		Unknown
 	};
 
-	class TouchInputEvent final : public InputEvent
-	{
+	class TouchInputEvent final : public InputEvent {
 	public:
 		TouchInputEvent(int32_t pointer_id, size_t pointer_count, TouchAction action, float pos_x, float pos_y) :
 			InputEvent{ EventSource::Touchscreen },
@@ -278,32 +252,26 @@ namespace edge
 			pointer_id{ pointer_id },
 			touch_points{ touch_points },
 			pos_x{ pos_x },
-			pos_y{ pos_y }
-		{
+			pos_y{ pos_y } {
 		}
 
-		[[nodiscard]] auto GetAction() const noexcept -> TouchAction
-		{
+		[[nodiscard]] auto get_action() const noexcept -> TouchAction {
 			return action;
 		}
 
-		[[nodiscard]] auto GetPointerId() const noexcept -> int32_t
-		{
+		[[nodiscard]] auto get_pointer_id() const noexcept -> int32_t {
 			return pointer_id;
 		}
 
-		[[nodiscard]] auto GetTouchPoints() const noexcept -> std::size_t
-		{
+		[[nodiscard]] auto get_touch_points() const noexcept -> std::size_t {
 			return touch_points;
 		}
 
-		[[nodiscard]] auto GetPosX() const noexcept -> float
-		{
+		[[nodiscard]] auto get_pos_x() const noexcept -> float {
 			return pos_x;
 		}
 
-		[[nodiscard]] auto GetPosY() const noexcept -> float
-		{
+		[[nodiscard]] auto get_pos_y() const noexcept -> float {
 			return pos_y;
 		}
 
@@ -315,21 +283,17 @@ namespace edge
 		size_t touch_points;
 
 		float pos_x;
-
 		float pos_y;
 	};
 
 	using keystate = std::bitset<static_cast<uint64_t>(KeyCode::Count)>;
 
-	class CKeyDecoder
-	{
+	class KeyDecoder {
 	public:
-		bool Update(KeyCode eCode, bool bPressed)
-		{
+		auto update(KeyCode eCode, bool bPressed) noexcept -> bool {
 			auto code = static_cast<uint64_t>(eCode);
 
-			if (bPressed != states.test(code))
-			{
+			if (bPressed != states.test(code)) {
 				if (bPressed)
 					states.set(static_cast<uint64_t>(eCode));
 				else
@@ -341,8 +305,7 @@ namespace edge
 			return false;
 		}
 
-		bool Test(KeyCode eCode)
-		{
+		auto test(KeyCode eCode) const noexcept -> bool {
 			return states.test(static_cast<uint64_t>(eCode));
 		}
 	private:

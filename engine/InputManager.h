@@ -1,7 +1,7 @@
 #pragma once
 
 #include <reactive/function.h>
-#include <edge/runtime/InputEvents.h>
+#include <edge/runtime/rt_input_events.h>
 
 namespace engine
 {

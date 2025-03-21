@@ -1,9 +1,9 @@
 #pragma once
 
 #include "EntryPoint.h"
-#include "runtime/Runtime.h"
+#include "runtime/rt_runtime.h"
 
 namespace edge
 {
-	std::unique_ptr<Runtime> CreateApplicationContext(const IRuntimeContext& context);
+	std::unique_ptr<Runtime> create_application_context(const IRuntimeContext& context);
 }

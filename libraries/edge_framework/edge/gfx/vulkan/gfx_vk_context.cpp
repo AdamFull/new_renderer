@@ -3,12 +3,12 @@
 
 #include "../../util/Logger.h"
 #include "../../util/Profiler.h"
-#include "../../runtime/Window.h"
+#include "../../runtime/rt_window.h"
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-#include "../../runtime/win64/WindowsNativeSurface.h"
+#include "../../runtime/win64/rt_windows_native_surface.h"
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
-#include "../../runtime/android/AndroidNativeSurface.h"
+#include "../../runtime/android/rt_android_native_surface.h"
 #endif
 
 #include "gfx_vk_physical_device.h"
@@ -61,7 +61,7 @@ namespace edge::gfx::vulkan
 
 		auto* window = create_info.window;
 
-		bool headless = window->GetWindowMode() == edge::Window::Mode::Headless;
+		bool headless = window->get_window_mode() == edge::Window::Mode::Headless;
 
 		auto instance_builder = InstanceBuilder();
 		instance_builder.set_headless(headless);
@@ -77,7 +77,7 @@ namespace edge::gfx::vulkan
 
 		// Apply instance extensions requested by surface
 		{
-			auto required_surface_extensions = window->GetRequiredSurfaceExtensions();
+			auto required_surface_extensions = window->get_required_surface_extensions();
 			instance_builder.add_required_extensions(required_surface_extensions);
 		}
 
@@ -100,14 +100,14 @@ namespace edge::gfx::vulkan
 
 		instance = instance_builder.build_unique();
 
-		auto* native_surface = window->GetNativeSurface();
+		auto* native_surface = window->get_native_surface();
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 		{
-			win32::WindowsNativeSurface* windows_surface = static_cast<win32::WindowsNativeSurface*>(native_surface);
+			win64::WindowsNativeSurface* windows_surface = static_cast<win64::WindowsNativeSurface*>(native_surface);
 
 			vk::Win32SurfaceCreateInfoKHR surface_create_info{};
-			surface_create_info.hwnd = windows_surface->GetHandle();
-			surface_create_info.hinstance = windows_surface->GetHandleInstance();
+			surface_create_info.hwnd = windows_surface->get_handle();
+			surface_create_info.hinstance = windows_surface->get_handle_instance();
 
 			auto result = instance->get_handle().createWin32SurfaceKHR(&surface_create_info, allocation_callbacks, &surface);
 		}
@@ -225,7 +225,7 @@ namespace edge::gfx::vulkan
 		vk::PresentModeKHR present_mode = (create_info.window->get_properties().vsync == Window::Vsync::OFF) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
 		std::vector<vk::PresentModeKHR> present_mode_priority_list{ vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eImmediate };
 #else
-		vk::PresentModeKHR present_mode = (create_info.window->GetProperties().vsync == edge::Window::Vsync::ON) ? vk::PresentModeKHR::eFifo : vk::PresentModeKHR::eMailbox;
+		vk::PresentModeKHR present_mode = (create_info.window->get_properties().vsync == edge::Window::Vsync::ON) ? vk::PresentModeKHR::eFifo : vk::PresentModeKHR::eMailbox;
 		std::vector<vk::PresentModeKHR> present_mode_priority_list{ vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eImmediate };
 #endif
 		if (create_info.old_swapchain) {
