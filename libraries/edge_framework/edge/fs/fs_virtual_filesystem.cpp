@@ -8,13 +8,13 @@
 
 namespace edge::fs
 {
-	static std::unordered_map<std::string_view, IFilesystem*> filesystems{};
+	static std::unordered_map<std::string_view, std::unique_ptr<IFilesystem>> filesystems{};
 
 	auto get_filesystem(std::string_view path) -> IFilesystem* {
 		auto fs_prefix = fs::get_mount_point(path);
 		auto found = filesystems.find(fs_prefix);
 		if (found != filesystems.end())
-			return found->second;
+			return found->second.get();
 
 		return nullptr;
 	}
