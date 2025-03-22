@@ -15,7 +15,7 @@ namespace edge {
 	namespace
 	{
 		void error_callback(int error, const char* description) {
-			EDGE_LOGE("GLFW Error (code {}): {}", error, description);
+			EDGE_LOGE("[GLFW Window] (code {}): {}", error, description);
 		}
 
 		inline KeyCode translate_key_code(int key) {
@@ -242,7 +242,7 @@ namespace edge {
 #endif
 
 		if (!glfwInit()) {
-			EDGE_LOGE("[GlfwWindow] GLFW couldn't be initialized.");
+			EDGE_LOGE("[GLFW Window] GLFW couldn't be initialized.");
 			return;
 		}
 
@@ -269,7 +269,7 @@ namespace edge {
 		}
 
 		case Window::Mode::FullscreenStretch: {
-			throw std::runtime_error("Cannot support stretch mode on this platform.");
+			EDGE_LOGE("[GLFW Window] Cannot support stretch mode on this platform.");
 			break;
 		}
 
@@ -281,7 +281,7 @@ namespace edge {
 		resize(Extent{ properties.extent.width, properties.extent.height });
 
 		if (!handle) {
-			EDGE_LOGE("[GlfwWindow] Couldn't create glfw window.");
+			EDGE_LOGE("[GLFW Window] Couldn't create glfw window.");
 			return;
 		}
 

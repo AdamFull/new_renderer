@@ -1,5 +1,7 @@
 #include "rt_windows_runtime_context.h"
 
+#include "../../util/Logger.h"
+
 #include <stdexcept>
 
 namespace edge::win64 {
@@ -9,7 +11,7 @@ namespace edge::win64 {
 		if (!AttachConsole(ATTACH_PARENT_PROCESS)) {
 			// No parent console, allocate a new one for this process
 			if (!AllocConsole()) {
-				throw std::runtime_error{ "AllocConsole error" };
+				EDGE_LOGE("[Windows Runtime Context] AllocConsole error");
 			}
 		}
 

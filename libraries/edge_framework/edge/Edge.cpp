@@ -25,7 +25,7 @@ void android_main(android_app* state)
 
 int main(int argc, char* argv[])
 {
-	throw std::runtime_error{ "platform not supported" };
+	EDGE_LOGE("[Runtime] platform not supported");
 }
 #endif
 
