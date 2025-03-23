@@ -325,7 +325,7 @@ namespace engine
 			{
 				// TODO: make it fixed size
 				TextureResourceCreateInfo create_info{};
-				create_info.width = create_info.height = 1024u;
+				create_info.width = create_info.height = 512u;
 				create_info.format = edge::gfx::Format::eR16G16Sfloat;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = false;
@@ -337,7 +337,7 @@ namespace engine
 			//uint32_t environment_cube_target{ ~0u };
 			//{
 			//	TextureResourceCreateInfo create_info{};
-			//	create_info.width = create_info.height = 1024;
+			//	create_info.width = create_info.height = 512;
 			//	create_info.format = edge::gfx::Format::eR16G16B16A16Sfloat;
 			//	create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
 			//	create_info.resizable = false;
