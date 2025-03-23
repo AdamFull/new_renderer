@@ -285,24 +285,23 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 
 	// INTERPOLATE NORMAL
 #ifdef HAS_NORMAL
-	vec3 normal0 = vertices[0].normal;
-	vec3 normal1 = vertices[1].normal;
-	vec3 normal2 = vertices[2].normal;
+	vec3 normal0 = normalize(normal_matrix * vertices[0].normal);
+	vec3 normal1 = normalize(normal_matrix * vertices[1].normal);
+	vec3 normal2 = normalize(normal_matrix * vertices[2].normal);
 
-	vec3 normal = interpolate(normal0, normal1, normal2, bary.barycentrics);
-	res.normal = normalize(normal_matrix * normal);
+	res.normal = normalize(interpolate(normal0, normal1, normal2, bary.barycentrics));
 #else
 	res.normal = cross(res.pos_dx, res.pos_dy);
 #endif // HAS_NORMAL
 
 	// INTERPOLATE TANGENT
 #ifdef HAS_TANGENT
-	vec4 tangent0 = vertices[0].tangent;
-	vec4 tangent1 = vertices[1].tangent;
-	vec4 tangent2 = vertices[2].tangent;
+	vec4 tangent0 = vec4(normalize(mat3(model) * vertices[0].tangent.xyz), vertices[0].tangent.w);
+	vec4 tangent1 = vec4(normalize(mat3(model) * vertices[1].tangent.xyz), vertices[1].tangent.w);
+	vec4 tangent2 = vec4(normalize(mat3(model) * vertices[2].tangent.xyz), vertices[2].tangent.w);
 
 	vec4 tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
-	res.tangent = vec4(normalize(mat3(model) * tangent.xyz), tangent.w);
+	res.tangent = vec4(normalize(tangent.xyz), tangent.w);
 #else	
 	vec3 tangent = (res.uv_dy.t * res.pos_dx - res.uv_dx.t * res.pos_dy) / (res.uv_dx.s * res.uv_dy.t - res.uv_dy.s * res.uv_dx.t); 
 	tangent = normalize(tangent - res.normal * dot(res.normal, tangent));
