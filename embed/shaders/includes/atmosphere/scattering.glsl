@@ -6,7 +6,7 @@
 
 const float maxScatterDistance = (atmosphere_radius - atmosphere_planet_radius) * 2.0;
 
-const int integralStepCount = 32;
+const int integralStepCount = 16;
 const int lightIntegralStepCount = 8;
 
 const vec3 DefaultColor = vec3(0.01);
