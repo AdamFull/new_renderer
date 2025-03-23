@@ -334,6 +334,18 @@ namespace engine
 				render_context->set_resource_name(brdf_lut_target, "brdf_lut_target");
 			}
 
+			//uint32_t environment_cube_target{ ~0u };
+			//{
+			//	TextureResourceCreateInfo create_info{};
+			//	create_info.width = create_info.height = 1024;
+			//	create_info.format = edge::gfx::Format::eR16G16B16A16Sfloat;
+			//	create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
+			//	create_info.resizable = false;
+			//
+			//	environment_cube_target = render_context->AddResource(create_info, linear_sampler);
+			//	render_context->set_resource_name(environment_cube_target, "environment_cube_target");
+			//}
+
 			uint32_t irradiance_cube_target{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
@@ -619,6 +631,28 @@ namespace engine
 
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
+
+			// Generate environment map
+			//{
+			//	ComputeShaderPassCreateInfo create_info{};
+			//	create_info.technique_name = "generate_environment";
+			//
+			//	create_info.draw_callback = [this,
+			//		environment_cube_target
+			//	](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
+			//		{
+			//			EDGE_PROFILE_ZONE_SCOPED;
+			//
+			//			self.BindWriteResource(render_label::write_image0, environment_cube_target, ~0u);
+			//
+			//			self.ResolveDependencies(command_list);
+			//			self.BindResources(command_list);
+			//
+			//			self.DispatchForTarget(command_list, environment_cube_target, true);
+			//		};
+			//
+			//	render_context->AddNode(render_context->CreateNode(create_info));
+			//}
 
 			// Generate irradiance cubemap
 			{

@@ -226,6 +226,11 @@ namespace engine
 				.shared_descriptor = shared_descriptor,
 				.stages = { {.path = "/source/embed/shaders/lighting/prefilteredmap.comp" } }
 				});
+			technique_db->add_technique("generate_environment", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/lighting/generate_environment.comp" } }
+				});
 			technique_db->add_technique("directional_shadow", {
 				.type = edge::gfx::TechniqueType::eGraphics,
 				.shared_descriptor = shared_descriptor,
