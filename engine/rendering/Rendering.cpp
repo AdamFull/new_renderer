@@ -91,7 +91,7 @@ namespace render_label
 	constexpr const uint32_t histogram_compute_params = "FHistogramComputeParams"_hash32;
 	constexpr const uint32_t min_log_lum = "minLogLum"_hash32;
 	constexpr const uint32_t log_lum_range = "logLumRange"_hash32;
-	constexpr const uint32_t time_coeff = "logLumRange"_hash32;
+	constexpr const uint32_t time_coeff = "timeCoeff"_hash32;
 	constexpr const uint32_t num_pixels_x = "numPixelsX"_hash32;
 	constexpr const uint32_t num_pixels_y = "numPixelsY"_hash32;
 }
@@ -1787,7 +1787,7 @@ namespace engine
 					render_context->AddNode(std::move(group_node));
 				}
 			
-				final_target = pass_count % 2 ? output_target : input_target;
+				final_target = pass_count % 2 ? input_target : output_target;
 			}
 			
 			
