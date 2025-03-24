@@ -13,6 +13,7 @@ namespace edge::gfx::vulkan
 		bool is_array = texture_create_info.layers > 1u;
 		bool is_cubemap = static_cast<bool>(texture_create_info.usage & TextureUsageFlag::eCubemap);
 		bool is_3d = texture_create_info.depth > 1u;
+		bool is_2d = texture_create_info.height > 1u;
 
 		// TODO: assert 3d arrays or 3d cubemaps
 
@@ -33,7 +34,7 @@ namespace edge::gfx::vulkan
 		}
 		else {
 			create_info.subresourceRange.layerCount = 1u;
-			create_info.viewType = vk::ImageViewType::e2D;
+			create_info.viewType = is_2d ? vk::ImageViewType::e2D : vk::ImageViewType::e1D;
 		}
 
 		create_info.format = image.get_format();

@@ -51,10 +51,11 @@ namespace edge::gfx::vulkan
 		alloc_create_info.usage = vma::MemoryUsage::eUnknown;
 
 		bool is_3d = texture_create_info.depth > 1u;
+		bool is_2d = texture_create_info.height > 1u;
 		if (is_3d) {
 			create_info.imageType = vk::ImageType::e3D;
 		}
-		else if (texture_create_info.height != 0u || texture_create_info.height != 0u) {
+		else if (is_2d) {
 			create_info.imageType = vk::ImageType::e2D;
 		}
 		else {
