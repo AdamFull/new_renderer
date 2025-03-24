@@ -334,17 +334,29 @@ namespace engine
 				render_context->set_resource_name(brdf_lut_target, "brdf_lut_target");
 			}
 
-			//uint32_t environment_cube_target{ ~0u };
-			//{
-			//	TextureResourceCreateInfo create_info{};
-			//	create_info.width = create_info.height = 512;
-			//	create_info.format = edge::gfx::Format::eR16G16B16A16Sfloat;
-			//	create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
-			//	create_info.resizable = false;
-			//
-			//	environment_cube_target = render_context->AddResource(create_info, linear_sampler);
-			//	render_context->set_resource_name(environment_cube_target, "environment_cube_target");
-			//}
+			uint32_t density_lut_target{ ~0u };
+			{
+				TextureResourceCreateInfo create_info{};
+				create_info.width = 256u;
+				create_info.format = edge::gfx::Format::eR32G32B32A32Sfloat;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
+				create_info.resizable = false;
+
+				density_lut_target = render_context->AddResource(create_info, nearest_sampler);
+				render_context->set_resource_name(density_lut_target, "density_lut_target");
+			}
+
+			uint32_t environment_cube_target{ ~0u };
+			{
+				TextureResourceCreateInfo create_info{};
+				create_info.width = create_info.height = 512;
+				create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
+				create_info.resizable = false;
+			
+				environment_cube_target = render_context->AddResource(create_info, linear_sampler);
+				render_context->set_resource_name(environment_cube_target, "environment_cube_target");
+			}
 
 			uint32_t irradiance_cube_target{ ~0u };
 			{
@@ -632,27 +644,53 @@ namespace engine
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
+			// Generate density lut for scattering
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "generate_density_lut";
+				create_info.one_time = true;
+
+				create_info.draw_callback = [this,
+					density_lut_target
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
+					{
+						EDGE_PROFILE_ZONE_SCOPED;
+
+						self.BindWriteResource(render_label::write_image0, density_lut_target, ~0u);
+
+						self.ResolveDependencies(command_list);
+						self.BindResources(command_list);
+
+						self.DispatchForTarget(command_list, density_lut_target, true);
+						self.FinalizeTarget(command_list, render_label::write_image0, density_lut_target);
+					};
+
+				render_context->AddNode(render_context->CreateNode(create_info));
+			}
+
 			// Generate environment map
-			//{
-			//	ComputeShaderPassCreateInfo create_info{};
-			//	create_info.technique_name = "generate_environment";
-			//
-			//	create_info.draw_callback = [this,
-			//		environment_cube_target
-			//	](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
-			//		{
-			//			EDGE_PROFILE_ZONE_SCOPED;
-			//
-			//			self.BindWriteResource(render_label::write_image0, environment_cube_target, ~0u);
-			//
-			//			self.ResolveDependencies(command_list);
-			//			self.BindResources(command_list);
-			//
-			//			self.DispatchForTarget(command_list, environment_cube_target, true);
-			//		};
-			//
-			//	render_context->AddNode(render_context->CreateNode(create_info));
-			//}
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "generate_environment";
+			
+				create_info.draw_callback = [this,
+					environment_cube_target,
+					density_lut_target
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
+					{
+						EDGE_PROFILE_ZONE_SCOPED;
+			
+						self.BindWriteResource(render_label::write_image0, environment_cube_target, ~0u);
+						self.BindReadResource(render_label::sample_image0, density_lut_target, ~0u);
+			
+						self.ResolveDependencies(command_list);
+						self.BindResources(command_list);
+			
+						self.DispatchForTarget(command_list, environment_cube_target, true);
+					};
+			
+				render_context->AddNode(render_context->CreateNode(create_info));
+			}
 
 			// Generate irradiance cubemap
 			{

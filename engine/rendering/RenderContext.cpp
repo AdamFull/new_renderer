@@ -216,6 +216,11 @@ namespace engine
 				.shared_descriptor = shared_descriptor,
 				.stages = { {.path = "/source/embed/shaders/lighting/brdflut.comp" } }
 				});
+			technique_db->add_technique("generate_density_lut", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/lighting/generate_density_lut.comp" } }
+				});
 			technique_db->add_technique("generate_irradiancecube", {
 				.type = edge::gfx::TechniqueType::eCompute,
 				.shared_descriptor = shared_descriptor,
