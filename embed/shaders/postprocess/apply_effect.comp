@@ -17,7 +17,7 @@ layout(set = 1, binding = 4) uniform sampler2D sample_image2;
 layout(set = 1, binding = 3) uniform sampler2D sample_image1;
 layout(set = 1, binding = 4) uniform sampler2D sample_image2;
 #elif defined(TONEMAP)
-layout(set = 1, binding = 3, r32f) uniform image2D sample_image1;
+layout(set = 1, binding = 3, r32f) uniform image1D sample_image1;
 #endif
 
 #if defined(GAUSSIAN_BLUR)
@@ -111,7 +111,7 @@ void main()
 #elif defined(TONEMAP)
 	if(postprocess.enable_tonemap > 0)
 	{
-		float avgLum = imageLoad(sample_image1, ivec2(0, 0)).x;
+		float avgLum = imageLoad(sample_image1, 0).x;
 	
 		vec3 Yxy = convertRGB2Yxy(color.rgb);
 	
