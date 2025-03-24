@@ -1,0 +1,27 @@
+#include "atmosphere/constants.glsl"
+
+layout(local_size_x = 256) in;
+
+layout(set = 1, binding = 0) uniform writeonly image1D write_image0;
+
+void main()
+{
+	uint idx = gl_GlobalInvocationID.x;
+
+	uint size = uint(imageSize(write_image0));
+
+    // Guard: ensure we don’t write past the LUT
+    if (idx >= size)
+        return;
+
+    float t = float(idx) / float(size - 1);
+    float height = t * max_altitude;
+
+    float rayleighDensity = exp(-height / RayleighScaleHeight);
+    float mieDensity = exp(-height / MieScaleHeight);
+    float denom = (AbsorptionScaleHeight - height) / FalloffAbsorbtion;
+    float absorptionDensity = (1.0 / (denom * denom + 1.0)) * rayleighDensity;
+
+    vec4 result = vec4(rayleighDensity, mieDensity, absorptionDensity, 0.0);
+    imageStore(write_image0, int(idx), result);
+}
