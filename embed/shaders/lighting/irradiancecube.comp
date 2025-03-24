@@ -1,7 +1,7 @@
 #include "compute_common.glsl"
 #include "lighting_model.glsl"
 
-layout(local_size_x = 8, local_size_y = 8) in;
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 6) in;
 
 layout(set = 1, binding = 1, rgba32f) uniform writeonly imageCube write_image0;
 layout(set = 1, binding = 2) uniform samplerCube sample_image0;
@@ -13,32 +13,33 @@ void main()
 {
 	uvec2 image_size = imageSize(write_image0);
 
-	uvec2 px = uvec2(0, 0);
+	uvec3 px = gl_GlobalInvocationID.xyz;
+
+	uvec2 px_swizzled = uvec2(0, 0);
 	vec2 uv = vec2(0, 0);
-	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px_swizzled))
 		return;
 
-	for (uint i = 0; i != 6; ++i) 
+	px.xy = px_swizzled;
+
+	vec3 N = normalize(cubeDir(uv, px.z));
+	vec3 up = vec3(0.0f, 1.0f, 0.0f);
+	vec3 right = normalize(cross(up, N));
+	up = cross(N, right);
+
+	vec3 colour = vec3(0.0f);
+	uint sampleCount = 0u;
+
+	for (float phi = 0.0f; phi < TWO_PI; phi += deltaPhi) 
 	{
-		vec3 N = normalize(cubeDir(uv, i));
-		vec3 up = vec3(0.0f, 1.0f, 0.0f);
-		vec3 right = normalize(cross(up, N));
-		up = cross(N, right);
-
-		vec3 colour = vec3(0.0f);
-		uint sampleCount = 0u;
-
-		for (float phi = 0.0f; phi < TWO_PI; phi += deltaPhi) 
+		for (float theta = 0.0f; theta < HALF_PI; theta += deltaTheta) 
 		{
-			for (float theta = 0.0f; theta < HALF_PI; theta += deltaTheta) 
-			{
-				vec3 tempVec = cos(phi) * right + sin(phi) * up;
-				vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
-				colour += texture(sample_image0, sampleVector).rgb * cos(theta) * sin(theta);
-				sampleCount++;
-			}
+			vec3 tempVec = cos(phi) * right + sin(phi) * up;
+			vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
+			colour += texture(sample_image0, sampleVector).rgb * cos(theta) * sin(theta);
+			sampleCount++;
 		}
-
-		imageStore(write_image0, ivec3(px, i), vec4(PI * colour / float(sampleCount), 1.0f));
 	}
+
+	imageStore(write_image0, ivec3(px), vec4(PI * colour / float(sampleCount), 1.0f));
 }
