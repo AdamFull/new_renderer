@@ -1,7 +1,7 @@
 #include "compute_common.glsl"
 #include "lighting_model.glsl"
 
-layout(local_size_x = 8, local_size_y = 8) in;
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 6) in;
 
 layout(set = 1, binding = 1, rgba32f) uniform writeonly imageCube write_image0;
 layout(set = 1, binding = 2) uniform samplerCube sample_image0;
@@ -56,14 +56,15 @@ void main()
 {
 	uvec2 image_size = imageSize(write_image0);
 
-	uvec2 px = uvec2(0, 0);
+	uvec3 px = gl_GlobalInvocationID.xyz;
+
+	uvec2 px_swizzled = uvec2(0, 0);
 	vec2 uv = vec2(0, 0);
-	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px_swizzled))
 		return;
 
-	for (uint i = 0; i != 6; ++i) 
-    {
-		vec3 R = normalize(cubeDir(uv, i));
-		imageStore(write_image0, ivec3(px, i), vec4(prefilterEnvMap(sample_image0, R, data.roughness), 1.0f));
-	}
+	px.xy = px_swizzled;
+
+	vec3 R = normalize(cubeDir(uv, px.z));
+	imageStore(write_image0, ivec3(px), vec4(prefilterEnvMap(sample_image0, R, data.roughness), 1.0f));
 }
