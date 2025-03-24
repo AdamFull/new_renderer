@@ -4,24 +4,7 @@
 #include "math.glsl"
 #include "atmosphere/constants.glsl"
 
-const float maxScatterDistance = (atmosphere_radius - atmosphere_planet_radius) * 2.0;
-
-const int integralStepCount = 16;
-const int lightIntegralStepCount = 8;
-
-const vec3 DefaultColor = vec3(0.01);
-const float BaseIntencity = 5.0;
-
-const float RayleighScaleHeight = 8e3;
-const vec3 BetaRayleigh = vec3(5.8e-6, 13.5e-6, 33.1e-6);
-
-const float MieScaleHeight = 1.2e3;
-const vec3 BetaMie = vec3(21e-6);
-
-const float AbsorptionScaleHeight = 30e3;
-const vec3 BetaAbsorption = vec3(2.04e-5, 4.97e-5, 1.95e-6);
-const float FalloffAbsorbtion = 4e3;
-const vec3 BetaAmbient = vec3(0.01);
+#extension GL_EXT_control_flow_attributes : enable
 
 vec2 raySphereIntersect(vec3 r0, vec3 rd, vec3 s0, float sr) 
 {
@@ -103,6 +86,7 @@ vec3 atmosphere(vec3 origin, vec3 direction, vec3 sunDirection, float sunIntensi
     vec3 totalMie = vec3(0.0);
 
     // Solve first integral
+    [[unroll]]
     for (int i = 0; i < integralStepCount; ++i)
     {
         // Calculate current ray step from VIEWER to SKY
@@ -125,6 +109,7 @@ vec3 atmosphere(vec3 origin, vec3 direction, vec3 sunDirection, float sunIntensi
         vec3 sunOpticalDepth = vec3(0.0);
 
         // Solve second integral
+        [[unroll]]
         for (int j = 0; j < lightIntegralStepCount; ++j)
         {
             // Calculate position from INTEGRAL POSITION to SUN
