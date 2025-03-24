@@ -6,7 +6,7 @@
 
 layout (local_size_x = THREADS_X, local_size_y = THREADS_Y, local_size_z = 1) in;
 
-layout (set = 1, binding = 0, r32f) uniform image2D write_image0;
+layout (set = 1, binding = 0, r32f) uniform image1D write_image0;
 layout (set = 1, binding = 1) buffer Histogram { uint histogram[GROUP_SIZE]; };
 
 layout (std140, set = 1, binding = 2) uniform FHistogramComputeParams 
@@ -55,8 +55,8 @@ void main()
 
 		// The new stored value will be interpolated using the last frames value
 		// to prevent sudden shifts in the exposure.
-		float lumLastFrame = imageLoad(write_image0, ivec2(0, 0)).x;
+		float lumLastFrame = imageLoad(write_image0, 0).x;
 		float adaptedLum = lumLastFrame + (weightedAvgLum - lumLastFrame) * timeCoeff;
-		imageStore(write_image0, ivec2(0, 0), vec4(adaptedLum, 0.0, 0.0, 0.0));
+		imageStore(write_image0, 0, vec4(adaptedLum, 0.0, 0.0, 0.0));
 	}
 }
