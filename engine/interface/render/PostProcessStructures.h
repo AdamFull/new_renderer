@@ -58,9 +58,9 @@ namespace engine
 		struct PostProcessTonemap
 		{
 			bool enable{ true };
-			bool adaptive{ true };
+			bool adaptive{ false };
 			float gamma{ 2.2f };
-			float exposure{ 4.5f };
+			float exposure{ 0.5f };
 			float whitePoint{ 4.f };
 			float lumMin{ -5.f };
 			float lumMax{ 3.f };
