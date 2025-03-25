@@ -374,7 +374,7 @@ namespace engine
 			{
 				TextureResourceCreateInfo create_info{};
 				create_info.width = create_info.height = 512u;
-				create_info.format = edge::gfx::Format::eR16G16B16A16Sfloat;
+				create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
 				create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
 				create_info.resizable = false;
