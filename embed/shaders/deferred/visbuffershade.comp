@@ -280,6 +280,15 @@ vec3 debug_visualize_cascades(in float view_depth, float dither)
 	return vec3(1.0f, 1.0f, 1.0f);
 }
 
+vec3 tonemapACES(in vec3 color) {
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((color * (a * color + b)) / (color * (c * color + d) + e), 0.0, 1.0);
+}
+
 void main() 
 {
 	uvec2 image_size = imageSize(write_image0);
@@ -306,7 +315,7 @@ void main()
 	{
 		// TODO: will work after adding lights
 		vec4 dir_world_space = vec4(0.0);
-		const vec3 origin = vec3(0, atmosphere_planet_radius, 0) + camera_pos;
+		const vec3 origin = vec3(0, PLANET_RADIUS, 0) + camera_pos;
 		
 		float depth = texture(sample_image5, uv).r;
 		dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, GetInvViewProjectionMatrix(camera.matrices_offset));
@@ -318,8 +327,12 @@ void main()
 			if(light.type == light_type_directional)
 			{
 				const vec3 dir_to_sun = normalize(-light.direction);
+
 				pixel_color.rgb += atmosphere(origin, dir_world_space.xyz, -dir_to_sun, light.intencity);
+				pixel_color.rgb += atmosphere(origin, dir_world_space.xyz, dir_to_sun, light.intencity);
+
 				sun_count++;
+				break;
 			}
 		}
 		
