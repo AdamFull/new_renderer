@@ -7,8 +7,10 @@
 #include "atmosphere/scattering.glsl"
 #include "ssr.glsl"
 
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+#define MATERIAL_TILE_SIZE 8
+layout(local_size_x = MATERIAL_TILE_SIZE, local_size_y = MATERIAL_TILE_SIZE, local_size_z = 1) in;
 
+#define TILE_MATERIAL_CLASSIFICATION
 #define DISABLE_SHADOWS
 
 layout(set = 2, binding = 0) uniform writeonly image2D write_image0;
@@ -21,6 +23,10 @@ layout(set = 2, binding = 4) uniform sampler2D sample_image5;
 layout (set = 2, binding = 6) uniform sampler2DArrayShadow sample_image6;
 layout (set = 2, binding = 7) uniform sampler2DArrayShadow sample_image7;
 layout (set = 2, binding = 8) uniform samplerCubeArrayShadow sample_image8;
+
+#ifdef TILE_MATERIAL_CLASSIFICATION
+layout(std430, set = 2, binding = 9) buffer MaterialCommandBuffer { uint data[]; } read_buffer0;
+#endif
 
 vec4 sampleTexture(in uint s, in VertexAttribute va)
 {
@@ -296,8 +302,18 @@ void main()
 	uvec2 px;
 	vec2 uv;
 
+#ifdef TILE_MATERIAL_CLASSIFICATION
+	uint tile_index = gl_WorkGroupID.x;
+	uint tile_packed = read_buffer0.data[tile_index];
+	uvec2 tile_pos = uvec2(tile_packed & 0xFFFF, (tile_packed >> 16) & 0xFFFF);
+
+	px = tile_pos * MATERIAL_TILE_SIZE + gl_LocalInvocationID.xy;
+	uv = (vec2(px) + vec2(0.5, 0.5)) / vec2(image_size);
+
+#else
 	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
 		return;
+#endif
 
 	// TODO: set camera from another place
 	Camera camera = GetCamera(0);

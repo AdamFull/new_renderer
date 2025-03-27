@@ -205,8 +205,15 @@ namespace engine
 				.type = edge::gfx::TechniqueType::eCompute,
 				.shared_descriptor = shared_descriptor,
 				.stages = {{
-						.path = "/source/embed/shaders/deferred/visbuffershade.comp",
+						.path = "/source/embed/shaders/deferred/material_pass_base.comp",
 						.definitions = { "LIGHT_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" }
+					}}
+				});
+			technique_db->add_technique("material_tile_classification", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = {{
+						.path = "/source/embed/shaders/deferred/material_tile_classification.comp"
 					}}
 				});
 
@@ -527,6 +534,11 @@ namespace engine
 				});
 
 			// Register "utility" techniques
+			technique_db->add_technique("clear_buffer", {
+				.type = edge::gfx::TechniqueType::eCompute,
+				.shared_descriptor = shared_descriptor,
+				.stages = { {.path = "/source/embed/shaders/utility/clear_buffer.comp" } }
+				});
 			technique_db->add_technique("copy_image", {
 				.type = edge::gfx::TechniqueType::eCompute,
 				.shared_descriptor = shared_descriptor,

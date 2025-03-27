@@ -1,27 +1,19 @@
-#include "compute_common.glsl"
-#include "shader_inputs.glsl"
-#include "util.glsl"
+#include "shlib.h"
 
 layout(local_size_x = 256) in;
 
-layout(std140, set = 1, binding = 1) uniform bindings
-{
-	GPUBufferDesc buffer_desc;
-};
+layout(push_constant) uniform PushConstant
+{	
+	GET_PTR_T(uint8_t) ptr;
+	uint64_t size;
+} buffer_desc;
 
 void main()
 {
-	uint index = gl_GlobalInvocationID.x;
+	uint byte_index = gl_GlobalInvocationID.x;
 
-	if (index >= buffer_desc.size) 
+	if (byte_index >= buffer_desc.size) 
 		return;
-#if defined(INT32_BUFFER_PTR)
-	PTRVAL(GET_BUFFER_POINTER(GET_PTR_T(int32_t), buffer_desc), index) = 0;
-#elif defined(INT64_BUFFER_PTR)
-	PTRVAL(GET_BUFFER_POINTER(GET_PTR_T(int64_t), buffer_desc), index) = 0;
-#elif defined(UINT32_BUFFER_PTR)
-	PTRVAL(GET_BUFFER_POINTER(GET_PTR_T(uint32_t), buffer_desc), index) = 0;
-#elif defined(UINT64_BUFFER_PTR)
-	PTRVAL(GET_BUFFER_POINTER(GET_PTR_T(uint64_t), buffer_desc), index) = 0;
-#endif
+
+	buffer_desc.ptr[byte_index].data = uint8_t(0);
 }

@@ -1,0 +1,48 @@
+#include "shader_inputs.glsl"
+#include "compute_common.glsl"
+
+#define MATERIAL_TILE_SIZE 8
+#define MATERIAL_GROUP_SIZE (MATERIAL_TILE_SIZE * MATERIAL_TILE_SIZE)
+
+layout(local_size_x = MATERIAL_TILE_SIZE, local_size_y = MATERIAL_TILE_SIZE) in;
+
+layout(std430, set = 1, binding = 1) writeonly buffer IndirectArgumentBuffer { uint data[]; } write_buffer0;
+layout(std430, set = 1, binding = 2) writeonly buffer MaterialCommandBuffer { uint data[]; } write_buffer1;
+layout(set = 1, binding = 3) uniform sampler2D sample_image0;
+
+shared uint is_tile_valid;
+
+void main() {
+	uvec2 image_size = textureSize(sample_image0, 0);
+
+	uvec2 px;
+	vec2 uv;
+
+	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+		return;
+
+	if (gl_LocalInvocationIndex == 0) {
+        is_tile_valid = 0u;
+    }
+    barrier();
+
+	uint vis_buffer = packUnorm4x8(texelFetch(sample_image0, ivec2(px), 0));
+    uint triangleID = (vis_buffer & 0x007FFFFF);
+    triangleID -= 1u;
+
+	if(triangleID != 0xFFFFFFFFu) {
+        atomicMax(is_tile_valid, 1u);
+    }
+    
+    barrier();
+
+	if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0) {
+        if(is_tile_valid != 0u) {
+            // Compute a tile offset (combining workgroup x and y for later use)
+            const uint tile = (gl_WorkGroupID.x & 0xFFFFu) | ((gl_WorkGroupID.y & 0xFFFFu) << 16);
+            // Atomically get an index into the command buffer
+            uint idx = atomicAdd(write_buffer0.data[0], 1);
+            write_buffer1.data[idx] = tile;
+        }
+    }
+}
