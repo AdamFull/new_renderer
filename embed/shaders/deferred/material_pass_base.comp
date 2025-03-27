@@ -10,7 +10,7 @@
 #define MATERIAL_TILE_SIZE 8
 layout(local_size_x = MATERIAL_TILE_SIZE, local_size_y = MATERIAL_TILE_SIZE, local_size_z = 1) in;
 
-#define TILE_MATERIAL_CLASSIFICATION
+//#define TILE_MATERIAL_CLASSIFICATION
 #define DISABLE_SHADOWS
 
 layout(set = 2, binding = 0) uniform writeonly image2D write_image0;
@@ -284,15 +284,6 @@ vec3 debug_visualize_cascades(in float view_depth, float dither)
 	}
 
 	return vec3(1.0f, 1.0f, 1.0f);
-}
-
-vec3 tonemapACES(in vec3 color) {
-    float a = 2.51;
-    float b = 0.03;
-    float c = 2.43;
-    float d = 0.59;
-    float e = 0.14;
-    return clamp((color * (a * color + b)) / (color * (c * color + d) + e), 0.0, 1.0);
 }
 
 void main() 

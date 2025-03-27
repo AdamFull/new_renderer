@@ -387,6 +387,20 @@ namespace engine
 			BindResource(binding_point, resource_index, subresource_index);
 		}
 
+		void ShaderPass::DispatchForBuffer(edge::gfx::ICommandList& command_list, uint32_t buffer_id, bool divide_by_locals)
+		{
+			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+
+			auto buffer = execution_context.GetBuffer(buffer_id);
+
+			group_x = buffer->get_size();
+
+			if (divide_by_locals)
+				DivideWorkgroupByLocalSizes(group_x, group_y, group_z);
+
+			command_list.dispatch(group_x, group_y, group_z);
+		}
+
 		void ShaderPass::DispatchForTarget(edge::gfx::ICommandList& command_list, uint32_t target_it, bool divide_by_locals)
 		{
 			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };

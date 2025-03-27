@@ -180,6 +180,7 @@ namespace engine
 			void BindReadResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 			void BindWriteResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 
+			void DispatchForBuffer(edge::gfx::ICommandList& command_list, uint32_t buffer_id, bool divide_by_locals);
 			void DispatchForTarget(edge::gfx::ICommandList& command_list, uint32_t target_it, bool divide_by_locals);
 			void FinalizeTarget(edge::gfx::ICommandList& command_list, uint32_t binding_point, uint32_t target);
 

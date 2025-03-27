@@ -346,17 +346,17 @@ namespace engine
 				render_context->set_resource_name(density_lut_target, "density_lut_target");
 			}
 
-			uint32_t environment_cube_target{ ~0u };
-			{
-				TextureResourceCreateInfo create_info{};
-				create_info.width = create_info.height = 512;
-				create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
-				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
-				create_info.resizable = false;
-			
-				environment_cube_target = render_context->AddResource(create_info, linear_sampler);
-				render_context->set_resource_name(environment_cube_target, "environment_cube_target");
-			}
+			//uint32_t environment_cube_target{ ~0u };
+			//{
+			//	TextureResourceCreateInfo create_info{};
+			//	create_info.width = create_info.height = 512;
+			//	create_info.format = edge::gfx::Format::eB10G11R11UfloatPack32;
+			//	create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
+			//	create_info.resizable = false;
+			//
+			//	environment_cube_target = render_context->AddResource(create_info, linear_sampler);
+			//	render_context->set_resource_name(environment_cube_target, "environment_cube_target");
+			//}
 
 			uint32_t irradiance_cube_target{ ~0u };
 			{
@@ -619,6 +619,28 @@ namespace engine
 				render_context->set_resource_name(alive_offsets_buffer, "alive_offsets_buffer");
 			}
 
+#ifdef TILE_MATERIAL_CLASSIFICATION
+			uint32_t indirect_material_technique_buffer{ ~0u };
+			{
+				edge::gfx::BufferCreateInfo create_info{};
+				create_info.size = sizeof(uint32_t) * 3ull;
+				create_info.usage = edge::gfx::BufferUsageFlag::eIndirectBuffer;
+
+				indirect_material_technique_buffer = render_context->AddResource(create_info);
+				render_context->set_resource_name(indirect_material_technique_buffer, "indirect_material_technique_buffer");
+			}
+
+			uint32_t material_tiles_buffer{ ~0u };
+			{
+				edge::gfx::BufferCreateInfo create_info{};
+				create_info.size = sizeof(uint32_t) * ceil(1920 / 8) * ceil(1080 / 8);
+				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
+
+				material_tiles_buffer = render_context->AddResource(create_info);
+				render_context->set_resource_name(material_tiles_buffer, "material_tiles_buffer");
+			}
+#endif
+
 			// Passes
 			// Generate brdflut
 			{
@@ -669,28 +691,28 @@ namespace engine
 			}
 
 			// Generate environment map
-			{
-				ComputeShaderPassCreateInfo create_info{};
-				create_info.technique_name = "generate_environment";
-			
-				create_info.draw_callback = [this,
-					environment_cube_target,
-					density_lut_target
-				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
-					{
-						EDGE_PROFILE_ZONE_SCOPED;
-			
-						self.BindWriteResource(render_label::write_image0, environment_cube_target, ~0u);
-						self.BindReadResource(render_label::sample_image0, density_lut_target, ~0u);
-			
-						self.ResolveDependencies(command_list);
-						self.BindResources(command_list);
-			
-						self.DispatchForTarget(command_list, environment_cube_target, true);
-					};
-			
-				render_context->AddNode(render_context->CreateNode(create_info));
-			}
+			//{
+			//	ComputeShaderPassCreateInfo create_info{};
+			//	create_info.technique_name = "generate_environment";
+			//
+			//	create_info.draw_callback = [this,
+			//		environment_cube_target,
+			//		density_lut_target
+			//	](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
+			//		{
+			//			EDGE_PROFILE_ZONE_SCOPED;
+			//
+			//			self.BindWriteResource(render_label::write_image0, environment_cube_target, ~0u);
+			//			self.BindReadResource(render_label::sample_image0, density_lut_target, ~0u);
+			//
+			//			self.ResolveDependencies(command_list);
+			//			self.BindResources(command_list);
+			//
+			//			self.DispatchForTarget(command_list, environment_cube_target, true);
+			//		};
+			//
+			//	render_context->AddNode(render_context->CreateNode(create_info));
+			//}
 
 			// Generate irradiance cubemap
 			{
@@ -1338,6 +1360,58 @@ namespace engine
 			
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
+
+#ifdef TILE_MATERIAL_CLASSIFICATION
+			// Clear material indirect buffer
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "clear_buffer";
+				
+				create_info.draw_callback = [this,
+					indirect_material_technique_buffer
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					
+					auto* indirect_buffer = render_context->GetBuffer(indirect_material_technique_buffer);
+					"BufferDescription";
+
+					self.ResolveDependencies(command_list);
+
+					auto& constants = self.GetConstantBlock();
+					constants.Set(edge::murmur_hash("ptr"), indirect_buffer->get_address());
+					constants.Set(edge::murmur_hash("size"), indirect_buffer->get_size());
+
+					self.PushConstantRanges(command_list);
+					self.BindResources(command_list);
+
+					self.DispatchForBuffer(command_list, indirect_material_technique_buffer, true);
+					};
+
+				render_context->AddNode(render_context->CreateNode(create_info));
+			}
+
+			// Compute per material technique tiles
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "material_tile_classification";
+
+				create_info.draw_callback = [this,
+					visbuffer_geometry_target,
+					indirect_material_technique_buffer,
+					material_tiles_buffer
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					self.BindWriteResource(edge::murmur_hash("IndirectArgumentBuffer"), indirect_material_technique_buffer, ~0u);
+					self.BindWriteResource(edge::murmur_hash("MaterialCommandBuffer"), material_tiles_buffer, ~0u);
+					self.BindReadResource(render_label::sample_image0, visbuffer_geometry_target, ~0u);
+
+					self.ResolveDependencies(command_list);
+					self.BindResources(command_list);
+
+					self.DispatchForTarget(command_list, visbuffer_geometry_target, true);
+				};
+
+				render_context->AddNode(render_context->CreateNode(create_info));
+			}
+#endif
 			
 			// Resolve materials
 			{
@@ -1361,12 +1435,20 @@ namespace engine
 					cascaded_shadows_target,
 					directional_shadows_target,
 					omni_shadows_target
+#ifdef TILE_MATERIAL_CLASSIFICATION
+					,indirect_material_technique_buffer,
+					material_tiles_buffer
+#endif
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
 
 						auto* alive_meshes = render_context->GetBuffer(alive_commands_buffer);
 						auto* argument_buffer = render_context->GetBuffer(indirect_draw_commands);
+
+#ifdef TILE_MATERIAL_CLASSIFICATION
+						auto* material_argument_buffer = render_context->GetBuffer(indirect_material_technique_buffer);
+#endif
 
 						// Indirect generated buffers
 						self.ReadResource(alive_commands_buffer, ~0u);
@@ -1384,6 +1466,11 @@ namespace engine
 						self.BindReadResource(render_label::sample_image6, cascaded_shadows_target, ~0u);
 						self.BindReadResource(render_label::sample_image7, directional_shadows_target, ~0u);
 						self.BindReadResource(render_label::sample_image8, omni_shadows_target, ~0u);
+
+#ifdef TILE_MATERIAL_CLASSIFICATION
+						self.ReadResource(indirect_material_technique_buffer, ~0u);
+						self.BindReadResource(edge::murmur_hash("MaterialCommandBuffer"), material_tiles_buffer, ~0u);
+#endif
 			
 						self.ResolveDependencies(command_list);
 			
@@ -1395,10 +1482,10 @@ namespace engine
 						buffers.Set(render_label::texcoord, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTexCoord));
 						buffers.Set(render_label::normal, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eNormal));
 						buffers.Set(render_label::tangent, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eTangent));
-#if SKINNING_TEST
+#if SKINNING_TEST		
 						buffers.Set(render_label::joints, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eJoint));
 						buffers.Set(render_label::weights, geometry_buffer.GetBufferAddress(VertexAttributeFlag::eWeight));
-#endif
+#endif					
 						buffers.Set(render_label::indices, geometry_buffer.GetIndexBufferAddress());
 
 						auto& draw_data_block = self.GetUniformBlock(edge::murmur_hash("DrawDescriptionBuffers"));
@@ -1412,8 +1499,12 @@ namespace engine
 						self.PushConstantRanges(command_list);
 			
 						self.BindResources(command_list);
-			
+
+#ifdef TILE_MATERIAL_CLASSIFICATION
+						command_list.dispatch_indirect(material_argument_buffer, 0);
+#else
 						self.DispatchForTarget(command_list, hdr0, true);
+#endif
 					};
 			
 				render_context->AddNode(render_context->CreateNode(create_info));
