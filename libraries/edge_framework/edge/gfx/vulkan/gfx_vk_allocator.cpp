@@ -26,6 +26,7 @@ namespace edge::gfx::vulkan
 		allocator_info.instance = physical.get_instance().get_handle();
 		allocator_info.pAllocationCallbacks = allocation_callbacks;
 
+		// NOTE: Nsight graphics using VkImportMemoryHostPointerEXT that cannot be used with dedicated memory allocation
 		bool can_get_memory_requirements = device.is_extension_supported(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 		bool has_dedicated_allocation = device.is_extension_supported(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
 		if (can_get_memory_requirements && has_dedicated_allocation && device.is_enabled(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
