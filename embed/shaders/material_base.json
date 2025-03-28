@@ -1,0 +1,22 @@
+{
+  "technique": "visibilitybuffer_shade",
+
+  "base_color_factor": [ 1.0, 1.0, 1.0, 1.0 ],
+  "base_color_texture": null,
+
+  "metallic_factor": 1.0,
+  "roughness_factor": 1.0,
+  "occlusion_strength": 1.0,
+  "pbr_data_texture": null,
+
+  "emissive_factor": [ 1.0, 1.0, 1.0 ],
+  "emissive_texture": null,
+  "emissive_strength": 1.0,
+
+  "normal_map_texture": null,
+  "normal_map_scale": 1.0,
+
+  "alpha_mode": "opaque",
+  "alpha_cutoff": 0.5,
+  "double_sided": true
+}
