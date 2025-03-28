@@ -13,7 +13,7 @@ namespace edge::gfx {
 	struct ShaderCompileInfo {
 		std::string_view path;
 		std::string_view source;
-		std::vector<std::string_view> definitions;
+		std::vector<std::string> definitions;
 	};
 
 	class IShaderCompiler {

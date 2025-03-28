@@ -318,13 +318,13 @@ namespace edge::gfx
 
 // Meta data registration
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, RenderApi,
-	EDGE_ENUM_META(edge::gfx::RenderApi::eAuto, "Auto"),
-	EDGE_ENUM_META(edge::gfx::RenderApi::eVulkan, "Vulkan"),
-	EDGE_ENUM_META(edge::gfx::RenderApi::eDirectx12, "Directx12")
+	EDGE_ENUM_META(edge::gfx::RenderApi::eAuto, "auto"),
+	EDGE_ENUM_META(edge::gfx::RenderApi::eVulkan, "vulkan"),
+	EDGE_ENUM_META(edge::gfx::RenderApi::eDirectx12, "directx12")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, ResourceType,
-	EDGE_ENUM_META(edge::gfx::ResourceType::eUnknown, "Auto"),
+	EDGE_ENUM_META(edge::gfx::ResourceType::eUnknown, "auto"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::eFence, "IFence"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::eSemaphore, "ISemaphore"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::eQueue, "Queue"),
@@ -345,168 +345,168 @@ EDGE_REGISTER_ENUM_CLASS(edge::gfx, ResourceType,
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, ShaderStageFlags, ShaderStageFlag,
-	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eVertex, "Vertex"),
-	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eTessellationControl, "TessellationControl"),
-	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eTessellationEvaluation, "TessellationEvaluation"),
-	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eGeometry, "Geometry"),
-	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eFragment, "Fragment"),
-	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eCompute, "Compute"),
-	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eAllGraphics, "AllGraphics")
+	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eVertex, "vertex"),
+	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eTessellationControl, "tessellation_control"),
+	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eTessellationEvaluation, "tessellation_evaluation"),
+	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eGeometry, "geometry"),
+	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eFragment, "fragment"),
+	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eCompute, "compute"),
+	EDGE_ENUM_META(edge::gfx::ShaderStageFlag::eAllGraphics, "all_graphics")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, IndexType,
-	EDGE_ENUM_META(edge::gfx::IndexType::eUint16, "Uint16"),
-	EDGE_ENUM_META(edge::gfx::IndexType::eUint32, "Uint32")
+	EDGE_ENUM_META(edge::gfx::IndexType::eUint16, "uint16"),
+	EDGE_ENUM_META(edge::gfx::IndexType::eUint32, "uint32")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, QueueTypeFlags, QueueTypeFlag,
-	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::eGraphics, "Graphics"),
-	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::ePresent, "Present"),
-	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::eCompute, "Compute"),
-	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::eTransfer, "Transfer")
+	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::eGraphics, "graphics"),
+	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::ePresent, "present"),
+	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::eCompute, "compute"),
+	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::eTransfer, "transfer")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, CommandPoolResetMode,
-	EDGE_ENUM_META(edge::gfx::CommandPoolResetMode::eResetPool, "ResetPool"),
-	EDGE_ENUM_META(edge::gfx::CommandPoolResetMode::eResetIndividually, "ResetIndividually"),
-	EDGE_ENUM_META(edge::gfx::CommandPoolResetMode::eAlwaysAllocate, "AlwaysAllocate")
+	EDGE_ENUM_META(edge::gfx::CommandPoolResetMode::eResetPool, "reset_pool"),
+	EDGE_ENUM_META(edge::gfx::CommandPoolResetMode::eResetIndividually, "reset_individually"),
+	EDGE_ENUM_META(edge::gfx::CommandPoolResetMode::eAlwaysAllocate, "always_allocate")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, StageFlags, StageFlag,
-	EDGE_ENUM_META(edge::gfx::StageFlag::eNone, "None"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eTopOfPipe, "TopOfPipe"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eNone, "none"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eTopOfPipe, "top_of_pipe"),
 	EDGE_ENUM_META(edge::gfx::StageFlag::eDrawIndirect, "draw_indirect"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eVertexInput, "VertexInput"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eVertexShader, "VertexShader"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eTessellationControlShader, "TessellationControlShader"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eTessellationEvaluationShader, "TessellationEvaluationShader"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eGeometryShader, "GeometryShader"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eFragmentShader, "FragmentShader"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eEarlyFragmentTests, "EarlyFragmentTests"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eLateFragmentTests, "LateFragmentTests"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eColorAttachmentOutput, "ColorAttachmentOutput"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eComputeShader, "ComputeShader"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eAllTransfer, "AllTransfer"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eTransfer, "Transfer"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eBottomOfPipe, "BottomOfPipe"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eHost, "Host"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eAllGraphics, "AllGraphics"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eAllCommands, "AllCommands"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eCopy, "Copy"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eResolve, "Resolve"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eBlit, "Blit"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eClear, "Clear"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eIndexInput, "IndexInput"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::eVertexAttributeInput, "VertexAttributeInput"),
-	EDGE_ENUM_META(edge::gfx::StageFlag::ePreRasterizationShaders, "PreRasterizationShaders")
+	EDGE_ENUM_META(edge::gfx::StageFlag::eVertexInput, "vertex_input"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eVertexShader, "vertex_shader"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eTessellationControlShader, "tessellation_control_shader"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eTessellationEvaluationShader, "tessellation_evaluation_shader"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eGeometryShader, "geometry_shader"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eFragmentShader, "fragment_shader"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eEarlyFragmentTests, "early_fragment_tests"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eLateFragmentTests, "late_fragment_tests"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eColorAttachmentOutput, "color_attachment_output"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eComputeShader, "compute_shader"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eAllTransfer, "all_transfer"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eTransfer, "transfer"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eBottomOfPipe, "bottom_of_pipe"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eHost, "host"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eAllGraphics, "all_graphics"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eAllCommands, "all_commands"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eCopy, "copy"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eResolve, "resolve"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eBlit, "blit"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eClear, "clear"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eIndexInput, "index_input"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::eVertexAttributeInput, "vertex_attribute_input"),
+	EDGE_ENUM_META(edge::gfx::StageFlag::ePreRasterizationShaders, "pre_rasterization_shaders")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, ResourceStateFlags, ResourceStateFlag,
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eUndefined, "Undefined"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eRead, "Read"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eWrite, "Write"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCompute, "Compute"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eGraphics, "Graphics"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eColorAttachment, "ColorAttachment"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthAttachment, "DepthAttachment"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilAttachment, "StencilAttachment"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eIndex, "Index"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eVertex, "Vertex"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eSample, "Sample"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStorage, "Storage"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eIndirect, "Indirect"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eGeneral, "General"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCopy, "Copy"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::ePresent, "Present"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eColorAttachmentRead, "ColorAttachmentRead"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eColorAttachmentWrite, "ColorAttachmentWrite"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthAttachmentRead, "DepthAttachmentRead"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthAttachmentWrite, "DepthAttachmentWrite"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilAttachmentRead, "StencilAttachmentRead"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilAttachmentWrite, "StencilAttachmentWrite"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthStencilAttachmentRead, "DepthStencilAttachmentRead"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthStencilAttachmentWrite, "DepthStencilAttachmentWrite"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eShaderReadOnlyResource, "ShaderReadOnlyResource"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCopyDst, "CopyDst"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCopySrc, "CopySrc"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::ePresentSrc, "PresentSrc")
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eUndefined, "undefined"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eRead, "read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eWrite, "write"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCompute, "compute"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eGraphics, "graphics"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eColorAttachment, "color_attachment"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthAttachment, "depth_attachment"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilAttachment, "stencil_attachment"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eIndex, "index"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eVertex, "vertex"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eSample, "sample"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStorage, "storage"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eIndirect, "indirect"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eGeneral, "general"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCopy, "copy"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::ePresent, "present"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eColorAttachmentRead, "color_attachment_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eColorAttachmentWrite, "color_attachment_write"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthAttachmentRead, "depth_attachment_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthAttachmentWrite, "depth_attachment_write"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilAttachmentRead, "stencil_attachment_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilAttachmentWrite, "stencil_attachment_write"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthStencilAttachmentRead, "depth_stencil_attachment_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthStencilAttachmentWrite, "depth_stencil_attachment_write"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eShaderReadOnlyResource, "shader_read_only_resource"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCopyDst, "copy_dst"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCopySrc, "copy_src"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::ePresentSrc, "present_src")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, AccessTypeFlags, AccessTypeFlag,
-	EDGE_ENUM_META(edge::gfx::AccessTypeFlag::eRead, "Read"),
-	EDGE_ENUM_META(edge::gfx::AccessTypeFlag::eWrite, "Write"),
-	EDGE_ENUM_META(edge::gfx::AccessTypeFlag::eRW, "RW")
+	EDGE_ENUM_META(edge::gfx::AccessTypeFlag::eRead, "read"),
+	EDGE_ENUM_META(edge::gfx::AccessTypeFlag::eWrite, "write"),
+	EDGE_ENUM_META(edge::gfx::AccessTypeFlag::eRW, "rw")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, Filter,
-	EDGE_ENUM_META(edge::gfx::Filter::eNearest, "Nearest"),
-	EDGE_ENUM_META(edge::gfx::Filter::eLinear, "Linear")
+	EDGE_ENUM_META(edge::gfx::Filter::eNearest, "nearest"),
+	EDGE_ENUM_META(edge::gfx::Filter::eLinear, "linear")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, SamplerAddressMode,
-	EDGE_ENUM_META(edge::gfx::SamplerAddressMode::eMirror, "Mirror"),
-	EDGE_ENUM_META(edge::gfx::SamplerAddressMode::eRepeat, "Repeat"),
-	EDGE_ENUM_META(edge::gfx::SamplerAddressMode::eClampToEdge, "ClampToEdge"),
-	EDGE_ENUM_META(edge::gfx::SamplerAddressMode::eClampToBorder, "ClampToBorder")
+	EDGE_ENUM_META(edge::gfx::SamplerAddressMode::eMirror, "mirror"),
+	EDGE_ENUM_META(edge::gfx::SamplerAddressMode::eRepeat, "repeat"),
+	EDGE_ENUM_META(edge::gfx::SamplerAddressMode::eClampToEdge, "clamp_to_edge"),
+	EDGE_ENUM_META(edge::gfx::SamplerAddressMode::eClampToBorder, "clamp_to_border")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, CompareOp,
-	EDGE_ENUM_META(edge::gfx::CompareOp::eNone, "None"),
-	EDGE_ENUM_META(edge::gfx::CompareOp::eNever, "Never"),
-	EDGE_ENUM_META(edge::gfx::CompareOp::eLess, "Less"),
-	EDGE_ENUM_META(edge::gfx::CompareOp::eEqual, "Equal"),
-	EDGE_ENUM_META(edge::gfx::CompareOp::eLessOrEqual, "LessOrEqual"),
-	EDGE_ENUM_META(edge::gfx::CompareOp::eGreater, "Greater"),
-	EDGE_ENUM_META(edge::gfx::CompareOp::eNotEqual, "NotEqual"),
-	EDGE_ENUM_META(edge::gfx::CompareOp::eGreaterOrEqual, "GreaterOrEqual"),
-	EDGE_ENUM_META(edge::gfx::CompareOp::eAlways, "Always")
+	EDGE_ENUM_META(edge::gfx::CompareOp::eNone, "none"),
+	EDGE_ENUM_META(edge::gfx::CompareOp::eNever, "never"),
+	EDGE_ENUM_META(edge::gfx::CompareOp::eLess, "less"),
+	EDGE_ENUM_META(edge::gfx::CompareOp::eEqual, "equal"),
+	EDGE_ENUM_META(edge::gfx::CompareOp::eLessOrEqual, "less_or_equal"),
+	EDGE_ENUM_META(edge::gfx::CompareOp::eGreater, "greater"),
+	EDGE_ENUM_META(edge::gfx::CompareOp::eNotEqual, "not_equal"),
+	EDGE_ENUM_META(edge::gfx::CompareOp::eGreaterOrEqual, "greater_or_equal"),
+	EDGE_ENUM_META(edge::gfx::CompareOp::eAlways, "always")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, QueryType,
-	EDGE_ENUM_META(edge::gfx::QueryType::eTimestamp, "Timestamp"),
-	EDGE_ENUM_META(edge::gfx::QueryType::eOcclusion, "Occlusion"),
-	EDGE_ENUM_META(edge::gfx::QueryType::ePipelineStatistics, "PipelineStatistics")
+	EDGE_ENUM_META(edge::gfx::QueryType::eTimestamp, "timestamp"),
+	EDGE_ENUM_META(edge::gfx::QueryType::eOcclusion, "occlusion"),
+	EDGE_ENUM_META(edge::gfx::QueryType::ePipelineStatistics, "pipeline_statistics")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, BufferUsageFlags, BufferUsageFlag,
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eCopy, "Copy"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eStorage, "Storage"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eVertex, "Vertex"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eIndex, "Index"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eUniform, "Uniform"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eIndirect, "Indirect"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eGpuOnly, "GpuOnly"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eCpuToGpu, "CpuToGpu"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eHasDeviceAddress, "HasDeviceAddress"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eStagingBuffer, "StagingBuffer"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eStorageBufferCPU, "StorageBufferCPU"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eStorageBuffer, "StorageBuffer"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eVertexBuffer, "VertexBuffer"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eIndexBuffer, "IndexBuffer"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eUniformBuffer, "UniformBuffer"),
-	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eIndirectBuffer, "IndirectBuffer")
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eCopy, "copy"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eStorage, "storage"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eVertex, "vertex"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eIndex, "index"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eUniform, "uniform"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eIndirect, "indirect"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eGpuOnly, "gpu_only"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eCpuToGpu, "cpu_to_gpu"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eHasDeviceAddress, "has_device_address"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eStagingBuffer, "staging_buffer"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eStorageBufferCPU, "storage_buffer_cpu"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eStorageBuffer, "storage_buffer"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eVertexBuffer, "vertex_buffer"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eIndexBuffer, "index_buffer"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eUniformBuffer, "uniform_buffer"),
+	EDGE_ENUM_META(edge::gfx::BufferUsageFlag::eIndirectBuffer, "indirect_buffer")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, TextureUsageFlags, TextureUsageFlag,
-	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eCubemap, "Cubemap"),
-	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eTransferable, "Transferable"),
-	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eSamplable, "Samplable"),
-	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eStorage, "Storage"),
-	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eRenderTarget, "RenderTarget")
+	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eCubemap, "cubemap"),
+	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eTransferable, "transferable"),
+	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eSamplable, "samplable"),
+	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eStorage, "storage"),
+	EDGE_ENUM_META(edge::gfx::TextureUsageFlag::eRenderTarget, "render_target")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, PipelineType,
-	EDGE_ENUM_META(edge::gfx::PipelineType::eCompute, "Compute"),
-	EDGE_ENUM_META(edge::gfx::PipelineType::eGraphics, "Graphics")
+	EDGE_ENUM_META(edge::gfx::PipelineType::eCompute, "compute"),
+	EDGE_ENUM_META(edge::gfx::PipelineType::eGraphics, "graphics")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, PrimitiveTopology,
-	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::ePointList, "PointList"),
-	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::eLineList, "LineList"),
-	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::eLineStrip, "LineStrip"),
-	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::eTriangleList, "TriangleList"),
-	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::eTriangleStrip, "TriangleStrip"),
-	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::ePatchList, "PatchList")
+	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::ePointList, "point_list"),
+	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::eLineList, "line_list"),
+	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::eLineStrip, "line_strip"),
+	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::eTriangleList, "triangle_list"),
+	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::eTriangleStrip, "triangle_strip"),
+	EDGE_ENUM_META(edge::gfx::PrimitiveTopology::ePatchList, "patch_list")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, SampleCount,
@@ -518,89 +518,88 @@ EDGE_REGISTER_ENUM_CLASS(edge::gfx, SampleCount,
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, FillMode,
-	EDGE_ENUM_META(edge::gfx::FillMode::eSolid, "Solid"),
-	EDGE_ENUM_META(edge::gfx::FillMode::eWireframe, "Wireframe")
+	EDGE_ENUM_META(edge::gfx::FillMode::eSolid, "solid"),
+	EDGE_ENUM_META(edge::gfx::FillMode::eWireframe, "wireframe")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, CullModeFlags, CullModeFlag,
-	EDGE_ENUM_META(edge::gfx::CullModeFlag::eNone, "None"),
-	EDGE_ENUM_META(edge::gfx::CullModeFlag::eFront, "Front"),
-	EDGE_ENUM_META(edge::gfx::CullModeFlag::eBack, "Back")
+	EDGE_ENUM_META(edge::gfx::CullModeFlag::eNone, "none"),
+	EDGE_ENUM_META(edge::gfx::CullModeFlag::eFront, "front"),
+	EDGE_ENUM_META(edge::gfx::CullModeFlag::eBack, "back")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, FrontFace,
-	EDGE_ENUM_META(edge::gfx::FrontFace::eCCW, "CCW"),
-	EDGE_ENUM_META(edge::gfx::FrontFace::eCW, "CW")
+	EDGE_ENUM_META(edge::gfx::FrontFace::eCCW, "ccw"),
+	EDGE_ENUM_META(edge::gfx::FrontFace::eCW, "cw")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, StencilOp,
-	EDGE_ENUM_META(edge::gfx::StencilOp::eKeep, "Keep"),
-	EDGE_ENUM_META(edge::gfx::StencilOp::eZero, "Zero"),
-	EDGE_ENUM_META(edge::gfx::StencilOp::eReplace, "Replace"),
-	EDGE_ENUM_META(edge::gfx::StencilOp::eIncrementAndClamp, "IncrementAndClamp"),
-	EDGE_ENUM_META(edge::gfx::StencilOp::eDecrementAndClamp, "DecrementAndClamp"),
-	EDGE_ENUM_META(edge::gfx::StencilOp::eInvert, "Invert"),
-	EDGE_ENUM_META(edge::gfx::StencilOp::eIncrementAndWrap, "IncrementAndWrap"),
-	EDGE_ENUM_META(edge::gfx::StencilOp::eDecrementAndWrap, "DecrementAndWrap")
+	EDGE_ENUM_META(edge::gfx::StencilOp::eKeep, "keep"),
+	EDGE_ENUM_META(edge::gfx::StencilOp::eZero, "zero"),
+	EDGE_ENUM_META(edge::gfx::StencilOp::eReplace, "replace"),
+	EDGE_ENUM_META(edge::gfx::StencilOp::eIncrementAndClamp, "increment_and_clamp"),
+	EDGE_ENUM_META(edge::gfx::StencilOp::eDecrementAndClamp, "decrement_and_clamp"),
+	EDGE_ENUM_META(edge::gfx::StencilOp::eInvert, "invert"),
+	EDGE_ENUM_META(edge::gfx::StencilOp::eIncrementAndWrap, "increment_and_wrap"),
+	EDGE_ENUM_META(edge::gfx::StencilOp::eDecrementAndWrap, "decrement_and_wrap")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, BlendFactor,
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eZero, "Zero"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eOne, "One"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eSrcColor, "SrcColor"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusSrcColor, "OneMinusSrcColor"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eDstColor, "DstColor"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusDstColor, "OneMinusDstColor"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eSrcAlpha, "SrcAlpha"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusSrcAlpha, "OneMinusSrcAlpha"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusSrcAlpha, "OneMinusSrcAlpha"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eDstAlpha, "DstAlpha"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusDstAlpha, "OneMinusDstAlpha"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eConstantAlpha, "ConstantAlpha"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusConstantAlpha, "OneMinusConstantAlpha"),
-	EDGE_ENUM_META(edge::gfx::BlendFactor::eSrcAlphaSaturate, "SrcAlphaSaturate")
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eZero, "zero"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eOne, "one"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eSrcColor, "src_color"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusSrcColor, "one_minus_src_color"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eDstColor, "dst_color"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusDstColor, "one_minus_dst_color"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eSrcAlpha, "src_alpha"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusSrcAlpha, "one_minus_src_alpha"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eDstAlpha, "dst_alpha"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusDstAlpha, "one_minus_dst_alpha"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eConstantAlpha, "constant_alpha"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eOneMinusConstantAlpha, "one_minus_constant_alpha"),
+	EDGE_ENUM_META(edge::gfx::BlendFactor::eSrcAlphaSaturate, "src_alpha_saturate")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, BlendOp,
-	EDGE_ENUM_META(edge::gfx::BlendOp::eAdd, "Add"),
-	EDGE_ENUM_META(edge::gfx::BlendOp::eSubtract, "Subtract"),
-	EDGE_ENUM_META(edge::gfx::BlendOp::eReverseSubtract, "ReverseSubtract"),
-	EDGE_ENUM_META(edge::gfx::BlendOp::eMin, "Min"),
-	EDGE_ENUM_META(edge::gfx::BlendOp::eMax, "Max")
+	EDGE_ENUM_META(edge::gfx::BlendOp::eAdd, "add"),
+	EDGE_ENUM_META(edge::gfx::BlendOp::eSubtract, "subtract"),
+	EDGE_ENUM_META(edge::gfx::BlendOp::eReverseSubtract, "reverse_subtract"),
+	EDGE_ENUM_META(edge::gfx::BlendOp::eMin, "min"),
+	EDGE_ENUM_META(edge::gfx::BlendOp::eMax, "max")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, ColorMaskFlags, ColorMaskFlag,
-	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eR, "R"),
-	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eG, "G"),
-	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eB, "B"),
-	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eA, "A"),
-	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eAll, "All")
+	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eR, "r"),
+	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eG, "g"),
+	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eB, "b"),
+	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eA, "a"),
+	EDGE_ENUM_META(edge::gfx::ColorMaskFlag::eAll, "all")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, LoadOp,
-	EDGE_ENUM_META(edge::gfx::LoadOp::eLoad, "Load"),
-	EDGE_ENUM_META(edge::gfx::LoadOp::eClear, "Clear"),
-	EDGE_ENUM_META(edge::gfx::LoadOp::eDontCare, "DontCare")
+	EDGE_ENUM_META(edge::gfx::LoadOp::eLoad, "load"),
+	EDGE_ENUM_META(edge::gfx::LoadOp::eClear, "clear"),
+	EDGE_ENUM_META(edge::gfx::LoadOp::eDontCare, "dont_care")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, StoreOp,
-	EDGE_ENUM_META(edge::gfx::StoreOp::eStore, "Store"),
-	EDGE_ENUM_META(edge::gfx::StoreOp::eDontCare, "DontCare"),
-	EDGE_ENUM_META(edge::gfx::StoreOp::eNone, "None")
+	EDGE_ENUM_META(edge::gfx::StoreOp::eStore, "store"),
+	EDGE_ENUM_META(edge::gfx::StoreOp::eDontCare, "dont_care"),
+	EDGE_ENUM_META(edge::gfx::StoreOp::eNone, "none")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, DescriptorType,
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eSampler, "ISampler"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eCombinedImageSampler, "CombinedImageSampler"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eSampledImage, "SampledImage"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageImage, "StorageImage"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eUniformTexelBuffer, "UniformTexelBuffer"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageTexelBuffer, "StorageTexelBuffer"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eUniformBuffer, "UniformBuffer"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageBuffer, "StorageBuffer"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eUniformBufferDynamic, "UniformBufferDynamic"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageBufferDynamic, "StorageBufferDynamic"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eInputAttachment, "InputAttachment")
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eSampler, "sampler"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eCombinedImageSampler, "combined_image_sampler"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eSampledImage, "sampled_image"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageImage, "storage_image"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eUniformTexelBuffer, "uniform_texel_buffer"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageTexelBuffer, "storage_texel_buffer"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eUniformBuffer, "uniform_buffer"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageBuffer, "storage_buffer"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eUniformBufferDynamic, "uniform_buffer_dynamic"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageBufferDynamic, "storage_buffer_dynamic"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eInputAttachment, "input_attachment")
 )
 
 namespace edge::gfx

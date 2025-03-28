@@ -7,14 +7,14 @@ namespace edge::gfx
 	void to_json(nlohmann::json& json, const VertexAttributeDescription& type) {
 		serialize_to("location", json, type.location);
 		serialize_to("binding", json, type.binding);
-		//serialize_to("format", json, type.format);
+		serialize_to("format", json, type.format);
 		serialize_to("offset", json, type.offset);
 	}
 
 	void from_json(const nlohmann::json& json, VertexAttributeDescription& type) {
 		parse_from("location", json, type.location);
 		parse_from("binding", json, type.binding);
-		//parse_from("format", json, type.format);
+		parse_from("format", json, type.format);
 		parse_from("offset", json, type.offset);
 	}
 

@@ -25,7 +25,7 @@ namespace edge::gfx
 
 			struct ShaderStage {
 				std::string_view path;
-				std::vector<std::string_view> definitions;
+				std::vector<std::string> definitions;
 			};
 
 			TechniqueType type{};
@@ -64,14 +64,22 @@ namespace edge::gfx
 			uint32_t dependency_hash{ 0u };
 		};
 
+		struct TechniqueConfigInfo {
+			std::string_view db_path;
+			ISharedDescriptor* shared_descriptor{ nullptr };
+			Format backbuffer_format{};
+		};
+
 		TechniqueDatabase();
 		~TechniqueDatabase();
 
-		bool load(std::string_view path);
-		bool save(std::string_view path);
+		bool load_config(const TechniqueConfigInfo& config);
 
-		void add_technique(std::string_view name, const TechniqueDesc& technique_desc);
-		auto get_technique(std::string_view name) -> Technique&;
+		bool load(const std::string& path);
+		bool save(const std::string& path);
+
+		void add_technique(const std::string& name, const TechniqueDesc& technique_desc);
+		auto get_technique(const std::string& name) -> Technique&;
 	private:
 		std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage);
 
@@ -80,6 +88,6 @@ namespace edge::gfx
 		std::unique_ptr<IShaderCompiler> shader_compiler;
 
 		std::unordered_map<uint32_t, Shader> shaders;
-		std::unordered_map<std::string_view, Technique> techniques;
+		std::unordered_map<std::string, Technique> techniques;
 	};
 }

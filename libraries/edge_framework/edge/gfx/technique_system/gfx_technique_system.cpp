@@ -13,6 +13,13 @@
 
 namespace edge::gfx
 {
+	NLOHMANN_JSON_SERIALIZE_ENUM(TechniqueType,
+		{
+			{TechniqueType::eNone, nullptr},
+			{TechniqueType::eCompute, "compute"},
+			{TechniqueType::eGraphics, "graphics"}
+		})
+
 	constexpr const std::string_view k_frame_graph_cache_path = "/root/fgcache";
 
 	TechniqueDatabase::TechniqueDatabase() {
@@ -56,7 +63,135 @@ namespace edge::gfx
 		pipeline_cache = nullptr;
 	}
 
-	bool TechniqueDatabase::load(std::string_view path) {
+	template<typename _Ty>
+	void try_parse_to(std::string_view name, const nlohmann::json& j, _Ty& o) {
+		if (auto obj = j.find(name); obj != j.end()) {
+			obj->get_to(o);
+		}
+	}
+
+	bool TechniqueDatabase::load_config(const TechniqueConfigInfo& config) {
+		if (!fs::exists(config.db_path)) {
+			EDGE_LOGE("[TechniqueSystem] Configuration file \"{}\" is not exists.", config.db_path);
+			return false;
+		}
+
+		std::vector<uint8_t> file_data;
+		if (!fs::read_file(config.db_path, file_data)) {
+			EDGE_LOGE("[TechniqueSystem] Failed to read configuration file \"{}\".", config.db_path);
+			return false;
+		}
+
+		auto json = nlohmann::json::parse(file_data);
+
+		if (!json.is_array()) {
+			EDGE_LOGE("[TechniqueSystem] Configuration file \"{}\" is not contain array with techniques.", config.db_path);
+			return false;
+		}
+
+		for (const auto& technique : json) {
+			TechniqueDesc technique_desc;
+			technique_desc.type = technique["type"].get<TechniqueType>();
+			technique_desc.shared_descriptor = config.shared_descriptor;
+
+			// Parse stages
+			if (auto stages = technique.find("stages"); stages != technique.end()) {
+				for (const auto& stage : *stages) {
+					auto& new_stage = technique_desc.stages.emplace_back();
+					try_parse_to("path", stage, new_stage.path);
+					try_parse_to("def", stage, new_stage.definitions);
+				}
+			}
+
+			// Parse vertex layout
+			if (auto vertex_layout = technique.find("vertex_layout"); vertex_layout != technique.end()) {
+				try_parse_to("attributes", *vertex_layout, technique_desc.vertex_layout.attributes);
+				try_parse_to("bindings", *vertex_layout, technique_desc.vertex_layout.bindings);
+			}
+
+			// Parse color attachments and color blending data
+			if (auto attachments = technique.find("attachments"); attachments != technique.end()) {
+				for (const auto& attachment : *attachments) {
+					auto format = attachment["format"].get<Format>();
+
+					if (format == Format::eUndefined) {
+						format = config.backbuffer_format;
+					}
+
+					technique_desc.color_formats.emplace_back(format);
+
+					auto& color_blending = technique_desc.color_blending_attachments.emplace_back();
+
+					try_parse_to("blending", attachment, color_blending.enable);
+					try_parse_to("src_color", attachment, color_blending.src_color);
+					try_parse_to("dst_color", attachment, color_blending.dst_color);
+					try_parse_to("color_blend_op", attachment, color_blending.color_blend_op);
+					try_parse_to("src_alpha", attachment, color_blending.src_alpha);
+					try_parse_to("dst_alpha", attachment, color_blending.dst_alpha);
+					try_parse_to("alpha_blend_op", attachment, color_blending.alpha_blend_op);
+
+					if (auto color_mask = attachment.find("color_mask"); color_mask != attachment.end()) {
+						for (const auto& mask_flag : *color_mask) {
+							color_blending.color_mask |= mask_flag.get<ColorMaskFlag>();
+						}
+					}
+				}
+			}
+
+			// Parse rasterization state
+			if (auto rasterization = technique.find("rasterization"); rasterization != technique.end()) {
+				try_parse_to("depth_clamp", *rasterization, technique_desc.rasterization_state.depth_clamp);
+				try_parse_to("discard_enable", *rasterization, technique_desc.rasterization_state.discard_enable);
+				try_parse_to("fill_mode", *rasterization, technique_desc.rasterization_state.fill_mode);
+
+				if (auto cull_mode_mask = rasterization->find("cull_mode"); cull_mode_mask != rasterization->end()) {
+					for (const auto& cull_mode_flag : *cull_mode_mask) {
+						CullModeFlag flag = cull_mode_flag.get<CullModeFlag>();
+						technique_desc.rasterization_state.cull_mode |= flag;
+					}
+				}
+
+				try_parse_to("front_face", *rasterization, technique_desc.rasterization_state.front_face);
+			}
+
+			// Parse multisampling state
+			if (auto multisampling = technique.find("multisampling"); multisampling != technique.end()) {
+				try_parse_to("sample_count", *multisampling, technique_desc.multisample_state.sample_count);
+				try_parse_to("alpha_to_coverage", *multisampling, technique_desc.multisample_state.alpha_to_coverage);
+				try_parse_to("alpha_to_one", *multisampling, technique_desc.multisample_state.alpha_to_one);
+			}
+
+			// Parse depth stencil state
+			if (auto depth_stencil = technique.find("depth_stencil"); depth_stencil != technique.end()) {
+				try_parse_to("depth_format", *depth_stencil, technique_desc.depth_format);
+				try_parse_to("stencil_format", *depth_stencil, technique_desc.stencil_format);
+
+				try_parse_to("depth_test", *depth_stencil, technique_desc.depth_stencil_state.depth_test);
+				try_parse_to("depth_write", *depth_stencil, technique_desc.depth_stencil_state.depth_write);
+				try_parse_to("depth_compare_op", *depth_stencil, technique_desc.depth_stencil_state.depth_compare_op);
+
+				try_parse_to("stencil_test", *depth_stencil, technique_desc.depth_stencil_state.stencil_test);
+				try_parse_to("stencil_front_compare_op", *depth_stencil, technique_desc.depth_stencil_state.stencil_front_compare_op);
+				try_parse_to("front_fail", *depth_stencil, technique_desc.depth_stencil_state.front_fail);
+				try_parse_to("depth_front_fail", *depth_stencil, technique_desc.depth_stencil_state.depth_front_fail);
+				try_parse_to("front_pass", *depth_stencil, technique_desc.depth_stencil_state.front_pass);
+
+				try_parse_to("stencil_back_compare_op", *depth_stencil, technique_desc.depth_stencil_state.stencil_back_compare_op);
+				try_parse_to("back_fail", *depth_stencil, technique_desc.depth_stencil_state.back_fail);
+				try_parse_to("depth_back_fail", *depth_stencil, technique_desc.depth_stencil_state.depth_back_fail);
+				try_parse_to("back_pass", *depth_stencil, technique_desc.depth_stencil_state.back_pass);
+			}
+
+			try_parse_to("primitive_topology", technique, technique_desc.primitive_topology);
+
+			std::string technique_name = technique["name"].get<std::string>();
+			add_technique(technique_name, technique_desc);
+		}
+
+		return true;
+	}
+
+	bool TechniqueDatabase::load(const std::string& path) {
 		if (!fs::exists(path))
 			return false;
 
@@ -80,10 +215,12 @@ namespace edge::gfx
 			file->read(shader.dependency_hash);
 		}
 
+		delete file;
+
 		return true;
 	}
 
-	bool TechniqueDatabase::save(std::string_view path) {
+	bool TechniqueDatabase::save(const std::string& path) {
 		auto* file = fs::open_file(path, fs::FileModeFlag::eWrite | fs::FileModeFlag::eBin);
 
 		size_t shader_count = shaders.size();
@@ -106,7 +243,7 @@ namespace edge::gfx
 		return true;
 	}
 
-	void TechniqueDatabase::add_technique(std::string_view name, const TechniqueDesc& technique_desc) {
+	void TechniqueDatabase::add_technique(const std::string& name, const TechniqueDesc& technique_desc) {
 		std::vector<ShaderStageInfo> shader_stages{};
 
 		if (technique_desc.type == TechniqueType::eNone) {
@@ -192,13 +329,15 @@ namespace edge::gfx
 		techniques.emplace(name, Technique{ name, shader, root_signature, pipeline });
 	}
 
-	auto TechniqueDatabase::get_technique(std::string_view name) -> Technique& {
+	auto TechniqueDatabase::get_technique(const std::string& name) -> Technique& {
 		static Technique fallback_technique{};
 
 		auto found = techniques.find(name);
 		if (found != techniques.end()) {
 			return found->second;
 		}
+
+		EDGE_LOGE("[Technique Database] Rendering technique with name \"{}\" was not found.", name);
 
 		return fallback_technique;
 	}
@@ -217,7 +356,7 @@ namespace edge::gfx
 
 		ShaderCompileInfo shader_compile_info{};
 		shader_compile_info.path = stage.path;
-		shader_compile_info.definitions = stage.definitions;
+		shader_compile_info.definitions = std::move(stage.definitions);
 		shader_compile_info.source = shader_source;
 
 		uint32_t shader_hash = shader_hash = murmur_hash(shader_source, 0);

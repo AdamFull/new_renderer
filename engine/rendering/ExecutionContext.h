@@ -82,7 +82,7 @@ namespace engine
 		struct ShaderPassCreateInfo
 		{
 			// Shader name in shader cache
-			std::string_view technique_name{};
+			std::string technique_name{};
 
 			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
