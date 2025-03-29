@@ -40,3 +40,6 @@
 [submodule "libraries/edge_framework/external/stb"]
 	path = libraries/edge_framework/external/stb
 	url = https://github.com/nothings/stb.git
+[submodule "libraries/edge_framework/external/glfw"]
+	path = libraries/edge_framework/external/glfw
+	url = https://github.com/glfw/glfw.git

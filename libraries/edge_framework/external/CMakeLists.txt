@@ -262,6 +262,23 @@ add_subdirectory(spirv-cross)
 add_library(stb INTERFACE)
 target_include_directories(stb SYSTEM INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/stb")
 
+if(NOT ANDROID AND NOT IOS)
+    if (NOT DIRECT_TO_DISPLAY)
+        # GLFW
+        option(GLFW_BUILD_DOCS OFF)
+        option(GLFW_BUILD_TESTS OFF)
+        option(GLFW_BUILD_EXAMPLES OFF)
+        option(GLFW_BUILD_TESTS OFF)
+        option(GLFW_INSTALL OFF)
+        option(BUILD_SHARED_LIBS ON)
+        if (EDGE_VK_WSI_SELECTION STREQUAL WAYLAND)
+            set(GLFW_USE_WAYLAND ON)
+        endif()
+
+        add_subdirectory(glfw)
+    endif()
+endif()
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
