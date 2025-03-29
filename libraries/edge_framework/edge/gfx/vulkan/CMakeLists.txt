@@ -10,9 +10,6 @@ set(ENABLE_VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION ON CACHE BOOL "Enable synchr
 set(ENABLE_VULKAN_DEBUG ON CACHE BOOL "Enable VK_EXT_debug_utils or VK_EXT_debug_marker if supported.")
 
 find_package(volk CONFIG REQUIRED)
-find_package(VulkanHeaders CONFIG)
-find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-find_package(unofficial-vulkan-memory-allocator-hpp CONFIG REQUIRED)
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)
 
@@ -50,41 +47,6 @@ if(${ENABLE_VULKAN_PORTABILITY})
     target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_ENABLE_PORTABILITY)
 endif()
 
-if(ANDROID)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VK_USE_PLATFORM_ANDROID_KHR)
-elseif(WIN32)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VK_USE_PLATFORM_WIN32_KHR)
-elseif(APPLE)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VK_USE_PLATFORM_METAL_EXT)
-elseif(UNIX)
-    # Choose WSI based on VKB_WSI_SELECTION
-    if (VKE_WSI_SELECTION STREQUAL XCB OR VKE_WSI_SELECTION STREQUAL XLIB OR VKE_WSI_SELECTION STREQUAL WAYLAND)
-        find_package(PkgConfig REQUIRED)
-    endif()
-    if (VKE_WSI_SELECTION STREQUAL XCB)
-        pkg_check_modules(XCB xcb REQUIRED)
-        if (XCB_FOUND)
-            target_compile_definitions(${PROJECT_NAME} PUBLIC VK_USE_PLATFORM_XCB_KHR)
-        endif()
-    elseif (VKE_WSI_SELECTION STREQUAL XLIB)
-        pkg_check_modules(X11 x11 REQUIRED)
-        if (X11_FOUND)
-            target_compile_definitions(${PROJECT_NAME} PUBLIC VK_USE_PLATFORM_XLIB_KHR)
-        endif()
-    elseif (VKE_WSI_SELECTION STREQUAL WAYLAND)
-        pkg_check_modules(WAYLAND wayland-client REQUIRED)
-        if (WAYLAND_FOUND)
-            target_compile_definitions(${PROJECT_NAME} PUBLIC VK_USE_PLATFORM_WAYLAND_KHR)
-        endif()
-    elseif (VKE_WSI_SELECTION STREQUAL D2D)
-        set(DIRECT_TO_DISPLAY TRUE)
-        set(DIRECT_TO_DISPLAY TRUE PARENT_SCOPE)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC VK_USE_PLATFORM_DISPLAY_KHR)
-    else()
-        message(FATAL_ERROR "Unknown WSI")
-    endif()
-endif()
-
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_STANDARD 20
@@ -98,7 +60,7 @@ target_link_libraries(vulkan_common
     volk::volk 
     volk::volk_headers
     GPUOpen::VulkanMemoryAllocator
-    unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
+    GPUOpen::VulkanMemoryAllocatorHpp
 )
 target_compile_definitions(vulkan_common 
     INTERFACE
@@ -107,7 +69,6 @@ target_compile_definitions(vulkan_common
     VMA_STATS_STRING_ENABLED=0 
 
     VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
-    VK_NO_PROTOTYPES
 )
 
 if(USE_NSIGHT_AFTERMATH)

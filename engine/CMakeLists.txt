@@ -37,7 +37,6 @@ target_include_directories(${PROJECT_NAME}
 add_library(engine_common INTERFACE)
 target_link_libraries(engine_common
     INTERFACE
-    glm 
     EnTT::EnTT 
     imdbg 
     imgui
@@ -45,7 +44,7 @@ target_link_libraries(engine_common
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-    tinygltf
+    external_libraries
     edge_framework
     engine_common 
 )
