@@ -9,9 +9,6 @@ set(ENABLE_VULKAN_VALIDATION_LAYERS_BEST_PRACTICES OFF CACHE BOOL "Enable best p
 set(ENABLE_VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION ON CACHE BOOL "Enable synchronization validation layers for every application.")
 set(ENABLE_VULKAN_DEBUG ON CACHE BOOL "Enable VK_EXT_debug_utils or VK_EXT_debug_marker if supported.")
 
-find_package(spirv_cross_core CONFIG REQUIRED)
-find_package(spirv_cross_glsl CONFIG REQUIRED)
-
 file(GLOB_RECURSE VULKAN_RENDERER_SOURCES FILES *.cpp *.h)
 
 add_library(${PROJECT_NAME} STATIC ${VULKAN_RENDERER_SOURCES})

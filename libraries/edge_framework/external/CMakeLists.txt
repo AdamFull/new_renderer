@@ -255,6 +255,9 @@ if(NOT MSVC)
         "-Wno-unused-parameter")
 endif()
 
+# spirv-cross
+add_subdirectory(spirv-cross)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE

@@ -33,3 +33,7 @@
 	path = libraries/edge_framework/external/glslang
 	url = https://github.com/KhronosGroup/glslang.git
 	branch = vulkan-sdk-1.4.309
+[submodule "libraries/edge_framework/external/spirv-cross"]
+	path = libraries/edge_framework/external/spirv-cross
+	url = https://github.com/KhronosGroup/SPIRV-Cross.git
+	branch = vulkan-sdk-1.4.309
