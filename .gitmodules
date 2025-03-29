@@ -29,3 +29,7 @@
 	path = libraries/edge_framework/external/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "libraries/edge_framework/external/glslang"]
+	path = libraries/edge_framework/external/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+	branch = vulkan-sdk-1.4.309
