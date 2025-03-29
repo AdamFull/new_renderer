@@ -25,3 +25,7 @@
 	path = libraries/edge_framework/external/volk
 	url = https://github.com/zeux/volk.git
 	branch = vulkan-sdk-1.4.309
+[submodule "libraries/edge_framework/external/imgui"]
+	path = libraries/edge_framework/external/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

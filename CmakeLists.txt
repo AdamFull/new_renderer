@@ -37,7 +37,6 @@ include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib/source"
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/imdbg"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui"
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/edge_framework"
     "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
 )
@@ -46,7 +45,6 @@ add_compile_definitions($<$<CONFIG:DEBUG>:ENGINE_DEBUG>)
 
 add_subdirectory(libraries/imdbg)
 add_subdirectory(libraries/edge_framework)
-add_subdirectory(libraries/imgui)
 add_subdirectory(libraries/utllib)
 
 add_subdirectory(engine)

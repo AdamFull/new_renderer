@@ -50,12 +50,6 @@ add_compile_definitions(
     IMGUI_DEFINE_MATH_OPERATORS
     IMGUI_USE_WCHAR32
     NOMINMAX
-    GLM_FORCE_INLINE 
-    GLM_FORCE_XYZW_ONLY
-    GLM_FORCE_CXX17
-    GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-    GLM_ENABLE_EXPERIMENTAL
-    GLM_EXT_INCLUDED
 )
 
 find_package(Taskflow CONFIG REQUIRED)
@@ -67,11 +61,9 @@ include_directories(
     "${CMAKE_BINARY_DIR}/exports"
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib/other"
     "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib/source"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui"
     "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
 )
 
-add_subdirectory(libraries/imgui)
 add_subdirectory(libraries/utllib)
 add_subdirectory(tools/scene_compiler)
 
@@ -80,7 +72,6 @@ add_subdirectory(engine)
 add_executable(${PROJECT_NAME} main.cpp Application.cpp)
 
 target_link_libraries(${PROJECT_NAME} 
-    PUBLIC imgui
     PUBLIC utility_lib
 	PRIVATE application
 )

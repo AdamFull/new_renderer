@@ -45,7 +45,7 @@ namespace engine
 		style.GrabRounding = 4.599999904632568f;
 		style.TabRounding = 4.0f;
 		style.TabBorderSize = 0.0f;
-		style.TabMinWidthForCloseButton = 0.0f;
+		//style.TabMinWidthForCloseButton = 0.0f;
 		style.ColorButtonPosition = ImGuiDir_Right;
 		style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
 		style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
@@ -136,7 +136,7 @@ namespace engine
 		style.GrabRounding = 4.599999904632568f;
 		style.TabRounding = 4.0f;
 		style.TabBorderSize = 0.0f;
-		style.TabMinWidthForCloseButton = 0.0f;
+		//style.TabMinWidthForCloseButton = 0.0f;
 		style.ColorButtonPosition = ImGuiDir_Right;
 		style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
 		style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
@@ -413,7 +413,7 @@ namespace engine
 	EngineUI::EngineUI(edge::Window& window) :
 		window{ window }
 	{
-		ImGui::create_context();
+		ImGui::CreateContext();
 
 		ImGuiIO& io = ImGui::GetIO();
 		IMGUI_CHECKVERSION();
@@ -464,7 +464,7 @@ namespace engine
 
 	EngineUI::~EngineUI()
 	{
-		ImGui::end_frame();
+		ImGui::EndFrame();
 		ImGui::DestroyContext();
 	}
 
