@@ -3,7 +3,7 @@
 #include "../../fs/fs_helper.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
+#include <stb_image.h>
 #include <ktx.h>
 
 #include "gfx_staging_allocator.h"

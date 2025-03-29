@@ -258,6 +258,10 @@ endif()
 # spirv-cross
 add_subdirectory(spirv-cross)
 
+# stb
+add_library(stb INTERFACE)
+target_include_directories(stb SYSTEM INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/stb")
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE

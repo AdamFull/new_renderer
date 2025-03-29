@@ -93,8 +93,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC 
-    "${CMAKE_CURRENT_SOURCE_DIR}" 
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../external/stb"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/shaders/mipgen.comp" GLSLANG_FLAGS ${GLSL_FLAGS} EMBED_TARGET MipGeneratorShader)
@@ -104,6 +103,7 @@ add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/shaders/mipgen.comp" GLSLAN
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
+    stb
     KTX::ktx
     MipGeneratorShader
     MipGeneratorShaderMip2
