@@ -7,8 +7,6 @@
 #include <condition_variable>
 #include <memory>
 
-#include "../util/utl_future.hpp"
-
 #include "gfx_common.h"
 #include "gfx_structures.h"
 
