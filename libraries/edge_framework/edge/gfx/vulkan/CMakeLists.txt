@@ -1,6 +1,3 @@
-cmake_minimum_required(VERSION 3.18.0)
-project(gfx_vulkan)
-
 include(GenerateExportHeader)
 
 set(ENABLE_VULKAN_VALIDATION_LAYERS ON CACHE BOOL "Enable validation layers for every application.")
@@ -9,9 +6,13 @@ set(ENABLE_VULKAN_VALIDATION_LAYERS_BEST_PRACTICES OFF CACHE BOOL "Enable best p
 set(ENABLE_VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION ON CACHE BOOL "Enable synchronization validation layers for every application.")
 set(ENABLE_VULKAN_DEBUG ON CACHE BOOL "Enable VK_EXT_debug_utils or VK_EXT_debug_marker if supported.")
 
-file(GLOB_RECURSE VULKAN_RENDERER_SOURCES FILES *.cpp *.h)
-
-add_library(${PROJECT_NAME} STATIC ${VULKAN_RENDERER_SOURCES})
+file(GLOB EDGE_GFX_VULKAN_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+)
+target_sources(${PROJECT_NAME} PRIVATE
+    "${EDGE_GFX_VULKAN_SOURCES}"
+)
 
 if(${ENABLE_VULKAN_DEBUG})
     if(${ENABLE_VULKAN_VALIDATION_LAYERS})
@@ -43,21 +44,8 @@ if(${ENABLE_VULKAN_PORTABILITY})
     target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_ENABLE_PORTABILITY)
 endif()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    CXX_EXTENSIONS OFF
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
-)
-
-add_library(vulkan_common INTERFACE)
-target_link_libraries(vulkan_common
-    INTERFACE
-    Vulkan::Headers
-    volk::volk
-    GPUOpen::VulkanMemoryAllocator
-)
-target_compile_definitions(vulkan_common 
-    INTERFACE
+target_compile_definitions(${PROJECT_NAME} 
+    PRIVATE
     VMA_STATIC_VULKAN_FUNCTIONS=0
     VMA_DYNAMIC_VULKAN_FUNCTIONS=1
     VMA_STATS_STRING_ENABLED=0 
@@ -66,12 +54,12 @@ target_compile_definitions(vulkan_common
 )
 
 if(USE_NSIGHT_AFTERMATH)
-    target_link_libraries(${PROJECT_NAME} PUBLIC nsight_aftermath_interface)
+    target_link_libraries(${PROJECT_NAME} PRIVATE nsight_aftermath_interface)
 endif()
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-    vulkan_common
-	spirv-cross-core
-	spirv-cross-glsl
+    Vulkan::Headers
+    volk::volk
+    GPUOpen::VulkanMemoryAllocator
 )

@@ -1,5 +1,0 @@
-project(edge_runtime_windows LANGUAGES CXX)
-
-file(GLOB_RECURSE EDGE_WIN64_RUNTIME_SOURCES FILES *.cpp *.h)
-
-add_library(${PROJECT_NAME} STATIC ${EDGE_WIN64_RUNTIME_SOURCES})

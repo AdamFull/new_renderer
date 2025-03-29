@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(edge_shader_compiler)
 
-find_package(spdlog CONFIG REQUIRED)
 find_package(argparse CONFIG REQUIRED)
 
 set(VULKAN_SDK_ROOT $ENV{VULKAN_SDK})
@@ -27,7 +26,7 @@ add_executable(${PROJECT_NAME} main.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE ${SLANG_INCLUDE_DIR})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
-    spdlog::spdlog
+    spdlog
     argparse::argparse
     ${SLANG_LIBRARY}
 )

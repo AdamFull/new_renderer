@@ -1,8 +1,8 @@
 #pragma once
 #include "../../util/utl_hash.hpp"
-#include "gfx_structures.h"
+#include "../gfx_structures.h"
 
-#include "shader_compiler/gfx_shader_compiler.h"
+#include "gfx_shader_compiler.h"
 
 namespace edge::gfx
 {

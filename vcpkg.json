@@ -21,7 +21,6 @@
     "mimalloc",
     "benchmark",
     "freetype",
-    "spdlog",
     "argparse",
 
     "libvorbis",

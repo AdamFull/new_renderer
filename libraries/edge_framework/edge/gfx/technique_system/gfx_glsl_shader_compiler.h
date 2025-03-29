@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../gfx_shader_compiler.h"
+#include "gfx_shader_compiler.h"
 
 #include <memory>
 

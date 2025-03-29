@@ -5,7 +5,6 @@
 #include "debugbreak.h"
 
 #include <spdlog/spdlog.h>
-
 #include <spdlog/sinks/basic_file_sink.h>
 
 #ifdef PLATFORM_ANDROID

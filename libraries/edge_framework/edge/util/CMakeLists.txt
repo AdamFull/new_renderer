@@ -1,5 +1,3 @@
-project(edge_utils)
-
 #tracy
 set(TRACY_ENABLE ON CACHE BOOL "Enable profiling" FORCE)
 set(TRACY_ON_DEMAND ON CACHE BOOL "On-demand profiling" FORCE)
@@ -8,36 +6,31 @@ set(TRACY_CALLSTACK ON CACHE BOOL "Enfore callstack collection for tracy regions
 endif()
 
 find_package(Tracy CONFIG REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
-# Enable tracy profiler
-#add_definitions(-DTRACY_ENABLE)
-
-file(GLOB EDGE_FRAMEWORK_UTILS_SOURCES FILES *.cpp *.h)
-
-add_library(${PROJECT_NAME} STATIC ${EDGE_FRAMEWORK_UTILS_SOURCES})
-
-add_compile_definitions(
-    #TRACY_ENABLE
-    SPDLOG_USD_STD_FORMAT
-)
-    
-
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    CXX_EXTENSIONS OFF
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
-)
-
-add_library(util_common INTERFACE)
-target_link_libraries(util_common 
-    INTERFACE 
-    spdlog::spdlog
-    Tracy::TracyClient 
-    nlohmann_json::nlohmann_json
+target_sources(${PROJECT_NAME} PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/debugbreak.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lockfree_ring_buffer.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Logger.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Performance.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Performance.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Result.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Serialization.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_base.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_enum.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_hash.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_memory.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_memory.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_profiler.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_scheduler.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_scheduler.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_string.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_thread_pool.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utl_thread_pool.h"
 )
 
 target_link_libraries(${PROJECT_NAME} 
-    PRIVATE util_common
+    PUBLIC
+    Tracy::TracyClient 
+    nlohmann_json::nlohmann_json
 )

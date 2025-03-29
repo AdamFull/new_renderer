@@ -1,6 +1,6 @@
 #include "gfx_technique_system.h"
 
-#include "shader_compiler/glsl/gfx_glsl_shader_compiler.h"
+#include "gfx_glsl_shader_compiler.h"
 
 #include "../gfx_context.h"
 

@@ -1,36 +1,33 @@
-cmake_minimum_required(VERSION 3.18.0)
-project(edge_gfx)
-
 include(GlslShaderCompiler)
 
-#spirv-cross
-#set(SPIRV_CROSS_SHARED OFF CACHE BOOL "Build the C API as a single shared library." FORCE)
-set(SPIRV_CROSS_STATIC ON CACHE BOOL "Build the C and C++ API as static libraries." FORCE)
-set(SPIRV_CROSS_CLI OFF CACHE BOOL "Build the CLI binary. Requires SPIRV_CROSS_STATIC." FORCE)
-set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "Enable SPIRV-Cross tests." FORCE)
-set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "Enable util module support." FORCE)
-
-set(USE_NSIGHT_AFTERMATH OFF CACHE BOOL "Enable nsight aftermath support." FORCE)
+option(USE_NSIGHT_AFTERMATH OFF)
 
 #TODO: add extensions as plugins
 #add_subdirectory("ext/imgui")
 #add_subdirectory("ext/printf")
 
-add_library(${PROJECT_NAME} STATIC)
+file(GLOB EDGE_GFX_RESOURCE_LOADER_SOURCES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader/*.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader/*.h")
+
+file(GLOB EDGE_GFX_TECHNIQUE_SYSTEM_SOURCES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/technique_system/*.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/technique_system/*.h")
+
+file(GLOB EDGE_GFX_BASE_SOURCES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 target_sources(${PROJECT_NAME} PRIVATE
-    "gfx_context.cpp"
-    "gfx_enum.cpp"
-    "gfx_format_vk.cpp"
-    "gfx_frame_graph.cpp"
-    "gfx_nsight_aftermath.cpp"
-    "gfx_resource_loader.cpp"
-    "gfx_string.cpp"
-    "gfx_structures.cpp"
-)
+    # resource loader
+    "${EDGE_GFX_RESOURCE_LOADER_SOURCES}"
 
-add_subdirectory("resource_loader")
-add_subdirectory("technique_system")
+    # shader effect technique system
+    "${EDGE_GFX_TECHNIQUE_SYSTEM_SOURCES}"
+
+    # base
+    "${EDGE_GFX_BASE_SOURCES}"
+)
 
 if(USE_NSIGHT_AFTERMATH)
 find_package(NsightAftermath REQUIRED)
@@ -43,31 +40,18 @@ endif()
 
 if(ANDROID)
     add_subdirectory(vulkan)
-    target_link_libraries(${PROJECT_NAME} 
-    PUBLIC 
-    gfx_vulkan)
     target_compile_definitions(${PROJECT_NAME} PRIVATE VULKAN_SUPPORTED=1)
 elseif(WIN32)
     add_subdirectory(directx12)
     add_subdirectory(vulkan)
 
-    target_link_libraries(${PROJECT_NAME} 
-        PUBLIC
-        gfx_d3d12
-        gfx_vulkan
-    )
-
     target_compile_definitions(${PROJECT_NAME} 
-        PRIVATE D3D12_SUPPORTED=1
-        PRIVATE VULKAN_SUPPORTED=1
+        PRIVATE 
+        D3D12_SUPPORTED=1
+        VULKAN_SUPPORTED=1
     )
 elseif(APPLE)
     add_subdirectory(vulkan)
-
-    target_link_libraries(${PROJECT_NAME} 
-        PUBLIC
-        gfx_vulkan
-    )
 
     target_compile_definitions(${PROJECT_NAME} 
         PRIVATE VULKAN_SUPPORTED=1
@@ -75,26 +59,10 @@ elseif(APPLE)
 elseif(UNIX)
     add_subdirectory(vulkan)
 
-    target_link_libraries(${PROJECT_NAME} 
-        PUBLIC
-        gfx_vulkan
-    )
-
     target_compile_definitions(${PROJECT_NAME} 
         PRIVATE VULKAN_SUPPORTED=1
     )
 endif()
-
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    CXX_EXTENSIONS OFF
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
-)
-
-target_include_directories(${PROJECT_NAME} 
-    PUBLIC 
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-)
 
 add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/shaders/mipgen.comp" GLSLANG_FLAGS ${GLSL_FLAGS} EMBED_TARGET MipGeneratorShader)
 add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/shaders/mipgen.comp" GLSLANG_FLAGS ${GLSL_FLAGS} DEFINES MIP_2 EMBED_TARGET MipGeneratorShaderMip2)
@@ -103,8 +71,6 @@ add_shader_compile_glsl("${CMAKE_CURRENT_SOURCE_DIR}/shaders/mipgen.comp" GLSLAN
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-    stb
-    KTX::ktx
     MipGeneratorShader
     MipGeneratorShaderMip2
     MipGeneratorShaderMip3

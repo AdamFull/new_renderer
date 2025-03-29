@@ -262,7 +262,13 @@ if(NOT MSVC)
 endif()
 
 # spirv-cross
+#set(SPIRV_CROSS_SHARED OFF CACHE BOOL "Build the C API as a single shared library." FORCE)
+set(SPIRV_CROSS_STATIC ON CACHE BOOL "Build the C and C++ API as static libraries." FORCE)
+set(SPIRV_CROSS_CLI OFF CACHE BOOL "Build the CLI binary. Requires SPIRV_CROSS_STATIC." FORCE)
+set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "Enable SPIRV-Cross tests." FORCE)
+set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "Enable util module support." FORCE)
 add_subdirectory(spirv-cross)
+#target_include_directories(spirv-cross-glsl SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/spirv-cross")
 
 # stb
 add_library(stb INTERFACE)
@@ -285,12 +291,26 @@ if(NOT ANDROID AND NOT IOS)
     endif()
 endif()
 
+
+# spdlog
+set(SPDLOG_USE_STD_FORMAT ON)
+add_subdirectory(spdlog)
+target_include_directories(spdlog SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
     glm::glm
     refl-cpp
     tinygltf
+    spdlog::spdlog
+    stb
+    KTX::ktx
+    glslang::glslang
+	glslang::SPIRV
+
+    spirv-cross-core
+	spirv-cross-glsl
     #vulkan
     #volk
     #vma

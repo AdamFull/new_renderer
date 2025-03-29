@@ -4,7 +4,7 @@
 
 #include "gfx_vk_util.h"
 
-#include <spirv_cross.hpp>
+//#include <spirv_cross.hpp>
 #include <spirv_glsl.hpp>
 
 namespace edge::gfx::vulkan
