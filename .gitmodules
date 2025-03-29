@@ -1,6 +1,3 @@
-[submodule "libraries/utllib"]
-	path = libraries/utllib
-	url = https://github.com/AdamFull/utllib.git
 [submodule "libraries/libwebm"]
 	path = libraries/libwebm
 	url = https://github.com/webmproject/libwebm

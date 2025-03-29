@@ -3,7 +3,7 @@
 #include <edge/runtime/rt_input_events.h>
 #include "BaseSystem.h"
 
-#include <reactive/function.h>
+#include <functional>
 
 namespace engine
 {
@@ -13,7 +13,7 @@ namespace engine
 		{
 			struct FInputAxis
 			{
-				std::vector<utl::reactive::function<void(f32, f32)>> listeners;
+				std::vector<std::function<void(float, float)>> listeners;
 			};
 
 			class CInputSystem : public ISystem
@@ -23,7 +23,7 @@ namespace engine
 				virtual ~CInputSystem() override = default;
 
 				void __Create() override;
-				void __Update(f32 fDt) override;
+				void __Update(float fDt) override;
 
 			protected:
 				void OnAnyInput(const edge::InputEvent& input_event);
@@ -32,10 +32,10 @@ namespace engine
 				void HandleTouchInput(const edge::TouchInputEvent& input_event);
 			private:
 				edge::KeyDecoder key_decoder{};
-				f32 m_deltaTime{ 0.f };
-				f32 oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
+				float m_deltaTime{ 0.f };
+				float oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
 
-				f32 movF{ 0.f }, movR{ 0.f }, movU{ 0.f };
+				float movF{ 0.f }, movR{ 0.f }, movU{ 0.f };
 				bool allowRotation{ false };
 			};
 		}

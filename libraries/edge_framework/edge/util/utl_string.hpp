@@ -1,5 +1,7 @@
 #pragma once
 
+#include <codecvt>
+
 #include "utl_hash.hpp"
 
 namespace edge {

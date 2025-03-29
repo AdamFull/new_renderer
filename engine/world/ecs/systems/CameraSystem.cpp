@@ -29,7 +29,7 @@ namespace engine
 			{
 			}
 
-			void CameraSystem::__Update(f32 fDt)
+			void CameraSystem::__Update(float fDt)
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 

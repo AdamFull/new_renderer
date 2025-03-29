@@ -1,6 +1,5 @@
 #pragma once 
 
-#include <standart_library.h>
 #include <edge/util/Serialization.hpp>
 
 #include <glm/glm.hpp>
@@ -194,11 +193,11 @@ namespace engine
 		struct FLightComponent
 		{
 			glm::vec3 color{ 1.f };
-			f32 intensity{ 1.f };
-			f32 range{ 1.f };
+			float intensity{ 1.f };
+			float range{ 1.f };
 
-			f32 innerAngle{};
-			f32 outerAngle{};
+			float innerAngle{};
+			float outerAngle{};
 
 			light_flags_t flags{};
 

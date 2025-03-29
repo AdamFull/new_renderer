@@ -32,7 +32,7 @@ namespace engine
 			{
 			}
 
-			void CScenegraphSystem::__Update(f32 fDt)
+			void CScenegraphSystem::__Update(float fDt)
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 

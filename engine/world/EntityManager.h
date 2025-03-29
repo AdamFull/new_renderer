@@ -3,7 +3,6 @@
 #include <functional>
 #include <entt/entt.hpp>
 #include <edge/util/Serialization.hpp>
-#include <standart_library.h>
 
 #include "../ui/InspectorDrawer.h"
 
@@ -169,7 +168,7 @@ namespace engine
 			static entt::entity DeserializeEntity(entt::entity parent, const nlohmann::json& j);
 
 			static void Create();
-			static void Update(f32 dt);
+			static void Update(float dt);
 
 		private:
 			static entt::registry m_registry;

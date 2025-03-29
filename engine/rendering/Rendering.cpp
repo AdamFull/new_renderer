@@ -1899,7 +1899,7 @@ namespace engine
 								self.ResolveDependencies(command_list);
 			
 								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
-								float time_coeff = glm::clamp<f32>(1.0f - glm::exp(-delta_time * postprocess.tonemap.tau), 0.0, 1.0);
+								float time_coeff = glm::clamp<float>(1.0f - glm::exp(-delta_time * postprocess.tonemap.tau), 0.0, 1.0);
 			
 								auto* texture = render_context->GetTexture(input_target);
 			

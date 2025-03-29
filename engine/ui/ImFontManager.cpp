@@ -6,7 +6,7 @@
 
 using namespace engine;
 
-void ImFontManager::AddFont(std::string_view name, std::string_view path, f32 size, const ImFontConfig* config, const ImWchar* glyph_range)
+void ImFontManager::AddFont(std::string_view name, std::string_view path, float size, const ImFontConfig* config, const ImWchar* glyph_range)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -15,7 +15,7 @@ void ImFontManager::AddFont(std::string_view name, std::string_view path, f32 si
 		AddFont(name, bytes, size, config, glyph_range);
 }
 
-void ImFontManager::AddFont(std::string_view name, const std::vector<uint8_t>& bytes, f32 size, const ImFontConfig* config, const ImWchar* glyph_range)
+void ImFontManager::AddFont(std::string_view name, const std::vector<uint8_t>& bytes, float size, const ImFontConfig* config, const ImWchar* glyph_range)
 {
 	ImGuiIO& io = ImGui::GetIO();
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <entt/entt.hpp>
-#include <utils/stopwatch.h>
 #include <edge/runtime/rt_input_events.h>
 
 namespace engine
@@ -16,14 +15,11 @@ namespace engine
 				virtual ~ISystem() = default;
 
 				virtual void Create();
-				void Update(f32 dt);
+				void Update(float dt);
 
 			protected:
 				virtual void __Create() = 0;
-				virtual void __Update(f32 fDf) = 0;
-
-				utl::utils::stopwatch m_stopWatch;
-				f32 m_createTime{ 0.f }, m_updateTime{ 0.f };
+				virtual void __Update(float fDf) = 0;
 			};
 		}
 	}

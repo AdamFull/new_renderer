@@ -24,8 +24,8 @@ namespace engine
 			{
 				DECLARE_COMPONENT(FPupa, icon::shape, "Pupa")
 
-				f32 biba{ 45.f };
-				f32 boba{ 0.1f };
+				float biba{ 45.f };
+				float boba{ 0.1f };
 			};
 
 			struct FCameraComponent
@@ -34,13 +34,13 @@ namespace engine
 
 				ECameraType ctype{ ECameraType::ePerspective };
 
-				f32 fieldOfView{ 45.f };
-				f32 nearPlane{ 0.1f };
-				f32 farPlane{ 100.f };
-				f32 aspectRatio{ 1.7777777f };
+				float fieldOfView{ 45.f };
+				float nearPlane{ 0.1f };
+				float farPlane{ 100.f };
+				float aspectRatio{ 1.7777777f };
 
-				f32 xmag{ 0.f };
-				f32 ymag{ 0.f };
+				float xmag{ 0.f };
+				float ymag{ 0.f };
 
 				glm::vec3 up{ 0.f };
 				glm::vec3 forward{ 0.f };

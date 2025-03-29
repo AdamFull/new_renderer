@@ -13,8 +13,8 @@ namespace engine
 				DECLARE_COMPONENT(FPointLightComponent, icon::point_light, "Point light")
 
 				glm::vec3 color{ 1.f };
-				f32 intencity{ 1.f };
-				f32 radius{ 1.f };
+				float intencity{ 1.f };
+				float radius{ 1.f };
 				int shadowIndex{ -1 };
 				bool castShadows{ true };
 

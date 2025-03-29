@@ -32,7 +32,7 @@ namespace engine
 		private:
 			void LoadGLTF(tinygltf::Model& root);
 
-			void LoadNode(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index, f32 global_scale = 1.f);
+			void LoadNode(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index, float global_scale = 1.f);
 
 			void LoadMeshComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index);
 			void LoadCameraComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index);

@@ -9,8 +9,8 @@
 
 #include <edge/util/utl_profiler.h>
 
-constexpr const f32 mouse_scale{ 50.f };
-constexpr const f32 movement_scale{ 2.f };
+constexpr const float mouse_scale{ 50.f };
+constexpr const float movement_scale{ 2.f };
 
 template<class _Ty>
 inline _Ty remap(_Ty input, _Ty in_min, _Ty in_max, _Ty out_min, _Ty out_max)
@@ -29,14 +29,14 @@ void CInputSystem::__Create()
 	InputManager::SubscribeInputEvent(this, &CInputSystem::OnAnyInput);
 }
 
-void CInputSystem::__Update(f32 fDt)
+void CInputSystem::__Update(float fDt)
 {
 	EDGE_PROFILE_ZONE_SCOPED;
 
 	m_deltaTime = fDt;
 
 	glm::vec3 orbitCenter{ 0.0f, 0.0f, 0.0f };
-	f32 orbitDistance{ 10.0f };
+	float orbitDistance{ 10.0f };
 
 	if (key_decoder.test(edge::KeyCode::W)) movF = 1.f;
 	if (key_decoder.test(edge::KeyCode::S)) movF = -1.f;
@@ -47,9 +47,9 @@ void CInputSystem::__Update(f32 fDt)
 	if (key_decoder.test(edge::KeyCode::MouseMiddle))
 		allowRotation = true;
 
-	f32 dX = (curX - oldX) * fDt;
+	float dX = (curX - oldX) * fDt;
 	oldX = curX;
-	f32 dY = (curY - oldY) * fDt;
+	float dY = (curY - oldY) * fDt;
 	oldY = curY;
 
 	auto view = EntityManager::View<FTransformComponent, FBaseComponent, FCameraComponent>();

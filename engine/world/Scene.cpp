@@ -387,14 +387,14 @@ namespace engine::world
 			// Attach normal map texture
 			if (auto& texture = material.normalTexture; texture.index >= 0)
 			{
-				render_material.normalScale = static_cast<f32>(texture.scale);
+				render_material.normalScale = static_cast<float>(texture.scale);
 				render_material.normalTexture = resources.textures[texture.index];
 			}
 
 			// Attach baked ambient occlusion texture
 			if (auto& texture = material.occlusionTexture; texture.index >= 0)
 			{
-				render_material.occlusionStrenth = static_cast<f32>(texture.strength);
+				render_material.occlusionStrenth = static_cast<float>(texture.strength);
 				render_material.occlusionTexture = resources.textures[texture.index];
 			}
 
@@ -403,8 +403,8 @@ namespace engine::world
 				render_material.emissiveTexture = resources.textures[texture.index];
 
 			render_material.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-			render_material.roughnessFactor = static_cast<f32>(material.pbrMetallicRoughness.roughnessFactor);
-			render_material.metallicFactor = static_cast<f32>(material.pbrMetallicRoughness.metallicFactor);
+			render_material.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
+			render_material.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
 			render_material.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
 			if (material.alphaMode.compare("BLEND") == 0)
@@ -414,7 +414,7 @@ namespace engine::world
 			else
 				render_material.alphaMode = 2;
 
-			render_material.alphaCutoff = static_cast<f32>(material.alphaCutoff);
+			render_material.alphaCutoff = static_cast<float>(material.alphaCutoff);
 			render_material.doubleSided = material.doubleSided;
 
 			renderer.AddMaterial(render_material);
@@ -433,7 +433,7 @@ namespace engine::world
 		EntityManager::Create();
 	}
 
-	void Scene::LoadNode(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index, f32 global_scale) {
+	void Scene::LoadNode(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index, float global_scale) {
 		const auto& node = root.nodes[node_index];
 
 		auto new_node = EntityManager::CreateNode(node.name);
@@ -774,8 +774,8 @@ namespace engine::world
 					// TODO: add other type support
 					assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-					f32* buf = new f32[accessor.count];
-					util::copy(buf, stream.data, stream.count * sizeof(f32));
+					float* buf = new float[accessor.count];
+					util::copy(buf, stream.data, stream.count * sizeof(float));
 					for (uint64_t index = 0; index < stream.count; index++)
 						sampler.inputs.push_back(buf[index]);
 

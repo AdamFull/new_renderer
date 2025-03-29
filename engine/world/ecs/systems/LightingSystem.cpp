@@ -40,7 +40,7 @@ namespace engine
 			{
 			}
 
-			void LightingSystem::__Update(f32 fDt)
+			void LightingSystem::__Update(float fDt)
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 				// TODO: RENDER WORLD

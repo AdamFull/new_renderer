@@ -47,7 +47,7 @@ void CSkinningSystem::__Create()
 {
 }
 
-void CSkinningSystem::__Update(f32 fDt)
+void CSkinningSystem::__Update(float fDt)
 {
 	EDGE_PROFILE_ZONE_SCOPED;
 

@@ -3,8 +3,6 @@
 #include <edge/runtime/rt_application.h>
 #include "rendering/RendererInterface.h"
 
-#include "InputMapper.h"
-
 #include "ui/EngineUI.h"
 #include "ui/windows/EditorWindow.h"
 

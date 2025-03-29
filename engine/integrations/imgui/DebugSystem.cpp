@@ -4,14 +4,14 @@
 
 using namespace engine;
 
-void DrawRingSegmentProgress(const glm::vec2& center, f32 inner_radius, f32 outer_radius, f32 progress, ImDbgColor color, int segments = 36)
+void DrawRingSegmentProgress(const glm::vec2& center, float inner_radius, float outer_radius, float progress, ImDbgColor color, int segments = 36)
 {
     float start_angle = 0.0f;
     float end_angle = progress * 2.0f * glm::pi<float>();
     ImDbg::DrawRingArc2D(center, inner_radius, outer_radius, start_angle, end_angle, color, segments);
 }
 
-void DrawPieProgress(const glm::vec2& center, f32 radius, f32 progress, ImDbgColor color, int segments = 36)
+void DrawPieProgress(const glm::vec2& center, float radius, float progress, ImDbgColor color, int segments = 36)
 {
     float start_angle = 0.0f;
     float end_angle = progress * 2.0f * glm::pi<float>();
@@ -28,7 +28,7 @@ void DrawComplexShape()
     ImDbg::DrawFillPolygon2D(star_points, ImDbg::Color::Cyan);
 }
 
-void DrawProgressBar(const glm::vec2& position, const glm::vec2& size, f32 progress, const std::string& text, ImDbgColor bar_color, ImDbgColor text_color)
+void DrawProgressBar(const glm::vec2& position, const glm::vec2& size, float progress, const std::string& text, ImDbgColor bar_color, ImDbgColor text_color)
 {
     // Draw the background
     ImDbg::DrawFillRoundedRect2D(position, position + size, 10.0f, ImDbg::Color::Gray);
@@ -76,7 +76,7 @@ void CDebugDrawEngineSystem::Initialize()
 	
 }
 
-void CDebugDrawEngineSystem::PreUpdate(f32 dt)
+void CDebugDrawEngineSystem::PreUpdate(float dt)
 {
     static float progress_increment{ 0.01f };
     static float progress{ 0.f };
@@ -135,7 +135,7 @@ void CDebugDrawEngineSystem::PreUpdate(f32 dt)
     //    progress_increment = -progress_increment;
 }
 
-void CDebugDrawEngineSystem::Update(f32 dt)
+void CDebugDrawEngineSystem::Update(float dt)
 {
 	ImDbg::end_frame();
 }

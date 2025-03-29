@@ -1,11 +1,11 @@
 #pragma once
 
-#include <design_pattern/pattern.h>
+#include <edge/util/utl_design.h>
 #include <entt/fwd.hpp>
 
 namespace engine
 {
-	class EditorState : public utl::pattern::singleton<EditorState>
+	class EditorState : public edge::utl::Singleton<EditorState>
 	{
 	public:
 		void SetSelection(entt::entity entity);

@@ -35,7 +35,7 @@ struct FontAtlas
 
     std::vector<ImDbgFontGlyph> glyphs{};
 
-    f32 lineHeight{};
+    float lineHeight{};
 
     uint8_t* texture{ nullptr };
     uint32_t width{};
@@ -52,7 +52,7 @@ struct FontImpl
 
 namespace ImDbg
 {
-    glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height);
+    glm::vec4 CalculateClipRect(const glm::vec2& start, float width, float height);
     glm::vec2 WorldToScreen(const glm::vec3& pos);
 
     void create_context()
@@ -192,8 +192,8 @@ namespace ImDbg
             new_glyph.size.y = new_atlas.face->glyph->bitmap.rows;
             new_glyph.corners.x = new_atlas.face->glyph->bitmap_left;
             new_glyph.corners.y = new_atlas.face->glyph->bitmap_top;
-            new_glyph.uv.x = (f32)cursor.x / (f32)new_atlas.width;
-            new_glyph.uv.y = (f32)cursor.y / (f32)new_atlas.height;
+            new_glyph.uv.x = (float)cursor.x / (float)new_atlas.width;
+            new_glyph.uv.y = (float)cursor.y / (float)new_atlas.height;
 
             cursor.x += bmp->width + 1;
         }
@@ -239,7 +239,7 @@ namespace ImDbg
     }
 
     // For 2d drawings
-    void DrawPoint2D(const glm::vec2& position, ImDbgColor color, f32 size)
+    void DrawPoint2D(const glm::vec2& position, ImDbgColor color, float size)
     {
         if (!context)
             return;
@@ -260,7 +260,7 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawLine2D(const glm::vec2& from, const glm::vec2& to, ImDbgColor color, f32 thickness)
+    void DrawLine2D(const glm::vec2& from, const glm::vec2& to, ImDbgColor color, float thickness)
     {
         if (!context)
             return;
@@ -286,7 +286,7 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color, f32 thickness)
+    void DrawRect2D(const glm::vec2& min, const glm::vec2& max, ImDbgColor color, float thickness)
     {
         const std::array<glm::vec2, 4ull> points{ min, {max.x, min.y}, max, {min.x, max.y} };
         DrawPolygon2D(points, color, thickness);
@@ -298,7 +298,7 @@ namespace ImDbg
         DrawFillPolygon2D(points, color);
     }
 
-    void DrawArc2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, int32_t segments, f32 thickness)
+    void DrawArc2D(const glm::vec2& center, float radius, float start_angle, float end_angle, ImDbgColor color, int32_t segments, float thickness)
     {
         if (!context)
             return;
@@ -333,7 +333,7 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawPie2D(const glm::vec2& center, f32 radius, f32 start_angle, f32 end_angle, ImDbgColor color, int32_t segments)
+    void DrawPie2D(const glm::vec2& center, float radius, float start_angle, float end_angle, ImDbgColor color, int32_t segments)
     {
         if (!context)
             return;
@@ -372,7 +372,7 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawRingArc2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, f32 start_angle, f32 end_angle, ImDbgColor color, int32_t segments)
+    void DrawRingArc2D(const glm::vec2& center, float inner_radius, float outer_radius, float start_angle, float end_angle, ImDbgColor color, int32_t segments)
     {
         auto& draw_list = context->drawData.drawLists[(uint32_t)ImDbgGeometryType::eTriangles];
 
@@ -416,22 +416,22 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawRing2D(const glm::vec2& center, f32 inner_radius, f32 outer_radius, ImDbgColor color, int32_t segments)
+    void DrawRing2D(const glm::vec2& center, float inner_radius, float outer_radius, ImDbgColor color, int32_t segments)
     {
-        DrawRingArc2D(center, inner_radius, outer_radius, 0.f, 2.f * glm::pi<f32>(), color, segments);
+        DrawRingArc2D(center, inner_radius, outer_radius, 0.f, 2.f * glm::pi<float>(), color, segments);
     }
 
-    void DrawCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color, f32 thickness)
+    void DrawCircle2D(const glm::vec2& center, float radius, ImDbgColor color, float thickness)
     {
         DrawArc2D(center, radius, 0.0f, 2.0f * glm::pi<float>(), color, 36, thickness);
     }
 
-    void DrawFillCircle2D(const glm::vec2& center, f32 radius, ImDbgColor color)
+    void DrawFillCircle2D(const glm::vec2& center, float radius, ImDbgColor color)
     {
         DrawPie2D(center, radius, 0.0f, 2.0f * glm::pi<float>(), color, 36);
     }
 
-    void DrawTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color, f32 thickness)
+    void DrawTriangle2D(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, ImDbgColor color, float thickness)
     {
         const std::array<glm::vec2, 3ull> points{ p1, p2, p3 };
         DrawPolygon2D(points, color, thickness);
@@ -446,7 +446,7 @@ namespace ImDbg
         DrawFillPolygon2D(points, color);
     }
 
-    void DrawPolygon2D(const ArrayProxy<glm::vec2>& points, ImDbgColor color, f32 thickness)
+    void DrawPolygon2D(const ArrayProxy<glm::vec2>& points, ImDbgColor color, float thickness)
     {
         if (!context)
             return;
@@ -528,7 +528,7 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color, f32 thickness)
+    void DrawRoundedRect2D(const glm::vec2& min, const glm::vec2& max, float radius, ImDbgColor color, float thickness)
     {
         if (!context)
             return;
@@ -617,7 +617,7 @@ namespace ImDbg
         context->drawData.totalIndexCount += draw_list.indices.size() - new_draw_cmd.indexOffset;
     }
 
-    void DrawFillRoundedRect2D(const glm::vec2& min, const glm::vec2& max, f32 radius, ImDbgColor color)
+    void DrawFillRoundedRect2D(const glm::vec2& min, const glm::vec2& max, float radius, ImDbgColor color)
     {
         if (!context)
             return;
@@ -736,7 +736,7 @@ namespace ImDbg
 
         for (int32_t i = 0; i <= segments; ++i)
         {
-            f32 theta = i * increment + 3.0f * glm::half_pi<float>();
+            float theta = i * increment + 3.0f * glm::half_pi<float>();
             draw_list.vertices.emplace_back(ImDbgVertex{ glm::vec3(bottom_left + radius * glm::vec2(glm::cos(theta), glm::sin(theta)), 0.f), default_uv, color });
         }
 
@@ -987,7 +987,7 @@ namespace ImDbg
     }
 
     // Other functions
-    glm::vec4 CalculateClipRect(const glm::vec2& start, f32 width, f32 height)
+    glm::vec4 CalculateClipRect(const glm::vec2& start, float width, float height)
     {
         return glm::vec4(start.x, start.y, start.x + width, start.y + height);
     }

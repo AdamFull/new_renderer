@@ -44,7 +44,6 @@ target_link_libraries(engine_common
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-    external_libraries
     edge_framework
     engine_common 
 )

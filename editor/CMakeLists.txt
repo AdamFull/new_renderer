@@ -48,12 +48,9 @@ find_package(Taskflow CONFIG REQUIRED)
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_BINARY_DIR}/exports"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib/other"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/utllib/source"
     "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
 )
 
-add_subdirectory(libraries/utllib)
 add_subdirectory(tools/scene_compiler)
 
 add_subdirectory(engine)

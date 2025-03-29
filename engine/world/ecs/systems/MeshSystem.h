@@ -16,7 +16,7 @@ namespace engine
 				virtual ~CMeshSystem() override = default;
 
 				void __Create() override;
-				void __Update(f32 fDt) override;
+				void __Update(float fDt) override;
 			private:
 				render::IRenderWorld& render_world;
 			};

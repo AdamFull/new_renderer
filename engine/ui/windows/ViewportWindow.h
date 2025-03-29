@@ -19,7 +19,7 @@ namespace engine
 		void DrawManipulator(float offsetx, float offsety, float sizex, float sizey);
 		void DrawOverlay(float offsetx, float offsety, float fDt);
 
-		f32 m_fSizeX{};
-		f32 m_fSizeY{};
+		float m_fSizeX{};
+		float m_fSizeY{};
 	};
 }

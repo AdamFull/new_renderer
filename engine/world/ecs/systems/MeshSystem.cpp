@@ -28,7 +28,7 @@ namespace engine
 			{
 			}
 
-			void CMeshSystem::__Update(f32 fDt)
+			void CMeshSystem::__Update(float fDt)
 			{
 				EDGE_PROFILE_ZONE_SCOPED;
 

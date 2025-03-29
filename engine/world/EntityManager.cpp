@@ -161,7 +161,7 @@ void EntityManager::Create()
 		system->Create();
 }
 
-void EntityManager::Update(f32 dt)
+void EntityManager::Update(float dt)
 {
 	EDGE_PROFILE_ZONE_SCOPED;
 	for (auto& system : m_vSystems)

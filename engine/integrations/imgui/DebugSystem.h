@@ -14,8 +14,8 @@ namespace engine
 
 		void Initialize() override;
 
-		void PreUpdate(f32 dt) override;
-		void Update(f32 dt) override;
+		void PreUpdate(float dt) override;
+		void Update(float dt) override;
 
 		void Render() override;
 
