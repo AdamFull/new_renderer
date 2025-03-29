@@ -224,7 +224,36 @@ set(IMGUI_FILES
 add_library(imgui STATIC ${IMGUI_FILES})
 target_include_directories(imgui SYSTEM PUBLIC ${IMGUI_DIR})
 
-#set_target_properties(ktx PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+# glslang
+option(ENABLE_SPVREMAPPER OFF)
+option(ENABLE_GLSLANG_BINARIES OFF)
+set(ENABLE_HLSL ON)
+option(ENABLE_OPT OFF)
+option(BUILD_TESTING OFF)
+option(BUILD_EXTERNAL OFF)
+if(IOS)
+    option(ENABLE_PCH OFF)
+endif ()
+
+add_subdirectory(glslang)
+
+if (NOT TARGET glslang-default-resource-limits)
+    add_library(glslang-default-resource-limits
+                glslang/StandAlone/ResourceLimits.cpp)
+
+    target_include_directories(glslang-default-resource-limits
+        SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glslang)
+endif()
+
+if(NOT MSVC)
+    target_compile_options(glslang PRIVATE
+        "-Wno-logical-op-parentheses"
+        "-Wno-unused-parameter")
+
+    target_compile_options(SPIRV PRIVATE
+        "-Wno-logical-op-parentheses"
+        "-Wno-unused-parameter")
+endif()
 
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}

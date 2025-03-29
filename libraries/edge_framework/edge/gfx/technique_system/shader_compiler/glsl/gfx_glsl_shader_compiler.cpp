@@ -1,6 +1,6 @@
 #include "gfx_glsl_shader_compiler.h"
 
-#include <glslang/SPIRV/GlslangToSpv.h>
+#include <SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/build_info.h>
 

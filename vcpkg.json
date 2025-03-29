@@ -9,13 +9,6 @@
       "name": "libzip"
     },
     {
-      "name": "glslang",
-      "version>=": "15.0.0",
-      "features": [
-        "tools"
-      ]
-    },
-    {
       "name": "directx-dxc",
       "platform": "windows"
     },
