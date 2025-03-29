@@ -19,6 +19,12 @@ endif()
 
 add_library(glm::glm ALIAS glm)
 
+# refl-cpp
+add_library(refl-cpp INTERFACE)
+set(REFLCPP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/refl-cpp/include)
+target_sources(refl-cpp INTERFACE ${REFLCPP_INCLUDE_DIR}/refl.hpp)
+target_include_directories(refl-cpp SYSTEM INTERFACE ${REFLCPP_INCLUDE_DIR})
+
 # tinygltf
 add_library(tinygltf INTERFACE)
 set(TINYGLTF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinygltf)
@@ -283,6 +289,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
     glm::glm
+    refl-cpp
     tinygltf
     #vulkan
     #volk

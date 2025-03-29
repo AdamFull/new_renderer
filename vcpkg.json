@@ -17,7 +17,6 @@
       "version>=": "3.14.0"
     },
     "nlohmann-json",
-    "refl-cpp",
     "meshoptimizer",
     "mimalloc",
     "benchmark",

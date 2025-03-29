@@ -43,3 +43,6 @@
 [submodule "libraries/edge_framework/external/glfw"]
 	path = libraries/edge_framework/external/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "libraries/edge_framework/external/refl-cpp"]
+	path = libraries/edge_framework/external/refl-cpp
+	url = https://github.com/veselink1/refl-cpp.git
