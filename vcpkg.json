@@ -9,10 +9,6 @@
       "name": "libzip"
     },
     {
-      "name": "directx-dxc",
-      "platform": "windows"
-    },
-    {
       "name": "spirv-cross",
       "version>=": "1.3.296.0"
     },
