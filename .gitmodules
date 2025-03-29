@@ -18,6 +18,3 @@
 [submodule "libraries/edge_framework/external/vma"]
 	path = libraries/edge_framework/external/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-[submodule "libraries/edge_framework/external/vma_hpp"]
-	path = libraries/edge_framework/external/vma_hpp
-	url = https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git
