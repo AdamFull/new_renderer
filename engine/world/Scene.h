@@ -1,7 +1,10 @@
 #include <engine/rendering/RendererInterface.h>
 #include "ecs/systems/BaseSystem.h"
 
-#include <libraries/easygltf/include/easygltf/easygltf_base.h>
+#define TINYGLTF_NO_STB_IMAGE
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#define TINYGLTF_NO_EXTERNAL_IMAGE
+#include <tiny_gltf.h>
 
 #include <entt/fwd.hpp>
 
@@ -23,22 +26,23 @@ namespace engine
 			Scene(render::IRenderer& renderer);
 			~Scene();
 
-			void Load(std::string_view path);
+			void Load(const std::string& path);
 
 			void Update(float delta_time);
 		private:
-			void LoadGLTF(easygltf::FGLTFRoot& root);
+			void LoadGLTF(tinygltf::Model& root);
 
-			void LoadNode(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index, f32 global_scale = 1.f);
+			void LoadNode(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index, f32 global_scale = 1.f);
 
-			void LoadMeshComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index);
-			void LoadCameraComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index);
-			void LoadLightComponent(const easygltf::FGLTFRoot& root, const entt::entity parent, uint32_t node_index);
+			void LoadMeshComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index);
+			void LoadCameraComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index);
+			void LoadLightComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index);
 
-			void LoadAnimations(const easygltf::FGLTFRoot& root);
-			void LoadSkins(const easygltf::FGLTFRoot& root);
+			void LoadAnimations(const tinygltf::Model& root);
+			void LoadSkins(const tinygltf::Model& root);
 		private:
 			render::IRenderer& renderer;
+			std::string scene_root_directory;
 
 			SceneLoadedResources resources{};
 			std::unordered_map<uint32_t, entt::entity> node_to_entity{};

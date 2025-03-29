@@ -54,7 +54,6 @@ add_subdirectory(libraries/imdbg)
 add_subdirectory(libraries/edge_framework)
 add_subdirectory(libraries/imgui)
 add_subdirectory(libraries/utllib)
-add_subdirectory(tools/scene_compiler)
 
 add_subdirectory(engine)
 

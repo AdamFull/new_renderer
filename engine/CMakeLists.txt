@@ -33,7 +33,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../libraries/easygltf/include"
 )
 
 add_library(engine_common INTERFACE)
@@ -47,7 +46,7 @@ target_link_libraries(engine_common
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-    easygltf
+    tinygltf
     edge_framework
     engine_common 
 )

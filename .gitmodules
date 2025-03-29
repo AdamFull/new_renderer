@@ -4,3 +4,6 @@
 [submodule "libraries/libwebm"]
 	path = libraries/libwebm
 	url = https://github.com/webmproject/libwebm
+[submodule "libraries/edge_framework/external/tinygltf"]
+	path = libraries/edge_framework/external/tinygltf
+	url = https://github.com/syoyo/tinygltf
