@@ -9,7 +9,6 @@ set(ENABLE_VULKAN_VALIDATION_LAYERS_BEST_PRACTICES OFF CACHE BOOL "Enable best p
 set(ENABLE_VULKAN_VALIDATION_LAYERS_SYNCHRONIZATION ON CACHE BOOL "Enable synchronization validation layers for every application.")
 set(ENABLE_VULKAN_DEBUG ON CACHE BOOL "Enable VK_EXT_debug_utils or VK_EXT_debug_marker if supported.")
 
-find_package(volk CONFIG REQUIRED)
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)
 
@@ -57,8 +56,7 @@ add_library(vulkan_common INTERFACE)
 target_link_libraries(vulkan_common
     INTERFACE
     Vulkan::Headers
-    volk::volk 
-    volk::volk_headers
+    volk::volk
     GPUOpen::VulkanMemoryAllocator
 )
 target_compile_definitions(vulkan_common 

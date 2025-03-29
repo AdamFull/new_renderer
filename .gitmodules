@@ -21,3 +21,7 @@
 [submodule "libraries/edge_framework/external/ktx"]
 	path = libraries/edge_framework/external/ktx
 	url = https://github.com/KhronosGroup/KTX-Software.git
+[submodule "libraries/edge_framework/external/volk"]
+	path = libraries/edge_framework/external/volk
+	url = https://github.com/zeux/volk.git
+	branch = vulkan-sdk-1.4.309

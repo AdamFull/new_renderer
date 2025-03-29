@@ -43,26 +43,26 @@ elseif(WIN32)
 elseif(APPLE)
 	target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_METAL_EXT)
 elseif(UNIX)
-    # Choose WSI based on VKB_WSI_SELECTION
-    if (VKB_WSI_SELECTION STREQUAL XCB OR VKB_WSI_SELECTION STREQUAL XLIB OR VKB_WSI_SELECTION STREQUAL WAYLAND)
+    # Choose WSI based on EDGE_VK_WSI_SELECTION
+    if (VKB_WSI_SELECTION STREQUAL XCB OR EDGE_VK_WSI_SELECTION STREQUAL XLIB OR EDGE_VK_WSI_SELECTION STREQUAL WAYLAND)
         find_package(PkgConfig REQUIRED)
     endif()
-    if (VKB_WSI_SELECTION STREQUAL XCB)
+    if (EDGE_VK_WSI_SELECTION STREQUAL XCB)
         pkg_check_modules(XCB xcb REQUIRED)
         if (XCB_FOUND)
             target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_XCB_KHR)
         endif()
-    elseif (VKB_WSI_SELECTION STREQUAL XLIB)
+    elseif (EDGE_VK_WSI_SELECTION STREQUAL XLIB)
         pkg_check_modules(X11 x11 REQUIRED)
         if (X11_FOUND)
             target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_XLIB_KHR)
         endif()
-    elseif (VKB_WSI_SELECTION STREQUAL WAYLAND)
+    elseif (EDGE_VK_WSI_SELECTION STREQUAL WAYLAND)
         pkg_check_modules(WAYLAND wayland-client REQUIRED)
         if (WAYLAND_FOUND)
             target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_WAYLAND_KHR)
         endif()
-    elseif (VKB_WSI_SELECTION STREQUAL D2D)
+    elseif (EDGE_VK_WSI_SELECTION STREQUAL D2D)
         set(DIRECT_TO_DISPLAY TRUE)
         set(DIRECT_TO_DISPLAY TRUE PARENT_SCOPE)
         target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_DISPLAY_KHR)
@@ -72,6 +72,28 @@ elseif(UNIX)
 endif()
 
 add_library(Vulkan::Headers ALIAS vulkan)
+
+# volk
+set(VOLK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/volk")
+set(VOLK_FILES
+    "${VOLK_DIR}/volk.c"
+    "${VOLK_DIR}/volk.h")
+
+add_library(volk STATIC ${VOLK_FILES})
+set_target_properties(volk PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+target_link_libraries(volk PUBLIC vulkan)
+
+target_include_directories(volk SYSTEM PUBLIC ${VOLK_DIR})
+if (EDGE_VK_WSI_SELECTION STREQUAL XCB)
+    target_include_directories(volk SYSTEM PUBLIC ${XCB_INCLUDE_DIRS})
+elseif (EDGE_VK_WSI_SELECTION STREQUAL XLIB)
+    target_include_directories(volk SYSTEM PUBLIC ${X11_INCLUDE_DIRS})
+elseif (EDGE_VK_WSI_SELECTION STREQUAL WAYLAND)
+    target_include_directories(volk SYSTEM PUBLIC ${WAYLAND_INCLUDE_DIRS})
+endif()
+
+add_library(volk::volk ALIAS volk)
 
 # vma
 add_library(vma INTERFACE)

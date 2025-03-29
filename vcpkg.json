@@ -8,7 +8,6 @@
     {
       "name": "libzip"
     },
-    "volk",
     {
       "name": "glslang",
       "version>=": "15.0.0",
