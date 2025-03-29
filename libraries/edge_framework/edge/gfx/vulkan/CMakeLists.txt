@@ -60,7 +60,6 @@ target_link_libraries(vulkan_common
     volk::volk 
     volk::volk_headers
     GPUOpen::VulkanMemoryAllocator
-    GPUOpen::VulkanMemoryAllocatorHpp
 )
 target_compile_definitions(vulkan_common 
     INTERFACE

@@ -13,48 +13,48 @@ namespace edge::gfx::vulkan
 		VulkanResource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
 
-		vma::VulkanFunctions vma_vulkan_func{};
+		VmaVulkanFunctions vma_vulkan_func{};
 		vma_vulkan_func.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
 		vma_vulkan_func.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
 
 		auto& physical = device.get_gpu();
 
-		vma::AllocatorCreateInfo allocator_info{};
+		VmaAllocatorCreateInfo allocator_info{};
 		allocator_info.pVulkanFunctions = &vma_vulkan_func;
 		allocator_info.physicalDevice = physical.get_handle();
 		allocator_info.device = device.get_handle();
 		allocator_info.instance = physical.get_instance().get_handle();
-		allocator_info.pAllocationCallbacks = allocation_callbacks;
+		allocator_info.pAllocationCallbacks = (VkAllocationCallbacks*)allocation_callbacks;
 
 		// NOTE: Nsight graphics using VkImportMemoryHostPointerEXT that cannot be used with dedicated memory allocation
 		bool can_get_memory_requirements = device.is_extension_supported(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
 		bool has_dedicated_allocation = device.is_extension_supported(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
 		if (can_get_memory_requirements && has_dedicated_allocation && device.is_enabled(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
-			allocator_info.flags |= vma::AllocatorCreateFlagBits::eKhrDedicatedAllocation;
+			allocator_info.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
 		}
 
 		if (device.is_extension_supported(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && device.is_enabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
-			allocator_info.flags |= vma::AllocatorCreateFlagBits::eBufferDeviceAddress;
+			allocator_info.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 		}
 
 		if (device.is_extension_supported(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME) && device.is_enabled(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME)) {
-			allocator_info.flags |= vma::AllocatorCreateFlagBits::eExtMemoryBudget;
+			allocator_info.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 		}
 
 		if (device.is_extension_supported(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME) && device.is_enabled(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME)) {
-			allocator_info.flags |= vma::AllocatorCreateFlagBits::eExtMemoryPriority;
+			allocator_info.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_PRIORITY_BIT;
 		}
 
 		if (device.is_extension_supported(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME) && device.is_enabled(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
-			allocator_info.flags |= vma::AllocatorCreateFlagBits::eKhrBindMemory2;
+			allocator_info.flags |= VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT;
 		}
 
 		if (device.is_extension_supported(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME) && device.is_enabled(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)) {
-			allocator_info.flags |= vma::AllocatorCreateFlagBits::eAmdDeviceCoherentMemory;
+			allocator_info.flags |= VMA_ALLOCATOR_CREATE_AMD_DEVICE_COHERENT_MEMORY_BIT;
 		}
 
-		vk::Result result = vma::createAllocator(&allocator_info, &handle_);
-		if (result != vk::Result::eSuccess) {
+		VkResult result = vmaCreateAllocator(&allocator_info, &handle_);
+		if (result != VK_SUCCESS) {
 			//throw VulkanException{ result, "Cannot create allocator" };
 			EDGE_LOGE("[VkAllocator] Cannot create allocator");
 		}
@@ -62,20 +62,23 @@ namespace edge::gfx::vulkan
 
 	Allocator::~Allocator() {
 		if (handle_) {
-			vma::TotalStatistics stats;
-			handle_.calculateStatistics(&stats);
+			VmaTotalStatistics stats;
+			vmaCalculateStatistics(handle_, &stats);
 			EDGE_LOGI("[VkAllocator] Total device memory leaked: {} bytes.", stats.total.statistics.allocationBytes);
-			handle_.destroy();
+			vmaDestroyAllocator(handle_);
 			handle_ = nullptr;
 		}
 	}
 
 	[[nodiscard]] vk::Buffer Allocator::create_buffer(Allocation& allocation, vk::BufferCreateInfo const& create_info) {
-		vk::Buffer buffer{ nullptr };
-		vma::AllocationInfo allocation_info{};
-		auto result = handle_.createBuffer(&create_info, &allocation.alloc_create_info, &buffer, &allocation.allocation, &allocation_info);
+		VkBuffer buffer{ nullptr };
+		VmaAllocationInfo allocation_info{};
+		
+		VkBufferCreateInfo buffer_create_info = static_cast<VkBufferCreateInfo>(create_info);
+		auto result = vmaCreateBuffer(handle_, &buffer_create_info, &allocation.alloc_create_info, 
+			&buffer, &allocation.allocation, &allocation_info);
 
-		if (result != vk::Result::eSuccess) {
+		if (result != VK_SUCCESS) {
 			EDGE_LOGE("[VkAllocator] Cannot create Buffer");
 		}
 
@@ -86,7 +89,7 @@ namespace edge::gfx::vulkan
 	void Allocator::destroy_buffer(Allocation& allocation, vk::Buffer& buffer) {
 		if (buffer && allocation) {
 			allocation.unmap_memory();
-			handle_.destroyBuffer(buffer, allocation.allocation);
+			vmaDestroyBuffer(handle_, buffer, allocation.allocation);
 			allocation.clear();
 		}
 	}
@@ -96,8 +99,8 @@ namespace edge::gfx::vulkan
 		assert(0 < create_info.arrayLayers && "Images should have at least one layer");
 		assert(0 < (uint32_t)create_info.usage && "Images should have at least one usage type");
 
-		vk::Image image{ nullptr };
-		vma::AllocationInfo allocation_info{};
+		VkImage image{ nullptr };
+		VmaAllocationInfo allocation_info{};
 
 #if 0
 		// If the image is an attachment, prefer dedicated memory
@@ -110,8 +113,10 @@ namespace edge::gfx::vulkan
 			alloc_create_info.preferredFlags |= VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
 		}
 #endif
-		auto result = handle_.createImage(&create_info, &allocation.alloc_create_info, &image, &allocation.allocation, &allocation_info);
-		if (result != vk::Result::eSuccess) {
+		VkImageCreateInfo image_create_info = static_cast<VkImageCreateInfo>(create_info);
+		auto result = vmaCreateImage(handle_, &image_create_info, &allocation.alloc_create_info, 
+			&image, &allocation.allocation, &allocation_info);
+		if (result != VK_SUCCESS) {
 			EDGE_LOGE("[VkAllocator] Cannot create Image");
 		}
 
@@ -124,15 +129,15 @@ namespace edge::gfx::vulkan
 	void Allocator::destroy_image(Allocation& allocation, vk::Image& image) {
 		if (image && allocation) {
 			allocation.unmap_memory();
-			handle_.destroyImage(image, allocation.allocation);
+			vmaDestroyImage(handle_, image, allocation.allocation);
 			allocation.clear();
 		}
 	}
 
-	void Allocator::post_create(Allocation& allocation, vma::AllocationInfo const& allocation_info) {
-		vk::MemoryPropertyFlags memory_properties;
-		handle_.getAllocationMemoryProperties(allocation.allocation, &memory_properties);
-		allocation.coherent = (memory_properties & vk::MemoryPropertyFlagBits::eHostCoherent) == vk::MemoryPropertyFlagBits::eHostCoherent;
+	void Allocator::post_create(Allocation& allocation, VmaAllocationInfo const& allocation_info) {
+		VkMemoryPropertyFlags memory_properties;
+		vmaGetAllocationMemoryProperties(handle_, allocation.allocation, &memory_properties);
+		allocation.coherent = (memory_properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		allocation.mapped_data = static_cast<uint8_t*>(allocation_info.pMappedData);
 		allocation.persistent = allocation.mapped_data;
 	}
@@ -147,21 +152,21 @@ namespace edge::gfx::vulkan
 	}
 
 	vk::DeviceMemory Allocation::get_memory() const {
-		vma::AllocationInfo alloc_info;
-		allocator.get_handle().getAllocationInfo(allocation, &alloc_info);
+		VmaAllocationInfo alloc_info;
+		vmaGetAllocationInfo(allocator.get_handle(), allocation, &alloc_info);
 		return alloc_info.deviceMemory;
 	}
 
 	void Allocation::flush(vk::DeviceSize offset, vk::DeviceSize size) {
 		if (!coherent) {
-			allocator.get_handle().flushAllocation(allocation, offset, size);
+			vmaFlushAllocation(allocator.get_handle(), allocation, offset, size);
 		}
 	}
 
 	uint8_t* Allocation::map_memory() {
 		if (!persistent && !is_mapped()) {
-			auto result = allocator.get_handle().mapMemory(allocation, reinterpret_cast<void**>(&mapped_data));
-			if (result != vk::Result::eSuccess) {
+			auto result = vmaMapMemory(allocator.get_handle(), allocation, reinterpret_cast<void**>(&mapped_data));
+			if (result != VK_SUCCESS) {
 				EDGE_LOGE("[VkAllocator] Failed to map memory.");
 			}
 
@@ -172,7 +177,7 @@ namespace edge::gfx::vulkan
 
 	void Allocation::unmap_memory() {
 		if (!persistent && is_mapped()) {
-			allocator.get_handle().unmapMemory(allocation);
+			vmaUnmapMemory(allocator.get_handle(), allocation);
 			mapped_data = nullptr;
 		}
 	}
@@ -180,6 +185,6 @@ namespace edge::gfx::vulkan
 	void Allocation::clear() {
 		mapped_data = nullptr;
 		persistent = false;
-		alloc_create_info = vma::AllocationCreateInfo{};
+		alloc_create_info = VmaAllocationCreateInfo{};
 	}
 }

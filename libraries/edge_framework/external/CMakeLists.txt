@@ -82,21 +82,6 @@ target_link_libraries(vma INTERFACE vulkan)
 
 add_library(GPUOpen::VulkanMemoryAllocator ALIAS vma)
 
-# vma hpp
-add_library(vma_hpp INTERFACE)
-set(VMA_HPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vma_hpp/include)
-target_sources(vma_hpp INTERFACE 
-    ${VMA_HPP_DIR}/vk_mem_alloc.hpp
-    ${VMA_HPP_DIR}/vk_mem_alloc_enums.hpp
-    ${VMA_HPP_DIR}/vk_mem_alloc_funcs.hpp
-    ${VMA_HPP_DIR}/vk_mem_alloc_handles.hpp
-    ${VMA_HPP_DIR}/vk_mem_alloc_imported.hpp
-    ${VMA_HPP_DIR}/vk_mem_alloc_structs.hpp
-)
-target_include_directories(vma_hpp SYSTEM INTERFACE ${VMA_HPP_DIR})
-target_link_libraries(vma_hpp INTERFACE vma)
-add_library(GPUOpen::VulkanMemoryAllocatorHpp ALIAS vma_hpp)
-
 
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}

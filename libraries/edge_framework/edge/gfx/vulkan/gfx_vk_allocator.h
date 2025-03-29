@@ -6,14 +6,14 @@
 
 #include "gfx_vk_resource.h"
 
-#include <vk_mem_alloc.hpp>
+#include <vk_mem_alloc.h>
 
 namespace edge::gfx::vulkan
 {
 	class Device;
 	class Allocation;
-
-	class Allocator final : public VulkanResource<vma::Allocator> {
+	
+	class Allocator final : public VulkanResource<VmaAllocator> {
 	public:
 		Allocator(Device& device);
 		~Allocator();
@@ -26,9 +26,9 @@ namespace edge::gfx::vulkan
 		[[nodiscard]] auto get_device() noexcept -> Device& {
 			return device;
 		}
-
+		
 	protected:
-		void post_create(Allocation& allocation, vma::AllocationInfo const& allocation_info);
+		void post_create(Allocation& allocation, VmaAllocationInfo const& allocation_info);
 	private:
 		Device& device;
 	};
@@ -90,8 +90,8 @@ namespace edge::gfx::vulkan
 		bool operator!() const noexcept {
 			return !allocation;
 		}
-
-		auto get_usage() const noexcept -> vma::MemoryUsage {
+		
+		auto get_usage() const noexcept -> VmaMemoryUsage {
 			return alloc_create_info.usage;
 		}
 
@@ -103,8 +103,8 @@ namespace edge::gfx::vulkan
 	protected:
 		Allocator& allocator;
 
-		vma::AllocationCreateInfo alloc_create_info{};
-		vma::Allocation allocation{ nullptr };
+		VmaAllocationCreateInfo alloc_create_info{};
+		VmaAllocation allocation{ nullptr };
 		uint8_t* mapped_data{ nullptr };
 		bool coherent{ false };
 		bool persistent{ false };

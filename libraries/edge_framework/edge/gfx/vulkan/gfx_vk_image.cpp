@@ -48,7 +48,7 @@ namespace edge::gfx::vulkan
 		auto family_count = device.get_queue_count();
 		std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
 
-		alloc_create_info.usage = vma::MemoryUsage::eUnknown;
+		alloc_create_info.usage = VMA_MEMORY_USAGE_UNKNOWN;
 
 		bool is_3d = texture_create_info.depth > 1u;
 		bool is_2d = texture_create_info.height > 1u;

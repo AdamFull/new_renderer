@@ -52,11 +52,11 @@ namespace edge::gfx::vulkan
 		}
 
 		if (create_info.usage & BufferUsageFlag::eGpuOnly)
-			alloc_create_info.usage = vma::MemoryUsage::eGpuOnly;
+			alloc_create_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		else if (create_info.usage & BufferUsageFlag::eCpuToGpu)
-			alloc_create_info.usage = vma::MemoryUsage::eCpuToGpu;
+			alloc_create_info.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 		else
-			alloc_create_info.usage = vma::MemoryUsage::eCpuOnly;
+			alloc_create_info.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
 		buffer_create_info.size = aligned_size(create_info.size, minimal_alignment) * create_info.count;
 		size = buffer_create_info.size;
