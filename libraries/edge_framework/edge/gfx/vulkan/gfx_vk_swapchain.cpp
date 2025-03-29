@@ -8,7 +8,7 @@
 
 #include "../../util/Logger.h"
 
-#include <glm/glm.hpp>
+#include <algorithm>
 
 #include "../../util/utl_profiler.h"
 
@@ -27,8 +27,8 @@ namespace edge::gfx::vulkan
 			return current_extent;
 		}
 
-		request_extent.width = glm::clamp(request_extent.width, min_image_extent.width, max_image_extent.width);
-		request_extent.height = glm::clamp(request_extent.height, min_image_extent.height, max_image_extent.height);
+		request_extent.width = std::clamp(request_extent.width, min_image_extent.width, max_image_extent.width);
+		request_extent.height = std::clamp(request_extent.height, min_image_extent.height, max_image_extent.height);
 
 		return request_extent;
 	}
@@ -246,7 +246,7 @@ namespace edge::gfx::vulkan
 		vk::SurfaceCapabilitiesKHR const surface_capabilities = physical_device.get_handle().getSurfaceCapabilitiesKHR(surface);
 
 		create_info.oldSwapchain = old_swapchain;
-		create_info.minImageCount = glm::clamp(image_count, surface_capabilities.minImageCount, surface_capabilities.maxImageCount ? surface_capabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
+		create_info.minImageCount = std::clamp(image_count, surface_capabilities.minImageCount, surface_capabilities.maxImageCount ? surface_capabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
 		create_info.imageExtent = choose_extent(extent, surface_capabilities.minImageExtent, surface_capabilities.maxImageExtent, surface_capabilities.currentExtent);
 		auto surface_format = choose_surface_format({}, surface_formats, surface_format_priority_list);
 		create_info.imageFormat = surface_format.format;
