@@ -23,11 +23,6 @@
     "freetype",
     "argparse",
 
-    "libvorbis",
-    "libvpx",
-
-    "taskflow",
-
-    "openal-soft"
+    "taskflow"
   ]
 }
