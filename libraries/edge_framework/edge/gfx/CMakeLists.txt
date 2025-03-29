@@ -21,8 +21,8 @@ set(SPIRV_CROSS_ENABLE_UTIL OFF CACHE BOOL "Enable util module support." FORCE)
 set(USE_NSIGHT_AFTERMATH OFF CACHE BOOL "Enable nsight aftermath support." FORCE)
 
 #TODO: add extensions as plugins
-add_subdirectory("ext/imgui")
-add_subdirectory("ext/printf")
+#add_subdirectory("ext/imgui")
+#add_subdirectory("ext/printf")
 
 add_library(${PROJECT_NAME} STATIC)
 
@@ -117,7 +117,4 @@ target_link_libraries(${PROJECT_NAME}
     MipGeneratorShaderMip2
     MipGeneratorShaderMip3
     MipGeneratorShaderMip4
-    PUBLIC
-    edge_gfx_ext_imgui
-    edge_gfx_ext_printf
 )

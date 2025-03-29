@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(application)
-
-find_package(glm CONFIG REQUIRED)
+ 
 find_package(EnTT CONFIG REQUIRED)
 
 file(GLOB ENGINE_APP_SOURCES FILES *.cpp *.h)
@@ -38,7 +37,7 @@ target_include_directories(${PROJECT_NAME}
 add_library(engine_common INTERFACE)
 target_link_libraries(engine_common
     INTERFACE
-    glm::glm 
+    glm 
     EnTT::EnTT 
     imdbg 
     imgui

@@ -26,6 +26,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC 
+    glm::glm
     edge_utils 
     edge_runtime 
     edge_filesystem_new 
