@@ -11,3 +11,13 @@
 	path = libraries/edge_framework/external/glm
 	url = https://github.com/g-truc/glm.git
 	branch = release-1.0.2
+[submodule "libraries/edge_framework/external/vulkan"]
+	path = libraries/edge_framework/external/vulkan
+	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+	branch = vulkan-sdk-1.3.296
+[submodule "libraries/edge_framework/external/vma"]
+	path = libraries/edge_framework/external/vma
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "libraries/edge_framework/external/vma_hpp"]
+	path = libraries/edge_framework/external/vma_hpp
+	url = https://github.com/YaaZ/VulkanMemoryAllocator-Hpp.git
