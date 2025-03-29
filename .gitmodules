@@ -18,3 +18,6 @@
 [submodule "libraries/edge_framework/external/vma"]
 	path = libraries/edge_framework/external/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "libraries/edge_framework/external/ktx"]
+	path = libraries/edge_framework/external/ktx
+	url = https://github.com/KhronosGroup/KTX-Software.git

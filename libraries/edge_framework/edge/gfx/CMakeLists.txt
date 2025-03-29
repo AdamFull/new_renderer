@@ -3,14 +3,6 @@ project(edge_gfx)
 
 include(GlslShaderCompiler)
 
-#ktx
-set(KTX_FEATURE_TESTS OFF CACHE BOOL "Create unit tests" FORCE)
-set(KTX_FEATURE_TOOLS OFF CACHE BOOL "Create KTX tools" FORCE)
-set(KTX_FEATURE_VULKAN OFF CACHE BOOL "Enable Vulkan texture upload" FORCE)
-set(KTX_FEATURE_GL_UPLOAD OFF CACHE BOOL "Enable OpenGL texture upload" FORCE)
-
-find_package(Ktx CONFIG REQUIRED)
-
 #spirv-cross
 #set(SPIRV_CROSS_SHARED OFF CACHE BOOL "Build the C API as a single shared library." FORCE)
 set(SPIRV_CROSS_STATIC ON CACHE BOOL "Build the C and C++ API as static libraries." FORCE)

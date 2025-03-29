@@ -6,19 +6,9 @@
   "builtin-baseline": "9d196b217c8f435b90e8608753609c58c24faed1",
   "dependencies": [
     {
-      "name": "libzip",
-      "features": [
-        "zstd"
-      ]
+      "name": "libzip"
     },
     "volk",
-    {
-      "name": "ktx",
-      "version>=": "4.1.0",
-      "features": [
-        "tools"
-      ]
-    },
     {
       "name": "glslang",
       "version>=": "15.0.0",
