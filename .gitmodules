@@ -14,7 +14,7 @@
 [submodule "libraries/edge_framework/external/vulkan"]
 	path = libraries/edge_framework/external/vulkan
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
-	branch = vulkan-sdk-1.3.296
+	branch = vulkan-sdk-1.4.309
 [submodule "libraries/edge_framework/external/vma"]
 	path = libraries/edge_framework/external/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
