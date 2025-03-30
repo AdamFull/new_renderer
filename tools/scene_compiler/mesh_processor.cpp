@@ -3,7 +3,7 @@
 #include <easygltf/easygltf_loader.h>
 #include <easygltf/easygltf_helpers.h>
 
-#include <meshoptimizer.h>
+//#include <meshoptimizer.h>
 
 #include <edge/util/utl_hash.hpp>
 #include <edge/util/utl_base.h>
