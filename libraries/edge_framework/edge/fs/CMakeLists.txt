@@ -22,8 +22,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/zip/fs_zip_filesystem.h" 
 )
 
-find_package(libzip REQUIRED)
-
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
 	libzip::zip 
