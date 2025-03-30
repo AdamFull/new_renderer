@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 project(external_libraries LANGUAGES C CXX)
 
+# argparse
+add_library(argparse INTERFACE)
+set(ARGPARSE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/argparse/include)
+target_sources(argparse INTERFACE ${ARGPARSE_INCLUDE_DIR}/argparse/argparse.hpp)
+target_include_directories(argparse SYSTEM INTERFACE ${ARGPARSE_INCLUDE_DIR})
+add_library(argparse::argparse ALIAS argparse)
+
 # glm
 add_library(glm INTERFACE)
 set(GLM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)

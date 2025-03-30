@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(edge_shader_compiler)
 
-find_package(argparse CONFIG REQUIRED)
-
 set(VULKAN_SDK_ROOT $ENV{VULKAN_SDK})
 
 find_path(SLANG_INCLUDE_DIR
