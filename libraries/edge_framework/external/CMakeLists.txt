@@ -38,6 +38,12 @@ target_sources(nlohmann_json INTERFACE
 target_include_directories(nlohmann_json SYSTEM INTERFACE ${NLOHMANN_JSON_INCLUDE_DIR})
 add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
 
+# taskflow
+add_library(taskflow INTERFACE)
+set(TASKFLOW_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/taskflow)
+target_sources(taskflow INTERFACE ${TASKFLOW_INCLUDE_DIR}/taskflow/taskflow.hpp)
+target_include_directories(taskflow SYSTEM INTERFACE ${TASKFLOW_INCLUDE_DIR})
+
 # tinygltf
 add_library(tinygltf INTERFACE)
 set(TINYGLTF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinygltf)
@@ -336,6 +342,7 @@ target_link_libraries(${PROJECT_NAME}
 	spirv-cross-glsl
 
     nlohmann_json::nlohmann_json
+    taskflow
     #vulkan
     #volk
     #vma

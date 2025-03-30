@@ -29,9 +29,6 @@ add_compile_definitions(
     NOMINMAX
 )
 
-# find_package(Taskflow CONFIG REQUIRED)
-# target_link_libraries(main PRIVATE Taskflow::Taskflow)
-
 # global includes
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
