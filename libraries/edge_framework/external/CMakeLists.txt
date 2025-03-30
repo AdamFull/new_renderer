@@ -379,6 +379,9 @@ target_sources(entt INTERFACE
 target_include_directories(entt SYSTEM INTERFACE ${ENTT_INCLUDE_DIR})
 add_library(EnTT::EnTT ALIAS entt)
 
+# tracy
+add_subdirectory(tracy)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE

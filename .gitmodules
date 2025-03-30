@@ -65,3 +65,6 @@
 [submodule "libraries/edge_framework/external/freetype"]
 	path = libraries/edge_framework/external/freetype
 	url = https://github.com/freetype/freetype.git
+[submodule "libraries/edge_framework/external/tracy"]
+	path = libraries/edge_framework/external/tracy
+	url = https://github.com/wolfpld/tracy.git

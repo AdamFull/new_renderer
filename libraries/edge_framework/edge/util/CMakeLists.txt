@@ -5,8 +5,6 @@ if(WIN32)
 set(TRACY_CALLSTACK ON CACHE BOOL "Enfore callstack collection for tracy regions" FORCE)
 endif()
 
-find_package(Tracy CONFIG REQUIRED)
-
 target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/debugbreak.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/lockfree_ring_buffer.h"

@@ -7,10 +7,6 @@
   "dependencies": [
     {
       "name": "libzip"
-    },
-    {
-      "name": "tracy",
-      "version>=": "0.11.1#1"
     }
   ]
 }
