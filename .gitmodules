@@ -62,3 +62,6 @@
 [submodule "libraries/edge_framework/external/argparse"]
 	path = libraries/edge_framework/external/argparse
 	url = https://github.com/p-ranav/argparse.git
+[submodule "libraries/edge_framework/external/freetype"]
+	path = libraries/edge_framework/external/freetype
+	url = https://github.com/freetype/freetype.git

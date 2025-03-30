@@ -4,8 +4,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+//#include <ft2build.h>
+//#include FT_FREETYPE_H
 
 #define STBI_MSC_SECURE_CRT
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -31,9 +31,9 @@ struct ImDbgFontGlyph
 
 struct FontAtlas
 {
-    FT_Face face;
+    //FT_Face face;
 
-    std::vector<ImDbgFontGlyph> glyphs{};
+    //std::vector<ImDbgFontGlyph> glyphs{};
 
     float lineHeight{};
 
@@ -46,8 +46,8 @@ struct FontAtlas
 
 struct FontImpl
 {
-    FT_Library ft;
-    std::vector<FontAtlas> atlases;
+    //FT_Library ft;
+    //std::vector<FontAtlas> atlases;
 };
 
 namespace ImDbg
@@ -70,8 +70,8 @@ namespace ImDbg
             new_list3d.type = type;
         }
 
-        context->font = new FontImpl();
-        auto err = FT_Init_FreeType(&context->font->ft);
+        //context->font = new FontImpl();
+        //auto err = FT_Init_FreeType(&context->font->ft);
         assert(!err);
 
         LoadFont(monoisome_regular_ttf, monoisome_regular_ttf_len, 48);
@@ -87,11 +87,11 @@ namespace ImDbg
                 font_atlas.texture = nullptr;
             }
 
-            if(font_atlas.face)
-                FT_Done_Face(font_atlas.face);
+            //if(font_atlas.face)
+            //    FT_Done_Face(font_atlas.face);
         }
         
-        FT_Done_FreeType(context->font->ft);
+        //FT_Done_FreeType(context->font->ft);
 
         delete context;
         context = nullptr;
@@ -102,112 +102,112 @@ namespace ImDbg
 
 	void LoadFont(const uint8_t* data, uint32_t data_size, uint32_t character_size)
 	{
-		auto& new_atlas = context->font->atlases.emplace_back();
-
-		auto err = FT_New_Memory_Face(context->font->ft, monoisome_regular_ttf, monoisome_regular_ttf_len, 0, &new_atlas.face);
-		assert(!err);
-
-		err = FT_New_Memory_Face(context->font->ft, data, data_size, 0, &new_atlas.face);
-		assert(!err);
-
-		err = FT_Set_Pixel_Sizes(new_atlas.face, 0, character_size);
-		assert(!err);
-
-        // Caqlculating max atlas width
-        int max_dim = (1 + (new_atlas.face->size->metrics.height >> 6)) * glm::ceil(glm::sqrt(max_glyph_count - start_glyph));
-        new_atlas.width = 1;
-        while (new_atlas.width < max_dim) new_atlas.width <<= 1;
-        
-        uint32_t maxy{};
-        glm::uvec2 pen{};
-        for (uint64_t i = start_glyph; i < max_glyph_count; i++)
-        {
-            FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
-            FT_Bitmap* bmp = &new_atlas.face->glyph->bitmap;
-
-            if (pen.x + bmp->width >= new_atlas.width)
-            {
-                pen.x = 0;
-                pen.y += (new_atlas.face->size->metrics.height >> 6) + 1;
-            }
-
-            pen.x += bmp->width + 1;
-            if (pen.y + bmp->rows > maxy)
-                maxy = pen.y + bmp->rows;
-        }
-
-        // Get scaled line height
-        new_atlas.lineHeight = new_atlas.face->size->metrics.height >> 6;
-
-        // Adjust the texture height to the exact height required
-        new_atlas.height = 1;
-        while (new_atlas.height < maxy) new_atlas.height <<= 1;
-
-        // Fill glyph texture
-        new_atlas.stride = sizeof(uint32_t);
-        new_atlas.size = (uint64_t)new_atlas.width * (uint64_t)new_atlas.height * (uint64_t)new_atlas.stride;
-        new_atlas.texture = (uint8_t*)calloc(new_atlas.size, 1);
-
-        int strip_width = 3; // Width of the filled strip
-        for (int y = 0; y < new_atlas.height; ++y)
-        {
-            for (int x = 0; x < strip_width; ++x)
-            {
-                int pixel_index = (y * new_atlas.width + x) * new_atlas.stride;
-                for (uint64_t idx = 0; idx < new_atlas.stride; ++idx)
-                    new_atlas.texture[pixel_index + idx] = 0xFF;
-            }
-        }
-
-        glm::uvec2 cursor{ strip_width + 1, 0};
-        for (uint64_t i = start_glyph; i < max_glyph_count; i++)
-        {
-            FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
-            FT_Bitmap* bmp = &new_atlas.face->glyph->bitmap;
-
-            if (cursor.x + bmp->width >= new_atlas.width)
-            {
-                cursor.x = strip_width + 1;
-                cursor.y += ((new_atlas.face->size->metrics.height >> 6) + 1);
-            }
-
-            for (uint64_t row = 0; row < bmp->rows; ++row)
-            {
-                for (uint64_t col = 0; col < bmp->width; ++col)
-                {
-                    int x = cursor.x + col;
-                    int y = cursor.y + row;
-                    int pixel_index = (y * new_atlas.width + x) * new_atlas.stride;
-                    auto value = bmp->buffer[row * bmp->pitch + col];
-
-                    for (uint64_t idx = 0; idx < new_atlas.stride; ++idx)
-                        new_atlas.texture[pixel_index + idx] = value;
-                }
-            }
-
-            auto& new_glyph = new_atlas.glyphs.emplace_back();
-            new_glyph.advance.x = new_atlas.face->glyph->advance.x >> 6;
-            new_glyph.advance.y = new_atlas.face->glyph->advance.y >> 6;
-            new_glyph.size.x = new_atlas.face->glyph->bitmap.width;
-            new_glyph.size.y = new_atlas.face->glyph->bitmap.rows;
-            new_glyph.corners.x = new_atlas.face->glyph->bitmap_left;
-            new_glyph.corners.y = new_atlas.face->glyph->bitmap_top;
-            new_glyph.uv.x = (float)cursor.x / (float)new_atlas.width;
-            new_glyph.uv.y = (float)cursor.y / (float)new_atlas.height;
-
-            cursor.x += bmp->width + 1;
-        }
+		//auto& new_atlas = context->font->atlases.emplace_back();
+        //
+		//auto err = FT_New_Memory_Face(context->font->ft, monoisome_regular_ttf, monoisome_regular_ttf_len, 0, &new_atlas.face);
+		//assert(!err);
+        //
+		//err = FT_New_Memory_Face(context->font->ft, data, data_size, 0, &new_atlas.face);
+		//assert(!err);
+        //
+		//err = FT_Set_Pixel_Sizes(new_atlas.face, 0, character_size);
+		//assert(!err);
+        //
+        //// Caqlculating max atlas width
+        //int max_dim = (1 + (new_atlas.face->size->metrics.height >> 6)) * glm::ceil(glm::sqrt(max_glyph_count - start_glyph));
+        //new_atlas.width = 1;
+        //while (new_atlas.width < max_dim) new_atlas.width <<= 1;
+        //
+        //uint32_t maxy{};
+        //glm::uvec2 pen{};
+        //for (uint64_t i = start_glyph; i < max_glyph_count; i++)
+        //{
+        //    FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
+        //    FT_Bitmap* bmp = &new_atlas.face->glyph->bitmap;
+        //
+        //    if (pen.x + bmp->width >= new_atlas.width)
+        //    {
+        //        pen.x = 0;
+        //        pen.y += (new_atlas.face->size->metrics.height >> 6) + 1;
+        //    }
+        //
+        //    pen.x += bmp->width + 1;
+        //    if (pen.y + bmp->rows > maxy)
+        //        maxy = pen.y + bmp->rows;
+        //}
+        //
+        //// Get scaled line height
+        //new_atlas.lineHeight = new_atlas.face->size->metrics.height >> 6;
+        //
+        //// Adjust the texture height to the exact height required
+        //new_atlas.height = 1;
+        //while (new_atlas.height < maxy) new_atlas.height <<= 1;
+        //
+        //// Fill glyph texture
+        //new_atlas.stride = sizeof(uint32_t);
+        //new_atlas.size = (uint64_t)new_atlas.width * (uint64_t)new_atlas.height * (uint64_t)new_atlas.stride;
+        //new_atlas.texture = (uint8_t*)calloc(new_atlas.size, 1);
+        //
+        //int strip_width = 3; // Width of the filled strip
+        //for (int y = 0; y < new_atlas.height; ++y)
+        //{
+        //    for (int x = 0; x < strip_width; ++x)
+        //    {
+        //        int pixel_index = (y * new_atlas.width + x) * new_atlas.stride;
+        //        for (uint64_t idx = 0; idx < new_atlas.stride; ++idx)
+        //            new_atlas.texture[pixel_index + idx] = 0xFF;
+        //    }
+        //}
+        //
+        //glm::uvec2 cursor{ strip_width + 1, 0};
+        //for (uint64_t i = start_glyph; i < max_glyph_count; i++)
+        //{
+        //    FT_Load_Char(new_atlas.face, i, FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_LIGHT);
+        //    FT_Bitmap* bmp = &new_atlas.face->glyph->bitmap;
+        //
+        //    if (cursor.x + bmp->width >= new_atlas.width)
+        //    {
+        //        cursor.x = strip_width + 1;
+        //        cursor.y += ((new_atlas.face->size->metrics.height >> 6) + 1);
+        //    }
+        //
+        //    for (uint64_t row = 0; row < bmp->rows; ++row)
+        //    {
+        //        for (uint64_t col = 0; col < bmp->width; ++col)
+        //        {
+        //            int x = cursor.x + col;
+        //            int y = cursor.y + row;
+        //            int pixel_index = (y * new_atlas.width + x) * new_atlas.stride;
+        //            auto value = bmp->buffer[row * bmp->pitch + col];
+        //
+        //            for (uint64_t idx = 0; idx < new_atlas.stride; ++idx)
+        //                new_atlas.texture[pixel_index + idx] = value;
+        //        }
+        //    }
+        //
+        //    auto& new_glyph = new_atlas.glyphs.emplace_back();
+        //    new_glyph.advance.x = new_atlas.face->glyph->advance.x >> 6;
+        //    new_glyph.advance.y = new_atlas.face->glyph->advance.y >> 6;
+        //    new_glyph.size.x = new_atlas.face->glyph->bitmap.width;
+        //    new_glyph.size.y = new_atlas.face->glyph->bitmap.rows;
+        //    new_glyph.corners.x = new_atlas.face->glyph->bitmap_left;
+        //    new_glyph.corners.y = new_atlas.face->glyph->bitmap_top;
+        //    new_glyph.uv.x = (float)cursor.x / (float)new_atlas.width;
+        //    new_glyph.uv.y = (float)cursor.y / (float)new_atlas.height;
+        //
+        //    cursor.x += bmp->width + 1;
+        //}
 
         //stbi_write_png("font.png", new_atlas.width, new_atlas.height, new_atlas.stride, new_atlas.texture, new_atlas.width * new_atlas.stride);
 	}
 
     void GetTexDataAsRGBA32(uint32_t index, uint8_t** out_pixels, int32_t* out_width, int32_t* out_height, int32_t* out_bytes_per_pixel)
     {
-        auto& atlas = context->font->atlases[index];
-        *out_pixels = atlas.texture;
-        *out_width = atlas.width;
-        *out_height = atlas.height;
-        *out_bytes_per_pixel = atlas.stride;
+        //auto& atlas = context->font->atlases[index];
+        //*out_pixels = atlas.texture;
+        //*out_width = atlas.width;
+        //*out_height = atlas.height;
+        //*out_bytes_per_pixel = atlas.stride;
     }
 
     void NewFrame()

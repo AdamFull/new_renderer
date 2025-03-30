@@ -288,7 +288,7 @@ set(IMGUI_FILES
     "${IMGUI_DIR}/imgui_tables.cpp"
     "${IMGUI_DIR}/imgui_widgets.cpp"
     "${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp"
-    "${IMGUI_DIR}/misc/freetype/imgui_freetype.cpp"
+    #"${IMGUI_DIR}/misc/freetype/imgui_freetype.cpp"
     "${IMGUI_DIR}/imconfig.h"
     "${IMGUI_DIR}/imgui.h"
     "${IMGUI_DIR}/imgui_internal.h"
@@ -296,7 +296,7 @@ set(IMGUI_FILES
     "${IMGUI_DIR}/imstb_textedit.h"
     "${IMGUI_DIR}/imstb_truetype.h"
     "${IMGUI_DIR}/misc/cpp/imgui_stdlib.h"
-    "${IMGUI_DIR}/misc/freetype/imgui_freetype.h"
+    #"${IMGUI_DIR}/misc/freetype/imgui_freetype.h"
 )
 
 add_library(imgui STATIC ${IMGUI_FILES})

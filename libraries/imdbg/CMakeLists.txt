@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(imdbg)
 
-find_package(Freetype REQUIRED)
+#find_package(Freetype REQUIRED)
 
 file(GLOB IMDBG_SOURCES "*.cpp")
 
@@ -17,6 +17,6 @@ target_include_directories(${PROJECT_NAME}
 	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
-target_link_libraries(${PROJECT_NAME} 
-    PUBLIC Freetype::Freetype
-)
+#target_link_libraries(${PROJECT_NAME} 
+#    PUBLIC Freetype::Freetype
+#)
