@@ -53,3 +53,9 @@
 [submodule "libraries/edge_framework/external/taskflow"]
 	path = libraries/edge_framework/external/taskflow
 	url = https://github.com/taskflow/taskflow.git
+[submodule "libraries/edge_framework/external/libzip"]
+	path = libraries/edge_framework/external/libzip
+	url = https://github.com/nih-at/libzip.git
+[submodule "libraries/edge_framework/external/zlib"]
+	path = libraries/edge_framework/external/zlib
+	url = https://github.com/madler/zlib.git

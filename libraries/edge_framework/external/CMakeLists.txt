@@ -134,6 +134,52 @@ set(ZSTD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ktx/external/basisu/zstd)
 add_library(zstd STATIC ${ZSTD_DIR}/zstd.c)
 target_include_directories(zstd SYSTEM INTERFACE ${ZSTD_DIR})
 
+# zlib
+#set(ZLIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zlib)
+#
+#set(ZLIB_SOURCES
+#    "${ZLIB_SOURCE_DIR}/adler32.c"
+#    "${ZLIB_SOURCE_DIR}/compress.c"
+#    "${ZLIB_SOURCE_DIR}/crc32.c"
+#    "${ZLIB_SOURCE_DIR}/crc32.h"
+#    "${ZLIB_SOURCE_DIR}/deflate.c"
+#    "${ZLIB_SOURCE_DIR}/deflate.h"
+#    "${ZLIB_SOURCE_DIR}/gzclose.c"
+#    "${ZLIB_SOURCE_DIR}/gzguts.h"
+#    "${ZLIB_SOURCE_DIR}/gzlib.c"
+#    "${ZLIB_SOURCE_DIR}/gzread.c"
+#    "${ZLIB_SOURCE_DIR}/gzwrite.c"
+#    "${ZLIB_SOURCE_DIR}/infback.c"
+#    "${ZLIB_SOURCE_DIR}/inffast.c"
+#    "${ZLIB_SOURCE_DIR}/inffast.h"
+#    "${ZLIB_SOURCE_DIR}/inffixed.h"
+#    "${ZLIB_SOURCE_DIR}/inflate.c"
+#    "${ZLIB_SOURCE_DIR}/inflate.h"
+#    "${ZLIB_SOURCE_DIR}/inftrees.c"
+#    "${ZLIB_SOURCE_DIR}/inftrees.h"
+#    "${ZLIB_SOURCE_DIR}/trees.c"
+#    "${ZLIB_SOURCE_DIR}/trees.h"
+#    "${ZLIB_SOURCE_DIR}/uncompr.c"
+#    "${ZLIB_SOURCE_DIR}/zlib.h"
+#    "${ZLIB_SOURCE_DIR}/zutil.c"
+#    "${ZLIB_SOURCE_DIR}/zutil.h"
+#)
+#
+#add_library(zlib STATIC ${ZLIB_SOURCES})
+#target_include_directories(zlib SYSTEM PUBLIC ${ZLIB_SOURCE_DIR})
+#
+#if(WIN32)
+#    target_compile_definitions(zlib PRIVATE _CRT_SECURE_NO_WARNINGS)
+#endif()
+#
+#add_library(ZLIB::ZLIB ALIAS zlib)
+#
+## libzip
+#set(LIBZIP_BUILD_TOOLS OFF CACHE BOOL "Disable libzip tools"   FORCE)
+#set(LIBZIP_BUILD_EXAMPLES OFF CACHE BOOL "Disable libzip examples" FORCE)
+#set(LIBZIP_BUILD_DOC OFF CACHE BOOL "Disable libzip docs" FORCE)
+#add_subdirectory(libzip)
+
 # libktx
 set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ktx)
 
