@@ -4,7 +4,7 @@
 #include "ecs/components/components.h"
 #include "ecs/systems/systems.h"
 
-#include <meshoptimizer.h>
+//#include <meshoptimizer.h>
 
 #include "../rendering/Rendering.h"
 #include <edge/gfx/gfx_context.h>
