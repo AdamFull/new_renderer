@@ -297,6 +297,16 @@ set(SPDLOG_USE_STD_FORMAT ON)
 add_subdirectory(spdlog)
 target_include_directories(spdlog SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)
 
+# entt
+add_library(entt INTERFACE)
+set(ENTT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/entt/src)
+target_sources(entt INTERFACE 
+    "${ENTT_INCLUDE_DIR}/entt/entt.hpp"
+    "${ENTT_INCLUDE_DIR}/entt/fwd.hpp"
+)
+target_include_directories(entt SYSTEM INTERFACE ${ENTT_INCLUDE_DIR})
+add_library(EnTT::EnTT ALIAS entt)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE

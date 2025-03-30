@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(application)
- 
-find_package(EnTT CONFIG REQUIRED)
 
 file(GLOB ENGINE_APP_SOURCES FILES *.cpp *.h)
 file(GLOB_RECURSE ENGINE_RENDERING_SOURCES FILES rendering/*cpp)
