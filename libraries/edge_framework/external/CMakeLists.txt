@@ -25,6 +25,19 @@ set(REFLCPP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/refl-cpp/include)
 target_sources(refl-cpp INTERFACE ${REFLCPP_INCLUDE_DIR}/refl.hpp)
 target_include_directories(refl-cpp SYSTEM INTERFACE ${REFLCPP_INCLUDE_DIR})
 
+# nlohmann json
+add_library(nlohmann_json INTERFACE)
+set(NLOHMANN_JSON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/json/include)
+target_sources(nlohmann_json INTERFACE 
+    "${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/adl_serializer.hpp"
+    "${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/byte_container_with_subtype.hpp"
+    "${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/json.hpp"
+    "${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/json_fwd.hpp"
+    "${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/ordered_map.hpp"
+)
+target_include_directories(nlohmann_json SYSTEM INTERFACE ${NLOHMANN_JSON_INCLUDE_DIR})
+add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
+
 # tinygltf
 add_library(tinygltf INTERFACE)
 set(TINYGLTF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinygltf)
@@ -321,6 +334,8 @@ target_link_libraries(${PROJECT_NAME}
 
     spirv-cross-core
 	spirv-cross-glsl
+
+    nlohmann_json::nlohmann_json
     #vulkan
     #volk
     #vma

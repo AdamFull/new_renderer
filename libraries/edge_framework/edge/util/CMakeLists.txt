@@ -6,7 +6,6 @@ set(TRACY_CALLSTACK ON CACHE BOOL "Enfore callstack collection for tracy regions
 endif()
 
 find_package(Tracy CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
 
 target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/debugbreak.h"

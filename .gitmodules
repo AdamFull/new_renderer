@@ -47,3 +47,6 @@
 	path = libraries/edge_framework/external/entt
 	url = https://github.com/skypjack/entt.git
 	branch = v3.13.x
+[submodule "libraries/edge_framework/external/json"]
+	path = libraries/edge_framework/external/json
+	url = https://github.com/nlohmann/json.git
