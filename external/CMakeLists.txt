@@ -186,9 +186,10 @@ add_library(ZLIB::ZLIB ALIAS zlib)
 set(ZLIB_LIBRARY ZLIB::ZLIB)
 #
 # libzip
-set(LIBZIP_BUILD_TOOLS OFF CACHE BOOL "Disable libzip tools"   FORCE)
-set(LIBZIP_BUILD_EXAMPLES OFF CACHE BOOL "Disable libzip examples" FORCE)
-set(LIBZIP_BUILD_DOC OFF CACHE BOOL "Disable libzip docs" FORCE)
+set(BUILD_TOOLS OFF CACHE BOOL "Disable libzip tools" FORCE)
+set(BUILD_REGRESS OFF CACHE BOOL "Disable libzip regress tests" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "Disable libzip examples" FORCE)
+set(BUILD_DOC OFF CACHE BOOL "Disable libzip docs" FORCE)
 add_subdirectory(libzip)
 
 # libktx

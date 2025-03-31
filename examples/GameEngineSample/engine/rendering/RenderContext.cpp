@@ -146,7 +146,7 @@ namespace engine
 			technique_db = std::make_unique<edge::gfx::TechniqueDatabase>();
 			technique_db->load("/root/tdbcache");
 			technique_db->load_config({ 
-				"/source/embed/shaders/technique_db.json", 
+				"/root/embed/technique_db.json", 
 				shared_descriptor,
 				current_frame->backbuffer->get_format()
 				});

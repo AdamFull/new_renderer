@@ -21,6 +21,27 @@ if(NOT DEFINED CMAKE_C_COMPILER_LAUNCHER AND NOT DEFINED CMAKE_CXX_COMPILER_LAUN
     endif()
 endif()
 
+#if(MSVC)
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+#endif()
+
+function(copy_dependency_file target)
+    foreach(file IN LISTS ARGN)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${file}
+                $<TARGET_FILE_DIR:${target}>
+        )
+    endforeach()
+endfunction()
+function(copy_dependency_directory target)
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${file}
+            $<TARGET_FILE_DIR:${target}>
+    )
+endfunction()
+
 add_compile_definitions(
     NOMINMAX
 )

@@ -49,18 +49,26 @@ target_link_libraries(${PROJECT_NAME}
     application
 )
 
-install(TARGETS ${PROJECT_NAME}
-  RUNTIME_DEPENDENCIES
-    PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
-    POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+set(PROJECT_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/engine")
+set(EMBED_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../embed")
+
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_OUTPUT_DIR}/embed"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${EMBED_SOURCE_DIR}/font" "${PROJECT_OUTPUT_DIR}/embed/font"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${EMBED_SOURCE_DIR}/mono" "${PROJECT_OUTPUT_DIR}/embed/mono"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${EMBED_SOURCE_DIR}/textures" "${PROJECT_OUTPUT_DIR}/embed/textures"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EMBED_SOURCE_DIR}/shaders/technique_db.json" "${PROJECT_OUTPUT_DIR}/embed/technique_db.json"
 )
 
-#if(MSVC)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}"
-        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}"
-        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}"
-        RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}"
+if(MSVC)
+    set_target_properties(engine PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR}
     )
-#endif()
+    add_custom_command(TARGET engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:engine>
+            $<TARGET_FILE_DIR:engine>
+        COMMAND_EXPAND_LISTS
+    )
+endif()

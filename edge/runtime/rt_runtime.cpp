@@ -28,8 +28,7 @@ namespace edge {
 
 		// Mount default engine root filesystem
 		fs::mount("/root", new fs::NativeFilesystem("./"));
-		fs::mount("/source", new fs::NativeFilesystem("./../../../"));
-		fs::mount("/resources", new fs::ZipFilesystem("resources.zip"));
+		fs::mount("/source", new fs::NativeFilesystem("./../../../../../"));
 
 		return 0;
 	}
