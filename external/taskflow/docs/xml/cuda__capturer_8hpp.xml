@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.1" xml:lang="en-US">
+  <compounddef id="cuda__capturer_8hpp" kind="file" language="C++">
+    <compoundname>cuda_capturer.hpp</compoundname>
+    <includes refid="cuda__task_8hpp" local="yes">cuda_task.hpp</includes>
+    <includes refid="cuda__optimizer_8hpp" local="yes">cuda_optimizer.hpp</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>taskflow/cuda/cuda_capturer.hpp</label>
+        <link refid="cuda__capturer_8hpp"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>cuda_graph.hpp</label>
+      </node>
+      <node id="4">
+        <label>cuda_optimizer.hpp</label>
+        <link refid="cuda__optimizer_8hpp"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>cuda_task.hpp</label>
+        <link refid="cuda__task_8hpp"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+    </incdepgraph>
+    <innerclass refid="classtf_1_1cudaFlowCapturer" prot="public">tf::cudaFlowCapturer</innerclass>
+    <innerclass refid="structtf_1_1cudaFlowCapturer_1_1External" prot="private">tf::cudaFlowCapturer::External</innerclass>
+    <innerclass refid="structtf_1_1cudaFlowCapturer_1_1Internal" prot="private">tf::cudaFlowCapturer::Internal</innerclass>
+    <innernamespace refid="namespacetf">tf</innernamespace>
+    <briefdescription>
+<para>cudaFlow capturer include file </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="taskflow/cuda/cuda_capturer.hpp"/>
+  </compounddef>
+</doxygen>

@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.18.0)
 project(scene_compiler)
 
-add_subdirectory("${MAIN_PROJECT_DIRECTORY_PATH}/libraries/easygltf" easygltf)
-
 file(GLOB_RECURSE SCENE_COMPILER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 file(GLOB_RECURSE SCENE_COMPILER_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
@@ -25,7 +23,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_link_libraries(${PROJECT_NAME} 
 	PRIVATE easygltf
     PRIVATE utility_lib
-)
-target_include_directories(${PROJECT_NAME} 
-    PUBLIC "${MAIN_PROJECT_DIRECTORY_PATH}/libraries/easygltf/include"
 )

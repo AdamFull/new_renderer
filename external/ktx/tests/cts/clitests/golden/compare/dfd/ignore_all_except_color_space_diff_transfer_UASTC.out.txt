@@ -1,0 +1,4 @@
+Data Format Descriptor
+
+-Transfer: KHR_DF_TRANSFER_LINEAR
++Transfer: KHR_DF_TRANSFER_DCIP3

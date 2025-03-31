@@ -1,80 +1,34 @@
-cmake_minimum_required(VERSION 3.28.0)
-project(engine)
+cmake_minimum_required(VERSION 3.22.1)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-set(MAIN_PROJECT_DIRECTORY_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-set(OUT_BINARIES_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-set(ENGINE_BINARIES_PATH ${OUT_BINARIES_PATH}/${CMAKE_BUILD_TYPE}/engine)
-set(TOOLS_BINARIES_PATH ${OUT_BINARIES_PATH}/${CMAKE_BUILD_TYPE}/tools)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-file(MAKE_DIRECTORY ${OUT_BINARIES_PATH})
-
-if(WIN32)
-add_compile_definitions("PLATFORM_WIN32")
-endif()
-
-add_compile_definitions(FMT_UNICODE=0)
-
-if(MSVC)
-    add_compile_options(/bigobj)
+if(NOT DEFINED CMAKE_C_COMPILER_LAUNCHER AND NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER)
+    find_program(CCACHE_FOUND ccache)
+    find_program(SCCACHE_FOUND sccache)
+    if (SCCACHE_FOUND)
+        message("setting SCCACHE to ${SCCACHE_FOUND}")
+        set(CMAKE_C_COMPILER_LAUNCHER ${SCCACHE_FOUND})
+        set(CMAKE_CXX_COMPILER_LAUNCHER ${SCCACHE_FOUND})
+    elseif(CCACHE_FOUND)
+        message("setting CCACHE to ${CCACHE_FOUND}")
+        set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_FOUND})
+        set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_FOUND})
+    endif()
 endif()
 
 add_compile_definitions(
-    IMGUI_DEFINE_MATH_OPERATORS
-    IMGUI_USE_WCHAR32
     NOMINMAX
 )
 
-# global includes
-include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/imdbg"
-    "${CMAKE_CURRENT_SOURCE_DIR}/libraries/edge_framework"
-    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
-)
+add_subdirectory(external)
 
-add_compile_definitions($<$<CONFIG:DEBUG>:ENGINE_DEBUG>)
+add_subdirectory(tools/shader_compiler)
 
-add_subdirectory(libraries/imdbg)
-add_subdirectory(libraries/edge_framework)
-
-add_subdirectory(engine)
-
-set(APP_SOURCES main.cpp)
-
-if(ANDROID)
-    if(CMAKE_VS_NsightTegra_VERSION)
-        list(APPEND APP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/android/AndroidManifest.xml)
-    endif()
-
-    add_library(${PROJECT_NAME} SHARED ${APP_SOURCES})
-elseif(IOS)
-	list(REMOVE_AT APP_SOURCES 0)
-	list(APPEND APP_SOURCES
-			${CMAKE_CURRENT_SOURCE_DIR}/ios/main.mm
-			${CMAKE_CURRENT_SOURCE_DIR}/ios/AppDelegate.h
-			${CMAKE_CURRENT_SOURCE_DIR}/ios/AppDelegate.m
-			${CMAKE_CURRENT_SOURCE_DIR}/ios/ViewController.h
-			${CMAKE_CURRENT_SOURCE_DIR}/ios/ViewController.mm
-	)
-    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${APP_SOURCES})
-else()
-    add_executable(${PROJECT_NAME} WIN32 ${APP_SOURCES})
-endif()
-
-target_link_libraries(${PROJECT_NAME} 
-    PRIVATE 
-    application
-)
-
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${ENGINE_BINARIES_PATH}
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${ENGINE_BINARIES_PATH}
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${ENGINE_BINARIES_PATH}
-    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${ENGINE_BINARIES_PATH}
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${ENGINE_BINARIES_PATH}
-)
+add_subdirectory(edge)
+add_subdirectory(examples/GameEngineSample)
+add_subdirectory(examples/HelloTriangle)
