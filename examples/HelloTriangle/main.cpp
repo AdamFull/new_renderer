@@ -436,7 +436,7 @@ private:
 	edge::gfx::IBuffer* vertex_buffer{ nullptr };
 };
 
-int runtime_main(const edge::IRuntimeContext& context)
+int runtime_main(edge::IRuntimeContext& context)
 {
     auto runtime = edge::create_application_context(context);
 

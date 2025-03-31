@@ -29,6 +29,8 @@ if(WIN32)
 
     target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 elseif(ANDROID)
+    find_package(game-activity REQUIRED CONFIG)
+
     target_sources(${PROJECT_NAME} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/android/rt_android_common.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/android/rt_android_common.h"
@@ -43,7 +45,6 @@ elseif(ANDROID)
     )
     target_link_libraries(${PROJECT_NAME} 
         PRIVATE
-        log 
         android 
         game-activity::game-activity
     )

@@ -7,15 +7,15 @@ SHLIB_NS_BEGIN
 
 // Define joints type
 #if defined(JOINTS_16BIT)
-#define Joints u16vec4
+#define joints_t u16vec4
 #else
-#define Joints u8vec4
+#define joints_t u8vec4
 #endif
 
 #if defined(INDEX_16BIT)
-#define Index uint16_t
+#define sindex_t uint16_t
 #else
-#define Index uint32_t
+#define sindex_t uint32_t
 #endif
 
 struct DrawIndexedIndirectData

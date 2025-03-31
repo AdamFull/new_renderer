@@ -86,11 +86,11 @@ namespace edge::gfx
 		for (int32_t i = 0; i < uploader_count; ++i)
 			upload_contexts.emplace_back(std::make_unique<UploadContext>());
 		
-		dispatcher_thread = std::jthread([this](std::stop_token stop_token) { loop(stop_token); });
+		dispatcher_thread = std::thread([this]() { loop(); });
 	}
 
 	UploadingDispatcher::~UploadingDispatcher() {
-		dispatcher_thread.request_stop();
+        should_stop.store(true, std::memory_order_relaxed);
 		cv.notify_all();
 
 		upload_contexts.clear();
@@ -117,18 +117,18 @@ namespace edge::gfx
 		return *upload_contexts[active_uploader_idx];
 	}
 
-	auto UploadingDispatcher::loop(std::stop_token stop_token) -> void {
+	auto UploadingDispatcher::loop() -> void {
 		EDGE_PROFILE_SET_THREAD_NAME("UPLOADING_WORK_DISPATCHER");
 
-		while (!stop_token.stop_requested()) {
+		while (!should_stop.load(std::memory_order_relaxed)) {
 			// Wait for new jobs
 			tf::Taskflow local_jobs{};
 			std::vector<std::shared_ptr<AsyncResourceHandle>> local_handles;
 			{
 				std::unique_lock lock(mutex);
-				cv.wait(lock, [&] { return !pending_jobs.empty() || stop_token.stop_requested(); });
+				cv.wait(lock, [&] { return !pending_jobs.empty() || should_stop.load(std::memory_order_relaxed); });
 
-				if (stop_token.stop_requested())
+				if (should_stop.load(std::memory_order_relaxed))
 					break;
 
 				std::swap(local_jobs, pending_jobs);

@@ -34,7 +34,7 @@ void main()
 #ifdef HAS_SKIN
 	if(mesh.skin_offset != ~0u)
 	{
-		Joints joints = GetVertexJoints(vertex_index);
+		joints_t joints = GetVertexJoints(vertex_index);
 		vec4 weights = GetVertexWeights(vertex_index);
 
 		mat4 skin_mat = 

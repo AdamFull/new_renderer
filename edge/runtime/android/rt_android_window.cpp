@@ -18,27 +18,27 @@ namespace edge::android
 		native_surface = nullptr;
 	}
 
-	bool AndroidWindow::should_close() {
+	bool AndroidWindow::should_close() const noexcept {
 		return finish_called;
 	}
 
 	void AndroidWindow::process_events() {
-		auto* app = runtime.GetApp();
-		ProcessAndroidEvents(app);
+		auto* app = runtime.get_android_app();
+        process_android_events(app);
 	}
 
 	void AndroidWindow::close() {
-		auto* app = runtime.GetApp();
+        auto* app = runtime.get_android_app();
 		GameActivity_finish(app->activity);
 		finish_called = true;
 	}
 
-	float AndroidWindow::get_dpi_factor() const {
-		auto* app = runtime.GetApp();
+	float AndroidWindow::get_dpi_factor() const noexcept {
+        auto* app = runtime.get_android_app();
 		return AConfiguration_getDensity(app->config) / static_cast<float>(ACONFIGURATION_DENSITY_MEDIUM);
 	}
 
-	void AndroidWindow::set_title(std::string_view new_title) {
+	void AndroidWindow::set_title(std::string_view new_title) const {
 	}
 
 	std::vector<const char*> AndroidWindow::get_required_surface_extensions() const {

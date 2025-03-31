@@ -149,7 +149,7 @@ void HierarchyWindow::BuildHierarchy(const entt::entity& entity)
         if (ImGui::BeginDragDropSource())
         {
             ImGui::SetDragDropPayload("scene_node", &entity, sizeof(entity));
-            ImGui::Text(base.name.c_str());
+            ImGui::Text("%s", base.name.c_str());
             ImGui::EndDragDropSource();
         }
 

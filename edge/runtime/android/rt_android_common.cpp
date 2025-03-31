@@ -21,7 +21,7 @@ namespace edge::android {
 		}
 		if (app->userData) {
 			auto runtime = reinterpret_cast<AndroidRuntime*>(app->userData);
-			runtime->ProcessInputEvents();
+			runtime->process_input_events();
 		}
 		return true;
 	}

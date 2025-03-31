@@ -473,7 +473,7 @@
 #define ICON_MDI_AUGMENTED_REALITY "\xf3\xb0\xa1\x90"
 #define ICON_MDI_AUTO_DOWNLOAD "\xf3\xb1\x8d\xbe"
 #define ICON_MDI_AUTO_FIX "\xf3\xb0\x81\xa8"
-#define ICON_MDI_AUTO_UPLOAD "\xf3\xb0\x81\xa9"c
+#define ICON_MDI_AUTO_UPLOAD "\xf3\xb0\x81\xa9"
 #define ICON_MDI_AUTORENEW "\xf3\xb0\x81\xaa"
 #define ICON_MDI_AV_TIMER "\xf3\xb0\x81\xab"
 #define ICON_MDI_AWS "\xf3\xb0\xb8\x8f"

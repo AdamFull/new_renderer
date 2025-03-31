@@ -252,7 +252,7 @@ bool ImGui::GBeginTable(std::string_view label)
         TableSetupColumn("Controls", ImGuiTableColumnFlags_WidthStretch);
 
         TableNextColumn();
-        Text(label.data());
+        Text("%s", label.data());
 
         TableNextColumn();
 

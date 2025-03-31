@@ -19,11 +19,11 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/utl_memory.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utl_memory.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utl_profiler.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utl_scheduler.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utl_scheduler.h"
+    #"${CMAKE_CURRENT_SOURCE_DIR}/utl_scheduler.cpp"
+    #"${CMAKE_CURRENT_SOURCE_DIR}/utl_scheduler.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/utl_string.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utl_thread_pool.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utl_thread_pool.h"
+    #"${CMAKE_CURRENT_SOURCE_DIR}/utl_thread_pool.cpp"
+    #"${CMAKE_CURRENT_SOURCE_DIR}/utl_thread_pool.h"
 )
 
 target_link_libraries(${PROJECT_NAME} 

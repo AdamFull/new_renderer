@@ -111,9 +111,9 @@ FRawVertex[3] LoadTriangle(in uint drawID, in uint primID)
 	uint triVert3IndexBufferPosition = (primID * 3 + 2) + startIndex;	
 
 	// Now get vertex index from index buffer (eg, 17, 41, 32)
-	Index triVert0Index = GetIndex(triVert1IndexBufferPosition);
-	Index triVert1Index = GetIndex(triVert2IndexBufferPosition); 
-	Index triVert2Index = GetIndex(triVert3IndexBufferPosition);
+	sindex_t triVert0Index = GetIndex(triVert1IndexBufferPosition);
+	sindex_t triVert1Index = GetIndex(triVert2IndexBufferPosition); 
+	sindex_t triVert2Index = GetIndex(triVert3IndexBufferPosition);
 
 	// Load vertex data of the 3 control points 
 	vertices[0] = LoadVertex(triVert0Index, draw_command.vertexOffset, drawID);
@@ -209,9 +209,9 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 #ifdef HAS_SKIN
 	if(mesh.skin_offset != ~0u)
 	{
-		Joints joints0 = vertices[0].joints;
-		Joints joints1 = vertices[1].joints;
-		Joints joints2 = vertices[2].joints;
+		joints_t joints0 = vertices[0].joints;
+		joints_t joints1 = vertices[1].joints;
+		joints_t joints2 = vertices[2].joints;
 
 		vec4 weights0 = vertices[0].weights;
 		vec4 weights1 = vertices[1].weights;

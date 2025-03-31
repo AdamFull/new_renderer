@@ -182,9 +182,9 @@ namespace edge::android
 
 		app->contentRect = *rect;
 
-		if (write(app->msgwrite, &cmd, sizeof(cmd)) != sizeof(cmd)) {
-			EDGE_LOGE("Failure writing android_app cmd: {}\n", strerror(errno));
-		}
+		//if (write(app->msgwrite, &cmd, sizeof(cmd)) != sizeof(cmd)) {
+		//	EDGE_LOGE("Failure writing android_app cmd: {}\n", strerror(errno));
+		//}
 	}
 
 	void on_app_cmd(android_app* app, int32_t cmd) {
@@ -193,23 +193,23 @@ namespace edge::android
 
 		switch (cmd) {
 		case APP_CMD_INIT_WINDOW: {
-			runtime->OnResize(ANativeWindow_getWidth(app->window), ANativeWindow_getHeight(app->window));
-			runtime->SetSurfaceReady();
+			runtime->on_resize(ANativeWindow_getWidth(app->window), ANativeWindow_getHeight(app->window));
+			runtime->set_surface_ready();
 			break;
 		}
 		case APP_CMD_CONTENT_RECT_CHANGED: {
 			// Get the new size
 			auto width = app->contentRect.right - app->contentRect.left;
 			auto height = app->contentRect.bottom - app->contentRect.top;
-			runtime->OnResize(width, height);
+			runtime->on_resize(width, height);
 			break;
 		}
 		case APP_CMD_GAINED_FOCUS: {
-			runtime->SetFocus(true);
+			runtime->set_focus(true);
 			break;
 		}
 		case APP_CMD_LOST_FOCUS: {
-			runtime->SetFocus(false);
+			runtime->set_focus(false);
 			break;
 		}
 		}
@@ -230,9 +230,9 @@ namespace edge::android
 		return false;
 	}
 
-	AndroidRuntime::AndroidRuntime(const IRuntimeContext& context) :
-		IRuntime(context) {
-		ctx = static_cast<const AndroidRuntimeContext*>(&context);
+	AndroidRuntime::AndroidRuntime(IRuntimeContext& context) :
+            Runtime(context) {
+		ctx = static_cast<AndroidRuntimeContext*>(&context);
 	}
 
 	int32_t AndroidRuntime::initialize() {
@@ -245,13 +245,13 @@ namespace edge::android
 		//app->activity->callbacks->onContentRectChanged = on_content_rect_changed;
 		app->userData = this;
 
-		auto code = Runtime::Initialize();
+		auto code = Runtime::initialize();
 		if (code != ExitCode::Success) {
 			return code;
 		}
 
 		do {
-			if (!ProcessAndroidEvents(app)) {
+			if (!process_android_events(app)) {
 				// Android requested for the app to close
 				EDGE_LOGI("Android app has been destroyed by the OS");
 				return ExitCode::Close;
@@ -274,9 +274,9 @@ namespace edge::android
 		}
 
 		auto* app = ctx->get_app();
-		while (ProcessAndroidEvents(app));
+		while (process_android_events(app));
 
-		Runtime::Terminate(code);
+		Runtime::terminate(code);
 	}
 
 	void AndroidRuntime::process_input_events() {

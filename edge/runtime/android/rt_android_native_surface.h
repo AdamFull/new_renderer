@@ -1,5 +1,6 @@
 #pragma once
 
+#include <android/native_window.h>
 #include "../rt_native_surface.h"
 
 namespace edge::android {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <queue>
 #include <thread>
 #include <future>
@@ -90,7 +91,7 @@ namespace edge::gfx
 		auto get_worker_context() -> WorkerContext&;
 	private:
 		auto get_upload_context() -> UploadContext&;
-		auto loop(std::stop_token stop_token) -> void;
+		auto loop() -> void;
 		auto register_thread_context() -> size_t;
 
 		const IQueue* queue;
@@ -102,7 +103,8 @@ namespace edge::gfx
 
 		std::atomic_bool sync_needed{};
 
-		std::jthread dispatcher_thread;
+		std::thread dispatcher_thread;
+        std::atomic_bool should_stop{false};
 		std::mutex mutex;
 		std::mutex semaphore_mutex;
 		std::condition_variable cv;

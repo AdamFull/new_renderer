@@ -48,7 +48,7 @@ add_compile_definitions(
 
 add_subdirectory(external)
 
-add_subdirectory(tools/shader_compiler)
+#add_subdirectory(tools/shader_compiler)
 
 add_subdirectory(edge)
 add_subdirectory(examples/GameEngineSample)

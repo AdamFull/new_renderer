@@ -10,7 +10,7 @@ namespace edge::android {
 	class AndroidRuntime final : public Runtime
 	{
 	public:
-		AndroidRuntime(const IRuntimeContext& context);
+		AndroidRuntime(IRuntimeContext& context);
 		virtual ~AndroidRuntime() = default;
 
 		int32_t initialize() override;
@@ -27,7 +27,7 @@ namespace edge::android {
 	protected:
 		virtual void create_window(const Window::Properties& properties) override;
 	private:
-		const AndroidRuntimeContext* ctx{ nullptr };
+		AndroidRuntimeContext* ctx{ nullptr };
 
 		bool surface_ready{ false };
 	};

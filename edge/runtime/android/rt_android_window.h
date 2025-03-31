@@ -13,15 +13,15 @@ namespace edge::android
 		AndroidWindow(AndroidRuntime& runtime, ANativeWindow*& window, const Window::Properties& properties);
 		~AndroidWindow();
 
-		bool should_close() override;
+		bool should_close() const noexcept override;
 
 		void process_events() override;
 
 		void close() override;
 
-		float get_dpi_factor() const override;
+		float get_dpi_factor() const noexcept override;
 
-		void SetTitle(std::string_view new_title) override;
+		void set_title(std::string_view new_title) const override;
 
 		std::vector<const char*> get_required_surface_extensions() const override;
 	private:

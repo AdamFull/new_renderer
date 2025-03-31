@@ -84,12 +84,12 @@ vec4 GetVertexTangent(uint32_t vertex_index)
 #endif
 }
 
-Joints GetVertexJoints(uint32_t vertex_index)
+joints_t GetVertexJoints(uint32_t vertex_index)
 {
 #ifdef HAS_SKIN
 	return geometry_buffers.joints[vertex_index].data;
 #else
-	return Joints(0);
+	return joints_t(0);
 #endif
 }
 
@@ -102,7 +102,7 @@ vec4 GetVertexWeights(uint32_t vertex_index)
 #endif
 }
 
-Index GetIndex(uint32_t offset)
+sindex_t GetIndex(uint32_t offset)
 {
 	return geometry_buffers.indices[offset].data;
 }
@@ -117,7 +117,7 @@ struct FRawVertex
 
 	vec4 tangent;
 	
-	Joints joints;
+	joints_t joints;
 	vec4 weights;
 };
 
