@@ -44,8 +44,9 @@ elseif(ANDROID)
         "${CMAKE_CURRENT_SOURCE_DIR}/android/rt_android_window.h"
     )
     target_link_libraries(${PROJECT_NAME} 
-        PRIVATE
+        PUBLIC
+            log
         android 
-        game-activity::game-activity
+        game-activity::game-activity_static
     )
 endif()

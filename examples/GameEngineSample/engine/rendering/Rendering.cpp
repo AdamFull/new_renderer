@@ -2117,7 +2117,7 @@ namespace engine
 
 					ImGuiIO& io = ImGui::GetIO();
 					io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-					uint64_t upload_size = width * height * 4ull * sizeof(char);
+					size_t upload_size = width * height * 4ull * sizeof(char);
 
 					TextureResourceCreateInfo font_texture_ci{};
 					font_texture_ci.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eTransferable;

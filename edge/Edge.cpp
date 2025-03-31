@@ -13,7 +13,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 #include "runtime/android/rt_android_runtime_context.h"
 #include "runtime/android/rt_android_runtime.h"
 
-void android_main(android_app* state)
+extern "C" void android_main(android_app* state)
 {
 	auto context = std::make_unique<edge::android::AndroidRuntimeContext>(state);
 	runtime_main(*context);

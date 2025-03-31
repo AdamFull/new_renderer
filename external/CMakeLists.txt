@@ -143,6 +143,9 @@ target_include_directories(zstd SYSTEM INTERFACE ${ZSTD_INCLUDE_DIR})
 add_library(ZSTD::ZSTD ALIAS zstd)
 set(ZSTD_LIBRARY ZSTD::ZSTD)
 
+if(ANDROID)
+find_package(ZLIB REQUIRED)
+else()
 # zlib
 set(ZLIB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zlib)
 set(ZLIB_INCLUDE_DIR ${ZLIB_SOURCE_DIR})
@@ -184,6 +187,8 @@ endif()
 
 add_library(ZLIB::ZLIB ALIAS zlib)
 set(ZLIB_LIBRARY ZLIB::ZLIB)
+endif()
+
 #
 # libzip
 set(BUILD_TOOLS OFF CACHE BOOL "Disable libzip tools" FORCE)

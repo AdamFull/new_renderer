@@ -117,7 +117,7 @@ namespace edge::gfx::vulkan
 
 			vk::AndroidSurfaceCreateInfoKHR surface_create_info{};
 			surface_create_info.window = android_surface->get_handle();
-			auto result = Handle(*instance).createAndroidSurfaceKHR(&surface_create_info, allocation_callbacks, &surface);
+			auto result = instance->get_handle().createAndroidSurfaceKHR(&surface_create_info, allocation_callbacks, &surface);
 		}
 #endif
 

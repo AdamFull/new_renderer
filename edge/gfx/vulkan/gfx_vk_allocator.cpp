@@ -66,12 +66,12 @@ namespace edge::gfx::vulkan
 			vmaCalculateStatistics(handle_, &stats);
 			EDGE_LOGI("[VkAllocator] Total device memory leaked: {} bytes.", stats.total.statistics.allocationBytes);
 			vmaDestroyAllocator(handle_);
-			handle_ = nullptr;
+			handle_ = VK_NULL_HANDLE;
 		}
 	}
 
 	[[nodiscard]] vk::Buffer Allocator::create_buffer(Allocation& allocation, vk::BufferCreateInfo const& create_info) {
-		VkBuffer buffer{ nullptr };
+		VkBuffer buffer{ VK_NULL_HANDLE };
 		VmaAllocationInfo allocation_info{};
 		
 		VkBufferCreateInfo buffer_create_info = static_cast<VkBufferCreateInfo>(create_info);
@@ -83,13 +83,13 @@ namespace edge::gfx::vulkan
 		}
 
 		post_create(allocation, allocation_info);
-		return buffer;
+		return vk::Buffer(buffer);
 	}
 
 	void Allocator::destroy_buffer(Allocation& allocation, vk::Buffer& buffer) {
 		if (buffer && allocation) {
 			allocation.unmap_memory();
-			vmaDestroyBuffer(handle_, buffer, allocation.allocation);
+			vmaDestroyBuffer(handle_, (VkBuffer)buffer, allocation.allocation);
 			allocation.clear();
 		}
 	}
@@ -99,7 +99,7 @@ namespace edge::gfx::vulkan
 		assert(0 < create_info.arrayLayers && "Images should have at least one layer");
 		assert(0 < (uint32_t)create_info.usage && "Images should have at least one usage type");
 
-		VkImage image{ nullptr };
+		VkImage image{ VK_NULL_HANDLE };
 		VmaAllocationInfo allocation_info{};
 
 #if 0
@@ -121,7 +121,7 @@ namespace edge::gfx::vulkan
 		}
 
 		post_create(allocation, allocation_info);
-		return image;
+		return vk::Image(image);
 	}
 
 
@@ -129,7 +129,7 @@ namespace edge::gfx::vulkan
 	void Allocator::destroy_image(Allocation& allocation, vk::Image& image) {
 		if (image && allocation) {
 			allocation.unmap_memory();
-			vmaDestroyImage(handle_, image, allocation.allocation);
+			vmaDestroyImage(handle_, (VkImage)image, allocation.allocation);
 			allocation.clear();
 		}
 	}
@@ -154,7 +154,7 @@ namespace edge::gfx::vulkan
 	vk::DeviceMemory Allocation::get_memory() const {
 		VmaAllocationInfo alloc_info;
 		vmaGetAllocationInfo(allocator.get_handle(), allocation, &alloc_info);
-		return alloc_info.deviceMemory;
+		return (vk::DeviceMemory)alloc_info.deviceMemory;
 	}
 
 	void Allocation::flush(vk::DeviceSize offset, vk::DeviceSize size) {

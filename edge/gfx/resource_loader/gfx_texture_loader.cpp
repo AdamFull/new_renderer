@@ -143,7 +143,9 @@ namespace edge::gfx
 						(ktxtexture->baseHeight >> level), 1,
 						layer, ktxtexture->numLayers, level);
 
-					auto ktxresult = ktxTexture_GetImageOffset(ktxtexture, level, 0, layer, &region.buffer_offset);
+                    size_t buffer_offset = region.buffer_offset;
+					auto ktxresult = ktxTexture_GetImageOffset(ktxtexture, level, 0, layer, &buffer_offset);
+                    region.buffer_offset = buffer_offset;
 					if (ktxresult != KTX_SUCCESS)
 						return;
 
