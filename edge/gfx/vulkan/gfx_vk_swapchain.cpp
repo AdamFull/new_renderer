@@ -283,8 +283,8 @@ namespace edge::gfx::vulkan
 
 		vk::Result result = device.get_handle().createSwapchainKHR(&create_info, allocation_callbacks, &handle_);
 
-		images.resize(image_count);
-		result = device.get_handle().getSwapchainImagesKHR(handle_, &image_count, images.data());
+		images.resize(create_info.minImageCount);
+		result = device.get_handle().getSwapchainImagesKHR(handle_, &create_info.minImageCount, images.data());
 	}
 
 	VulkanSwapchain::~VulkanSwapchain() {
