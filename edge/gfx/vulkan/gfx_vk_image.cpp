@@ -92,8 +92,12 @@ namespace edge::gfx::vulkan
 
 		create_info.flags = is_cubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits::eExtendedUsage;
 
-		create_info.queueFamilyIndexCount = family_count;
-		create_info.pQueueFamilyIndices = &queue_families[0];
-		create_info.sharingMode = vk::SharingMode::eConcurrent;
+		create_info.sharingMode = vk::SharingMode::eExclusive;
+
+		if (family_count > 1) {
+			create_info.queueFamilyIndexCount = family_count;
+			create_info.pQueueFamilyIndices = &queue_families[0];
+			create_info.sharingMode = vk::SharingMode::eConcurrent;
+		}
 	}
 }

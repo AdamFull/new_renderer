@@ -61,14 +61,17 @@ namespace edge::gfx::vulkan
 		buffer_create_info.size = aligned_size(create_info.size, minimal_alignment) * create_info.count;
 		size = buffer_create_info.size;
 
-		buffer_create_info.sharingMode = vk::SharingMode::eConcurrent;
-
 		auto family_count = device.get_queue_type_count();
 
+		buffer_create_info.sharingMode = vk::SharingMode::eExclusive;
+
 		std::array<uint32_t, 8u> queue_families{};
-		std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
-		buffer_create_info.queueFamilyIndexCount = family_count;
-		buffer_create_info.pQueueFamilyIndices = &queue_families[0];
+		if (family_count > 1) {
+			std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
+			buffer_create_info.queueFamilyIndexCount = family_count;
+			buffer_create_info.pQueueFamilyIndices = &queue_families[0];
+			buffer_create_info.sharingMode = vk::SharingMode::eConcurrent;
+		}
 
 		handle_ = allocator.create_buffer(*this, buffer_create_info);
 	}

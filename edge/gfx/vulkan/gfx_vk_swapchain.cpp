@@ -245,9 +245,14 @@ namespace edge::gfx::vulkan
 		// Choose best properties based on surface capabilities
 		vk::SurfaceCapabilitiesKHR const surface_capabilities = physical_device.get_handle().getSurfaceCapabilitiesKHR(surface);
 
+		auto potential_extent = extent;
+		if (potential_extent.width == 1 || potential_extent.height == 1) {
+			potential_extent = surface_capabilities.currentExtent;
+		}
+
 		create_info.oldSwapchain = old_swapchain;
 		create_info.minImageCount = std::clamp(image_count, surface_capabilities.minImageCount, surface_capabilities.maxImageCount ? surface_capabilities.maxImageCount : std::numeric_limits<uint32_t>::max());
-		create_info.imageExtent = choose_extent(extent, surface_capabilities.minImageExtent, surface_capabilities.maxImageExtent, surface_capabilities.currentExtent);
+		create_info.imageExtent = choose_extent(potential_extent, surface_capabilities.minImageExtent, surface_capabilities.maxImageExtent, surface_capabilities.currentExtent);
 		auto surface_format = choose_surface_format({}, surface_formats, surface_format_priority_list);
 		create_info.imageFormat = surface_format.format;
 		create_info.imageArrayLayers = 1;
@@ -264,14 +269,17 @@ namespace edge::gfx::vulkan
 		create_info.imageFormat = surface_format.format;
 		create_info.imageColorSpace = surface_format.colorSpace;
 		create_info.clipped = VK_TRUE;
+		create_info.imageSharingMode = vk::SharingMode::eExclusive;
 
 		auto family_count = device.get_queue_type_count();
 
 		std::array<uint32_t, 8u> queue_families{};
-		std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
-		create_info.queueFamilyIndexCount = family_count;
-		create_info.pQueueFamilyIndices = &queue_families[0];
-		create_info.imageSharingMode = vk::SharingMode::eConcurrent;
+		if (family_count > 1) {
+			std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
+			create_info.queueFamilyIndexCount = family_count;
+			create_info.pQueueFamilyIndices = &queue_families[0];
+			create_info.imageSharingMode = vk::SharingMode::eConcurrent;
+		}
 
 		vk::Result result = device.get_handle().createSwapchainKHR(&create_info, allocation_callbacks, &handle_);
 
