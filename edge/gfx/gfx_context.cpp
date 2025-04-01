@@ -51,7 +51,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_fence();
+        return gfx_context->create_fence();
 	}
 
 	auto create_semaphore(SemaphoreType sem_type) -> ISemaphore* {
@@ -60,7 +60,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_semaphore(sem_type);
+        return gfx_context->create_semaphore(sem_type);
 	}
 
 	auto request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue) -> IQueue const* {
@@ -69,7 +69,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->request_queue(include_queue, exclude_queue);
+		return gfx_context->request_queue(include_queue, exclude_queue);
 	}
 
 	auto create_swapchain(const SwapChainCreateInfo& create_info) -> ISwapchain* {
@@ -78,7 +78,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_swapchain(create_info);
+        return gfx_context->create_swapchain(create_info);
 	}
 
 	auto create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) -> ICommandPool* {
@@ -87,7 +87,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_command_pool(queue, reset_mode);
+        return gfx_context->create_command_pool(queue, reset_mode);
 	}
 
 	auto create_buffer(const BufferCreateInfo& create_info) -> IBuffer* {
@@ -96,7 +96,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_buffer(create_info);
+        return gfx_context->create_buffer(create_info);
 	}
 
 	auto create_texture(const TextureCreateInfo& create_info) -> ITexture* {
@@ -105,7 +105,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_texture(create_info);
+        return gfx_context->create_texture(create_info);
 	}
 
 	auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) -> ITexture* {
@@ -114,7 +114,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_swapchain_texture(swapchain, image_index);
+        return gfx_context->create_swapchain_texture(swapchain, image_index);
 	}
 
 	auto create_shader(std::span<const ShaderStageInfo> shader_stages) -> IShader* {
@@ -123,7 +123,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_shader(shader_stages);
+        return gfx_context->create_shader(shader_stages);
 	}
 
 	auto create_root_signature(const RootSignatureCreateInfo& create_info) -> IRootSignature* {
@@ -132,7 +132,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_root_signature(create_info);
+        return gfx_context->create_root_signature(create_info);
 	}
 
 	auto create_pipeline(const GraphicsPipelineCreateInfo& create_info) -> IPipeline* {
@@ -141,7 +141,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_pipeline(create_info);
+        return gfx_context->create_pipeline(create_info);
 	}
 
 	auto create_pipeline(const ComputePipelineCreateInfo& create_info) -> IPipeline* {
@@ -150,7 +150,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_pipeline(create_info);
+        return gfx_context->create_pipeline(create_info);
 	}
 
 	auto create_pipeline_cache(const PipelineCacheCreateInfo& create_info) -> IPipelineCache* {
@@ -159,7 +159,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_pipeline_cache(create_info);
+        return gfx_context->create_pipeline_cache(create_info);
 	}
 
 	auto create_descriptor_allocator() -> IDescriptorAllocator* {
@@ -168,7 +168,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_descriptor_allocator();
+        return gfx_context->create_descriptor_allocator();
 	}
 
 	auto create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) -> ISharedDescriptor* {
@@ -177,7 +177,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_shared_descriptor(create_info);
+        return gfx_context->create_shared_descriptor(create_info);
 	}
 
 	auto create_sampler(const SamplerCreateInfo& create_info) -> ISampler* {
@@ -186,7 +186,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_sampler(create_info);
+        return gfx_context->create_sampler(create_info);
 	}
 
 	auto create_query_pool(const QueryPoolCreateInfo& create_info) -> IQueryPool* {
@@ -195,7 +195,7 @@ namespace edge::gfx
 			return nullptr;
 		}
 
-		gfx_context->create_query_pool(create_info);
+        return gfx_context->create_query_pool(create_info);
 	}
 
 	void wait_for_fences(std::span<IFence*> fences, uint64_t timeout) {
