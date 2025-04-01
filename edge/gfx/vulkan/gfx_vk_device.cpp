@@ -128,7 +128,56 @@ namespace edge::gfx::vulkan
 		for (uint32_t queue_family_index = 0U; queue_family_index < queue_family_properties.size(); ++queue_family_index) {
 			vk::QueueFamilyProperties const& queue_family_property = queue_family_properties[queue_family_index];
 			vk::Bool32 present_supported = gpu.get_handle().getSurfaceSupportKHR(queue_family_index, surface);
-			queue_families.emplace_back(*this, queue_family_index, queue_family_property, present_supported);
+
+			bool is_graphics_commands_supported = (queue_family_property.queueFlags & vk::QueueFlagBits::eGraphics) == vk::QueueFlagBits::eGraphics;
+			bool is_compute_commands_supported = (queue_family_property.queueFlags & vk::QueueFlagBits::eCompute) == vk::QueueFlagBits::eCompute;
+			bool is_copy_commands_supported = (queue_family_property.queueFlags & vk::QueueFlagBits::eTransfer) == vk::QueueFlagBits::eTransfer;
+
+			QueueType queue_family_type{};
+			if (present_supported &&
+				is_graphics_commands_supported &&
+				is_compute_commands_supported &&
+				is_copy_commands_supported) {
+				queue_family_type = QueueType::eDirect;
+			}
+			else if (present_supported &&
+				is_compute_commands_supported &&
+				is_copy_commands_supported) {
+				queue_family_type = QueueType::eCompute;
+			}
+			else if (is_copy_commands_supported) {
+				queue_family_type = QueueType::eCopy;
+			}
+
+			auto& family_group = queue_families[static_cast<std::underlying_type<QueueType>::type>(queue_family_type)];
+			auto& new_family = family_group.emplace_back();
+			new_family.index = queue_family_index;
+
+			for (uint32_t queue_index = 0U; queue_index < queue_family_property.queueCount; ++queue_index) {
+				new_family.queues.emplace_back(*this, new_family.index, queue_index);
+			}
+
+			queue_family_count++;
+
+#ifndef NDEBUG
+			std::string supported_commands;
+
+			if (present_supported)
+				supported_commands += "present|";
+			if (is_graphics_commands_supported)
+				supported_commands += "graphics|";
+			if (is_compute_commands_supported)
+				supported_commands += "compute|";
+			if (is_copy_commands_supported)
+				supported_commands += "transfer|";
+
+			if (!supported_commands.empty())
+				supported_commands.pop_back();
+
+			EDGE_LOGD("[VkDevice] Found \"{}\" queue that support: {} commands.", 
+				enum_to_string(queue_family_type), 
+				supported_commands);
+#endif
 		}
 	}
 
@@ -137,13 +186,28 @@ namespace edge::gfx::vulkan
 			handle_.destroy();
 	}
 
-	auto Device::request_queue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) -> VulkanQueue* {
-		for (auto& family : queue_families) {
-			if (auto* queue = family.look_up_queue(include_flags, exclude_flags))
-				return queue;
+	auto Device::get_queue_count(QueueType queue_type) -> uint32_t {
+		auto& family_group = queue_families[static_cast<std::underlying_type<QueueType>::type>(queue_type)];
+		if (family_group.empty()) {
+			return 0u;
 		}
 
-		return nullptr;
+		uint32_t queue_count{ 0u };
+		for (auto& family : family_group) {
+			queue_count += family.queues.size();
+		}
+
+		return queue_count;
+	}
+
+	auto Device::get_queue(QueueType queue_type, uint32_t queue_index) -> VulkanQueue* {
+		auto& family_group = queue_families[static_cast<std::underlying_type<QueueType>::type>(queue_type)];
+		if (family_group.empty()) {
+			return nullptr;
+		}
+
+		// TODO: Check that index is in queue range
+		return &family_group.front().queues[queue_index];
 	}
 
 	auto Device::is_extension_supported(const char* extension) const noexcept -> bool {

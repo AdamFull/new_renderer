@@ -13,18 +13,27 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanQueue::VulkanQueue(QueueFamilyManager* family_manager, vk::Queue queue) :
-		VulkanResource{ queue, family_manager->get_device().get_allocation_callbacks() },
-		family_manager{ family_manager } {
+	VulkanQueue::VulkanQueue(Device& device, uint32_t family_index, uint32_t queue_index) :
+		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+		device{ device },
+		family_index{ family_index },
+		queue_index{ queue_index } {
+
+		vk::DeviceQueueInfo2 queue_info{};
+		queue_info.queueFamilyIndex = family_index;
+		queue_info.queueIndex = queue_index;
+
+		device.get_handle().getQueue2(&queue_info, &handle_);
 	}
 
 	VulkanQueue::VulkanQueue(VulkanQueue&& other) :
 		VulkanResource{ std::move(other) },
-		family_manager{ std::exchange(other.family_manager, nullptr) } {
+		device{ other.device },
+		family_index{ std::exchange(other.family_index, {}) },
+		queue_index{ std::exchange(other.queue_index, {}) } {
 	}
 
 	void VulkanQueue::set_resource_name(std::string_view name) const noexcept {
-		auto& device = family_manager->get_device();
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(handle_, name);
 	}

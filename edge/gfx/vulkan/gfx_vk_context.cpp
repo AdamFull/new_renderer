@@ -212,8 +212,12 @@ namespace edge::gfx::vulkan
 		return new VulkanSemaphore(*device, type == SemaphoreType::eTimeline);
 	}
 
-	auto VulkanContext::request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue) const -> IQueue* {
-		return device->request_queue(include_queue, exclude_queue);
+	auto VulkanContext::get_queue_count(QueueType queue_type) const->uint32_t {
+		return device->get_queue_count(queue_type);
+	}
+
+	auto VulkanContext::get_queue(QueueType queue_type, uint32_t queue_index) const->IQueue const* {
+		return device->get_queue(queue_type, queue_index);
 	}
 
 	auto VulkanContext::create_swapchain(const SwapChainCreateInfo& create_info) const -> ISwapchain* {

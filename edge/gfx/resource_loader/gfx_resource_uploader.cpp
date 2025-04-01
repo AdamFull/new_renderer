@@ -80,7 +80,7 @@ namespace edge::gfx
 		buffer_size{ buffer_size },
 		executor{ 2 } {
 
-		queue = request_queue(QueueTypeFlag::eTransfer, QueueTypeFlag::eGraphics | QueueTypeFlag::eCompute);
+		queue = get_queue(QueueType::eCopy);
 		queue->set_resource_name("UPLOAD");
 
 		for (int32_t i = 0; i < uploader_count; ++i)

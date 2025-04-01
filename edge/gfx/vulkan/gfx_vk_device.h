@@ -2,13 +2,18 @@
 
 #include <unordered_map>
 
-#include "gfx_vk_queue_family_manager.h"
+#include "gfx_vk_queue.h"
 
 namespace edge::gfx::vulkan
 {
 	class Device;
 	class DebugUtils;
 	class PhysicalDevice;
+
+	struct QueueFamily {
+		uint32_t index{ 0 };
+		std::vector<VulkanQueue> queues{};
+	};
 
 	class Device : public VulkanResource<vk::Device> {
 	public:
@@ -33,10 +38,11 @@ namespace edge::gfx::vulkan
 			return gpu;
 		}
 
-		[[nodiscard]] auto request_queue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) -> VulkanQueue*;
+		auto get_queue_count(QueueType queue_type) -> uint32_t;
+		auto get_queue(QueueType queue_type, uint32_t queue_count = 0) -> VulkanQueue*;
 
-		auto get_queue_count() const -> size_t {
-			return queue_families.size();
+		auto get_queue_type_count() const -> size_t {
+			return queue_family_count;
 		}
 
 		auto is_extension_supported(const char* extension) const noexcept -> bool;
@@ -58,6 +64,7 @@ namespace edge::gfx::vulkan
 
 		std::vector<const char*> enabled_extensions{};
 
-		std::vector<QueueFamilyManager> queue_families{};
+		uint32_t queue_family_count{ 0u };
+		std::array<std::vector<QueueFamily>, 3ull> queue_families{};
 	};
 }

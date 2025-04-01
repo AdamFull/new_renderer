@@ -81,7 +81,7 @@ namespace engine
 			window{ *window }
 		{
 			// Select queue that can present
-			queue = edge::gfx::request_queue(edge::gfx::QueueTypeFlag::ePresent | edge::gfx::QueueTypeFlag::eGraphics);
+			queue = edge::gfx::get_queue(edge::gfx::QueueType::eDirect);
 			queue->set_resource_name("GRAPHICS");
 			
 			edge::gfx::SwapChainCreateInfo swapchain_ci{};

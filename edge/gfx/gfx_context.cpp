@@ -63,13 +63,22 @@ namespace edge::gfx
         return gfx_context->create_semaphore(sem_type);
 	}
 
-	auto request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue) -> IQueue const* {
+	auto get_queue_qount(QueueType queue_type) -> uint32_t {
+		if (!gfx_context) {
+			EDGE_LOGE("[GFX] Graphics context is not initialized yet.");
+			return 0;
+		}
+
+		return gfx_context->get_queue_count(queue_type);
+	}
+
+	auto get_queue(QueueType queue_type, uint32_t queue_index) -> IQueue const* {
 		if (!gfx_context) {
 			EDGE_LOGE("[GFX] Graphics context is not initialized yet.");
 			return nullptr;
 		}
 
-		return gfx_context->request_queue(include_queue, exclude_queue);
+		return gfx_context->get_queue(queue_type, queue_index);
 	}
 
 	auto create_swapchain(const SwapChainCreateInfo& create_info) -> ISwapchain* {

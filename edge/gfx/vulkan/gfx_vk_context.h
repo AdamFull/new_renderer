@@ -24,37 +24,38 @@ namespace edge::gfx::vulkan
 
 		void destroy(IGFXResource* handle) const override;
 
-		[[nodiscard]] auto create_fence() const->IFence* override;
+		auto create_fence() const->IFence* override;
 
-		[[nodiscard]] auto create_semaphore(SemaphoreType type) const->ISemaphore* override;
+		auto create_semaphore(SemaphoreType type) const->ISemaphore* override;
 
-		[[nodiscard]] auto request_queue(QueueTypeFlags include_queue, QueueTypeFlags exclude_queue = {}) const->IQueue* override;
+		auto get_queue_count(QueueType queue_type) const->uint32_t override;
+		auto get_queue(QueueType queue_type, uint32_t queue_index = 0) const->IQueue const* override;
 
-		[[nodiscard]] auto create_swapchain(const SwapChainCreateInfo& create_info) const->ISwapchain* override;
+		auto create_swapchain(const SwapChainCreateInfo& create_info) const->ISwapchain* override;
 
-		[[nodiscard]] auto create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) const->ICommandPool* override;
+		auto create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) const->ICommandPool* override;
 
-		[[nodiscard]] auto create_buffer(const BufferCreateInfo& create_info) const->IBuffer* override;
+		auto create_buffer(const BufferCreateInfo& create_info) const->IBuffer* override;
 
-		[[nodiscard]] auto create_texture(const TextureCreateInfo& create_info) const->ITexture* override;
-		[[nodiscard]] auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const->ITexture* override;
+		auto create_texture(const TextureCreateInfo& create_info) const->ITexture* override;
+		auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const->ITexture* override;
 
-		[[nodiscard]] auto create_shader(std::span<const ShaderStageInfo> shader_stages) const->IShader* override;
+		auto create_shader(std::span<const ShaderStageInfo> shader_stages) const->IShader* override;
 
-		[[nodiscard]] auto create_root_signature(const RootSignatureCreateInfo& create_info) const->IRootSignature* override;
+		auto create_root_signature(const RootSignatureCreateInfo& create_info) const->IRootSignature* override;
 
-		[[nodiscard]] auto create_pipeline(const GraphicsPipelineCreateInfo& create_info) const->IPipeline* override;
-		[[nodiscard]] auto create_pipeline(const ComputePipelineCreateInfo& create_info) const->IPipeline* override;
+		auto create_pipeline(const GraphicsPipelineCreateInfo& create_info) const->IPipeline* override;
+		auto create_pipeline(const ComputePipelineCreateInfo& create_info) const->IPipeline* override;
 
-		[[nodiscard]] auto create_pipeline_cache(const PipelineCacheCreateInfo& create_info) const->IPipelineCache* override;
+		auto create_pipeline_cache(const PipelineCacheCreateInfo& create_info) const->IPipelineCache* override;
 
-		[[nodiscard]] auto create_descriptor_allocator() const->IDescriptorAllocator* override;
+		auto create_descriptor_allocator() const->IDescriptorAllocator* override;
 
-		[[nodiscard]] auto create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) const->ISharedDescriptor* override;
+		auto create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) const->ISharedDescriptor* override;
 
-		[[nodiscard]] auto create_sampler(const SamplerCreateInfo& create_info) const->ISampler* override;
+		auto create_sampler(const SamplerCreateInfo& create_info) const->ISampler* override;
 
-		[[nodiscard]] auto create_query_pool(const QueryPoolCreateInfo& create_info) const->IQueryPool* override;
+		auto create_query_pool(const QueryPoolCreateInfo& create_info) const->IQueryPool* override;
 
 		void wait_for_fences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const override;
 

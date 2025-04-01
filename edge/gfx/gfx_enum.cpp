@@ -28,10 +28,6 @@ namespace edge::gfx
 	void from_json(const nlohmann::json& json, ShaderStageFlags& type) { type = deserialize_hr_flags<ShaderStageFlag>(json.get<std::vector<std::string>>()); }
 
 
-	void to_json(nlohmann::json& json, const QueueTypeFlags& type) { json = serialize_hr_flags(type); }
-	void from_json(const nlohmann::json& json, QueueTypeFlags& type) { type = deserialize_hr_flags<QueueTypeFlag>(json.get<std::vector<std::string>>()); }
-
-
 	void to_json(nlohmann::json& json, const AccessTypeFlags& type) { json = serialize_hr_flags(type); }
 	void from_json(const nlohmann::json& json, AccessTypeFlags& type) { type = deserialize_hr_flags<AccessTypeFlag>(json.get<std::vector<std::string>>()); }
 

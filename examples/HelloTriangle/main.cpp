@@ -115,7 +115,7 @@ public:
 		edge::gfx::ResourceUpdater::create(resource_updater_init);
 
 		// Init everything we need for rendering
-		queue = edge::gfx::request_queue(edge::gfx::QueueTypeFlag::ePresent);
+		queue = edge::gfx::get_queue(edge::gfx::QueueType::eDirect);
 
 		edge::gfx::SwapChainCreateInfo swapchain_ci{};
 		swapchain_ci.window = options.window;

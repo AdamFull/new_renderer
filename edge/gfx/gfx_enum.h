@@ -51,11 +51,10 @@ namespace edge::gfx
 		eUint32
 	};
 
-	enum class QueueTypeFlag {
-		eGraphics = 1 << 0,
-		ePresent = 1 << 1,
-		eCompute = 1 << 2,
-		eTransfer = 1 << 3
+	enum class QueueType {
+		eDirect,
+		eCompute,
+		eCopy
 	};
 
 	enum class CommandPoolResetMode {
@@ -359,11 +358,10 @@ EDGE_REGISTER_ENUM_CLASS(edge::gfx, IndexType,
 	EDGE_ENUM_META(edge::gfx::IndexType::eUint32, "uint32")
 )
 
-EDGE_REGISTER_ENUM_FLAGS(edge::gfx, QueueTypeFlags, QueueTypeFlag,
-	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::eGraphics, "graphics"),
-	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::ePresent, "present"),
-	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::eCompute, "compute"),
-	EDGE_ENUM_META(edge::gfx::QueueTypeFlag::eTransfer, "transfer")
+EDGE_REGISTER_ENUM_CLASS(edge::gfx, QueueType,
+	EDGE_ENUM_META(edge::gfx::QueueType::eDirect, "direct"),
+	EDGE_ENUM_META(edge::gfx::QueueType::eCompute, "compute"),
+	EDGE_ENUM_META(edge::gfx::QueueType::eCopy, "copy")
 )
 
 EDGE_REGISTER_ENUM_CLASS(edge::gfx, CommandPoolResetMode,
@@ -606,9 +604,6 @@ namespace edge::gfx
 {
 	void to_json(nlohmann::json& json, const ShaderStageFlags& type);
 	void from_json(const nlohmann::json& json, ShaderStageFlags& type);
-
-	void to_json(nlohmann::json& json, const QueueTypeFlags& type);
-	void from_json(const nlohmann::json& json, QueueTypeFlags& type);
 
 	void to_json(nlohmann::json& json, const AccessTypeFlags& type);
 	void from_json(const nlohmann::json& json, AccessTypeFlags& type);

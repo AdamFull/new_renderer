@@ -265,7 +265,7 @@ namespace edge::gfx::vulkan
 		create_info.imageColorSpace = surface_format.colorSpace;
 		create_info.clipped = VK_TRUE;
 
-		auto family_count = device.get_queue_count();
+		auto family_count = device.get_queue_type_count();
 
 		std::array<uint32_t, 8u> queue_families{};
 		std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);

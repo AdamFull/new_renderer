@@ -29,8 +29,12 @@ namespace edge::gfx::d3d12
 		return nullptr;
 	}
 
-	auto D3D12Context::request_queue(QueueTypeFlags include_flags, QueueTypeFlags exclude_flags) const -> IQueue*
-	{
+	auto D3D12Context::get_queue_count(QueueType queue_type) const->uint32_t {
+		assert(false && "NOT IMPLEMENTED");
+		return 0;
+	}
+
+	auto D3D12Context::get_queue(QueueType queue_type, uint32_t queue_index) const->IQueue const* {
 		assert(false && "NOT IMPLEMENTED");
 		return nullptr;
 	}

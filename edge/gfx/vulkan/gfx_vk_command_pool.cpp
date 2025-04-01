@@ -8,8 +8,8 @@ namespace edge::gfx::vulkan
 {
 	VulkanCommandPool::VulkanCommandPool(const VulkanQueue& queue, CommandPoolResetMode reset_mode) :
 		VulkanResource{ nullptr, queue.get_allocation_callbacks() },
-		device{ queue.get_family().get_device() },
-		queue_family_index{ queue.get_family().get_family_index() },
+		device{ queue.get_device() },
+		queue_family_index{ queue.get_family_index() },
 		reset_mode{ reset_mode } {
 
 		vk::CommandPoolCreateInfo create_info{};

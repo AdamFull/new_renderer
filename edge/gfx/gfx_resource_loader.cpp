@@ -455,7 +455,7 @@ namespace edge::gfx
 
 	void ResourceUpdater::create(const ResourceUpdaterCreateInfo& create_info) {
 
-		auto update_queue = request_queue(QueueTypeFlag::eGraphics);
+		auto update_queue = get_queue(QueueType::eDirect);
 		update_queue->set_resource_name("UPDATE");
 		updater = std::make_unique<ResourceLoader>(update_queue, create_info.update_buffer_count, create_info.update_buffer_size, "UPDATER");
 

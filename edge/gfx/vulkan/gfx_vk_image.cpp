@@ -45,7 +45,7 @@ namespace edge::gfx::vulkan
 
 	void Image::initialize_create_info(const TextureCreateInfo& texture_create_info) {
 		auto& device = allocator.get_device();
-		auto family_count = device.get_queue_count();
+		auto family_count = device.get_queue_type_count();
 		std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
 
 		alloc_create_info.usage = VMA_MEMORY_USAGE_UNKNOWN;
