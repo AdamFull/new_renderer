@@ -81,6 +81,13 @@ namespace edge::gfx
 		executor{ 2 } {
 
 		queue = get_queue(QueueType::eCopy);
+		if (!queue) {
+			queue = get_queue(QueueType::eCompute);
+		}
+		if (!queue) {
+			queue = get_queue(QueueType::eDirect);
+		}
+
 		queue->set_resource_name("UPLOAD");
 
 		for (int32_t i = 0; i < uploader_count; ++i)
