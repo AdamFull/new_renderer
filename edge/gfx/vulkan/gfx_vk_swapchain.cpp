@@ -271,12 +271,9 @@ namespace edge::gfx::vulkan
 		create_info.clipped = VK_TRUE;
 		create_info.imageSharingMode = vk::SharingMode::eExclusive;
 
-		auto family_count = device.get_queue_type_count();
-
-		std::array<uint32_t, 8u> queue_families{};
-		if (family_count > 1) {
-			std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
-			create_info.queueFamilyIndexCount = family_count;
+		auto queue_families = device.get_queue_family_indices();
+		if (queue_families.size() > 1) {
+			create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_families.size());
 			create_info.pQueueFamilyIndices = &queue_families[0];
 			create_info.imageSharingMode = vk::SharingMode::eConcurrent;
 		}

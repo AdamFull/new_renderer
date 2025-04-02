@@ -157,7 +157,7 @@ namespace edge::gfx::vulkan
 				new_family.queues.emplace_back(*this, new_family.index, queue_index);
 			}
 
-			queue_family_count++;
+			queue_family_indices[queue_family_count++] = queue_family_index;
 
 #ifndef NDEBUG
 			std::string supported_commands;

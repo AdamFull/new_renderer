@@ -45,8 +45,6 @@ namespace edge::gfx::vulkan
 
 	void Image::initialize_create_info(const TextureCreateInfo& texture_create_info) {
 		auto& device = allocator.get_device();
-		auto family_count = device.get_queue_type_count();
-		std::iota(queue_families.begin(), queue_families.begin() + family_count, 0u);
 
 		alloc_create_info.usage = VMA_MEMORY_USAGE_UNKNOWN;
 
@@ -94,8 +92,9 @@ namespace edge::gfx::vulkan
 
 		create_info.sharingMode = vk::SharingMode::eExclusive;
 
-		if (family_count > 1) {
-			create_info.queueFamilyIndexCount = family_count;
+		auto queue_families = device.get_queue_family_indices();
+		if (queue_families.size() > 1) {
+			create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_families.size());
 			create_info.pQueueFamilyIndices = &queue_families[0];
 			create_info.sharingMode = vk::SharingMode::eConcurrent;
 		}

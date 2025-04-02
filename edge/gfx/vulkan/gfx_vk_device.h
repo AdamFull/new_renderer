@@ -41,8 +41,9 @@ namespace edge::gfx::vulkan
 		auto get_queue_count(QueueType queue_type) -> uint32_t;
 		auto get_queue(QueueType queue_type, uint32_t queue_count = 0) -> VulkanQueue*;
 
-		auto get_queue_type_count() const -> size_t {
-			return queue_family_count;
+		auto get_queue_family_indices() const -> std::span<const uint32_t> {
+			auto* begin = queue_family_indices.data();
+			return std::span<const uint32_t>(begin, begin + queue_family_count);
 		}
 
 		auto is_extension_supported(const char* extension) const noexcept -> bool;
@@ -65,6 +66,7 @@ namespace edge::gfx::vulkan
 		std::vector<const char*> enabled_extensions{};
 
 		uint32_t queue_family_count{ 0u };
+		std::array<uint32_t, 16ull> queue_family_indices{};
 		std::array<std::vector<QueueFamily>, 3ull> queue_families{};
 	};
 }

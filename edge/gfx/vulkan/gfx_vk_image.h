@@ -66,7 +66,5 @@ namespace edge::gfx::vulkan
 		bool is_external_handle{ false };
 		vk::ImageCreateInfo create_info;
 		vk::ImageSubresource subresource;
-
-		std::array<uint32_t, 8u> queue_families{};
 	};
 }
