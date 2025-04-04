@@ -8,6 +8,8 @@ namespace edge::win64 {
 		WindowsRuntime(const IRuntimeContext& context);
 		virtual ~WindowsRuntime() = default;
 
+        int32_t initialize() override;
+
 	protected:
 		virtual void create_window(const Window::Properties& properties) override;
 	};

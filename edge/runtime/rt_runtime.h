@@ -126,6 +126,11 @@ namespace edge {
 		bool focused{ true };                 /* App is currently in focus at an operating system level */
 		bool close_requested{ false };        /* Close requested */
 
+        std::string internal_resources_path{};
+        std::string external_resources_path{};
+        std::string internal_data_path{};
+        std::string external_data_path{};
+
 	private:
 		FPSCounter counter{};
 	};

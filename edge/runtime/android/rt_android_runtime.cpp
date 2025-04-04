@@ -7,6 +7,8 @@
 
 #include "../../util/Logger.h"
 
+#include "../../fs/zip/fs_zip_filesystem.h"
+
 #include <game-activity/GameActivity.h>
 
 namespace edge::android
@@ -175,18 +177,6 @@ namespace edge::android
 		return TouchAction::Unknown;
 	}
 
-	void on_content_rect_changed(GameActivity* activity, const ARect* rect) {
-		EDGE_LOGI("ContentRectChanged: {:p}\n", static_cast<void*>(activity));
-		struct android_app* app = reinterpret_cast<struct android_app*>(activity->instance);
-		auto cmd = APP_CMD_CONTENT_RECT_CHANGED;
-
-		app->contentRect = *rect;
-
-		//if (write(app->msgwrite, &cmd, sizeof(cmd)) != sizeof(cmd)) {
-		//	EDGE_LOGE("Failure writing android_app cmd: {}\n", strerror(errno));
-		//}
-	}
-
 	void on_app_cmd(android_app* app, int32_t cmd) {
 		auto runtime = reinterpret_cast<AndroidRuntime*>(app->userData);
 		assert(runtime && "Runtime is not valid");
@@ -235,14 +225,41 @@ namespace edge::android
 		ctx = static_cast<AndroidRuntimeContext*>(&context);
 	}
 
+    auto get_jni_env(android_app* app) -> JNIEnv* {
+        JNIEnv* env{ nullptr };
+        jint get_env_result = app->activity->vm->GetEnv((void**)&env, JNI_VERSION_1_6);
+        if (get_env_result == JNI_EDETACHED) {
+            if (app->activity->vm->AttachCurrentThread(&env, nullptr) != JNI_OK) {
+                return nullptr;
+            }
+        }
+
+        return env;
+    }
+
+    auto get_package_code_path(android_app* app) -> std::string {
+        auto* env = get_jni_env(app);
+
+        jclass clazz = env->GetObjectClass(app->activity->javaGameActivity);
+        jmethodID methodID = env->GetMethodID(clazz, "getPackageCodePath", "()Ljava/lang/String;");
+        jstring apk_path_java = (jstring)env->CallObjectMethod(app->activity->javaGameActivity, methodID);
+
+        const char* apk_path_chars = env->GetStringUTFChars(apk_path_java, nullptr);
+        return std::string(apk_path_chars ? apk_path_chars : "");
+    }
+
 	int32_t AndroidRuntime::initialize() {
 		auto* app = ctx->get_app();
+
+        internal_resources_path = get_package_code_path(app);
+        external_resources_path = app->activity->obbPath;
+        internal_data_path = app->activity->internalDataPath;
+        external_data_path = app->activity->externalDataPath;
 
 		android_app_set_key_event_filter(app, key_event_filter);
 		android_app_set_motion_event_filter(app, motion_event_filter);
 
 		app->onAppCmd = on_app_cmd;
-		//app->activity->callbacks->onContentRectChanged = on_content_rect_changed;
 		app->userData = this;
 
 		auto code = Runtime::initialize();
