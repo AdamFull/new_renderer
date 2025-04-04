@@ -20,12 +20,12 @@ namespace edge::gfx
 			{TechniqueType::eGraphics, "graphics"}
 		})
 
-	constexpr const std::string_view k_frame_graph_cache_path = "/root/fgcache";
+	constexpr const std::string_view k_frame_graph_cache_path = "/internal/fgcache";
 
 	TechniqueDatabase::TechniqueDatabase() {
 		ShaderCompilerCreateInfo compiler_ci{};
 		//TODO: get this data from database ci
-		compiler_ci.base_path = "/source/embed/shaders";
+		compiler_ci.base_path = "/internal_res/assets/shaders";
 		compiler_ci.additional_include_dirs = { "includes" };
 
 		shader_compiler = std::make_unique<GLSLShaderCompiler>(compiler_ci);
