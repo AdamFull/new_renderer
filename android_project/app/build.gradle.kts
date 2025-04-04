@@ -49,6 +49,9 @@ android {
             version = "3.28.1"
         }
     }
+    sourceSets.getByName("main") {
+        assets.setSrcDirs(listOf("../../assets"))
+    }
 }
 
 dependencies {
