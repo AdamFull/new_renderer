@@ -22,6 +22,17 @@ target_sources(${PROJECT_NAME} PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/zip/fs_zip_filesystem.h" 
 )
 
+if(ANDROID)
+target_sources(${PROJECT_NAME} PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/aam/fs_aam_directory_iterator.cpp" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/aam/fs_aam_directory_iterator.h" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/aam/fs_aam_file.cpp" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/aam/fs_aam_file.h" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/aam/fs_aam_filesystem.cpp" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/aam/fs_aam_filesystem.h" 
+)
+endif()
+
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
 	libzip::zip 
