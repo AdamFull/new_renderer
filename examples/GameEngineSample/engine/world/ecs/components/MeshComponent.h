@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../../rendering/GeometryBufferInterface.h"
-#include <embed/shaders/includes/shlib.h>
+#include <assets/shaders/includes/shlib.h>
 
 #include "Component.h"
 

@@ -50,18 +50,32 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 set(PROJECT_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/engine")
-set(EMBED_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../embed")
-
-add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD 
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_OUTPUT_DIR}/embed"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${EMBED_SOURCE_DIR}/font" "${PROJECT_OUTPUT_DIR}/embed/font"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${EMBED_SOURCE_DIR}/mono" "${PROJECT_OUTPUT_DIR}/embed/mono"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${EMBED_SOURCE_DIR}/textures" "${PROJECT_OUTPUT_DIR}/embed/textures"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${EMBED_SOURCE_DIR}/shaders/technique_db.json" "${PROJECT_OUTPUT_DIR}/embed/technique_db.json"
-)
 
 if(MSVC)
+    set(ARCHIVE_EXT "pak")
+    set(ARCHIVE_NAME "internal")
+    set(ARCHIVE_SOURCE_PARENT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../")
+    set(ARCHIVE_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/archives)
+    file(MAKE_DIRECTORY ${ARCHIVE_OUTPUT_DIR})
+
+    add_custom_command(
+        OUTPUT ${ARCHIVE_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT}
+        COMMAND ${CMAKE_COMMAND} -E tar "cf" "${ARCHIVE_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT}" --format=zip assets
+        WORKING_DIRECTORY ${ARCHIVE_SOURCE_PARENT_DIR}
+        DEPENDS ${ARCHIVE_SOURCE_PARENT_DIR}/assets
+        COMMENT "Creating archive ${ARCHIVE_NAME}.${ARCHIVE_EXT}"
+        VERBATIM
+    )
+
+    add_custom_target(create_archive ALL DEPENDS ${ARCHIVE_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT})
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${ARCHIVE_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT}
+        ${PROJECT_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT}
+    COMMENT "Copying archive next to the executable"
+)
+
     set_target_properties(engine PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR}
     )

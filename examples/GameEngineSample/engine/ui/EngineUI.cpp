@@ -12,7 +12,10 @@
 
 #include "../InputManager.h"
 
+#include <edge/fs/fs_virtual_filesystem.h>
 #include <edge/runtime/rt_window.h>
+
+#include <edge/util/Logger.h>
 
 namespace engine
 {
@@ -393,25 +396,6 @@ namespace engine
 		}
 	}
 
-	bool ReadFile(std::string_view path, std::vector<uint8_t>& out)
-	{
-		std::ifstream file(path.data(), std::ios::binary);
-		if (!file.is_open())
-			return false;
-
-		// Seek to the end to determine the file size
-		file.seekg(0, std::ios::end);
-		std::streamsize file_size = file.tellg();
-		file.seekg(0, std::ios::beg);
-
-		out.resize(file_size);
-
-		if (!file.read(reinterpret_cast<char*>(out.data()), file_size))
-			return false;
-
-		return true;
-	}
-
 	EngineUI::EngineUI(edge::Window& window) :
 		window{ window }
 	{
@@ -428,12 +412,12 @@ namespace engine
 
 		// Load additional fonts
 		auto& font_manager = ImFontManager::GetInstance();
-		font_manager->SetFileReaderFn([](std::string_view path, std::vector<uint8_t>& out) { return ReadFile(path, out); });
-
-		auto font_path = std::format("embed/font/{}", FONT_ICON_FILE_NAME_MDI);
+		font_manager->SetFileReaderFn([](std::string_view path, std::vector<uint8_t>& out) { return edge::fs::read_file(path, out); });
 
 		std::vector<uint8_t> data;
-		ReadFile(font_path, data);
+
+		auto font_path = std::format("/internal_res/assets/font/{}", FONT_ICON_FILE_NAME_MDI);
+		edge::fs::read_file(font_path, data);
 
 		// Load fonts
 		static const ImWchar icons_ranges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };

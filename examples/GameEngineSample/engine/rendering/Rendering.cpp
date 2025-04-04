@@ -14,8 +14,8 @@
 
 #include "GeometryBuffer.h"
 
-#include <embed/shaders/includes/shlib.h>
-#include <embed/shaders/includes/debug_text.h>
+#include <assets/shaders/includes/shlib.h>
+#include <assets/shaders/includes/debug_text.h>
 
 #include <edge/util/Logger.h>
 
@@ -316,8 +316,8 @@ namespace engine
 			}
 
 			// Load some static textures
-			auto casual_day_4k_cube = render_context->AddResourceSync("/root/embed/textures/CasualDay4K.ktx2");
-			auto dirt_mask_texture = render_context->AddResource("/root/embed/textures/DirtMaskTextureExample.png");
+			auto casual_day_4k_cube = render_context->AddResourceSync("/internal_res/assets/textures/CasualDay4K.ktx2");
+			auto dirt_mask_texture = render_context->AddResource("/internal_res/assets/textures/DirtMaskTextureExample.png");
 
 			// GI targets
 			uint32_t brdf_lut_target{ ~0u };

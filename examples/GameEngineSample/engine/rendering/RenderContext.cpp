@@ -144,19 +144,19 @@ namespace engine
 			current_frame = render_frames[active_frame_index].get();
 
 			technique_db = std::make_unique<edge::gfx::TechniqueDatabase>();
-			technique_db->load("/root/tdbcache");
+			technique_db->load("/internal/tdbcache");
 			technique_db->load_config({ 
-				"/root/embed/technique_db.json", 
+				"/internal_res/assets/shaders/technique_db.json", 
 				shared_descriptor,
 				current_frame->backbuffer->get_format()
 				});
 
-			technique_db->save("/root/tdbcache");
+			technique_db->save("/internal/tdbcache");
 		}
 
 		RenderContext::~RenderContext()
 		{
-			technique_db->save("/root/tdbcache");
+			technique_db->save("/internal/tdbcache");
 			queue->wait_idle();
 
 			auto image_count = swapchain->get_image_count();

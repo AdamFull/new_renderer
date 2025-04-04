@@ -63,7 +63,7 @@ namespace engine
 
 		scene = std::make_unique<world::Scene>(*renderer);
 		//scene = std::make_unique<world::Scene>(vfs.get());
-		scene->Load("/root/meshes/sponza/Sponza.gltf");
+		scene->Load("/internal/meshes/sponza/Sponza.gltf");
 		//scene->Load("/root/meshes/CesiumMan/CesiumMan.gltf");
 		
 		return true;

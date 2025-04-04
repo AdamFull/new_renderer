@@ -1,7 +1,7 @@
 #pragma once
 
 #include <edge/gfx/gfx_structures.h>
-#include <embed/shaders/includes/shlib.h>
+#include <assets/shaders/includes/shlib.h>
 
 namespace engine
 {

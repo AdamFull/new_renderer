@@ -1,14 +1,11 @@
 #include "GeometryBuffer.h"
 
 #include <edge/gfx/gfx_context.h>
-
 #include <edge/util/utl_base.h>
-
 #include <edge/util/utl_hash.hpp>
-
 #include <edge/util/utl_profiler.h>
 
-#include <embed/shaders/includes/geometry.h>
+#include <assets/shaders/includes/geometry.h>
 
 namespace engine
 {
