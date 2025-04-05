@@ -240,7 +240,7 @@ namespace edge::gfx::vulkan
 
 
 	Instance::Instance(const InstanceBuilder& builder) :
-		VulkanResource{ nullptr, builder.allocation_callbacks },
+		Resource{ nullptr, builder.allocation_callbacks },
 		api_version{ builder.api_version },
 		selected_gpu_index{ -1 } {
 
@@ -427,7 +427,7 @@ namespace edge::gfx::vulkan
 	}
 
 	Instance::Instance(vk::Instance instance) :
-		VulkanResource{ instance, nullptr } {
+		Resource{ instance, nullptr } {
 		if (handle_) {
 			// Querying valid physical devices on the machine
 			std::vector<vk::PhysicalDevice> physical_devices = handle_.enumeratePhysicalDevices();

@@ -7,7 +7,7 @@
 
 namespace edge::gfx::vulkan
 {
-	class Image : public Allocation, public VulkanResource<vk::Image> {
+	class Image : public Allocation, public Resource<vk::Image> {
 	public:
 		Image(Allocator& allocator, const TextureCreateInfo& create_info);
 		Image(Allocator& allocator, const TextureCreateInfo& create_info, vk::Image external_handle);

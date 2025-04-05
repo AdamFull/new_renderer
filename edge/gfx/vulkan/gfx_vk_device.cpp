@@ -8,7 +8,7 @@
 namespace edge::gfx::vulkan
 {
 	Device::Device(PhysicalDevice& gpu, vk::SurfaceKHR surface, std::vector<const char*> requested_extensions) :
-		VulkanResource{ nullptr, gpu.get_allocation_callbacks() },
+		Resource{ nullptr, gpu.get_allocation_callbacks() },
 		gpu(gpu) {
 		// Prepare the device queues
 		auto& queue_family_properties = gpu.get_queue_family_properties();
@@ -200,7 +200,7 @@ namespace edge::gfx::vulkan
 		return queue_count;
 	}
 
-	auto Device::get_queue(QueueType queue_type, uint32_t queue_index) -> VulkanQueue* {
+	auto Device::get_queue(QueueType queue_type, uint32_t queue_index) -> Queue* {
 		auto& family_group = queue_families[utl::cast(queue_type)];
 		if (family_group.empty()) {
 			return nullptr;

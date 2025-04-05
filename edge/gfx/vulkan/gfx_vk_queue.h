@@ -7,15 +7,15 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class VulkanQueue final : public IQueue, public VulkanResource<vk::Queue> {
+	class Queue final : public IQueue, public Resource<vk::Queue> {
 	public:
-		VulkanQueue(Device& device, uint32_t family_index, uint32_t queue_index);
-		VulkanQueue(VulkanQueue&& other);
-		~VulkanQueue() = default;
+		Queue(Device& device, uint32_t family_index, uint32_t queue_index);
+		Queue(Queue&& other);
+		~Queue() = default;
 
-		VulkanQueue(const VulkanQueue&) = delete;
-		VulkanQueue& operator=(const VulkanQueue&) = delete;
-		VulkanQueue& operator=(VulkanQueue&&) = delete;
+		Queue(const Queue&) = delete;
+		Queue& operator=(const Queue&) = delete;
+		Queue& operator=(Queue&&) = delete;
 
 		auto get_device() noexcept -> Device& {
 			return device;

@@ -17,7 +17,7 @@ namespace edge::gfx::vulkan
 	 *
 	 * This class is responsible for handling gpu features, properties, and queue families for the device creation.
 	 */
-	class PhysicalDevice : public VulkanResource<vk::PhysicalDevice> {
+	class PhysicalDevice : public Resource<vk::PhysicalDevice> {
 	public:
 		PhysicalDevice(Instance& instance, vk::PhysicalDevice physical_device);
 

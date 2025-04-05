@@ -10,7 +10,7 @@
 namespace edge::gfx::vulkan
 {
 	Allocator::Allocator(Device& device) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
 
 		VmaVulkanFunctions vma_vulkan_func{};

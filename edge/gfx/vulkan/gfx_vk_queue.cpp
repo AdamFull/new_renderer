@@ -13,8 +13,8 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanQueue::VulkanQueue(Device& device, uint32_t family_index, uint32_t queue_index) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+	Queue::Queue(Device& device, uint32_t family_index, uint32_t queue_index) :
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device },
 		family_index{ family_index },
 		queue_index{ queue_index } {
@@ -26,19 +26,19 @@ namespace edge::gfx::vulkan
 		device.get_handle().getQueue2(&queue_info, &handle_);
 	}
 
-	VulkanQueue::VulkanQueue(VulkanQueue&& other) :
-		VulkanResource{ std::move(other) },
+	Queue::Queue(Queue&& other) :
+		Resource{ std::move(other) },
 		device{ other.device },
 		family_index{ std::exchange(other.family_index, {}) },
 		queue_index{ std::exchange(other.queue_index, {}) } {
 	}
 
-	void VulkanQueue::set_resource_name(std::string_view name) const noexcept {
+	void Queue::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(handle_, name);
 	}
 
-	void VulkanQueue::submit(const SubmitInfo& submit_info, IFence* fence) const {
+	void Queue::submit(const SubmitInfo& submit_info, IFence* fence) const {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		std::array<vk::SemaphoreSubmitInfo, 16ull> wait_semaphores{};
@@ -54,7 +54,7 @@ namespace edge::gfx::vulkan
 			SemaphoreSubmitInfo& semaphore_info = submit_info.wait_semaphore_infos[i];
 			if (semaphore_info.semaphore) {
 				auto& submit_info = wait_semaphores[vk_submit_info.waitSemaphoreInfoCount++];
-				submit_info.semaphore = utl::cast<VulkanSemaphore*>(semaphore_info.semaphore)->get_handle();
+				submit_info.semaphore = utl::cast<Semaphore*>(semaphore_info.semaphore)->get_handle();
 				submit_info.value = semaphore_info.value;
 				submit_info.stageMask = stage_flags_to_vk(semaphore_info.stage);
 			}
@@ -64,7 +64,7 @@ namespace edge::gfx::vulkan
 			ICommandList* command_list = submit_info.command_lists[i];
 			if (command_list) {
 				auto& submit_info = command_buffers[vk_submit_info.commandBufferInfoCount++];
-				submit_info.commandBuffer = utl::cast<VulkanCommandList*>(command_list)->get_handle();
+				submit_info.commandBuffer = utl::cast<CommandList*>(command_list)->get_handle();
 			}
 		}
 
@@ -72,16 +72,16 @@ namespace edge::gfx::vulkan
 			SemaphoreSubmitInfo& semaphore_info = submit_info.signal_semaphore_infos[i];
 			if (semaphore_info.semaphore) {
 				auto& submit_info = signal_semaphores[vk_submit_info.signalSemaphoreInfoCount++];
-				submit_info.semaphore = utl::cast<VulkanSemaphore*>(semaphore_info.semaphore)->get_handle();
+				submit_info.semaphore = utl::cast<Semaphore*>(semaphore_info.semaphore)->get_handle();
 				submit_info.value = semaphore_info.value;
 				submit_info.stageMask = stage_flags_to_vk(semaphore_info.stage);
 			}
 		}
 
-		handle_.submit2KHR(vk_submit_info, fence ? utl::cast<VulkanFence*>(fence)->get_handle() : nullptr);
+		handle_.submit2KHR(vk_submit_info, fence ? utl::cast<Fence*>(fence)->get_handle() : nullptr);
 	}
 
-	void VulkanQueue::present(const PresentInfo& present_info) const {
+	void Queue::present(const PresentInfo& present_info) const {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		std::array<vk::Semaphore, 16ull> wait_semaphores{};
@@ -95,14 +95,14 @@ namespace edge::gfx::vulkan
 		for (int32_t i = 0; i < present_info.wait_semaphores.size(); ++i) {
 			ISemaphore* semaphore = present_info.wait_semaphores[i];
 			if (semaphore) {
-				wait_semaphores[vk_present_info.waitSemaphoreCount++] = utl::cast<VulkanSemaphore*>(semaphore)->get_handle();
+				wait_semaphores[vk_present_info.waitSemaphoreCount++] = utl::cast<Semaphore*>(semaphore)->get_handle();
 			}
 		}
 
 		for (int32_t i = 0; i < present_info.swapchains.size(); ++i) {
 			ISwapchain* swapchain = present_info.swapchains[i];
 			if (swapchain) {
-				auto* vk_swapchain = utl::cast<VulkanSwapchain*>(swapchain);
+				auto* vk_swapchain = utl::cast<Swapchain*>(swapchain);
 				swapchains[vk_present_info.swapchainCount++] = vk_swapchain->get_handle();
 
 				if (!vk_present_info.pNext) {
@@ -123,7 +123,7 @@ namespace edge::gfx::vulkan
 		handle_.presentKHR(vk_present_info);
 	}
 
-	void VulkanQueue::wait_idle() const {
+	void Queue::wait_idle() const {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		handle_.waitIdle();

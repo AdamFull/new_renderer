@@ -6,7 +6,7 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class DescriptorSet final : public VulkanResource<vk::DescriptorSet> {
+	class DescriptorSet final : public Resource<vk::DescriptorSet> {
 	public:
 		friend class DescriptorPool;
 

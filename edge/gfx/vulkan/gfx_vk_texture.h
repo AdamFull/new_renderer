@@ -5,17 +5,17 @@
 
 namespace edge::gfx::vulkan
 {
-	class VulkanTexture final : public ITexture {
+	class Texture final : public ITexture {
 	public:
-		VulkanTexture(Allocator& allocator, const TextureCreateInfo& create_info);
-		VulkanTexture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index);
+		Texture(Allocator& allocator, const TextureCreateInfo& create_info);
+		Texture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index);
 
-		VulkanTexture(const VulkanTexture&) = delete;
-		VulkanTexture(VulkanTexture&& other);
-		~VulkanTexture() = default;
+		Texture(const Texture&) = delete;
+		Texture(Texture&& other);
+		~Texture() = default;
 
-		VulkanTexture& operator=(const VulkanTexture&) = delete;
-		VulkanTexture& operator=(VulkanTexture&&) = delete;
+		Texture& operator=(const Texture&) = delete;
+		Texture& operator=(Texture&&) = delete;
 
 		[[nodiscard]] auto get_image() noexcept -> Image&;
 		[[nodiscard]] auto get_image() const noexcept -> Image const&;

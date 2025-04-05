@@ -7,16 +7,16 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class VulkanPipelineCache final : public IPipelineCache, public VulkanResource<vk::PipelineCache> {
+	class PipelineCache final : public IPipelineCache, public Resource<vk::PipelineCache> {
 	public:
-		VulkanPipelineCache(Device& device, const PipelineCacheCreateInfo& create_info);
-		~VulkanPipelineCache();
+		PipelineCache(Device& device, const PipelineCacheCreateInfo& create_info);
+		~PipelineCache();
 
-		VulkanPipelineCache(VulkanPipelineCache&) = delete;
-		VulkanPipelineCache(VulkanPipelineCache&& other) noexcept;
+		PipelineCache(PipelineCache&) = delete;
+		PipelineCache(PipelineCache&& other) noexcept;
 
-		VulkanPipelineCache& operator=(const VulkanPipelineCache&) = delete;
-		VulkanPipelineCache& operator=(VulkanPipelineCache&&) = delete;
+		PipelineCache& operator=(const PipelineCache&) = delete;
+		PipelineCache& operator=(PipelineCache&&) = delete;
 
 		void set_resource_name(std::string_view name) const noexcept override;
 

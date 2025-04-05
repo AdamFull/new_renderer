@@ -10,32 +10,32 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanPipeline::VulkanPipeline(Device& device) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+	Pipeline::Pipeline(Device& device) :
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
 	}
 
-	VulkanPipeline::VulkanPipeline(VulkanPipeline&& other) :
-		VulkanResource{ std::move(other) },
+	Pipeline::Pipeline(Pipeline&& other) :
+		Resource{ std::move(other) },
 		device{ device } {
 	}
 
-	VulkanPipeline::~VulkanPipeline() {
+	Pipeline::~Pipeline() {
 		device.get_handle().destroyPipeline(handle_, allocation_callbacks);
 	}
 
-	void VulkanPipeline::set_resource_name(std::string_view name) const noexcept {
+	void Pipeline::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(handle_, name);
 	}
 
 
 
-	VulkanComputePipeline::VulkanComputePipeline(Device& device, const ComputePipelineCreateInfo& create_info) :
-		VulkanPipeline{ device } {
-		auto* shader = utl::cast<VulkanShader*>(create_info.shader);
-		auto* root_signature = utl::cast<VulkanRootSignature*>(create_info.root_signature);
-		auto* pipeline_cache = utl::cast<VulkanPipelineCache*>(create_info.pipeline_cache);
+	ComputePipeline::ComputePipeline(Device& device, const ComputePipelineCreateInfo& create_info) :
+		Pipeline{ device } {
+		auto* shader = utl::cast<Shader*>(create_info.shader);
+		auto* root_signature = utl::cast<RootSignature*>(create_info.root_signature);
+		auto* pipeline_cache = utl::cast<PipelineCache*>(create_info.pipeline_cache);
 
 		vk::ComputePipelineCreateInfo pipeline_create_info{};
 
@@ -49,18 +49,18 @@ namespace edge::gfx::vulkan
 		vk::Result result = device.get_handle().createComputePipelines(cache, 1u, &pipeline_create_info, allocation_callbacks, &handle_);
 	}
 
-	VulkanComputePipeline::VulkanComputePipeline(VulkanComputePipeline&& other) :
-		VulkanPipeline{ std::move(other) } {
+	ComputePipeline::ComputePipeline(ComputePipeline&& other) :
+		Pipeline{ std::move(other) } {
 	}
 
 
 
 
-	VulkanGraphicsPipeline::VulkanGraphicsPipeline(Device& device, const GraphicsPipelineCreateInfo& create_info) :
-		VulkanPipeline{ device } {
-		auto* shader = utl::cast<VulkanShader*>(create_info.shader);
-		auto* root_signature = utl::cast<VulkanRootSignature*>(create_info.root_signature);
-		auto* pipeline_cache = utl::cast<VulkanPipelineCache*>(create_info.pipeline_cache);
+	GraphicsPipeline::GraphicsPipeline(Device& device, const GraphicsPipelineCreateInfo& create_info) :
+		Pipeline{ device } {
+		auto* shader = utl::cast<Shader*>(create_info.shader);
+		auto* root_signature = utl::cast<RootSignature*>(create_info.root_signature);
+		auto* pipeline_cache = utl::cast<PipelineCache*>(create_info.pipeline_cache);
 
 		std::array<vk::PipelineShaderStageCreateInfo, 5ull> shader_stages{};
 		vk::GraphicsPipelineCreateInfo pipeline_create_info{};
@@ -196,7 +196,7 @@ namespace edge::gfx::vulkan
 		vk::Result result = device.get_handle().createGraphicsPipelines(cache, 1u, &pipeline_create_info, allocation_callbacks, &handle_);
 	}
 
-	VulkanGraphicsPipeline::VulkanGraphicsPipeline(VulkanGraphicsPipeline&& other) :
-		VulkanPipeline{ std::move(other) } {
+	GraphicsPipeline::GraphicsPipeline(GraphicsPipeline&& other) :
+		Pipeline{ std::move(other) } {
 	}
 }

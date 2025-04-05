@@ -9,7 +9,7 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanSharedDescriptor::VulkanSharedDescriptor(Device& device, const SharedDescriptorCreateInfo& create_info) :
+	SharedDescriptor::SharedDescriptor(Device& device, const SharedDescriptorCreateInfo& create_info) :
 		device{ device },
 		first_set{ create_info.first_set } {
 
@@ -32,14 +32,14 @@ namespace edge::gfx::vulkan
 		descriptor_pool = std::make_unique<DescriptorPool>(device, *descriptor_set_layout);
 	}
 
-	VulkanSharedDescriptor::~VulkanSharedDescriptor() {
+	SharedDescriptor::~SharedDescriptor() {
 		for (auto& resource_descriptor : allocated_resource_descriptors) {
 			delete resource_descriptor;
 			resource_descriptor = nullptr;
 		}
 	}
 
-	VulkanSharedDescriptor::VulkanSharedDescriptor(VulkanSharedDescriptor&& other) :
+	SharedDescriptor::SharedDescriptor(SharedDescriptor&& other) :
 		device{ other.device },
 		first_set{ std::exchange(other.first_set, {}) },
 		descriptor_set_layout{ std::exchange(other.descriptor_set_layout , {}) },
@@ -47,11 +47,11 @@ namespace edge::gfx::vulkan
 
 	}
 
-	void VulkanSharedDescriptor::set_resource_name(std::string_view name) const noexcept {
+	void SharedDescriptor::set_resource_name(std::string_view name) const noexcept {
 		assert(false && "NOT IMPLEMENTED");
 	}
 
-	void VulkanSharedDescriptor::reset() {
+	void SharedDescriptor::reset() {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		descriptor_pool->reset();
@@ -63,14 +63,14 @@ namespace edge::gfx::vulkan
 		allocated_resource_descriptors.clear();
 	}
 
-	auto VulkanSharedDescriptor::get_latest_descriptors() const noexcept -> IResourceDescriptor* {
+	auto SharedDescriptor::get_latest_descriptors() const noexcept -> IResourceDescriptor* {
 		return allocated_resource_descriptors.back();
 	}
 
-	auto VulkanSharedDescriptor::request_descriptors() -> IResourceDescriptor* {
+	auto SharedDescriptor::request_descriptors() -> IResourceDescriptor* {
 		EDGE_PROFILE_ZONE_SCOPED;
 
-		auto& new_resource_descriptor = allocated_resource_descriptors.emplace_back(new VulkanResourceDescriptor(device));
+		auto& new_resource_descriptor = allocated_resource_descriptors.emplace_back(new ResourceDescriptor(device));
 
 		auto& descriptor_set = descriptor_pool->allocate(*descriptor_set_layout);
 		new_resource_descriptor->update_descriptor_set(first_set, descriptor_set);

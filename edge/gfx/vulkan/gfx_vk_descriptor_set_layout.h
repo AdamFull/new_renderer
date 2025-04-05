@@ -24,7 +24,7 @@ namespace edge::gfx::vulkan
 		vk::DescriptorBindingFlagsEXT& add_binding_flags();
 	};
 
-	class DescriptorSetLayout final : public VulkanResource<vk::DescriptorSetLayout> {
+	class DescriptorSetLayout final : public Resource<vk::DescriptorSetLayout> {
 	public:
 		struct DescriptorBindingInfo {
 			vk::DescriptorSetLayoutBinding binding{};

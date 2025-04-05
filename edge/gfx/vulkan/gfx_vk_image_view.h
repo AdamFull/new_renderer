@@ -5,7 +5,7 @@
 
 namespace edge::gfx::vulkan
 {
-	class ImageView : public VulkanResource<vk::ImageView> {
+	class ImageView : public Resource<vk::ImageView> {
 	public:
 		ImageView(Image& image, const TextureCreateInfo& texture_create_info, uint32_t base_array_layer, uint32_t base_mip_level, uint32_t mip_count);
 

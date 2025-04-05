@@ -79,7 +79,7 @@ namespace edge::gfx::vulkan
 	 * This class is responsible for initializing the dispatcher, enumerating over all available extensions and validation layers
 	 * enabling them if they exist, setting up debug messaging and querying all the physical devices existing on the machine.
 	 */
-	class Instance final : public VulkanResource<vk::Instance> {
+	class Instance final : public Resource<vk::Instance> {
 	public:
 		/**
 		 * @brief Initializes the connection to Vulkan

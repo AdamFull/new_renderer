@@ -4,8 +4,8 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanSemaphore::VulkanSemaphore(Device& device, bool timeline) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+	Semaphore::Semaphore(Device& device, bool timeline) :
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
 
 		vk::SemaphoreTypeCreateInfo timeline_semaphore_ci{};
@@ -17,11 +17,11 @@ namespace edge::gfx::vulkan
 		vk::Result result = device.get_handle().createSemaphore(&create_info, allocation_callbacks, &handle_);
 	}
 
-	VulkanSemaphore::~VulkanSemaphore() {
+	Semaphore::~Semaphore() {
 		device.get_handle().destroySemaphore(handle_, allocation_callbacks);
 	}
 
-	void VulkanSemaphore::set_resource_name(std::string_view name) const noexcept {
+	void Semaphore::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(handle_, name);
 	}

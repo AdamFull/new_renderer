@@ -7,8 +7,8 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanSampler::VulkanSampler(Device& device, const SamplerCreateInfo& create_info) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+	Sampler::Sampler(Device& device, const SamplerCreateInfo& create_info) :
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
 
 		vk::SamplerCreateInfo vk_create_info{};
@@ -33,16 +33,16 @@ namespace edge::gfx::vulkan
 		vk::Result result = device.get_handle().createSampler(&vk_create_info, allocation_callbacks, &handle_);
 	}
 
-	VulkanSampler::VulkanSampler(VulkanSampler&& other) noexcept :
-		VulkanResource{ std::move(other) },
+	Sampler::Sampler(Sampler&& other) noexcept :
+		Resource{ std::move(other) },
 		device{ other.device } {
 	}
 
-	VulkanSampler::~VulkanSampler() {
+	Sampler::~Sampler() {
 		device.get_handle().destroySampler(handle_, allocation_callbacks);
 	}
 
-	void VulkanSampler::set_resource_name(std::string_view name) const noexcept {
+	void Sampler::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(handle_, name);
 	}

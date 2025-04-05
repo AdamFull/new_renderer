@@ -20,7 +20,7 @@ namespace edge::gfx::vulkan
 		vk::PushConstantRange& add_constant_range();
 	};
 
-	class PipelineLayout final : public VulkanResource<vk::PipelineLayout> {
+	class PipelineLayout final : public Resource<vk::PipelineLayout> {
 	public:
 		PipelineLayout(Device& device, const PipelineLayoutCreateInfo& create_info);
 		~PipelineLayout();
@@ -35,19 +35,19 @@ namespace edge::gfx::vulkan
 	};
 
 
-	class VulkanRootSignature final : public IRootSignature {
+	class RootSignature final : public IRootSignature {
 	public:
-		friend class VulkanDescriptorAllocator;
-		friend class VulkanCommandList;
+		friend class DescriptorAllocator;
+		friend class CommandList;
 
-		VulkanRootSignature(Device& device, const RootSignatureCreateInfo& create_info);
-		~VulkanRootSignature();
+		RootSignature(Device& device, const RootSignatureCreateInfo& create_info);
+		~RootSignature();
 
-		VulkanRootSignature(VulkanRootSignature&) = delete;
-		VulkanRootSignature(VulkanRootSignature&& other);
+		RootSignature(RootSignature&) = delete;
+		RootSignature(RootSignature&& other);
 
-		VulkanRootSignature& operator=(const VulkanRootSignature&) = delete;
-		VulkanRootSignature& operator=(VulkanRootSignature&&) = delete;
+		RootSignature& operator=(const RootSignature&) = delete;
+		RootSignature& operator=(RootSignature&&) = delete;
 
 		void set_resource_name(std::string_view name) const noexcept override;
 

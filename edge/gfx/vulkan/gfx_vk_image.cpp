@@ -7,7 +7,7 @@
 namespace edge::gfx::vulkan
 {
 	Image::Image(Allocator& allocator, const TextureCreateInfo& texture_create_info) :
-		VulkanResource{ nullptr, allocator.get_allocation_callbacks() },
+		Resource{ nullptr, allocator.get_allocation_callbacks() },
 		Allocation{ allocator } {
 
 		initialize_create_info(texture_create_info);
@@ -15,14 +15,14 @@ namespace edge::gfx::vulkan
 	}
 
 	Image::Image(Allocator& allocator, const TextureCreateInfo& texture_create_info, vk::Image external_handle) :
-		VulkanResource{ external_handle, allocator.get_allocation_callbacks() },
+		Resource{ external_handle, allocator.get_allocation_callbacks() },
 		Allocation{ allocator },
 		is_external_handle{ true } {
 		initialize_create_info(texture_create_info);
 	}
 
 	Image::Image(Image&& other) noexcept :
-		VulkanResource{ std::move(other) },
+		Resource{ std::move(other) },
 		Allocation{ std::move(other) },
 		create_info{ std::exchange(other.create_info, {}) },
 		subresource{ std::exchange(other.subresource, {}) },

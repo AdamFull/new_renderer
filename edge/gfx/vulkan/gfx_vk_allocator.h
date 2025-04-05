@@ -13,7 +13,7 @@ namespace edge::gfx::vulkan
 	class Device;
 	class Allocation;
 	
-	class Allocator final : public VulkanResource<VmaAllocator> {
+	class Allocator final : public Resource<VmaAllocator> {
 	public:
 		Allocator(Device& device);
 		~Allocator();

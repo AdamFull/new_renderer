@@ -8,8 +8,8 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanBuffer::VulkanBuffer(Allocator& allocator, const BufferCreateInfo& create_info) :
-		VulkanResource{ nullptr, allocator.get_allocation_callbacks() },
+	Buffer::Buffer(Allocator& allocator, const BufferCreateInfo& create_info) :
+		Resource{ nullptr, allocator.get_allocation_callbacks() },
 		Allocation(allocator),
 		usage_flags{ create_info.usage } {
 
@@ -72,25 +72,25 @@ namespace edge::gfx::vulkan
 		handle_ = allocator.create_buffer(*this, buffer_create_info);
 	}
 
-	VulkanBuffer::~VulkanBuffer() {
+	Buffer::~Buffer() {
 		allocator.destroy_buffer(*this, handle_);
 	}
 
-	void VulkanBuffer::set_resource_name(std::string_view name) const noexcept {
+	void Buffer::set_resource_name(std::string_view name) const noexcept {
 		auto& device = allocator.get_device();
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(handle_, name);
 	}
 
-	auto VulkanBuffer::map() -> uint8_t* {
+	auto Buffer::map() -> uint8_t* {
 		return map_memory();
 	}
 
-	void VulkanBuffer::unmap() noexcept {
+	void Buffer::unmap() noexcept {
 		unmap_memory();
 	}
 
-	auto VulkanBuffer::update(const void* data, uint64_t size, uint64_t offset) -> uint64_t {
+	auto Buffer::update(const void* data, uint64_t size, uint64_t offset) -> uint64_t {
 		if (persistent) {
 			edge::utl::copy(mapped_data, offset, data, size, 0ull);
 			flush();
@@ -104,12 +104,12 @@ namespace edge::gfx::vulkan
 		return size;
 	}
 
-	auto VulkanBuffer::get_address() const -> uint64_t {
+	auto Buffer::get_address() const -> uint64_t {
 		auto& device = allocator.get_device();
 		return device.get_handle().getBufferAddressKHR(handle_);
 	}
 
-	auto VulkanBuffer::get_usage_flags() const noexcept -> BufferUsageFlags {
+	auto Buffer::get_usage_flags() const noexcept -> BufferUsageFlags {
 		return usage_flags;
 	}
 }

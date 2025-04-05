@@ -10,11 +10,11 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanResourceDescriptor::VulkanResourceDescriptor(Device& device) :
+	ResourceDescriptor::ResourceDescriptor(Device& device) :
 		device{ device } {
 	}
 
-	VulkanResourceDescriptor::VulkanResourceDescriptor(VulkanResourceDescriptor&& other) :
+	ResourceDescriptor::ResourceDescriptor(ResourceDescriptor&& other) :
 		device{ other.device },
 		first_set{ std::exchange(other.first_set, {}) },
 		set_count{ std::exchange(other.set_count, {}) },
@@ -24,23 +24,23 @@ namespace edge::gfx::vulkan
 		buffer_descriptors{ std::exchange(other.buffer_descriptors, {}) } {
 	}
 
-	void VulkanResourceDescriptor::update_descriptor_set(uint32_t set, DescriptorSet& descriptor_set) {
+	void ResourceDescriptor::update_descriptor_set(uint32_t set, DescriptorSet& descriptor_set) {
 		first_set = std::min(first_set, set);
 		descriptor_sets[set] = descriptor_set.get_handle();
 		set_count++;
 	}
 
-	void VulkanResourceDescriptor::set_resource_name(std::string_view name) const noexcept {
+	void ResourceDescriptor::set_resource_name(std::string_view name) const noexcept {
 		assert(false && "NOT IMPLEMENTED");
 	}
 
-	void VulkanResourceDescriptor::bind_texture(TextureDescriptor& texture_descriptor) {
+	void ResourceDescriptor::bind_texture(TextureDescriptor& texture_descriptor) {
 		auto& vk_image_descriptor = image_descriptors.emplace_back();
 
 		auto descriptor_type = descriptor_type_to_vk(texture_descriptor.type);
 
 		if (descriptor_type != vk::DescriptorType::eSampler) {
-			auto* vk_texture = utl::cast<VulkanTexture*>(texture_descriptor.texture);
+			auto* vk_texture = utl::cast<Texture*>(texture_descriptor.texture);
 			auto& subresource = vk_texture->get_subresource(texture_descriptor.subresource_index);
 			vk_image_descriptor.imageView = subresource.get_handle();
 			vk_image_descriptor.imageLayout = resource_state_to_vk_image_layout(texture_descriptor.resource_state);
@@ -48,7 +48,7 @@ namespace edge::gfx::vulkan
 
 		if (descriptor_type != vk::DescriptorType::eStorageImage &&
 			descriptor_type != vk::DescriptorType::eSampledImage) {
-			auto* vk_sampelr = utl::cast<VulkanSampler*>(texture_descriptor.sampler);
+			auto* vk_sampelr = utl::cast<Sampler*>(texture_descriptor.sampler);
 			vk_image_descriptor.sampler = vk_sampelr->get_handle();
 		}
 
@@ -61,8 +61,8 @@ namespace edge::gfx::vulkan
 		vk_descriptor_write.pImageInfo = &vk_image_descriptor;
 	}
 
-	void VulkanResourceDescriptor::bind_buffer(BufferDescriptor& buffer_descriptor) {
-		auto* vk_buffer = utl::cast<VulkanBuffer*>(buffer_descriptor.buffer);
+	void ResourceDescriptor::bind_buffer(BufferDescriptor& buffer_descriptor) {
+		auto* vk_buffer = utl::cast<Buffer*>(buffer_descriptor.buffer);
 
 		auto& vk_buffer_descriptor = buffer_descriptors.emplace_back();
 		vk_buffer_descriptor.buffer = vk_buffer->get_handle();
@@ -80,7 +80,7 @@ namespace edge::gfx::vulkan
 		vk_descriptor_write.dstArrayElement;
 	}
 
-	void VulkanResourceDescriptor::flush() {
+	void ResourceDescriptor::flush() {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		device.get_handle().updateDescriptorSets(write_descriptor_sets.size(), write_descriptor_sets.data(), 0, nullptr);

@@ -7,15 +7,15 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class VulkanQueryPool final : public IQueryPool, public VulkanResource<vk::QueryPool> {
+	class QueryPool final : public IQueryPool, public Resource<vk::QueryPool> {
 	public:
-		VulkanQueryPool(Device& device, const QueryPoolCreateInfo& create_info);
-		VulkanQueryPool(VulkanQueryPool&& other);
-		~VulkanQueryPool();
+		QueryPool(Device& device, const QueryPoolCreateInfo& create_info);
+		QueryPool(QueryPool&& other);
+		~QueryPool();
 
-		VulkanQueryPool(const VulkanQueryPool&) = delete;
-		VulkanQueryPool& operator=(const VulkanQueryPool&) = delete;
-		VulkanQueryPool& operator=(VulkanQueryPool&&) = delete;
+		QueryPool(const QueryPool&) = delete;
+		QueryPool& operator=(const QueryPool&) = delete;
+		QueryPool& operator=(QueryPool&&) = delete;
 
 		void set_resource_name(std::string_view name) const noexcept override;
 

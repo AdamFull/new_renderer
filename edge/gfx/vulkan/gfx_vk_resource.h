@@ -13,29 +13,29 @@ namespace edge::gfx::vulkan
 	}
 
 	template<typename _Ty>
-	class VulkanResource {
+	class Resource {
 	public:
 		using HandleType = _Ty;
 
-		explicit VulkanResource(_Ty resource, vk::AllocationCallbacks* allocation_callbacks) :
+		explicit Resource(_Ty resource, vk::AllocationCallbacks* allocation_callbacks) :
 			handle_{ resource },
 			allocation_callbacks{ allocation_callbacks } {
 		}
 
-		VulkanResource(const VulkanResource&) = delete;
-		VulkanResource& operator=(const VulkanResource&) = delete;
+		Resource(const Resource&) = delete;
+		Resource& operator=(const Resource&) = delete;
 
-		VulkanResource(VulkanResource&& other) :
+		Resource(Resource&& other) :
 			handle_{ std::exchange(other.handle_, {}) },
 			allocation_callbacks{ std::exchange(other.allocation_callbacks, {}) } {
 		}
 
-		VulkanResource& operator=(VulkanResource&& other) {
+		Resource& operator=(Resource&& other) {
 			handle_ = std::exchange(other.handle_, {});
 			return *this;
 		}
 
-		virtual ~VulkanResource() = default;
+		virtual ~Resource() = default;
 
 		_Ty& get_handle() {
 			return handle_;

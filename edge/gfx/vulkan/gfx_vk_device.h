@@ -12,10 +12,10 @@ namespace edge::gfx::vulkan
 
 	struct QueueFamily {
 		uint32_t index{ 0 };
-		std::vector<VulkanQueue> queues{};
+		std::vector<Queue> queues{};
 	};
 
-	class Device : public VulkanResource<vk::Device> {
+	class Device : public Resource<vk::Device> {
 	public:
 		/**
 		 * @brief Device constructor
@@ -39,7 +39,7 @@ namespace edge::gfx::vulkan
 		}
 
 		auto get_queue_count(QueueType queue_type) -> uint32_t;
-		auto get_queue(QueueType queue_type, uint32_t queue_count = 0) -> VulkanQueue*;
+		auto get_queue(QueueType queue_type, uint32_t queue_count = 0) -> Queue*;
 
 		auto get_queue_family_indices() const -> std::span<const uint32_t> {
 			auto* begin = queue_family_indices.data();

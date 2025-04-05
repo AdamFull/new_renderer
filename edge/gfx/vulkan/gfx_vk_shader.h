@@ -7,7 +7,7 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class ShaderModule final : public VulkanResource<vk::ShaderModule> {
+	class ShaderModule final : public Resource<vk::ShaderModule> {
 	public:
 		ShaderModule(Device& devices, const ShaderStageInfo& create_info);
 		~ShaderModule();
@@ -25,15 +25,15 @@ namespace edge::gfx::vulkan
 		vk::PipelineShaderStageCreateInfo stage_create_info{};
 	};
 
-	class VulkanShader final : public IShader {
+	class Shader final : public IShader {
 	public:
-		VulkanShader(Device& device, std::span<const ShaderStageInfo> shader_stages);
-		VulkanShader(VulkanShader&& other);
-		~VulkanShader() = default;
+		Shader(Device& device, std::span<const ShaderStageInfo> shader_stages);
+		Shader(Shader&& other);
+		~Shader() = default;
 
-		VulkanShader(const VulkanShader&) = delete;
-		VulkanShader& operator=(const VulkanShader&) = delete;
-		VulkanShader& operator=(VulkanShader&&) = delete;
+		Shader(const Shader&) = delete;
+		Shader& operator=(const Shader&) = delete;
+		Shader& operator=(Shader&&) = delete;
 
 		void set_resource_name(std::string_view name) const noexcept override;
 

@@ -9,18 +9,18 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class VulkanResourceDescriptor final : public IResourceDescriptor
+	class ResourceDescriptor final : public IResourceDescriptor
 	{
 	public:
-		VulkanResourceDescriptor(Device& device);
-		~VulkanResourceDescriptor() = default;
+		ResourceDescriptor(Device& device);
+		~ResourceDescriptor() = default;
 
-		VulkanResourceDescriptor(const VulkanResourceDescriptor&) = delete;
+		ResourceDescriptor(const ResourceDescriptor&) = delete;
 
-		VulkanResourceDescriptor(VulkanResourceDescriptor&& other);
+		ResourceDescriptor(ResourceDescriptor&& other);
 
-		VulkanResourceDescriptor& operator=(const VulkanResourceDescriptor&) = delete;
-		VulkanResourceDescriptor& operator=(VulkanResourceDescriptor&&) = delete;
+		ResourceDescriptor& operator=(const ResourceDescriptor&) = delete;
+		ResourceDescriptor& operator=(ResourceDescriptor&&) = delete;
 
 		void update_descriptor_set(uint32_t set, DescriptorSet& descriptor_set);
 

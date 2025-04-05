@@ -17,10 +17,10 @@ namespace edge::gfx::vulkan
 	class Allocator;
 	class Allocation;
 
-	class VulkanContext final : public IGFXContext {
+	class GFXContext final : public IGFXContext {
 	public:
-		VulkanContext(const ContextCreateInfo& create_info);
-		~VulkanContext();
+		GFXContext(const ContextCreateInfo& create_info);
+		~GFXContext();
 
 		void destroy(IGFXResource* handle) const override;
 

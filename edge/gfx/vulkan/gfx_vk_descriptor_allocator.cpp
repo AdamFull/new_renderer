@@ -8,17 +8,17 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanDescriptorAllocator::VulkanDescriptorAllocator(Device& device, uint32_t grow_factor) :
+	DescriptorAllocator::DescriptorAllocator(Device& device, uint32_t grow_factor) :
 		device{ device },
 		multiplicator{ grow_factor } {
 	}
 
-	VulkanDescriptorAllocator::VulkanDescriptorAllocator(VulkanDescriptorAllocator&& other) :
+	DescriptorAllocator::DescriptorAllocator(DescriptorAllocator&& other) :
 		device{ other.device },
 		descriptor_pools{ std::exchange(other.descriptor_pools, {}) } {
 	}
 
-	VulkanDescriptorAllocator::~VulkanDescriptorAllocator() {
+	DescriptorAllocator::~DescriptorAllocator() {
 		descriptor_pools.clear();
 
 		for (auto& descriptor : allocated_descriptors) {
@@ -27,11 +27,11 @@ namespace edge::gfx::vulkan
 		}
 	}
 
-	void VulkanDescriptorAllocator::set_resource_name(std::string_view name) const noexcept {
+	void DescriptorAllocator::set_resource_name(std::string_view name) const noexcept {
 		assert(false && "NOT IMPLEMENTED");
 	}
 
-	void VulkanDescriptorAllocator::reset() {
+	void DescriptorAllocator::reset() {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto to_delete = std::remove_if(descriptor_pools.begin(), descriptor_pools.end(), 
@@ -52,13 +52,13 @@ namespace edge::gfx::vulkan
 		allocated_descriptors.clear();
 	}
 
-	auto VulkanDescriptorAllocator::allocate_descriptors(IRootSignature* root_signature) -> IResourceDescriptor* {
+	auto DescriptorAllocator::allocate_descriptors(IRootSignature* root_signature) -> IResourceDescriptor* {
 		EDGE_PROFILE_ZONE_SCOPED;
 
-		auto* vk_root_signature = utl::cast<VulkanRootSignature*>(root_signature);
+		auto* vk_root_signature = utl::cast<RootSignature*>(root_signature);
 		auto& set_layouts = vk_root_signature->get_descriptor_set_layouts();
 
-		auto& new_resource_descriptor = allocated_descriptors.emplace_back(new VulkanResourceDescriptor(device));
+		auto& new_resource_descriptor = allocated_descriptors.emplace_back(new ResourceDescriptor(device));
 		for (int32_t i = 0; i < k_max_descriptor_count; ++i) {
 			// TODO: check is uses external set layout (ignore externals)
 
@@ -72,7 +72,7 @@ namespace edge::gfx::vulkan
 		return new_resource_descriptor;
 	}
 
-	auto VulkanDescriptorAllocator::allocate(DescriptorSetLayout& layout) -> DescriptorSet& {
+	auto DescriptorAllocator::allocate(DescriptorSetLayout& layout) -> DescriptorSet& {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		// We didn't have any pool for now, needs to allocate new one

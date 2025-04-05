@@ -7,16 +7,15 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class VulkanSemaphore final : public ISemaphore, public VulkanResource<vk::Semaphore>
-	{
+	class Semaphore final : public ISemaphore, public Resource<vk::Semaphore> {
 	public:
-		VulkanSemaphore(Device& device, bool timeline = false);
-		~VulkanSemaphore();
+		Semaphore(Device& device, bool timeline = false);
+		~Semaphore();
 
-		VulkanSemaphore(const VulkanSemaphore&) = delete;
-		VulkanSemaphore(VulkanSemaphore&& other) = default;
-		VulkanSemaphore& operator=(const VulkanSemaphore&) = delete;
-		VulkanSemaphore& operator=(VulkanSemaphore&&) = default;
+		Semaphore(const Semaphore&) = delete;
+		Semaphore(Semaphore&& other) = default;
+		Semaphore& operator=(const Semaphore&) = delete;
+		Semaphore& operator=(Semaphore&&) = default;
 
 		void set_resource_name(std::string_view name) const noexcept override;
 	private:

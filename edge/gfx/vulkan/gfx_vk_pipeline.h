@@ -8,37 +8,37 @@ namespace edge::gfx::vulkan
 	class Device;
 	class DebugUtils;
 
-	class VulkanPipeline : public IPipeline, public VulkanResource<vk::Pipeline> {
+	class Pipeline : public IPipeline, public Resource<vk::Pipeline> {
 	public:
-		VulkanPipeline(Device& device);
-		VulkanPipeline(VulkanPipeline&& other);
-		virtual ~VulkanPipeline();
+		Pipeline(Device& device);
+		Pipeline(Pipeline&& other);
+		virtual ~Pipeline();
 
-		VulkanPipeline(const VulkanPipeline&) = delete;
-		VulkanPipeline& operator=(const VulkanPipeline&) = delete;
-		VulkanPipeline& operator=(VulkanPipeline&&) = delete;
+		Pipeline(const Pipeline&) = delete;
+		Pipeline& operator=(const Pipeline&) = delete;
+		Pipeline& operator=(Pipeline&&) = delete;
 
 		void set_resource_name(std::string_view name) const noexcept override final;
 	protected:
 		Device& device;
 	};
 
-	class VulkanComputePipeline final : public VulkanPipeline {
+	class ComputePipeline final : public Pipeline {
 	public:
-		VulkanComputePipeline(Device& device, const ComputePipelineCreateInfo& create_info);
-		VulkanComputePipeline(VulkanComputePipeline&& other);
-		~VulkanComputePipeline() = default;
+		ComputePipeline(Device& device, const ComputePipelineCreateInfo& create_info);
+		ComputePipeline(ComputePipeline&& other);
+		~ComputePipeline() = default;
 
 		[[nodescard]] auto get_type() const noexcept -> PipelineType override {
 			return PipelineType::eCompute;
 		}
 	};
 
-	class VulkanGraphicsPipeline final : public VulkanPipeline {
+	class GraphicsPipeline final : public Pipeline {
 	public:
-		VulkanGraphicsPipeline(Device& device, const GraphicsPipelineCreateInfo& create_info);
-		VulkanGraphicsPipeline(VulkanGraphicsPipeline&& other);
-		~VulkanGraphicsPipeline() = default;
+		GraphicsPipeline(Device& device, const GraphicsPipelineCreateInfo& create_info);
+		GraphicsPipeline(GraphicsPipeline&& other);
+		~GraphicsPipeline() = default;
 
 		[[nodescard]] auto get_type() const noexcept -> PipelineType override {
 			return PipelineType::eGraphics;

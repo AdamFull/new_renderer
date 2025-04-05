@@ -47,7 +47,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace edge::gfx::vulkan
 {
-	VulkanContext::VulkanContext(const ContextCreateInfo& create_info) {
+	GFXContext::GFXContext(const ContextCreateInfo& create_info) {
 #if USE_NSIGHT_AFTERMATH
 		nsight_aftermath = std::make_unique<VkNsightAftermath>();
 #endif
@@ -188,7 +188,7 @@ namespace edge::gfx::vulkan
 		allocator = std::make_unique<Allocator>(*device);
 	}
 
-	VulkanContext::~VulkanContext() {
+	GFXContext::~GFXContext() {
 #if USE_NSIGHT_AFTERMATH
 		nsight_aftermath.reset();
 #endif
@@ -200,27 +200,27 @@ namespace edge::gfx::vulkan
 		}
 	}
 
-	void VulkanContext::destroy(IGFXResource* handle) const {
+	void GFXContext::destroy(IGFXResource* handle) const {
 		SAFE_DELETE(handle);
 	}
 
-	auto VulkanContext::create_fence() const -> IFence* {
-		return new VulkanFence(*device);
+	auto GFXContext::create_fence() const -> IFence* {
+		return new Fence(*device);
 	}
 
-	auto VulkanContext::create_semaphore(SemaphoreType type) const -> ISemaphore* {
-		return new VulkanSemaphore(*device, type == SemaphoreType::eTimeline);
+	auto GFXContext::create_semaphore(SemaphoreType type) const -> ISemaphore* {
+		return new Semaphore(*device, type == SemaphoreType::eTimeline);
 	}
 
-	auto VulkanContext::get_queue_count(QueueType queue_type) const->uint32_t {
+	auto GFXContext::get_queue_count(QueueType queue_type) const->uint32_t {
 		return device->get_queue_count(queue_type);
 	}
 
-	auto VulkanContext::get_queue(QueueType queue_type, uint32_t queue_index) const->IQueue const* {
+	auto GFXContext::get_queue(QueueType queue_type, uint32_t queue_index) const->IQueue const* {
 		return device->get_queue(queue_type, queue_index);
 	}
 
-	auto VulkanContext::create_swapchain(const SwapChainCreateInfo& create_info) const -> ISwapchain* {
+	auto GFXContext::create_swapchain(const SwapChainCreateInfo& create_info) const -> ISwapchain* {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 		vk::PresentModeKHR present_mode = (create_info.window->get_properties().vsync == Window::Vsync::OFF) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
 		std::vector<vk::PresentModeKHR> present_mode_priority_list{ vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eImmediate };
@@ -229,19 +229,19 @@ namespace edge::gfx::vulkan
 		std::vector<vk::PresentModeKHR> present_mode_priority_list{ vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eImmediate };
 #endif
 		if (create_info.old_swapchain) {
-			auto* old_swapchain = utl::cast<VulkanSwapchain*>(create_info.old_swapchain);
+			auto* old_swapchain = utl::cast<Swapchain*>(create_info.old_swapchain);
 
 			// Recreate swapchain with changed size
 			if (create_info.width != 1u && create_info.height != 1u) {
-				return new VulkanSwapchain(*old_swapchain, vk::Extent2D{ create_info.width, create_info.height });
+				return new Swapchain(*old_swapchain, vk::Extent2D{ create_info.width, create_info.height });
 			}
 			// Recreate with new amount of images
 			else if (create_info.image_count != 1u && create_info.image_count != old_swapchain->get_image_count()) {
-				return new VulkanSwapchain(*old_swapchain, create_info.image_count);
+				return new Swapchain(*old_swapchain, create_info.image_count);
 			}
 		}
 
-		return new VulkanSwapchain(*device,
+		return new Swapchain(*device,
 			surface,
 			present_mode,
 			present_mode_priority_list,
@@ -250,84 +250,84 @@ namespace edge::gfx::vulkan
 			create_info.image_count);
 	}
 
-	auto VulkanContext::create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) const -> ICommandPool* {
-		auto* vkqueue = utl::cast<const VulkanQueue*>(queue);
-		return new VulkanCommandPool(*vkqueue, reset_mode);
+	auto GFXContext::create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) const -> ICommandPool* {
+		auto* vkqueue = utl::cast<const Queue*>(queue);
+		return new CommandPool(*vkqueue, reset_mode);
 	}
 
-	auto VulkanContext::create_buffer(const BufferCreateInfo& create_info) const -> IBuffer*
+	auto GFXContext::create_buffer(const BufferCreateInfo& create_info) const -> IBuffer*
 	{
-		return new VulkanBuffer(*allocator, create_info);
+		return new Buffer(*allocator, create_info);
 	}
 
-	auto VulkanContext::create_texture(const TextureCreateInfo& create_info) const -> ITexture*
+	auto GFXContext::create_texture(const TextureCreateInfo& create_info) const -> ITexture*
 	{
-		return new VulkanTexture(*allocator, create_info);
+		return new Texture(*allocator, create_info);
 	}
 
-	auto VulkanContext::create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const -> ITexture*
+	auto GFXContext::create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const -> ITexture*
 	{
-		return new VulkanTexture(*allocator, swapchain, image_index);
+		return new Texture(*allocator, swapchain, image_index);
 	}
 
-	auto VulkanContext::create_shader(std::span<const ShaderStageInfo> shader_stages) const -> IShader*
+	auto GFXContext::create_shader(std::span<const ShaderStageInfo> shader_stages) const -> IShader*
 	{
-		return new VulkanShader(*device, shader_stages);
+		return new Shader(*device, shader_stages);
 	}
 
-	auto VulkanContext::create_root_signature(const RootSignatureCreateInfo& create_info) const -> IRootSignature*
+	auto GFXContext::create_root_signature(const RootSignatureCreateInfo& create_info) const -> IRootSignature*
 	{
-		return new VulkanRootSignature(*device, create_info);
+		return new RootSignature(*device, create_info);
 	}
 
-	auto VulkanContext::create_pipeline(const GraphicsPipelineCreateInfo& create_info) const -> IPipeline*
+	auto GFXContext::create_pipeline(const GraphicsPipelineCreateInfo& create_info) const -> IPipeline*
 	{
-		return new VulkanGraphicsPipeline(*device, create_info);
+		return new GraphicsPipeline(*device, create_info);
 	}
 
-	auto VulkanContext::create_pipeline(const ComputePipelineCreateInfo& create_info) const -> IPipeline*
+	auto GFXContext::create_pipeline(const ComputePipelineCreateInfo& create_info) const -> IPipeline*
 	{
-		return new VulkanComputePipeline(*device, create_info);
+		return new ComputePipeline(*device, create_info);
 	}
 
-	auto VulkanContext::create_pipeline_cache(const PipelineCacheCreateInfo& create_info) const -> IPipelineCache*
+	auto GFXContext::create_pipeline_cache(const PipelineCacheCreateInfo& create_info) const -> IPipelineCache*
 	{
-		return new VulkanPipelineCache(*device, create_info);
+		return new PipelineCache(*device, create_info);
 	}
 
-	auto VulkanContext::create_descriptor_allocator() const -> IDescriptorAllocator*
+	auto GFXContext::create_descriptor_allocator() const -> IDescriptorAllocator*
 	{
-		return new VulkanDescriptorAllocator(*device);
+		return new DescriptorAllocator(*device);
 	}
 
-	auto VulkanContext::create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) const -> ISharedDescriptor*
+	auto GFXContext::create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) const -> ISharedDescriptor*
 	{
-		return new VulkanSharedDescriptor(*device, create_info);
+		return new SharedDescriptor(*device, create_info);
 	}
 
-	auto VulkanContext::create_sampler(const SamplerCreateInfo& create_info) const -> ISampler*
+	auto GFXContext::create_sampler(const SamplerCreateInfo& create_info) const -> ISampler*
 	{
-		return new VulkanSampler(*device, create_info);
+		return new Sampler(*device, create_info);
 	}
 
-	auto VulkanContext::create_query_pool(const QueryPoolCreateInfo& create_info) const -> IQueryPool*
+	auto GFXContext::create_query_pool(const QueryPoolCreateInfo& create_info) const -> IQueryPool*
 	{
-		return new VulkanQueryPool(*device, create_info);
+		return new QueryPool(*device, create_info);
 	}
 
-	void VulkanContext::wait_for_fences(std::span<IFence*> fences, uint64_t timeout) const
+	void GFXContext::wait_for_fences(std::span<IFence*> fences, uint64_t timeout) const
 	{
 		std::array<vk::Fence, 16ull> wait_fences{};
 
 		for (int32_t i = 0; i < fences.size(); ++i)
 		{
-			wait_fences[i] = utl::cast<VulkanFence*>(fences[i])->get_handle();
+			wait_fences[i] = utl::cast<Fence*>(fences[i])->get_handle();
 		}
 
 		vk::Result result = device->get_handle().waitForFences(static_cast<uint32_t>(fences.size()), wait_fences.data(), VK_TRUE, timeout);
 	}
 
-	void VulkanContext::request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment) const {
+	void GFXContext::request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment) const {
 		alignment = 1ull;
 
 		auto& physical = device->get_gpu();
@@ -350,13 +350,13 @@ namespace edge::gfx::vulkan
 		}
 	}
 
-	void VulkanContext::request_timestamp_frequency(float* frequency) const {
+	void GFXContext::request_timestamp_frequency(float* frequency) const {
 		auto& physical = instance->get_best_device();
 		auto& properties = physical.get_properties();
 		*frequency = properties.limits.timestampPeriod;
 	}
 
-	void VulkanContext::request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const {
+	void GFXContext::request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const {
 		vk::MemoryHeapFlags memory_flags{ vk::MemoryHeapFlagBits::eDeviceLocal };
 		vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget_props{};
 		vk::PhysicalDeviceMemoryProperties2 memory_props{};
@@ -380,7 +380,7 @@ namespace edge::gfx::vulkan
 		}
 	}
 
-	void VulkanContext::enable_device_features(PhysicalDevice& device) {
+	void GFXContext::enable_device_features(PhysicalDevice& device) {
 		for (auto& extension_name : device_extensions) {
 			if (strcmp(extension_name, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) == 0)
 				device.request_extension_features<vk::PhysicalDeviceSynchronization2FeaturesKHR>();

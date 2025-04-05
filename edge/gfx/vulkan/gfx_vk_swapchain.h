@@ -9,36 +9,36 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class VulkanSwapchain final : public ISwapchain, public VulkanResource<vk::SwapchainKHR> {
+	class Swapchain final : public ISwapchain, public Resource<vk::SwapchainKHR> {
 	public:
 		/**
 		 * @brief Constructor to create a swapchain by changing the extent
 		 *        only and preserving the configuration from the old swapchain.
 		 */
-		VulkanSwapchain(VulkanSwapchain& old_swapchain, const vk::Extent2D& extent);
+		Swapchain(Swapchain& old_swapchain, const vk::Extent2D& extent);
 
 		/**
 		 * @brief Constructor to create a swapchain by changing the image count
 		 *        only and preserving the configuration from the old swapchain.
 		 */
-		VulkanSwapchain(VulkanSwapchain& old_swapchain, const uint32_t image_count);
+		Swapchain(Swapchain& old_swapchain, const uint32_t image_count);
 
 		/**
 		 * @brief Constructor to create a swapchain by changing the image usage
 		 * only and preserving the configuration from the old swapchain.
 		 */
-		VulkanSwapchain(VulkanSwapchain& old_swapchain, const std::set<vk::ImageUsageFlagBits>& image_usage_flags);
+		Swapchain(Swapchain& old_swapchain, const std::set<vk::ImageUsageFlagBits>& image_usage_flags);
 
 		/**
 		 * @brief Constructor to create a swapchain by changing the extent
 		 *        and transform only and preserving the configuration from the old swapchain.
 		 */
-		VulkanSwapchain(VulkanSwapchain& swapchain, const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform);
+		Swapchain(Swapchain& swapchain, const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform);
 
 		/**
 		 * @brief Constructor to create a swapchain.
 		 */
-		VulkanSwapchain(Device& device, vk::SurfaceKHR surface,
+		Swapchain(Device& device, vk::SurfaceKHR surface,
 			const vk::PresentModeKHR present_mode,
 			const std::vector<vk::PresentModeKHR>& present_mode_priority_list = { vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eMailbox },
 			const std::vector<vk::SurfaceFormatKHR>& surface_format_priority_list = { {vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear},
@@ -48,14 +48,14 @@ namespace edge::gfx::vulkan
 			const std::set<vk::ImageUsageFlagBits>& image_usage_flags = { vk::ImageUsageFlagBits::eColorAttachment, vk::ImageUsageFlagBits::eTransferSrc },
 			vk::SwapchainKHR                         old_swapchain = nullptr);
 
-		VulkanSwapchain(const VulkanSwapchain&) = delete;
+		Swapchain(const Swapchain&) = delete;
 
-		VulkanSwapchain(VulkanSwapchain&& other);
+		Swapchain(Swapchain&& other);
 
-		~VulkanSwapchain();
+		~Swapchain();
 
-		VulkanSwapchain& operator=(const VulkanSwapchain&) = delete;
-		VulkanSwapchain& operator=(VulkanSwapchain&&) = delete;
+		Swapchain& operator=(const Swapchain&) = delete;
+		Swapchain& operator=(Swapchain&&) = delete;
 
 		[[nodiscard]] auto is_valid() const noexcept -> bool {
 			return !!handle_;

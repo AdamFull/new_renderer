@@ -9,7 +9,7 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanTexture::VulkanTexture(Allocator& allocator, const TextureCreateInfo& create_info) :
+	Texture::Texture(Allocator& allocator, const TextureCreateInfo& create_info) :
 		device{ allocator.get_device() } {
 		// Create image handle
 		image = std::make_unique<Image>(allocator, create_info);
@@ -23,10 +23,10 @@ namespace edge::gfx::vulkan
 		}
 	}
 
-	VulkanTexture::VulkanTexture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index) :
+	Texture::Texture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index) :
 		device{ allocator.get_device() } {
 
-		VulkanSwapchain* vk_swapchain = utl::cast<VulkanSwapchain*>(swapchain);
+		Swapchain* vk_swapchain = utl::cast<Swapchain*>(swapchain);
 		auto& extent = vk_swapchain->get_extent();
 
 		TextureCreateInfo create_info{};
@@ -42,29 +42,29 @@ namespace edge::gfx::vulkan
 		srv = std::make_unique<ImageView>(*image, create_info, 0u, 0u, create_info.levels);
 	}
 
-	VulkanTexture::VulkanTexture(VulkanTexture&& other) :
+	Texture::Texture(Texture&& other) :
 		device{ device },
 		image{ std::exchange(other.image, {}) },
 		srv{ std::exchange(other.srv, {}) },
 		subresources{ std::exchange(other.subresources, {}) } {
 	}
 
-	auto VulkanTexture::get_image() noexcept -> Image& {
+	auto Texture::get_image() noexcept -> Image& {
 		return *image;
 	}
 
-	auto VulkanTexture::get_image() const noexcept -> Image const& {
+	auto Texture::get_image() const noexcept -> Image const& {
 		return *image;
 	}
 
-	auto VulkanTexture::get_subresource(uint32_t subresource) -> ImageView& {
+	auto Texture::get_subresource(uint32_t subresource) -> ImageView& {
 		if (subresource == ~0u)
 			return *srv;
 
 		return *subresources[subresource];
 	}
 
-	void VulkanTexture::set_resource_name(std::string_view name) const noexcept {
+	void Texture::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 
 		debug_utils.set_debug_name(image->get_handle(), name);
@@ -76,14 +76,14 @@ namespace edge::gfx::vulkan
 		}
 	}
 
-	auto VulkanTexture::get_subresource(uint32_t subresource) const -> ImageView const& {
+	auto Texture::get_subresource(uint32_t subresource) const -> ImageView const& {
 		if (subresource == ~0u)
 			return *srv;
 
 		return *subresources[subresource];
 	}
 
-	auto VulkanTexture::get_format() const noexcept -> Format {
+	auto Texture::get_format() const noexcept -> Format {
 		return format_from_vk(static_cast<uint32_t>(image->get_format()));
 	}
 }

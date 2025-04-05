@@ -6,15 +6,15 @@
 
 namespace edge::gfx::vulkan
 {
-	class VulkanBuffer final : public IBuffer, public Allocation, public VulkanResource<vk::Buffer> {
+	class Buffer final : public IBuffer, public Allocation, public Resource<vk::Buffer> {
 	public:
-		VulkanBuffer(const VulkanBuffer&) = delete;
-		VulkanBuffer(VulkanBuffer&& other) = default;
-		VulkanBuffer& operator=(const VulkanBuffer&) = delete;
-		VulkanBuffer& operator=(VulkanBuffer&&) = default;
+		Buffer(const Buffer&) = delete;
+		Buffer(Buffer&& other) = default;
+		Buffer& operator=(const Buffer&) = delete;
+		Buffer& operator=(Buffer&&) = default;
 
-		VulkanBuffer(Allocator& allocator, const BufferCreateInfo& create_info);
-		~VulkanBuffer();
+		Buffer(Allocator& allocator, const BufferCreateInfo& create_info);
+		~Buffer();
 
 		void set_resource_name(std::string_view name) const noexcept override;
 

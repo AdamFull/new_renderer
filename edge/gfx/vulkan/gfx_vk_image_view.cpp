@@ -7,7 +7,7 @@
 namespace edge::gfx::vulkan
 {
 	ImageView::ImageView(Image& image, const TextureCreateInfo& texture_create_info, uint32_t base_array_layer, uint32_t base_mip_level, uint32_t mip_count) :
-		VulkanResource{ nullptr, image.get_allocation_callbacks() },
+		Resource{ nullptr, image.get_allocation_callbacks() },
 		device{ image.get_device() } {
 
 		bool is_array = texture_create_info.layers > 1u;
@@ -64,7 +64,7 @@ namespace edge::gfx::vulkan
 	}
 
 	ImageView::ImageView(ImageView&& other) noexcept :
-		VulkanResource{ std::move(other) },
+		Resource{ std::move(other) },
 		device{ other.device },
 		create_info{ other.create_info } {
 	}

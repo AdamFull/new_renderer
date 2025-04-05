@@ -6,19 +6,19 @@
 namespace edge::gfx::vulkan
 {
 	class DescriptorPool;
-	class VulkanResourceDescriptor;
+	class ResourceDescriptor;
 
-	class VulkanSharedDescriptor final : public ISharedDescriptor {
+	class SharedDescriptor final : public ISharedDescriptor {
 	public:
-		VulkanSharedDescriptor(Device& device, const SharedDescriptorCreateInfo& create_info);
-		~VulkanSharedDescriptor();
+		SharedDescriptor(Device& device, const SharedDescriptorCreateInfo& create_info);
+		~SharedDescriptor();
 
-		VulkanSharedDescriptor(const VulkanSharedDescriptor&) = delete;
+		SharedDescriptor(const SharedDescriptor&) = delete;
 
-		VulkanSharedDescriptor(VulkanSharedDescriptor&& other);
+		SharedDescriptor(SharedDescriptor&& other);
 
-		VulkanSharedDescriptor& operator=(const VulkanSharedDescriptor&) = delete;
-		VulkanSharedDescriptor& operator=(VulkanSharedDescriptor&&) = delete;
+		SharedDescriptor& operator=(const SharedDescriptor&) = delete;
+		SharedDescriptor& operator=(SharedDescriptor&&) = delete;
 
 		[[nodiscard]] auto get_descriptor_set_layout() const noexcept -> DescriptorSetLayout& {
 			return *descriptor_set_layout;
@@ -44,6 +44,6 @@ namespace edge::gfx::vulkan
 		std::unique_ptr<DescriptorSetLayout> descriptor_set_layout{};
 		std::unique_ptr<DescriptorPool> descriptor_pool{};
 
-		std::vector<VulkanResourceDescriptor*> allocated_resource_descriptors{};
+		std::vector<ResourceDescriptor*> allocated_resource_descriptors{};
 	};
 }

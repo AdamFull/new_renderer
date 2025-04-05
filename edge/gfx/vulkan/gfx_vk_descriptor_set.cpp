@@ -4,16 +4,16 @@
 namespace edge::gfx::vulkan
 {
 	DescriptorSet::DescriptorSet() :
-		VulkanResource{ nullptr, nullptr } {
+		Resource{ nullptr, nullptr } {
 	}
 
 	DescriptorSet::DescriptorSet(vk::DescriptorSet handle, const PoolSizes& sizes) :
-		VulkanResource{ handle, nullptr },
+		Resource{ handle, nullptr },
 		used_sizes{ sizes } {
 	}
 
 	DescriptorSet::DescriptorSet(DescriptorSet&& other) :
-		VulkanResource{ std::move(other) },
+		Resource{ std::move(other) },
 		used_sizes{ std::exchange(other.used_sizes, {}) } {
 	}
 }

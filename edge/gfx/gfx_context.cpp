@@ -24,7 +24,7 @@ namespace edge::gfx
 #endif
 #if VULKAN_SUPPORTED
 		case RenderApi::eVulkan:
-			gfx_context = std::make_unique<vulkan::VulkanContext>(create_info);
+			gfx_context = std::make_unique<vulkan::GFXContext>(create_info);
 			break;
 #endif
 		default:

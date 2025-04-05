@@ -41,7 +41,7 @@ namespace edge::gfx::vulkan
 	}
 
 	DescriptorPool::DescriptorPool(Device& device, DescriptorSetLayout& layout, DescriptorPool* previous_pool) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
 		auto& requested_sizes = layout.get_required_descriptor_count();
 
@@ -88,7 +88,7 @@ namespace edge::gfx::vulkan
 	}
 
 	DescriptorPool::DescriptorPool(DescriptorPool&& other) :
-		VulkanResource{ std::move(other) },
+		Resource{ std::move(other) },
 		device{ other.device },
 		initial_sizes{ std::exchange(other.initial_sizes, {}) },
 		avaliable_sizes{ std::exchange(other.avaliable_sizes, {}) },

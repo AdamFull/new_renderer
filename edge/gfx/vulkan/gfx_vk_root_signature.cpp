@@ -23,7 +23,7 @@ namespace edge::gfx::vulkan
 
 
 	PipelineLayout::PipelineLayout(Device& device, const PipelineLayoutCreateInfo& create_info) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
 		vk::Result result = device.get_handle().createPipelineLayout(&create_info.create_info, allocation_callbacks, &handle_);
 	}
@@ -33,12 +33,12 @@ namespace edge::gfx::vulkan
 	}
 
 	PipelineLayout::PipelineLayout(PipelineLayout&& other) :
-		VulkanResource{ std::move(other) },
+		Resource{ std::move(other) },
 		device{ device } {
 	}
 
 
-	VulkanRootSignature::VulkanRootSignature(Device& device, const RootSignatureCreateInfo& create_info) :
+	RootSignature::RootSignature(Device& device, const RootSignatureCreateInfo& create_info) :
 		device{ device } {
 		const auto& reflection = create_info.shader->get_reflection();
 
@@ -74,7 +74,7 @@ namespace edge::gfx::vulkan
 		for (int32_t set = 0; set < 8ull; ++set) {
 			// NOTE: it's very dirty solution i think, but ok for now
 			if (create_info.shared_descriptor) {
-				auto* vk_shared_descriptor = static_cast<VulkanSharedDescriptor*>(create_info.shared_descriptor);
+				auto* vk_shared_descriptor = static_cast<SharedDescriptor*>(create_info.shared_descriptor);
 				auto shared_set = vk_shared_descriptor->get_first_set();
 				if (set == shared_set) {
 					auto& shared_layout = vk_shared_descriptor->get_descriptor_set_layout();
@@ -98,15 +98,15 @@ namespace edge::gfx::vulkan
 		pipeline_layout = std::make_unique<PipelineLayout>(device, layout_ci);
 	}
 
-	VulkanRootSignature::~VulkanRootSignature() {
+	RootSignature::~RootSignature() {
 	}
 
-	VulkanRootSignature::VulkanRootSignature(VulkanRootSignature&& other) :
+	RootSignature::RootSignature(RootSignature&& other) :
 		pipeline_layout{ std::exchange(other.pipeline_layout, {}) },
 		device{ other.device } {
 	}
 
-	void VulkanRootSignature::set_resource_name(std::string_view name) const noexcept {
+	void RootSignature::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(pipeline_layout->get_handle(), name);
 	}

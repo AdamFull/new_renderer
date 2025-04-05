@@ -6,8 +6,8 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanCommandPool::VulkanCommandPool(const VulkanQueue& queue, CommandPoolResetMode reset_mode) :
-		VulkanResource{ nullptr, queue.get_allocation_callbacks() },
+	CommandPool::CommandPool(const Queue& queue, CommandPoolResetMode reset_mode) :
+		Resource{ nullptr, queue.get_allocation_callbacks() },
 		device{ queue.get_device() },
 		queue_family_index{ queue.get_family_index() },
 		reset_mode{ reset_mode } {
@@ -29,8 +29,8 @@ namespace edge::gfx::vulkan
 		vk::Result result = device.get_handle().createCommandPool(&create_info, allocation_callbacks, &handle_);
 	}
 
-	VulkanCommandPool::VulkanCommandPool(VulkanCommandPool&& other) :
-		VulkanResource{ std::move(other) },
+	CommandPool::CommandPool(CommandPool&& other) :
+		Resource{ std::move(other) },
 		device{ device },
 		queue_family_index{ other.queue_family_index },
 		primary_command_buffers{ std::move(other.primary_command_buffers) },
@@ -42,7 +42,7 @@ namespace edge::gfx::vulkan
 
 	}
 
-	VulkanCommandPool::~VulkanCommandPool() {
+	CommandPool::~CommandPool() {
 		primary_command_buffers.clear();
 		secondary_command_buffers.clear();
 
@@ -56,13 +56,13 @@ namespace edge::gfx::vulkan
 		vkdevice.destroyCommandPool(handle_, allocation_callbacks);
 	}
 
-	void VulkanCommandPool::set_resource_name(std::string_view name) const noexcept {
+	void CommandPool::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(handle_, name);
 	}
 
-	auto VulkanCommandPool::allocate(bool secondary) -> VulkanCommandList* {
-		std::vector<std::unique_ptr<VulkanCommandList>>& buffers =
+	auto CommandPool::allocate(bool secondary) -> CommandList* {
+		std::vector<std::unique_ptr<CommandList>>& buffers =
 			secondary ? secondary_command_buffers : primary_command_buffers;
 
 		uint32_t& active_count = secondary ? active_secondary_command_buffer_count : active_primary_command_buffer_count;
@@ -73,12 +73,12 @@ namespace edge::gfx::vulkan
 		}
 
 		// Create a new command buffer if none are available
-		buffers.emplace_back(std::make_unique<VulkanCommandList>(*this, secondary ? vk::CommandBufferLevel::eSecondary : vk::CommandBufferLevel::ePrimary));
+		buffers.emplace_back(std::make_unique<CommandList>(*this, secondary ? vk::CommandBufferLevel::eSecondary : vk::CommandBufferLevel::ePrimary));
 		return buffers.back().get();
 	}
 
 
-	void VulkanCommandPool::reset() noexcept {
+	void CommandPool::reset() noexcept {
 		switch (reset_mode) {
 		case CommandPoolResetMode::eResetIndividually:
 			reset_command_buffers();
@@ -101,7 +101,7 @@ namespace edge::gfx::vulkan
 		free_command_buffers();
 	}
 
-	auto VulkanCommandPool::allocate_command_buffer(vk::CommandBufferLevel level) -> vk::CommandBuffer {
+	auto CommandPool::allocate_command_buffer(vk::CommandBufferLevel level) -> vk::CommandBuffer {
 		vk::CommandBufferAllocateInfo allocate_info(handle_, level, 1);
 
 		vk::CommandBuffer command_buffer{};
@@ -110,26 +110,26 @@ namespace edge::gfx::vulkan
 		return command_buffer;
 	}
 
-	void VulkanCommandPool::free_command_buffer(vk::CommandBuffer& command_buffer) {
+	void CommandPool::free_command_buffer(vk::CommandBuffer& command_buffer) {
 		free_command_buffer_list.emplace_back(command_buffer);
 	}
 
-	auto VulkanCommandPool::get_reset_mode() const noexcept -> CommandPoolResetMode {
+	auto CommandPool::get_reset_mode() const noexcept -> CommandPoolResetMode {
 		return reset_mode;
 	}
 
-	auto VulkanCommandPool::get_device() const noexcept -> Device const& {
+	auto CommandPool::get_device() const noexcept -> Device const& {
 		return device;
 	}
 
-	void VulkanCommandPool::free_command_buffers() {
+	void CommandPool::free_command_buffers() {
 		if (!free_command_buffer_list.empty()) {
 			device.get_handle().freeCommandBuffers(handle_, free_command_buffer_list.size(), free_command_buffer_list.data());
 			free_command_buffer_list.clear();
 		}
 	}
 
-	void VulkanCommandPool::reset_command_buffers() {
+	void CommandPool::reset_command_buffers() {
 		for (auto& cmd_buf : primary_command_buffers) {
 			cmd_buf->reset(reset_mode);
 		}

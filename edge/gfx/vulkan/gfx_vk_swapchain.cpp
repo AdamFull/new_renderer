@@ -164,8 +164,8 @@ namespace edge::gfx::vulkan
 	}
 
 
-	VulkanSwapchain::VulkanSwapchain(VulkanSwapchain& old_swapchain, const vk::Extent2D& extent) :
-		VulkanSwapchain{ old_swapchain.device, old_swapchain.surface,
+	Swapchain::Swapchain(Swapchain& old_swapchain, const vk::Extent2D& extent) :
+		Swapchain{ old_swapchain.device, old_swapchain.surface,
 					 old_swapchain.create_info.presentMode,
 					 old_swapchain.present_mode_priority_list,
 					 old_swapchain.surface_format_priority_list,
@@ -176,8 +176,8 @@ namespace edge::gfx::vulkan
 					 old_swapchain.get_handle() }
 	{}
 
-	VulkanSwapchain::VulkanSwapchain(VulkanSwapchain& old_swapchain, const uint32_t image_count) :
-		VulkanSwapchain{ old_swapchain.device, old_swapchain.surface,
+	Swapchain::Swapchain(Swapchain& old_swapchain, const uint32_t image_count) :
+		Swapchain{ old_swapchain.device, old_swapchain.surface,
 					 old_swapchain.create_info.presentMode,
 					 old_swapchain.present_mode_priority_list,
 					 old_swapchain.surface_format_priority_list,
@@ -188,8 +188,8 @@ namespace edge::gfx::vulkan
 					 old_swapchain.get_handle() }
 	{}
 
-	VulkanSwapchain::VulkanSwapchain(VulkanSwapchain& old_swapchain, const std::set<vk::ImageUsageFlagBits>& image_usage_flags) :
-		VulkanSwapchain{ old_swapchain.device, old_swapchain.surface,
+	Swapchain::Swapchain(Swapchain& old_swapchain, const std::set<vk::ImageUsageFlagBits>& image_usage_flags) :
+		Swapchain{ old_swapchain.device, old_swapchain.surface,
 					 old_swapchain.create_info.presentMode,
 					 old_swapchain.present_mode_priority_list,
 					 old_swapchain.surface_format_priority_list,
@@ -200,8 +200,8 @@ namespace edge::gfx::vulkan
 					 old_swapchain.get_handle() }
 	{}
 
-	VulkanSwapchain::VulkanSwapchain(VulkanSwapchain& old_swapchain, const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform) :
-		VulkanSwapchain{ old_swapchain.device, old_swapchain.surface,
+	Swapchain::Swapchain(Swapchain& old_swapchain, const vk::Extent2D& extent, const vk::SurfaceTransformFlagBitsKHR transform) :
+		Swapchain{ old_swapchain.device, old_swapchain.surface,
 					 old_swapchain.create_info.presentMode,
 					 old_swapchain.present_mode_priority_list,
 					 old_swapchain.surface_format_priority_list,
@@ -212,7 +212,7 @@ namespace edge::gfx::vulkan
 					 old_swapchain.get_handle() }
 	{}
 
-	VulkanSwapchain::VulkanSwapchain(Device& device, vk::SurfaceKHR surface,
+	Swapchain::Swapchain(Device& device, vk::SurfaceKHR surface,
 		const vk::PresentModeKHR present_mode,
 		const std::vector<vk::PresentModeKHR>& present_mode_priority_list,
 		const std::vector<vk::SurfaceFormatKHR>& surface_format_priority_list,
@@ -221,7 +221,7 @@ namespace edge::gfx::vulkan
 		const vk::SurfaceTransformFlagBitsKHR transform,
 		const std::set<vk::ImageUsageFlagBits>& image_usage_flags,
 		vk::SwapchainKHR old_swapchain) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device },
 		surface{ surface }
 	{
@@ -284,12 +284,12 @@ namespace edge::gfx::vulkan
 		result = device.get_handle().getSwapchainImagesKHR(handle_, &create_info.minImageCount, images.data());
 	}
 
-	VulkanSwapchain::~VulkanSwapchain() {
+	Swapchain::~Swapchain() {
 		device.get_handle().destroySwapchainKHR(handle_, allocation_callbacks);
 	}
 
-	VulkanSwapchain::VulkanSwapchain(VulkanSwapchain&& other) :
-		VulkanResource{ std::move(other) },
+	Swapchain::Swapchain(Swapchain&& other) :
+		Resource{ std::move(other) },
 		device{ other.device },
 		surface{ std::exchange(other.surface, nullptr) },
 		images{ std::exchange(other.images, {}) },
@@ -300,24 +300,24 @@ namespace edge::gfx::vulkan
 		image_usage_flags{ std::move(other.image_usage_flags) }
 	{}
 
-	void VulkanSwapchain::set_resource_name(std::string_view name) const noexcept {
+	void Swapchain::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(handle_, name);
 	}
 
-	auto VulkanSwapchain::acquire_next_image(ISemaphore* signal_semaphore, IFence* fence, uint32_t* image_index) -> bool
+	auto Swapchain::acquire_next_image(ISemaphore* signal_semaphore, IFence* fence, uint32_t* image_index) -> bool
 	{
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		vk::Semaphore image_acquired_semaphore{ nullptr };
 		if (signal_semaphore) {
-			auto* vk_semaphore = utl::cast<VulkanSemaphore*>(signal_semaphore);
+			auto* vk_semaphore = utl::cast<Semaphore*>(signal_semaphore);
 			image_acquired_semaphore = vk_semaphore->get_handle();
 		}
 
 		vk::Fence wait_fence{ nullptr };
 		if (fence) {
-			auto* vk_fence = utl::cast<VulkanFence*>(fence);
+			auto* vk_fence = utl::cast<Fence*>(fence);
 			wait_fence = vk_fence->get_handle();
 		}
 
@@ -332,23 +332,23 @@ namespace edge::gfx::vulkan
 		return result == vk::Result::eSuccess;
 	}
 
-	auto VulkanSwapchain::get_image_count() const noexcept -> uint32_t {
+	auto Swapchain::get_image_count() const noexcept -> uint32_t {
 		return create_info.minImageCount;
 	}
 
-	auto VulkanSwapchain::get_image_format() const noexcept -> Format {
+	auto Swapchain::get_image_format() const noexcept -> Format {
 		return format_from_vk(static_cast<uint32_t>(create_info.imageFormat));
 	}
 
-	auto VulkanSwapchain::get_width() const noexcept -> uint32_t const& {
+	auto Swapchain::get_width() const noexcept -> uint32_t const& {
 		return create_info.imageExtent.width;
 	}
 
-	auto VulkanSwapchain::get_height() const noexcept -> uint32_t const& {
+	auto Swapchain::get_height() const noexcept -> uint32_t const& {
 		return create_info.imageExtent.height;
 	}
 
-	void VulkanSwapchain::get_surface_extent(uint32_t& width, uint32_t& height) {
+	void Swapchain::get_surface_extent(uint32_t& width, uint32_t& height) {
 		auto& gpu = device.get_gpu();
 		vk::SurfaceCapabilitiesKHR surface_properties = gpu.get_handle().getSurfaceCapabilitiesKHR(surface);
 		width = surface_properties.currentExtent.width;

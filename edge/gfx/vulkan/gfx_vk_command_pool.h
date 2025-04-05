@@ -6,22 +6,22 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 	class DebugUtils;
-	class VulkanQueue;
+	class Queue;
 
-	class VulkanCommandPool final : public ICommandPool, public VulkanResource<vk::CommandPool> {
+	class CommandPool final : public ICommandPool, public Resource<vk::CommandPool> {
 	public:
-		VulkanCommandPool(const VulkanQueue& queue, CommandPoolResetMode reset_mode);
+		CommandPool(const Queue& queue, CommandPoolResetMode reset_mode);
 
-		VulkanCommandPool(const VulkanCommandPool&) = delete;
-		VulkanCommandPool(VulkanCommandPool&& other);
-		~VulkanCommandPool();
+		CommandPool(const CommandPool&) = delete;
+		CommandPool(CommandPool&& other);
+		~CommandPool();
 
-		VulkanCommandPool& operator=(const ICommandPool&) = delete;
-		VulkanCommandPool& operator=(ICommandPool&&) = delete;
+		CommandPool& operator=(const ICommandPool&) = delete;
+		CommandPool& operator=(ICommandPool&&) = delete;
 
 		void set_resource_name(std::string_view name) const noexcept override;
 
-		[[nodiscard]] auto allocate(bool secondary) -> VulkanCommandList* override;
+		[[nodiscard]] auto allocate(bool secondary) -> CommandList* override;
 		void reset() noexcept override;
 
 		[[nodiscard]] auto allocate_command_buffer(vk::CommandBufferLevel level) -> vk::CommandBuffer;
@@ -37,9 +37,9 @@ namespace edge::gfx::vulkan
 		const Device& device;
 
 		uint32_t queue_family_index{ 0u };
-		std::vector<std::unique_ptr<VulkanCommandList>> primary_command_buffers;
+		std::vector<std::unique_ptr<CommandList>> primary_command_buffers;
 		uint32_t active_primary_command_buffer_count{ 0u };
-		std::vector<std::unique_ptr<VulkanCommandList>> secondary_command_buffers;
+		std::vector<std::unique_ptr<CommandList>> secondary_command_buffers;
 		uint32_t active_secondary_command_buffer_count{ 0u };
 		CommandPoolResetMode reset_mode;
 

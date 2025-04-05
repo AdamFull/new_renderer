@@ -7,20 +7,20 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class VulkanFence final : public IFence, public VulkanResource<vk::Fence> {
+	class Fence final : public IFence, public Resource<vk::Fence> {
 	public:
-		VulkanFence(Device& device);
-		~VulkanFence();
+		Fence(Device& device);
+		~Fence();
 
 		void set_resource_name(std::string_view name) const noexcept override;
 
 		void wait(uint64_t timeout = std::numeric_limits<uint64_t>::max()) override;
 		void reset() override;
 
-		VulkanFence(const VulkanFence&) = delete;
-		VulkanFence(VulkanFence&& other) = default;
-		VulkanFence& operator=(const VulkanFence&) = delete;
-		VulkanFence& operator=(VulkanFence&&) = default;
+		Fence(const Fence&) = delete;
+		Fence(Fence&& other) = default;
+		Fence& operator=(const Fence&) = delete;
+		Fence& operator=(Fence&&) = default;
 	private:
 		Device& device;
 	};

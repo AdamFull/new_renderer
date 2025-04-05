@@ -12,7 +12,7 @@ namespace edge::gfx::vulkan
 		Other
 	};
 
-	class DescriptorPool final : public VulkanResource<vk::DescriptorPool> {
+	class DescriptorPool final : public Resource<vk::DescriptorPool> {
 	public:
 		DescriptorPool(Device& device, DescriptorSetLayout& layout, DescriptorPool* previous_pool = nullptr);
 		DescriptorPool(const DescriptorPool&) = delete;

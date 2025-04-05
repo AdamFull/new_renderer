@@ -8,8 +8,8 @@
 
 namespace edge::gfx::vulkan
 {
-	VulkanQueryPool::VulkanQueryPool(Device& device, const QueryPoolCreateInfo& create_info) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+	QueryPool::QueryPool(Device& device, const QueryPoolCreateInfo& create_info) :
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device },
 		max_query_count{ create_info.query_count } {
 
@@ -22,26 +22,26 @@ namespace edge::gfx::vulkan
 		vk::Result result = device.get_handle().createQueryPool(&vk_create_info, allocation_callbacks, &handle_);
 	}
 
-	VulkanQueryPool::VulkanQueryPool(VulkanQueryPool&& other) :
-		VulkanResource{ std::move(other) },
+	QueryPool::QueryPool(QueryPool&& other) :
+		Resource{ std::move(other) },
 		device{ device },
 		max_query_count{ std::exchange(other.max_query_count, {}) } {
 	}
 
-	VulkanQueryPool::~VulkanQueryPool() {
+	QueryPool::~QueryPool() {
 		device.get_handle().destroyQueryPool(handle_, allocation_callbacks);
 	}
 
-	void VulkanQueryPool::set_resource_name(std::string_view name) const noexcept {
+	void QueryPool::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(handle_, name);
 	}
 
-	void VulkanQueryPool::reset(uint32_t start_query, uint32_t query_count) {
+	void QueryPool::reset(uint32_t start_query, uint32_t query_count) {
 		device.get_handle().resetQueryPool(handle_, start_query, query_count ? query_count : max_query_count);
 	}
 
-	void VulkanQueryPool::get_data(uint32_t query_index, void* data) const {
+	void QueryPool::get_data(uint32_t query_index, void* data) const {
 		switch (query_type) {
 		case vk::QueryType::eOcclusion: {
 			vk::Result result = device.get_handle()
@@ -60,7 +60,7 @@ namespace edge::gfx::vulkan
 		}
 	}
 
-	void VulkanQueryPool::get_data(uint64_t first_query, uint32_t query_count, void* data) const {
+	void QueryPool::get_data(uint64_t first_query, uint32_t query_count, void* data) const {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		switch (query_type) {

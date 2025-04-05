@@ -7,16 +7,16 @@ namespace edge::gfx::vulkan
 {
 	class Device;
 
-	class VulkanSampler final : public ISampler, public VulkanResource<vk::Sampler> {
+	class Sampler final : public ISampler, public Resource<vk::Sampler> {
 	public:
-		VulkanSampler(Device& device, const SamplerCreateInfo& create_info);
-		~VulkanSampler();
+		Sampler(Device& device, const SamplerCreateInfo& create_info);
+		~Sampler();
 
-		VulkanSampler(VulkanSampler&) = delete;
-		VulkanSampler(VulkanSampler&& other) noexcept;
+		Sampler(Sampler&) = delete;
+		Sampler(Sampler&& other) noexcept;
 
-		VulkanSampler& operator=(const VulkanSampler&) = delete;
-		VulkanSampler& operator=(VulkanSampler&&) = delete;
+		Sampler& operator=(const Sampler&) = delete;
+		Sampler& operator=(Sampler&&) = delete;
 
 		void set_resource_name(std::string_view name) const noexcept override;
 	private:

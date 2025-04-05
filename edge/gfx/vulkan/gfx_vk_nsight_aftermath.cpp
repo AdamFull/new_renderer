@@ -33,7 +33,7 @@ namespace edge::gfx::vulkan
 	}
 
 	void VkNsightAftermath::set_marker_impl(ICommandList* cmd_list, const void* data_idx) {
-		auto* vk_cmd_list = static_cast<VulkanCommandList*>(cmd_list);
+		auto* vk_cmd_list = static_cast<CommandList*>(cmd_list);
 		auto& handle = vk_cmd_list->GetHandle();
 		handle.setCheckpointNV(data_idx);
 	}

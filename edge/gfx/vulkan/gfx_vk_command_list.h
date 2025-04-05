@@ -5,17 +5,17 @@
 
 namespace edge::gfx::vulkan
 {
-	class VulkanCommandPool;
+	class CommandPool;
 
-	class VulkanCommandList final : public ICommandList, public VulkanResource<vk::CommandBuffer> {
+	class CommandList final : public ICommandList, public Resource<vk::CommandBuffer> {
 	public:
-		VulkanCommandList(VulkanCommandPool& command_pool, vk::CommandBufferLevel level);
-		VulkanCommandList(VulkanCommandList&& other);
-		~VulkanCommandList();
+		CommandList(CommandPool& command_pool, vk::CommandBufferLevel level);
+		CommandList(CommandList&& other);
+		~CommandList();
 
-		VulkanCommandList(const VulkanCommandList&) = delete;
-		VulkanCommandList& operator=(const VulkanCommandList&) = delete;
-		VulkanCommandList& operator=(VulkanCommandList&&) = delete;
+		CommandList(const CommandList&) = delete;
+		CommandList& operator=(const CommandList&) = delete;
+		CommandList& operator=(CommandList&&) = delete;
 
 		void set_resource_name(std::string_view name) const noexcept override;
 
@@ -60,6 +60,6 @@ namespace edge::gfx::vulkan
 		void insert_marker(std::string_view name, uint32_t color) const override;
 		void end_marker() const override;
 	private:
-		VulkanCommandPool& command_pool;
+		CommandPool& command_pool;
 	};
 }

@@ -9,7 +9,7 @@ namespace edge::gfx::vulkan
 {
 	PhysicalDevice::PhysicalDevice(Instance& instance, vk::PhysicalDevice physical_device) :
 		instance{ instance },
-		VulkanResource{ physical_device, instance.get_allocation_callbacks() } {
+		Resource{ physical_device, instance.get_allocation_callbacks() } {
 
 		features = physical_device.getFeatures();
 		properties = physical_device.getProperties();

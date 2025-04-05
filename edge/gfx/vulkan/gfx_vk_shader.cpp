@@ -10,7 +10,7 @@
 namespace edge::gfx::vulkan
 {
 	ShaderModule::ShaderModule(Device& device, const ShaderStageInfo& create_info) :
-		VulkanResource{ nullptr, device.get_allocation_callbacks() },
+		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
 
 		vk::ShaderModuleCreateInfo vk_create_info{};
@@ -35,7 +35,7 @@ namespace edge::gfx::vulkan
 	}
 
 
-	VulkanShader::VulkanShader(Device& device, std::span<const ShaderStageInfo> shader_stages) :
+	Shader::Shader(Device& device, std::span<const ShaderStageInfo> shader_stages) :
 		device{ device } {
 
 		for (const auto& stage : shader_stages) {
@@ -45,12 +45,12 @@ namespace edge::gfx::vulkan
 		}
 	}
 
-	VulkanShader::VulkanShader(VulkanShader&& other) :
+	Shader::Shader(Shader&& other) :
 		shader_modules{ std::exchange(other.shader_modules, {}) },
 		device{ other.device } {
 	}
 
-	void VulkanShader::set_resource_name(std::string_view name) const noexcept {
+	void Shader::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		for (auto it = shader_modules.begin(); it != shader_modules.end(); ++it) {
 			auto& stage_ci = (*it)->get_stage_create_info();
@@ -203,7 +203,7 @@ namespace edge::gfx::vulkan
 		vertex_input.size = 4u * vertex_input.vec_size * vertex_input.columns;
 	}
 
-	void VulkanShader::add_reflection_stage(const ShaderStageInfo& create_info) {
+	void Shader::add_reflection_stage(const ShaderStageInfo& create_info) {
 		const uint32_t* code = reinterpret_cast<const uint32_t*>(create_info.code.data());
 		uint32_t code_size{ static_cast<uint32_t>(create_info.code.size() / sizeof(uint32_t)) };
 
