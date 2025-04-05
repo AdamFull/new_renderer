@@ -775,7 +775,7 @@ namespace engine::world
 					assert(accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
 					float* buf = new float[accessor.count];
-					util::copy(buf, stream.data, stream.count * sizeof(float));
+					edge::utl::copy(buf, stream.data, stream.count * sizeof(float));
 					for (uint64_t index = 0; index < stream.count; index++)
 						sampler.inputs.push_back(buf[index]);
 
@@ -798,7 +798,7 @@ namespace engine::world
 
 					if (accessor.type == TINYGLTF_TYPE_VEC3) {
 						glm::vec3* buf = new glm::vec3[stream.count];
-						util::copy(buf, stream.data, stream.count * sizeof(glm::vec3));
+						edge::utl::copy(buf, stream.data, stream.count * sizeof(glm::vec3));
 						for (uint64_t index = 0; index < stream.count; index++)
 							sampler.outputsVec4.push_back(glm::vec4(buf[index], 0.0f));
 
@@ -806,7 +806,7 @@ namespace engine::world
 					}
 					else if (accessor.type == TINYGLTF_TYPE_VEC4) {
 						glm::vec4* buf = new glm::vec4[stream.count];
-						util::copy(buf, stream.data, stream.count * sizeof(glm::vec4));
+						edge::utl::copy(buf, stream.data, stream.count * sizeof(glm::vec4));
 						for (uint64_t index = 0; index < stream.count; index++)
 							sampler.outputsVec4.push_back(buf[index]);
 
@@ -876,7 +876,7 @@ namespace engine::world
 				const auto& accessor = root.accessors[source.inverseBindMatrices];
 				auto stream = get_buffer_stream(root, accessor);
 				skin.inverseBindMatrices.resize(stream.count);
-				util::copy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
+				edge::utl::copy(skin.inverseBindMatrices.data(), stream.data, stream.count * sizeof(glm::mat4));
 			}
 
 			root_component.skins.emplace_back(skin);

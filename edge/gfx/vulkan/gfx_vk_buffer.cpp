@@ -92,12 +92,12 @@ namespace edge::gfx::vulkan
 
 	auto VulkanBuffer::update(const void* data, uint64_t size, uint64_t offset) -> uint64_t {
 		if (persistent) {
-			engine::util::copy(mapped_data, offset, data, size, 0ull);
+			edge::utl::copy(mapped_data, offset, data, size, 0ull);
 			flush();
 		}
 		else {
 			map_memory();
-			engine::util::copy(mapped_data, offset, data, size, 0ull);
+			edge::utl::copy(mapped_data, offset, data, size, 0ull);
 			flush();
 			unmap_memory();
 		}

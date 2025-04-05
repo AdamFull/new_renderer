@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "../util/utl_base.h"
 #include "gfx_structures.h"
 
 namespace edge::gfx
@@ -15,8 +16,7 @@ namespace edge::gfx
 
 		template<typename _Ty>
 		[[nodiscard]] auto as() -> _Ty {
-			//assert();
-			return static_cast<_Ty>(this);
+			return utl::cast<_Ty>(this);
 		}
 	};
 
