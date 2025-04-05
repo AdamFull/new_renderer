@@ -24,7 +24,7 @@
 
             <meta-data
                 android:name="android.app.lib_name"
-                android:value="EdgeHelloTriangle" />
+                android:value="engine" />
         </activity>
     </application>
 
