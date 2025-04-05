@@ -53,7 +53,6 @@ namespace edge::gfx
 
 		virtual void releaseInclude(IncludeResult* result) override {
 			if (result) {
-				delete static_cast<std::string*>(result->userData);
 				delete result;
 			}
 		}
@@ -72,6 +71,7 @@ namespace edge::gfx
 		std::vector<std::string> directoryStack;
 		int externalLocalDirectoryCount;
 		std::string base_path;
+		std::unordered_map<std::string, std::string> includer_cache{};
 
 		uint32_t hash{ 0u };
 		bool collect_hash{ false };
@@ -90,18 +90,27 @@ namespace edge::gfx
 				std::string path = *it + '/' + headerName;
 				std::replace(path.begin(), path.end(), '\\', '/');
 
-				std::string* file_data = new std::string;
-				if (fs::exists(path) && fs::read_file(path, *file_data)) {
-					directoryStack.emplace_back(getDirectory(path));
-
-					if (collect_hash) {
-						hash ^= murmur_hash(file_data->c_str(), file_data->size(), 0);
-					}
-
-					return new IncludeResult(path, reinterpret_cast<const char*>(file_data->data()), file_data->size(), file_data);
+				if (!fs::exists(path)) {
+					continue;
 				}
 
-				delete file_data;
+				directoryStack.emplace_back(getDirectory(path));
+
+				std::string* file_data{ nullptr };
+				if (auto found = includer_cache.find(path); found != includer_cache.end()) {
+					file_data = &found->second;
+				}
+				else {
+					file_data = &includer_cache[path];
+					if (fs::read_file(path, *file_data)) {
+					}
+				}
+
+				if (collect_hash) {
+					hash ^= murmur_hash(file_data->c_str(), file_data->size(), 0);
+				}
+
+				return new IncludeResult(path, reinterpret_cast<const char*>(file_data->data()), file_data->size(), file_data);
 			}
 
 			return nullptr;
