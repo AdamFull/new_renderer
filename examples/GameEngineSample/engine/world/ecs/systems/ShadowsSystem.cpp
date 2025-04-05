@@ -44,7 +44,7 @@ namespace engine
 				// TODO: get current player camera?
 				auto& camera = render_world.GetRenderCamera(render::main_camera_index);
 
-				uint64_t light_count{ 0ull };
+				int32_t light_count{ 0 };
 
 				// Calculate cascades shadow data
 				{

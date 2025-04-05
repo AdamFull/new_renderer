@@ -51,7 +51,7 @@ namespace engine
 				bool controllable{ true };
 				bool orbit{ true };
 
-				uint64_t frustumID{ ~0ull };
+				uint32_t frustumID{ ~0u };
 
 				std::vector<FPupa> pupas;
 			};

@@ -32,7 +32,7 @@ namespace engine::world
 	std::string url_decode(const std::string& str) {
 		std::string ret;
 		char ch;
-		int i, ii, len = str.length();
+		int i, ii, len = static_cast<int>(str.length());
 
 		for (i = 0; i < len; i++) {
 			if (str[i] != '%') {
@@ -212,7 +212,7 @@ namespace engine::world
 
 		std::sort(create_info.attribute_descriptions.begin(), create_info.attribute_descriptions.end(),
 			[](const auto& lhs, const auto& rhs) {
-				return edge::enum_cast(lhs.attribute_flag) < edge::enum_cast(rhs.attribute_flag);
+				return edge::utl::cast(lhs.attribute_flag) < edge::utl::cast(rhs.attribute_flag);
 			});
 
 		return create_info;
@@ -578,7 +578,7 @@ namespace engine::world
 		const auto& gltf_node = root.nodes[node_index];
 		const auto& gltf_mesh = root.meshes[gltf_node.mesh];
 
-		uint32_t joint_count{ 0u };
+		size_t joint_count{ 0 };
 		if (gltf_node.skin != -1) {
 			const auto& skin = root.skins[gltf_node.skin];
 			joint_count = skin.joints.size();
@@ -702,23 +702,23 @@ namespace engine::world
 		ecs::FCameraComponent camera_component;
 		if (camera.type.compare("orthographic") == 0) {
 			camera_component.ctype = ecs::ECameraType::eOrthographic;
-			camera_component.xmag = camera.orthographic.xmag;
-			camera_component.ymag = camera.orthographic.ymag;
-			camera_component.nearPlane = camera.orthographic.znear;
-			camera_component.farPlane = camera.orthographic.zfar;
+			camera_component.xmag = static_cast<float>(camera.orthographic.xmag);
+			camera_component.ymag = static_cast<float>(camera.orthographic.ymag);
+			camera_component.nearPlane = static_cast<float>(camera.orthographic.znear);
+			camera_component.farPlane = static_cast<float>(camera.orthographic.zfar);
 		}
 		else if (camera.type.compare("perspective") == 0) {
 			camera_component.ctype = ecs::ECameraType::ePerspective;
-			camera_component.aspectRatio = camera.perspective.aspectRatio;
-			camera_component.fieldOfView = glm::degrees(2.0f * glm::atan(glm::tan(camera.perspective.yfov * 0.5f) * camera.perspective.aspectRatio));
-			camera_component.nearPlane = camera.perspective.znear;
-			camera_component.farPlane = camera.perspective.zfar;
+			camera_component.aspectRatio = static_cast<float>(camera.perspective.aspectRatio);
+			camera_component.fieldOfView = static_cast<float>(glm::degrees(2.0f* glm::atan(glm::tan(camera.perspective.yfov * 0.5) * camera.perspective.aspectRatio)));
+			camera_component.nearPlane = static_cast<float>(camera.perspective.znear);
+			camera_component.farPlane = static_cast<float>(camera.perspective.zfar);
 		}
 
 		EntityManager::AddComponent<ecs::FCameraComponent>(parent, std::move(camera_component));
 		auto& nw_camera_component = EntityManager::GetComponent<ecs::FCameraComponent>(parent);
 
-		engine::render::main_camera_index = nw_camera_component.frustumID;
+		engine::render::main_camera_index = static_cast<uint32_t>(nw_camera_component.frustumID);
 	}
 
 	void Scene::LoadLightComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index) {
@@ -728,22 +728,22 @@ namespace engine::world
 		if (light.type.compare("directional") == 0) {
 			ecs::FDirectionalLightComponent light_component;
 			light_component.color = glm::make_vec3(light.color.data());
-			light_component.intencity = light.intensity / 638.0;
+			light_component.intencity = static_cast<float>(light.intensity / 638.0);
 			EntityManager::AddComponent<ecs::FDirectionalLightComponent>(parent, std::move(light_component));
 		}
 		else if (light.type.compare("spot") == 0) {
 			ecs::FSpotLightComponent light_component;
 			light_component.color = glm::make_vec3(light.color.data());
-			light_component.innerAngle = light.spot.innerConeAngle;
-			light_component.outerAngle = light.spot.outerConeAngle;
-			light_component.intencity = light.intensity / 638.0;
+			light_component.innerAngle = static_cast<float>(light.spot.innerConeAngle);
+			light_component.outerAngle = static_cast<float>(light.spot.outerConeAngle);
+			light_component.intencity = static_cast<float>(light.intensity / 638.0);
 			EntityManager::AddComponent<ecs::FSpotLightComponent>(parent, std::move(light_component));
 		}
 		else if (light.type.compare("point")) {
 			ecs::FPointLightComponent light_component;
 			light_component.color = glm::make_vec3(light.color.data());
-			light_component.intencity = light.intensity / 638.0;
-			light_component.radius = (std::max)(light.range, 1.0);
+			light_component.intencity = static_cast<float>(light.intensity / 638.0);
+			light_component.radius = static_cast<float>((std::max)(light.range, 1.0));
 			EntityManager::AddComponent<ecs::FPointLightComponent>(parent, std::move(light_component));
 		}
 	}

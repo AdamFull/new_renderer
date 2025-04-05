@@ -41,7 +41,7 @@ namespace engine
 
 		struct GeometryData
 		{
-			uint32_t count{ 0u };
+			size_t count{ 0 };
 			edge::gfx::IBuffer* buffer{ nullptr };
 			edge::gfx::ResourceStateFlags state{};
 			std::vector<uint8_t> data{};
@@ -51,13 +51,13 @@ namespace engine
 		{
 			VertexAttributeFlag attribute_flag{};
 			std::span<const uint8_t> byte_range{};
-			uint32_t count{ 0u };
+			size_t count{ 0 };
 		};
 
 		struct IndexStream
 		{
 			std::span<const uint8_t> byte_range{};
-			uint32_t count{ 0u };
+			size_t count{ 0 };
 		};
 
 		struct VertexRange

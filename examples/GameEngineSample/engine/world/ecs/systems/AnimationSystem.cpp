@@ -80,6 +80,8 @@ glm::vec3 v_interpolate(EInterpolationType interpolation, const std::vector<glm:
 		return v_step(positions, index, interp);
 	else if (interpolation == EInterpolationType::eCubicSpline)
 		return cubicspline(positions, index, interp);
+
+	return {};
 }
 
 glm::quat q_interpolate(EInterpolationType interpolation, const std::vector<glm::vec4>& positions, uint32_t index, const float interp)
@@ -99,6 +101,8 @@ glm::quat q_interpolate(EInterpolationType interpolation, const std::vector<glm:
 		q.w = tmp.w;
 		return glm::normalize(q);
 	}
+
+	return {};
 }
 
 CAnimationSystem::CAnimationSystem()

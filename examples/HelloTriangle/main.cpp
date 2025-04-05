@@ -279,7 +279,7 @@ public:
 		rendering_info.attachments[0].store_op = edge::gfx::StoreOp::eStore;
 		rendering_info.attachment_count = 1;
 
-		command_list->set_viewport(0, 0, rendering_info.width, rendering_info.height, 0.f, 1.f);
+		command_list->set_viewport(0, 0, static_cast<float>(rendering_info.width), static_cast<float>(rendering_info.height), 0.f, 1.f);
 		command_list->set_scissor(0, 0, rendering_info.width, rendering_info.height);
 
 		command_list->begin_rendering(rendering_info);

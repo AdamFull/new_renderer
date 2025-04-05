@@ -47,15 +47,15 @@ namespace engine
 
 		uint32_t Hash(const AttributeDescription& desc, uint32_t hash)
 		{
-			hash = edge::murmur_hash(edge::enum_cast(desc.attribute_flag), hash);
-			hash = edge::murmur_hash(edge::enum_cast(desc.format), hash);
+			hash = edge::murmur_hash(edge::utl::cast(desc.attribute_flag), hash);
+			hash = edge::murmur_hash(edge::utl::cast(desc.format), hash);
 
 			return hash;
 		}
 
 		uint32_t Hash(const IndexDescription& desc, uint32_t hash)
 		{
-			hash = edge::murmur_hash(edge::enum_cast(desc.type), hash);
+			hash = edge::murmur_hash(edge::utl::cast(desc.type), hash);
 			return hash;
 		}
 

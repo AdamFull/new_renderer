@@ -44,7 +44,7 @@ namespace engine
 			camera.frustum_offset = frustum_offset;
 			frustum_offset += 6ull; // Because 6 frustum sides
 
-			return { world_resources.size() - 1ull, camera };
+			return { static_cast<uint32_t>(world_resources.size() - 1ull), camera };
 		}
 
 		uint32_t RenderWorld::GetResourceId(uint32_t resource_index) const
