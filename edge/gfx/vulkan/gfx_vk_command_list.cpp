@@ -71,13 +71,13 @@ namespace edge::gfx::vulkan
 	}
 
 	void VulkanCommandList::bind_pipeline(IPipeline* pipeline) const {
-		auto* vk_pipeline = static_cast<VulkanPipeline*>(pipeline);
+		auto* vk_pipeline = utl::cast<VulkanPipeline*>(pipeline);
 		auto bind_point = pipeline_type_to_vk(vk_pipeline->get_type());
 		handle_.bindPipeline(bind_point, vk_pipeline->get_handle());
 	}
 
 	void VulkanCommandList::bind_descriptors(const BindDescriptorsInfo& bind_info) const {
-		auto* vk_root_signature = static_cast<VulkanRootSignature*>(bind_info.root_signature);
+		auto* vk_root_signature = utl::cast<VulkanRootSignature*>(bind_info.root_signature);
 
 		uint32_t first_descriptor_set{ ~0u };
 		uint32_t descriptor_set_count{ 0u };
@@ -85,7 +85,7 @@ namespace edge::gfx::vulkan
 		for (int32_t i = 0; i < bind_info.resource_descriptors.size(); ++i) {
 			auto* resource_descriptor = bind_info.resource_descriptors[i];
 			if (resource_descriptor) {
-				auto* vk_resource_descriptor = static_cast<VulkanResourceDescriptor*>(resource_descriptor);
+				auto* vk_resource_descriptor = utl::cast<VulkanResourceDescriptor*>(resource_descriptor);
 				auto first_set = vk_resource_descriptor->get_first_set();
 				auto set_count = vk_resource_descriptor->get_set_count();
 				auto& sets = vk_resource_descriptor->get_descriptor_sets();
@@ -110,7 +110,7 @@ namespace edge::gfx::vulkan
 	}
 
 	void VulkanCommandList::push_constants(IShader* shader, IRootSignature* root_signature, std::span<const char> constant_data) const {
-		auto* vk_root_signature = static_cast<VulkanRootSignature*>(root_signature);
+		auto* vk_root_signature = utl::cast<VulkanRootSignature*>(root_signature);
 		auto& pipeline_layout = vk_root_signature->get_pipeline_layout();
 
 		auto& reflection = shader->get_reflection();
@@ -127,7 +127,7 @@ namespace edge::gfx::vulkan
 			break;
 		}
 
-		auto* buffer = static_cast<VulkanBuffer*>(index_buffer);
+		auto* buffer = utl::cast<VulkanBuffer*>(index_buffer);
 		handle_.bindIndexBuffer(buffer->get_handle(), offset, vk_index_type);
 	}
 
@@ -135,7 +135,7 @@ namespace edge::gfx::vulkan
 		std::array<vk::Buffer, 16ull> vk_vertex_buffers{};
 
 		for (int32_t i = 0; i < vertex_buffers.size(); ++i) {
-			auto* buffer = static_cast<VulkanBuffer*>(vertex_buffers[i]);
+			auto* buffer = utl::cast<VulkanBuffer*>(vertex_buffers[i]);
 			vk_vertex_buffers[i] = buffer->get_handle();
 		}
 
@@ -151,8 +151,8 @@ namespace edge::gfx::vulkan
 	}
 
 	void VulkanCommandList::draw_indirect(const IndirectDrawCommand& draw_command) const {
-		auto* argument_buffer = static_cast<VulkanBuffer*>(draw_command.argument_buffer);
-		auto* count_buffer = static_cast<VulkanBuffer*>(draw_command.count_buffer);
+		auto* argument_buffer = utl::cast<VulkanBuffer*>(draw_command.argument_buffer);
+		auto* count_buffer = utl::cast<VulkanBuffer*>(draw_command.count_buffer);
 
 		if (draw_command.indexed_draw) {
 			if (count_buffer) {
@@ -179,7 +179,7 @@ namespace edge::gfx::vulkan
 	}
 
 	//void VulkanCommandList::write_timestamp(IQueryPool* query_pool, uint32_t pool_index, StageFlag stage_flag) {
-	//	auto* pool = static_cast<VulkanQueryPool*>(query_pool);
+	//	auto* pool = utl::cast<VulkanQueryPool*>(query_pool);
 	//	handle_.writeTimestamp2KHR(stage_flags_to_vk(stage_flag), pool->get_handle(), pool_index);
 	//}
 
@@ -188,7 +188,7 @@ namespace edge::gfx::vulkan
 	}
 
 	void VulkanCommandList::dispatch_indirect(IBuffer* argument_buffer, uint64_t argument_offset) const {
-		auto* vk_buffer = static_cast<VulkanBuffer*>(argument_buffer);
+		auto* vk_buffer = utl::cast<VulkanBuffer*>(argument_buffer);
 		handle_.dispatchIndirect(vk_buffer->get_handle(), argument_offset);
 	}
 
@@ -197,9 +197,9 @@ namespace edge::gfx::vulkan
 		vk::CopyBufferInfo2KHR vk_copy_info{};
 		vk_copy_info.pRegions = regions.data();
 
-		auto* src_buffer = static_cast<VulkanBuffer*>(copy_info.src_buffer);
+		auto* src_buffer = utl::cast<VulkanBuffer*>(copy_info.src_buffer);
 		vk_copy_info.srcBuffer = src_buffer->get_handle();
-		auto* dst_buffer = static_cast<VulkanBuffer*>(copy_info.dst_buffer);
+		auto* dst_buffer = utl::cast<VulkanBuffer*>(copy_info.dst_buffer);
 		vk_copy_info.dstBuffer = dst_buffer->get_handle();
 
 		for (int32_t i = 0; i < copy_info.regions.size(); ++i) {
@@ -218,10 +218,10 @@ namespace edge::gfx::vulkan
 		vk::CopyBufferToImageInfo2KHR vk_copy_info{};
 		vk_copy_info.pRegions = regions.data();
 
-		auto* src_buffer = static_cast<VulkanBuffer*>(copy_info.src_buffer);
+		auto* src_buffer = utl::cast<VulkanBuffer*>(copy_info.src_buffer);
 		vk_copy_info.srcBuffer = src_buffer->get_handle();
 
-		auto* dst_texture = static_cast<VulkanTexture*>(copy_info.dst_texture);
+		auto* dst_texture = utl::cast<VulkanTexture*>(copy_info.dst_texture);
 		auto& dst_image = dst_texture->get_image();
 		auto& subresource = dst_texture->get_subresource();
 		vk_copy_info.dstImage = dst_image.get_handle();
@@ -283,7 +283,7 @@ namespace edge::gfx::vulkan
 		// Parse buffer barriers
 		for (int32_t i = 0; i < barrier.buffer_barriers.size(); ++i) {
 			auto& buffer_barrier = barrier.buffer_barriers[i];
-			auto* buffer = static_cast<VulkanBuffer*>(buffer_barrier.buffer);
+			auto* buffer = utl::cast<VulkanBuffer*>(buffer_barrier.buffer);
 
 			auto& vk_buffer_barrier = buffer_barriers[vk_barrier.bufferMemoryBarrierCount++];
 			vk_buffer_barrier.buffer = buffer->get_handle();
@@ -304,8 +304,8 @@ namespace edge::gfx::vulkan
 			// TODO: NOT IMPLEMENTED TRANSFER OWNERSHIP
 			//if (buffer_barrier.src_state.queue && buffer_barrier.dst_state.queue)
 			//{
-			//	const auto* src_queue = static_cast<const VulkanQueue*>(buffer_barrier.src_state.queue);
-			//	const auto* dst_queue = static_cast<const VulkanQueue*>(buffer_barrier.dst_state.queue);
+			//	const auto* src_queue = utl::cast<const VulkanQueue*>(buffer_barrier.src_state.queue);
+			//	const auto* dst_queue = utl::cast<const VulkanQueue*>(buffer_barrier.dst_state.queue);
 			//	
 			//	vk_buffer_barrier.srcQueueFamilyIndex = src_queue->get_family_index();
 			//	vk_buffer_barrier.dstQueueFamilyIndex = dst_queue->get_family_index();
@@ -315,7 +315,7 @@ namespace edge::gfx::vulkan
 		// Parse image barriers
 		for (int32_t i = 0; i < barrier.texture_barriers.size(); ++i) {
 			auto& texture_barrier = barrier.texture_barriers[i];
-			auto* texture = static_cast<VulkanTexture*>(texture_barrier.texture);
+			auto* texture = utl::cast<VulkanTexture*>(texture_barrier.texture);
 
 			auto& vk_image_barrier = image_barriers[vk_barrier.imageMemoryBarrierCount++];
 
@@ -337,8 +337,8 @@ namespace edge::gfx::vulkan
 			// TODO: NOT IMPLEMENTED TRANSFER OWNERSHIP
 			//if (src_state.queue && dst_state.queue)
 			//{
-			//	const auto* src_queue = static_cast<const VulkanQueue*>(src_state.queue);
-			//	const auto* dst_queue = static_cast<const VulkanQueue*>(dst_state.queue);
+			//	const auto* src_queue = utl::cast<const VulkanQueue*>(src_state.queue);
+			//	const auto* dst_queue = utl::cast<const VulkanQueue*>(dst_state.queue);
 			//
 			//	vk_image_barrier.srcQueueFamilyIndex = src_queue->get_family_index();
 			//	vk_image_barrier.dstQueueFamilyIndex = dst_queue->get_family_index();
@@ -349,12 +349,12 @@ namespace edge::gfx::vulkan
 	}
 
 	void VulkanCommandList::reset_query(IQueryPool* query_pool, uint32_t first_query, uint32_t query_count) const {
-		auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
+		auto* vk_query_pool = utl::cast<VulkanQueryPool*>(query_pool);
 		handle_.resetQueryPool(vk_query_pool->get_handle(), first_query, query_count);
 	}
 
 	void VulkanCommandList::begin_query(IQueryPool* query_pool, uint32_t query) const {
-		auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
+		auto* vk_query_pool = utl::cast<VulkanQueryPool*>(query_pool);
 
 		switch (vk_query_pool->get_query_type()) {
 		case vk::QueryType::eTimestamp: {
@@ -371,7 +371,7 @@ namespace edge::gfx::vulkan
 	}
 
 	void VulkanCommandList::end_query(IQueryPool* query_pool, uint32_t query) const {
-		auto* vk_query_pool = static_cast<VulkanQueryPool*>(query_pool);
+		auto* vk_query_pool = utl::cast<VulkanQueryPool*>(query_pool);
 
 		switch (vk_query_pool->get_query_type()) {
 		case vk::QueryType::eTimestamp: {
@@ -404,7 +404,7 @@ namespace edge::gfx::vulkan
 			auto& vk_attachment = color_attachments[begin_rendering_info.colorAttachmentCount++];
 
 			assert(attachment.texture);
-			auto* texture = static_cast<VulkanTexture*>(attachment.texture);
+			auto* texture = utl::cast<VulkanTexture*>(attachment.texture);
 			auto& subresource = texture->get_subresource();
 
 			vk_attachment.imageView = subresource.get_handle();
@@ -417,7 +417,7 @@ namespace edge::gfx::vulkan
 
 		vk::RenderingAttachmentInfo depth_attachment{};
 		if (rendering_info.depth_attachment.texture) {
-			auto* texture = static_cast<VulkanTexture*>(rendering_info.depth_attachment.texture);
+			auto* texture = utl::cast<VulkanTexture*>(rendering_info.depth_attachment.texture);
 			auto& subresource = texture->get_subresource();
 
 			depth_attachment.imageView = subresource.get_handle();
@@ -433,7 +433,7 @@ namespace edge::gfx::vulkan
 
 		vk::RenderingAttachmentInfo stencil_attachment{};
 		if (rendering_info.stencil_attachment.texture) {
-			auto* texture = static_cast<VulkanTexture*>(rendering_info.stencil_attachment.texture);
+			auto* texture = utl::cast<VulkanTexture*>(rendering_info.stencil_attachment.texture);
 			auto& subresource = texture->get_subresource();
 
 			stencil_attachment.imageView = subresource.get_handle();

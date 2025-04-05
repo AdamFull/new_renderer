@@ -55,7 +55,7 @@ namespace edge::gfx::vulkan
 	auto VulkanDescriptorAllocator::allocate_descriptors(IRootSignature* root_signature) -> IResourceDescriptor* {
 		EDGE_PROFILE_ZONE_SCOPED;
 
-		auto* vk_root_signature = static_cast<VulkanRootSignature*>(root_signature);
+		auto* vk_root_signature = utl::cast<VulkanRootSignature*>(root_signature);
 		auto& set_layouts = vk_root_signature->get_descriptor_set_layouts();
 
 		auto& new_resource_descriptor = allocated_descriptors.emplace_back(new VulkanResourceDescriptor(device));

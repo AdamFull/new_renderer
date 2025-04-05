@@ -311,13 +311,13 @@ namespace edge::gfx::vulkan
 
 		vk::Semaphore image_acquired_semaphore{ nullptr };
 		if (signal_semaphore) {
-			auto* vk_semaphore = static_cast<VulkanSemaphore*>(signal_semaphore);
+			auto* vk_semaphore = utl::cast<VulkanSemaphore*>(signal_semaphore);
 			image_acquired_semaphore = vk_semaphore->get_handle();
 		}
 
 		vk::Fence wait_fence{ nullptr };
 		if (fence) {
-			auto* vk_fence = static_cast<VulkanFence*>(fence);
+			auto* vk_fence = utl::cast<VulkanFence*>(fence);
 			wait_fence = vk_fence->get_handle();
 		}
 

@@ -149,7 +149,7 @@ namespace edge::gfx::vulkan
 				queue_family_type = QueueType::eCopy;
 			}
 
-			auto& family_group = queue_families[static_cast<std::underlying_type<QueueType>::type>(queue_family_type)];
+			auto& family_group = queue_families[utl::cast(queue_family_type)];
 			auto& new_family = family_group.emplace_back();
 			new_family.index = queue_family_index;
 
@@ -187,7 +187,7 @@ namespace edge::gfx::vulkan
 	}
 
 	auto Device::get_queue_count(QueueType queue_type) -> uint32_t {
-		auto& family_group = queue_families[static_cast<std::underlying_type<QueueType>::type>(queue_type)];
+		auto& family_group = queue_families[utl::cast(queue_type)];
 		if (family_group.empty()) {
 			return 0u;
 		}
@@ -201,7 +201,7 @@ namespace edge::gfx::vulkan
 	}
 
 	auto Device::get_queue(QueueType queue_type, uint32_t queue_index) -> VulkanQueue* {
-		auto& family_group = queue_families[static_cast<std::underlying_type<QueueType>::type>(queue_type)];
+		auto& family_group = queue_families[utl::cast(queue_type)];
 		if (family_group.empty()) {
 			return nullptr;
 		}

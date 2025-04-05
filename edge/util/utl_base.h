@@ -45,4 +45,9 @@ namespace edge::utl {
 		return static_cast<_T>(other);
 #endif
 	}
+
+	template<typename _Enum, typename _Underlying = std::underlying_type<_Enum>::type>
+	inline _Underlying cast(_Enum e) requires(std::is_enum<_Enum>::value) {
+		return static_cast<_Underlying>(e);
+	}
 }

@@ -1,6 +1,7 @@
 #include "gfx_structures.h"
 #include "../util/Serialization.hpp"
 #include "../util/utl_hash.hpp"
+#include "../util/utl_base.h"
 
 namespace edge::gfx
 {
@@ -240,7 +241,7 @@ namespace edge::gfx
 	uint32_t hash(const VertexAttributeDescription& desc, uint32_t h) {
 		h = murmur_hash(desc.location, h);
 		h = murmur_hash(desc.binding, h);
-		h = murmur_hash(enum_cast(desc.format), h);
+		h = murmur_hash(utl::cast(desc.format), h);
 		h = murmur_hash(desc.offset, h);
 
 		return h;
@@ -268,15 +269,15 @@ namespace edge::gfx
 	uint32_t hash(const RasterizationState& state, uint32_t h) {
 		h = murmur_hash(state.depth_clamp, h);
 		h = murmur_hash(state.discard_enable, h);
-		h = murmur_hash(enum_cast(state.fill_mode), h);
+		h = murmur_hash(utl::cast(state.fill_mode), h);
 		//h = murmur_hash(static_cast<uint32_t>(state.cull_mode), h);
-		h = murmur_hash(enum_cast(state.front_face), h);
+		h = murmur_hash(utl::cast(state.front_face), h);
 
 		return h;
 	}
 
 	uint32_t hash(const MultisampleState& state, uint32_t h) {
-		h = murmur_hash(enum_cast(state.sample_count), h);
+		h = murmur_hash(utl::cast(state.sample_count), h);
 		h = murmur_hash(state.alpha_to_coverage, h);
 		h = murmur_hash(state.alpha_to_one, h);
 		return h;
@@ -285,18 +286,18 @@ namespace edge::gfx
 	uint32_t hash(const DepthStencilState& state, uint32_t h) {
 		h = murmur_hash(state.depth_test, h);
 		h = murmur_hash(state.depth_write, h);
-		h = murmur_hash(enum_cast(state.depth_compare_op), h);
+		h = murmur_hash(utl::cast(state.depth_compare_op), h);
 
 		h = murmur_hash(state.stencil_test, h);
-		h = murmur_hash(enum_cast(state.stencil_front_compare_op), h);
-		h = murmur_hash(enum_cast(state.front_fail), h);
-		h = murmur_hash(enum_cast(state.depth_front_fail), h);
-		h = murmur_hash(enum_cast(state.front_pass), h);
+		h = murmur_hash(utl::cast(state.stencil_front_compare_op), h);
+		h = murmur_hash(utl::cast(state.front_fail), h);
+		h = murmur_hash(utl::cast(state.depth_front_fail), h);
+		h = murmur_hash(utl::cast(state.front_pass), h);
 
-		h = murmur_hash(enum_cast(state.stencil_back_compare_op), h);
-		h = murmur_hash(enum_cast(state.back_fail), h);
-		h = murmur_hash(enum_cast(state.depth_back_fail), h);
-		h = murmur_hash(enum_cast(state.back_pass), h);
+		h = murmur_hash(utl::cast(state.stencil_back_compare_op), h);
+		h = murmur_hash(utl::cast(state.back_fail), h);
+		h = murmur_hash(utl::cast(state.depth_back_fail), h);
+		h = murmur_hash(utl::cast(state.back_pass), h);
 
 		return h;
 	}
@@ -314,13 +315,13 @@ namespace edge::gfx
 
 	uint32_t hash(const ColorBlendAttachment& attachment, uint32_t h) {
 		h = murmur_hash(attachment.enable, h);
-		h = murmur_hash(enum_cast(attachment.src_color), h);
-		h = murmur_hash(enum_cast(attachment.dst_color), h);
-		h = murmur_hash(enum_cast(attachment.color_blend_op), h);
+		h = murmur_hash(utl::cast(attachment.src_color), h);
+		h = murmur_hash(utl::cast(attachment.dst_color), h);
+		h = murmur_hash(utl::cast(attachment.color_blend_op), h);
 
-		h = murmur_hash(enum_cast(attachment.src_alpha), h);
-		h = murmur_hash(enum_cast(attachment.dst_alpha), h);
-		h = murmur_hash(enum_cast(attachment.alpha_blend_op), h);
+		h = murmur_hash(utl::cast(attachment.src_alpha), h);
+		h = murmur_hash(utl::cast(attachment.dst_alpha), h);
+		h = murmur_hash(utl::cast(attachment.alpha_blend_op), h);
 
 		//h = utl::murmur_hash(static_cast<uint32_t>(attachment.color_mask), h);
 
@@ -343,13 +344,13 @@ namespace edge::gfx
 		h = hash(state.color_blending_state, h);
 
 		//for (int32_t i = 0; i < state.color_format_count; ++i) {
-		//	hash = murmur_hash(enum_cast(state.color_formats[i]), h);
+		//	hash = murmur_hash(utl::cast(state.color_formats[i]), h);
 		//}
 		//
-		//h = murmur_hash(enum_cast(state.depth_format), h);
-		//h = murmur_hash(enum_cast(state.stencil_format), h);
+		//h = murmur_hash(utl::cast(state.depth_format), h);
+		//h = murmur_hash(utl::cast(state.stencil_format), h);
 
-		h = murmur_hash(enum_cast(state.primitive_topology), h);
+		h = murmur_hash(utl::cast(state.primitive_topology), h);
 
 		return h;
 	}
@@ -357,15 +358,15 @@ namespace edge::gfx
 
 
 	uint32_t hash(const SamplerCreateInfo& create_info, uint32_t h) {
-		h = murmur_hash(enum_cast(create_info.mag_filter), h);
-		h = murmur_hash(enum_cast(create_info.min_filter), h);
-		h = murmur_hash(enum_cast(create_info.mip_map_mode), h);
-		h = murmur_hash(enum_cast(create_info.address_u), h);
-		h = murmur_hash(enum_cast(create_info.address_v), h);
-		h = murmur_hash(enum_cast(create_info.address_w), h);
+		h = murmur_hash(utl::cast(create_info.mag_filter), h);
+		h = murmur_hash(utl::cast(create_info.min_filter), h);
+		h = murmur_hash(utl::cast(create_info.mip_map_mode), h);
+		h = murmur_hash(utl::cast(create_info.address_u), h);
+		h = murmur_hash(utl::cast(create_info.address_v), h);
+		h = murmur_hash(utl::cast(create_info.address_w), h);
 		h = murmur_hash(create_info.mip_lod_bias, h);
 		h = murmur_hash(create_info.max_anisotropy, h);
-		h = murmur_hash(enum_cast(create_info.depth_compare), h);
+		h = murmur_hash(utl::cast(create_info.depth_compare), h);
 		h = murmur_hash(create_info.min_lod, h);
 		h = murmur_hash(create_info.max_lod, h);
 

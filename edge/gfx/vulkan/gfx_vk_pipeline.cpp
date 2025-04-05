@@ -33,9 +33,9 @@ namespace edge::gfx::vulkan
 
 	VulkanComputePipeline::VulkanComputePipeline(Device& device, const ComputePipelineCreateInfo& create_info) :
 		VulkanPipeline{ device } {
-		auto* shader = static_cast<VulkanShader*>(create_info.shader);
-		auto* root_signature = static_cast<VulkanRootSignature*>(create_info.root_signature);
-		auto* pipeline_cache = static_cast<VulkanPipelineCache*>(create_info.pipeline_cache);
+		auto* shader = utl::cast<VulkanShader*>(create_info.shader);
+		auto* root_signature = utl::cast<VulkanRootSignature*>(create_info.root_signature);
+		auto* pipeline_cache = utl::cast<VulkanPipelineCache*>(create_info.pipeline_cache);
 
 		vk::ComputePipelineCreateInfo pipeline_create_info{};
 
@@ -58,9 +58,9 @@ namespace edge::gfx::vulkan
 
 	VulkanGraphicsPipeline::VulkanGraphicsPipeline(Device& device, const GraphicsPipelineCreateInfo& create_info) :
 		VulkanPipeline{ device } {
-		auto* shader = static_cast<VulkanShader*>(create_info.shader);
-		auto* root_signature = static_cast<VulkanRootSignature*>(create_info.root_signature);
-		auto* pipeline_cache = static_cast<VulkanPipelineCache*>(create_info.pipeline_cache);
+		auto* shader = utl::cast<VulkanShader*>(create_info.shader);
+		auto* root_signature = utl::cast<VulkanRootSignature*>(create_info.root_signature);
+		auto* pipeline_cache = utl::cast<VulkanPipelineCache*>(create_info.pipeline_cache);
 
 		std::array<vk::PipelineShaderStageCreateInfo, 5ull> shader_stages{};
 		vk::GraphicsPipelineCreateInfo pipeline_create_info{};

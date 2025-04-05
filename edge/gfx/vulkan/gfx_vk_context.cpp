@@ -103,7 +103,7 @@ namespace edge::gfx::vulkan
 		auto* native_surface = window->get_native_surface();
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
 		{
-			win64::WindowsNativeSurface* windows_surface = static_cast<win64::WindowsNativeSurface*>(native_surface);
+			win64::WindowsNativeSurface* windows_surface = utl::cast<win64::WindowsNativeSurface*>(native_surface);
 
 			vk::Win32SurfaceCreateInfoKHR surface_create_info{};
 			surface_create_info.hwnd = windows_surface->get_handle();
@@ -113,7 +113,7 @@ namespace edge::gfx::vulkan
 		}
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
 		{
-			android::AndroidNativeSurface* android_surface = static_cast<android::AndroidNativeSurface*>(native_surface);
+			android::AndroidNativeSurface* android_surface = utl::cast<android::AndroidNativeSurface*>(native_surface);
 
 			vk::AndroidSurfaceCreateInfoKHR surface_create_info{};
 			surface_create_info.window = android_surface->get_handle();
@@ -229,7 +229,7 @@ namespace edge::gfx::vulkan
 		std::vector<vk::PresentModeKHR> present_mode_priority_list{ vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eFifo, vk::PresentModeKHR::eImmediate };
 #endif
 		if (create_info.old_swapchain) {
-			auto* old_swapchain = static_cast<VulkanSwapchain*>(create_info.old_swapchain);
+			auto* old_swapchain = utl::cast<VulkanSwapchain*>(create_info.old_swapchain);
 
 			// Recreate swapchain with changed size
 			if (create_info.width != 1u && create_info.height != 1u) {
@@ -251,7 +251,7 @@ namespace edge::gfx::vulkan
 	}
 
 	auto VulkanContext::create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) const -> ICommandPool* {
-		auto* vkqueue = static_cast<const VulkanQueue*>(queue);
+		auto* vkqueue = utl::cast<const VulkanQueue*>(queue);
 		return new VulkanCommandPool(*vkqueue, reset_mode);
 	}
 
@@ -321,7 +321,7 @@ namespace edge::gfx::vulkan
 
 		for (int32_t i = 0; i < fences.size(); ++i)
 		{
-			wait_fences[i] = static_cast<VulkanFence*>(fences[i])->get_handle();
+			wait_fences[i] = utl::cast<VulkanFence*>(fences[i])->get_handle();
 		}
 
 		vk::Result result = device->get_handle().waitForFences(static_cast<uint32_t>(fences.size()), wait_fences.data(), VK_TRUE, timeout);

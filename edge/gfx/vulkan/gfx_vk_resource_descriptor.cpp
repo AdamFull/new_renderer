@@ -40,7 +40,7 @@ namespace edge::gfx::vulkan
 		auto descriptor_type = descriptor_type_to_vk(texture_descriptor.type);
 
 		if (descriptor_type != vk::DescriptorType::eSampler) {
-			auto* vk_texture = static_cast<VulkanTexture*>(texture_descriptor.texture);
+			auto* vk_texture = utl::cast<VulkanTexture*>(texture_descriptor.texture);
 			auto& subresource = vk_texture->get_subresource(texture_descriptor.subresource_index);
 			vk_image_descriptor.imageView = subresource.get_handle();
 			vk_image_descriptor.imageLayout = resource_state_to_vk_image_layout(texture_descriptor.resource_state);
@@ -48,7 +48,7 @@ namespace edge::gfx::vulkan
 
 		if (descriptor_type != vk::DescriptorType::eStorageImage &&
 			descriptor_type != vk::DescriptorType::eSampledImage) {
-			auto* vk_sampelr = static_cast<VulkanSampler*>(texture_descriptor.sampler);
+			auto* vk_sampelr = utl::cast<VulkanSampler*>(texture_descriptor.sampler);
 			vk_image_descriptor.sampler = vk_sampelr->get_handle();
 		}
 
@@ -62,7 +62,7 @@ namespace edge::gfx::vulkan
 	}
 
 	void VulkanResourceDescriptor::bind_buffer(BufferDescriptor& buffer_descriptor) {
-		auto* vk_buffer = static_cast<VulkanBuffer*>(buffer_descriptor.buffer);
+		auto* vk_buffer = utl::cast<VulkanBuffer*>(buffer_descriptor.buffer);
 
 		auto& vk_buffer_descriptor = buffer_descriptors.emplace_back();
 		vk_buffer_descriptor.buffer = vk_buffer->get_handle();

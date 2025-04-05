@@ -188,11 +188,6 @@ namespace edge {
 		}
 		return static_cast<_Enum>(0);
 	}
-
-	template<class _Ty, class _ReturnType = typename std::underlying_type<_Ty>::type>
-	inline constexpr _ReturnType enum_cast(_Ty enum_value) {
-		return static_cast<_ReturnType>(enum_value);
-	}
 }
 
 #if !defined(HAS_SPACESHIP_OPERATOR)

@@ -28,7 +28,7 @@ namespace edge::gfx::vulkan
 			auto& binding = create_info.bindings[i];
 
 			// Count number of required descriptors
-			pool_sizes[enum_cast(binding.descriptorType)] += binding.descriptorCount;
+			pool_sizes[utl::cast(binding.descriptorType)] += binding.descriptorCount;
 
 			layout_bindings[i] = { binding, create_info.binding_flags_ext[i] };
 			++binding_count;

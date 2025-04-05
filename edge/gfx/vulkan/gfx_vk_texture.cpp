@@ -26,7 +26,7 @@ namespace edge::gfx::vulkan
 	VulkanTexture::VulkanTexture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index) :
 		device{ allocator.get_device() } {
 
-		VulkanSwapchain* vk_swapchain = static_cast<VulkanSwapchain*>(swapchain);
+		VulkanSwapchain* vk_swapchain = utl::cast<VulkanSwapchain*>(swapchain);
 		auto& extent = vk_swapchain->get_extent();
 
 		TextureCreateInfo create_info{};
