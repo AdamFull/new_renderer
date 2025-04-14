@@ -63,6 +63,8 @@ namespace edge::gfx
 		// Resource whole size
 		uint32_t size{};
 
+		uint32_t count{ 1u };
+
 		// Name string
 		char name[255];
 

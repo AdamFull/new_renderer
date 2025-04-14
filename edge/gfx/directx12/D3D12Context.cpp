@@ -105,7 +105,7 @@ namespace edge::gfx::d3d12
 		return nullptr;
 	}
 
-	auto D3D12Context::create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) const -> ISharedDescriptor*
+	auto D3D12Context::create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) const -> IDescriptorLayout*
 	{
 		assert(false && "NOT IMPLEMENTED");
 		return nullptr;

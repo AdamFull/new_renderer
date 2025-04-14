@@ -29,9 +29,8 @@ namespace edge
 		class IRootSignature;
 		class IPipeline;
 		class IPipelineCache;
+		class IDescriptorLayout;
 		class IDescriptorAllocator;
-		class IResourceDescriptor;
-		class ISharedDescriptor;
 		class IQueryPool;
 
 		/**
@@ -69,7 +68,7 @@ namespace edge
 
 		struct RootSignatureCreateInfo {
 			IShader* shader{ nullptr };
-			ISharedDescriptor* shared_descriptor{ nullptr };
+			std::span<IDescriptorLayout*> binding_layouts;
 			std::span<ISampler*> immutable_samplers;
 		};
 
@@ -396,18 +395,8 @@ namespace edge
 			PipelineType pipeline_type{}; 
 			IRootSignature* root_signature{ nullptr };
 
-			std::span<IResourceDescriptor*> resource_descriptors;
-		};
-
-		struct BindingDescription {
-			DescriptorType type{};
-			uint32_t binding{};
-			uint32_t count{ 1u };
-		};
-
-		struct SharedDescriptorCreateInfo {
 			uint32_t first_set{ 0u };
-			std::vector<BindingDescription> descriptions{};
+			std::span<IDescriptorLayout*> binding_layouts{};
 		};
 
 		struct BufferDescriptor {
@@ -415,11 +404,16 @@ namespace edge
 
 			IBuffer* buffer{ nullptr };
 
-			uint32_t set{ 0u };
 			uint32_t binding{ 0u };
 
 			uint32_t offset{ 0u };
 			uint32_t size{ 0u };
+		};
+
+		struct SamplerDescriptor {
+			ISampler* sampler{ nullptr };
+			uint32_t binding{ 0u };
+			uint32_t array_index{ 0u };
 		};
 
 		struct TextureDescriptor {
@@ -430,9 +424,20 @@ namespace edge
 			uint32_t subresource_index{ ~0u };
 			ResourceStateFlags resource_state{};
 
-			uint32_t set{ 0u };
 			uint32_t binding{ 0u };
 			uint32_t array_index{ 0u };
+		};
+
+		struct DescrptorLayoutBindingDesc {
+			uint32_t binding;
+			uint32_t count;
+			ShaderStageFlags stages;
+			DescriptorType type;
+		};
+
+		struct DescriptorLayoutCreateInfo {
+			std::span<DescrptorLayoutBindingDesc> bindings;
+			bool support_bindless{ false };
 		};
 
 		struct RenderResourceDesc {
@@ -458,5 +463,7 @@ namespace edge
 		uint32_t hash(const PipelineState& state, uint32_t hash = 0u);
 
 		uint32_t hash(const SamplerCreateInfo& create_info, uint32_t hash = 0u);
+
+		uint32_t hash(const DescrptorLayoutBindingDesc& desc, uint32_t hash = 0u);
 	}
 }

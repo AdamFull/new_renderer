@@ -180,13 +180,13 @@ namespace edge::gfx
         return gfx_context->create_descriptor_allocator();
 	}
 
-	auto create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) -> ISharedDescriptor* {
+	auto create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) -> IDescriptorLayout* {
 		if (!gfx_context) {
 			EDGE_LOGE("[GFX] Graphics context is not initialized yet.");
 			return nullptr;
 		}
 
-        return gfx_context->create_shared_descriptor(create_info);
+		return gfx_context->create_descriptor_layout(create_info);
 	}
 
 	auto create_sampler(const SamplerCreateInfo& create_info) -> ISampler* {

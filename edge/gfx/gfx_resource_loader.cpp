@@ -204,6 +204,23 @@ namespace edge::gfx
 				shader_instance.pipeline = create_pipeline(pipeline_ci);
 			}
 
+			auto shader = shader_instances.front().shader;
+			auto& reflection = shader->get_reflection();
+			std::vector<DescrptorLayoutBindingDesc> layout_bindings{};
+
+			// TODO: Bad code, but i already tired
+			for (auto it = reflection.shader_resources.begin(); it != reflection.shader_resources.end(); ++it) {
+				auto& binding = layout_bindings.emplace_back();
+				binding.binding = it->binding;
+				binding.count = 1;
+				binding.type = it->type;
+				binding.stages = it->stages;
+			}
+
+			DescriptorLayoutCreateInfo layout_ci{};
+			layout_ci.bindings = layout_bindings;
+			binding_layout = create_descriptor_layout(layout_ci);
+
 			// Create descriptor allocator for allocate descriptors in mip passes
 			descriptor_allocator = create_descriptor_allocator();
 
@@ -230,6 +247,7 @@ namespace edge::gfx
 				destroy(shader_instances[i].shader);
 			}
 
+			destroy(binding_layout);
 			destroy(descriptor_allocator);
 		}
 
@@ -259,7 +277,7 @@ namespace edge::gfx
 
 				auto& generator = shader_instances[mip_count - 1];
 
-				IResourceDescriptor* descriptor = descriptor_allocator->allocate_descriptors(generator.root_signature);
+				descriptor_allocator->allocate({ &binding_layout, 1 });
 
 				cmd_list->bind_pipeline(generator.pipeline);
 
@@ -271,7 +289,6 @@ namespace edge::gfx
 
 				TextureDescriptor bind_resource{};
 				bind_resource.type = DescriptorType::eCombinedImageSampler;
-				bind_resource.set = 0;
 				bind_resource.binding = 5;
 
 				bind_resource.texture = texture;
@@ -280,7 +297,7 @@ namespace edge::gfx
 				bind_resource.resource_state = resource_state;
 
 				// Bind texture slot
-				descriptor->bind_texture(bind_resource);
+				binding_layout->bind(bind_resource);
 
 				// Make texture writable now
 				texture_barrier.src_state = resource_state;
@@ -294,16 +311,15 @@ namespace edge::gfx
 				for (int32_t i = 0; i < mip_count; ++i) {
 					bind_resource.binding = i + 1;
 					bind_resource.subresource_index = mip + i;
-					descriptor->bind_texture(bind_resource);
+					binding_layout->bind(bind_resource);
 				}
 
 				// Finally bind descriptor
 				BindDescriptorsInfo bind_info{};
 				bind_info.pipeline_type = PipelineType::eCompute;
-				bind_info.resource_descriptors = { &descriptor, 1u };
+				bind_info.binding_layouts = { &binding_layout, 1 };
 				bind_info.root_signature = generator.root_signature;
 
-				descriptor->flush();
 				cmd_list->bind_descriptors(bind_info);
 
 				// Divide by local group sizes
@@ -334,6 +350,7 @@ namespace edge::gfx
 
 		ISampler* linear_sampler{ nullptr };
 
+		IDescriptorLayout* binding_layout{ nullptr };
 		IDescriptorAllocator* descriptor_allocator{ nullptr };
 
 		std::array<ShaderInstance, 4ull> shader_instances;

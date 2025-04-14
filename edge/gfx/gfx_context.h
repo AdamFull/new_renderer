@@ -35,8 +35,7 @@ namespace edge::gfx
 	[[nodiscard]] auto create_pipeline_cache(const PipelineCacheCreateInfo& create_info) -> IPipelineCache*;
 
 	[[nodiscard]] auto create_descriptor_allocator() -> IDescriptorAllocator*;
-
-	[[nodiscard]] auto create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) -> ISharedDescriptor*;
+	[[nodiscard]] auto create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) -> IDescriptorLayout*;
 
 	[[nodiscard]] auto create_sampler(const SamplerCreateInfo& create_info) -> ISampler*;
 
@@ -81,8 +80,7 @@ namespace edge::gfx
 		virtual auto create_pipeline_cache(const PipelineCacheCreateInfo& create_info) const->IPipelineCache* = 0;
 
 		virtual auto create_descriptor_allocator() const->IDescriptorAllocator* = 0;
-
-		virtual auto create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) const->ISharedDescriptor* = 0;
+		virtual auto create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) const->IDescriptorLayout* = 0;
 
 		virtual auto create_sampler(const SamplerCreateInfo& create_info) const->ISampler* = 0;
 

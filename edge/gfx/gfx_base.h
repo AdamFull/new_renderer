@@ -4,8 +4,7 @@
 #include "../util/utl_base.h"
 #include "gfx_structures.h"
 
-namespace edge::gfx
-{
+namespace edge::gfx {
 	class IGFXResource {
 	public:
 		virtual ~IGFXResource() = default;
@@ -280,18 +279,21 @@ namespace edge::gfx
 		virtual auto get_data(size_t& data_size, void* data_ptr) const -> void = 0;
 	};
 
-	class IResourceDescriptor : public IGFXResource {
+	class IDescriptorLayout : public IGFXResource {
 	public:
-		~IResourceDescriptor() override = default;
+		~IDescriptorLayout() override = default;
 
 		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
-			return ResourceType::eResourceDescriptor;
+			return ResourceType::eDescriptorSetLayout;
 		}
 
-		virtual auto bind_texture(TextureDescriptor& texture_descriptor) -> void = 0;
-		virtual auto bind_buffer(BufferDescriptor& buffer_descriptor) -> void = 0;
+		virtual auto valid() const noexcept -> bool = 0;
+		virtual auto allocated() const noexcept -> bool = 0;
+		virtual auto hash() const noexcept -> uint32_t = 0;
 
-		virtual auto flush() -> void = 0;
+		virtual auto bind(const SamplerDescriptor& sampler_desc) -> void = 0;
+		virtual auto bind(const TextureDescriptor& texture_desc) -> void = 0;
+		virtual auto bind(const BufferDescriptor& buffer_desc) -> void = 0;
 	};
 
 	class IDescriptorAllocator : public IGFXResource {
@@ -303,20 +305,8 @@ namespace edge::gfx
 		}
 
 		virtual void reset() = 0;
-		[[nodiscard]] virtual auto allocate_descriptors(IRootSignature* root_signature) -> IResourceDescriptor* = 0;
-	};
-
-	class ISharedDescriptor : public IGFXResource {
-	public:
-		~ISharedDescriptor() override = default;
-
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
-			return ResourceType::eSharedDescriptor;
-		}
-
-		virtual void reset() = 0;
-		[[nodiscard]] virtual auto get_latest_descriptors() const noexcept -> IResourceDescriptor* = 0;
-		[[nodiscard]] virtual auto request_descriptors() -> IResourceDescriptor* = 0;
+		virtual auto allocate(std::span<IDescriptorLayout*> layouts) -> bool = 0;
+		virtual auto free(std::span<IDescriptorLayout*> layouts) -> bool = 0;
 	};
 
 	class IQueryPool : public IGFXResource {

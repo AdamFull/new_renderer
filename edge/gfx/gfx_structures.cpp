@@ -187,7 +187,7 @@ namespace edge::gfx
 		serialize_to("layers", json, type.layers);
 		serialize_to("levels", json, type.levels);
 
-		//serialize_to("format", json, type.format);
+		serialize_to("format", json, type.format);
 	}
 
 	void from_json(const nlohmann::json& json, TextureCreateInfo& type) {
@@ -200,7 +200,7 @@ namespace edge::gfx
 		parse_from("layers", json, type.layers);
 		parse_from("levels", json, type.levels);
 
-		//parse_from("format", json, type.format);
+		parse_from("format", json, type.format);
 	}
 
 
@@ -270,7 +270,7 @@ namespace edge::gfx
 		h = murmur_hash(state.depth_clamp, h);
 		h = murmur_hash(state.discard_enable, h);
 		h = murmur_hash(utl::cast(state.fill_mode), h);
-		//h = murmur_hash(static_cast<uint32_t>(state.cull_mode), h);
+		h = murmur_hash(static_cast<int32_t>(state.cull_mode), h);
 		h = murmur_hash(utl::cast(state.front_face), h);
 
 		return h;
@@ -323,7 +323,7 @@ namespace edge::gfx
 		h = murmur_hash(utl::cast(attachment.dst_alpha), h);
 		h = murmur_hash(utl::cast(attachment.alpha_blend_op), h);
 
-		//h = utl::murmur_hash(static_cast<uint32_t>(attachment.color_mask), h);
+		h = murmur_hash(static_cast<int>(attachment.color_mask), h);
 
 		return h;
 	}
@@ -370,6 +370,14 @@ namespace edge::gfx
 		h = murmur_hash(create_info.min_lod, h);
 		h = murmur_hash(create_info.max_lod, h);
 
+		return h;
+	}
+
+	uint32_t hash(const DescrptorLayoutBindingDesc& desc, uint32_t h) {
+		h = murmur_hash(desc.binding, h);
+		h = murmur_hash(desc.count, h);
+		h = murmur_hash(static_cast<int>(desc.stages), h);
+		h = murmur_hash(utl::cast(desc.type), h);
 		return h;
 	}
 }

@@ -30,7 +30,7 @@ namespace edge::gfx
 		eRootSignature,
 		ePipeline,
 		ePipelineCache,
-		eResourceDescriptor,
+		eDescriptorSetLayout,
 		eDescriptorAllocator,
 		eSharedDescriptor,
 		eQueryPool
@@ -43,7 +43,8 @@ namespace edge::gfx
 		eGeometry = 1 << 3,
 		eFragment = 1 << 4,
 		eCompute = 1 << 5,
-		eAllGraphics = eVertex | eTessellationControl | eTessellationEvaluation | eGeometry | eFragment
+		eAllGraphics = eVertex | eTessellationControl | eTessellationEvaluation | eGeometry | eFragment,
+		eAll = eAllGraphics | eCompute
 	};
 
 	enum class IndexType {
@@ -337,7 +338,6 @@ EDGE_REGISTER_ENUM_CLASS(edge::gfx, ResourceType,
 	EDGE_ENUM_META(edge::gfx::ResourceType::eRootSignature, "IRootSignature"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::ePipeline, "IPipeline"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::ePipelineCache, "IPipelineCache"),
-	EDGE_ENUM_META(edge::gfx::ResourceType::eResourceDescriptor, "IResourceDescriptor"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::eDescriptorAllocator, "IDescriptorAllocator"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::eSharedDescriptor, "ISharedDescriptor"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::eQueryPool, "IQueryPool")
