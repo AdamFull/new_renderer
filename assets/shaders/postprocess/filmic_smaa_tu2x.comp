@@ -3,9 +3,9 @@
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
-layout(set = 1, binding = 1) uniform writeonly image2D write_color;
-layout(set = 1, binding = 2) uniform sampler2D prev_frame;
-layout(set = 1, binding = 3) uniform sampler2D current_frame;
+layout(binding = 0) uniform writeonly image2D write_color;
+layout(binding = 1) uniform sampler2D prev_frame;
+layout(binding = 2) uniform sampler2D current_frame;
 
 int SMAAMod2(float value) 
 {

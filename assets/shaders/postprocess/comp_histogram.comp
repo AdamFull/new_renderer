@@ -9,14 +9,14 @@
 
 layout (local_size_x = THREADS_X, local_size_y = THREADS_Y, local_size_z = 1) in;
 
-layout(set = 1, binding = 0) uniform sampler2D sample_image0;
-layout (set = 1, binding = 1) buffer Histogram { uint histogram[GROUP_SIZE]; };
+layout(binding = 0) uniform sampler2D sample_image0;
+layout (binding = 1) buffer Histogram { uint histogram[GROUP_SIZE]; };
 
-layout (std140, set = 1, binding = 2) uniform FHistogramComputeParams 
-{ 
-    float minLogLum;
+layout(push_constant) uniform PushConstant
+{
+	float minLogLum;
 	float logLumRange;
-}; 
+} pc;
 
 // Shared histogram buffer used for storing intermediate sums for each work group
 shared uint histogramShared[GROUP_SIZE];
@@ -52,7 +52,7 @@ void main()
     if (gl_GlobalInvocationID.x < dim.x && gl_GlobalInvocationID.y < dim.y) 
     {
       vec3 hdrColor = texelFetch(sample_image0, ivec2(gl_GlobalInvocationID.xy) , 0).xyz;
-      uint binIndex = colorToBin(hdrColor, minLogLum, 1.0 / logLumRange);
+      uint binIndex = colorToBin(hdrColor, pc.minLogLum, 1.0 / pc.logLumRange);
 
       // We use an atomic add to ensure we don't write to the same bin in our
     // histogram from two different threads at the same time.

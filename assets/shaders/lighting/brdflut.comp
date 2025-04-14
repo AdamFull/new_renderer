@@ -3,7 +3,7 @@
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
-layout(set = 1, binding = 1, rg16f) uniform writeonly image2D write_image0;
+layout(binding = 0, rg16f) uniform writeonly image2D write_image0;
 
 const uint NUM_SAMPLES = 1024u;
 

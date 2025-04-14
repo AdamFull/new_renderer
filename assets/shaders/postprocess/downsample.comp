@@ -13,7 +13,7 @@
 layout(local_size_x = 8, local_size_y = 8) in;
 
 layout(set = 1, binding = 1) uniform writeonly image2D write_image0;
-layout(set = 1, binding = 2) uniform sampler2D sample_image0;
+layout(set = 1, binding = 0) uniform sampler2D sample_image0;
 
 vec3 PowVec3(vec3 v, float p)
 {
