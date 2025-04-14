@@ -89,10 +89,11 @@ namespace edge::gfx
 			return false;
 		}
 
+		descriptor_allocator = config.descriptor_allocator;
+
 		for (const auto& technique : json) {
 			TechniqueDesc technique_desc;
 			technique_desc.type = technique["type"].get<TechniqueType>();
-			technique_desc.shared_descriptor = config.shared_descriptor;
 
 			// Parse stages
 			if (auto stages = technique.find("stages"); stages != technique.end()) {
@@ -243,6 +244,19 @@ namespace edge::gfx
 		return true;
 	}
 
+	void TechniqueDatabase::add_descriptor_layout(IDescriptorLayout* layout) {
+		auto found = std::find_if(descriptors.begin(), descriptors.end(), [layout](const IDescriptorLayout* l) {
+			return layout->hash() == l->hash();
+			});
+
+		if (found != descriptors.end()) {
+			EDGE_LOGW("[Technique System] Descriptor \"{}\" is already exists.");
+			return;
+		}
+
+		descriptors.push_back(layout);
+	}
+
 	void TechniqueDatabase::add_technique(const std::string& name, const TechniqueDesc& technique_desc) {
 		std::vector<ShaderStageInfo> shader_stages{};
 
@@ -275,27 +289,31 @@ namespace edge::gfx
 				});
 		}
 
-		IShader* shader = create_shader(shader_stages);
-		shader->set_resource_name(name);
+		Technique new_technique{name, nullptr, nullptr, nullptr, descriptor_allocator };
+
+		new_technique.shader = create_shader(shader_stages);
+		new_technique.shader->set_resource_name(name);
+
+		create_descriptor_table(new_technique.shader, new_technique.table);
 
 		RootSignatureCreateInfo root_sign_ci{};
-		root_sign_ci.shader = shader;
-		root_sign_ci.shared_descriptor = technique_desc.shared_descriptor;
-		IRootSignature* root_signature = create_root_signature(root_sign_ci);
-		root_signature->set_resource_name(name);
+		root_sign_ci.shader = new_technique.shader;
+		root_sign_ci.binding_layouts = new_technique.table.get_layouts();
+		// TODO: lookup for root signature
+		new_technique.root_signature = create_root_signature(root_sign_ci);
+		new_technique.root_signature->set_resource_name(name);
 
-		IPipeline* pipeline{ nullptr };
 		if (technique_desc.type == TechniqueType::eCompute) {
 			ComputePipelineCreateInfo pipeline_ci{};
-			pipeline_ci.shader = shader;
-			pipeline_ci.root_signature = root_signature;
+			pipeline_ci.shader = new_technique.shader;
+			pipeline_ci.root_signature = new_technique.root_signature;
 			pipeline_ci.pipeline_cache = pipeline_cache;
-			pipeline = create_pipeline(pipeline_ci);
+			new_technique.pipeline = create_pipeline(pipeline_ci);
 		}
 		else if (technique_desc.type == TechniqueType::eGraphics) {
 			GraphicsPipelineCreateInfo pipeline_ci{};
-			pipeline_ci.shader = shader;
-			pipeline_ci.root_signature = root_signature;
+			pipeline_ci.shader = new_technique.shader;
+			pipeline_ci.root_signature = new_technique.root_signature;
 			pipeline_ci.pipeline_cache = pipeline_cache;
 
 			for (const auto& attribute : technique_desc.vertex_layout.attributes) {
@@ -321,12 +339,12 @@ namespace edge::gfx
 
 			pipeline_ci.depth_format = technique_desc.depth_format;
 			pipeline_ci.stencil_format = technique_desc.stencil_format;
-			pipeline = create_pipeline(pipeline_ci);
+			new_technique.pipeline = create_pipeline(pipeline_ci);
 		}
 
-		pipeline->set_resource_name(name);
+		new_technique.pipeline->set_resource_name(name);
 
-		techniques.emplace(name, Technique{ name, shader, root_signature, pipeline });
+		techniques.emplace(name, new_technique);
 	}
 
 	auto TechniqueDatabase::get_technique(const std::string& name) -> Technique& {
@@ -340,6 +358,59 @@ namespace edge::gfx
 		EDGE_LOGE("[Technique Database] Rendering technique with name \"{}\" was not found.", name);
 
 		return fallback_technique;
+	}
+
+	void TechniqueDatabase::free_resources() {
+		for (auto& [name, technique] : techniques) {
+			technique.table.reset();
+		}
+	}
+
+	auto TechniqueDatabase::create_descriptor_table(IShader* shader, DescriptorTable& table) -> void {
+		struct DescriptorSpaceDesc {
+			std::vector<DescrptorLayoutBindingDesc> bindings;
+			uint32_t hash{ 0u };
+		};
+
+		std::array<DescriptorSpaceDesc, 32ull> descriptor_spaces{};
+
+		auto& reflection = shader->get_reflection();
+		for (auto it = reflection.shader_resources.begin(); it != reflection.shader_resources.end(); ++it) {
+			auto& space = descriptor_spaces[it->set];
+
+			auto& binding = space.bindings.emplace_back();
+			binding.binding = it->binding;
+			binding.count = it->count;
+			binding.stages = ShaderStageFlag::eAll;//it->stages;
+			binding.type = it->type;
+
+			space.hash = gfx::hash(binding, space.hash);
+		}
+
+		for (int32_t space_idx = 0; space_idx < descriptor_spaces.size(); ++space_idx) {
+			auto& space_desc = descriptor_spaces[space_idx];
+			if (space_desc.bindings.empty()) {
+				continue;
+			}
+
+			auto found = std::find_if(descriptors.begin(), descriptors.end(),
+				[&space_desc](IDescriptorLayout* layout) {
+					return layout->hash() == space_desc.hash;
+				});
+
+			if (found != descriptors.end()) {
+				table.add_layout(space_idx, *found);
+				continue;
+			}
+
+			auto& new_layout = descriptors.emplace_back();
+
+			DescriptorLayoutCreateInfo layout_ci{};
+			layout_ci.bindings = space_desc.bindings;
+			new_layout = create_descriptor_layout(layout_ci);
+
+			table.add_layout(space_idx, new_layout);
+		}
 	}
 
 	std::span<const uint8_t> TechniqueDatabase::get_or_compile_shader(const TechniqueDesc::ShaderStage& stage) {

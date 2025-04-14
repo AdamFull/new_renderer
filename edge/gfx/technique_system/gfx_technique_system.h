@@ -1,8 +1,11 @@
 #pragma once
 #include "../../util/utl_hash.hpp"
 #include "../gfx_structures.h"
+#include "../gfx_descriptor_table.h"
 
 #include "gfx_shader_compiler.h"
+
+#include <deque>
 
 namespace edge::gfx
 {
@@ -29,7 +32,6 @@ namespace edge::gfx
 			};
 
 			TechniqueType type{};
-			ISharedDescriptor* shared_descriptor{ nullptr };
 			std::vector<ShaderStage> stages{};
 
 			struct {
@@ -52,10 +54,11 @@ namespace edge::gfx
 		};
 
 		struct Technique {
-			std::string_view name;
+			std::string name;
 			IShader* shader{ nullptr };
 			IRootSignature* root_signature{ nullptr };
 			IPipeline* pipeline{ nullptr };
+			DescriptorTable table;
 		};
 
 		struct Shader {
@@ -66,7 +69,7 @@ namespace edge::gfx
 
 		struct TechniqueConfigInfo {
 			std::string_view db_path;
-			ISharedDescriptor* shared_descriptor{ nullptr };
+			IDescriptorAllocator* descriptor_allocator{ nullptr };
 			Format backbuffer_format{};
 		};
 
@@ -78,9 +81,15 @@ namespace edge::gfx
 		bool load(const std::string& path);
 		bool save(const std::string& path);
 
+		void add_descriptor_layout(IDescriptorLayout* layout);
+
 		void add_technique(const std::string& name, const TechniqueDesc& technique_desc);
 		auto get_technique(const std::string& name) -> Technique&;
+
+		void free_resources();
 	private:
+		auto create_descriptor_table(IShader* shader, DescriptorTable& table) -> void;
+
 		std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage);
 
 		IPipelineCache* pipeline_cache{ nullptr };
@@ -89,5 +98,8 @@ namespace edge::gfx
 
 		std::unordered_map<uint32_t, Shader> shaders;
 		std::unordered_map<std::string, Technique> techniques;
+
+		IDescriptorAllocator* descriptor_allocator{ nullptr };
+		std::deque<IDescriptorLayout*> descriptors;
 	};
 }
