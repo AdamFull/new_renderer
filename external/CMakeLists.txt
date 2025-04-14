@@ -406,6 +406,7 @@ target_link_libraries(${PROJECT_NAME}
     stb
     KTX::ktx
     glslang::glslang
+    glslang-default-resource-limits
 	glslang::SPIRV
 
     spirv-cross-core

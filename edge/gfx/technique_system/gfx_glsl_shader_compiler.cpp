@@ -2,6 +2,7 @@
 
 #include <SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ShaderLang.h>
+#include <glslang/Public/ResourceLimits.h>
 #include <glslang/build_info.h>
 
 #include "../../util/utl_hash.hpp"
@@ -16,7 +17,7 @@ namespace edge::gfx
 	glslang::EShTargetClientVersion k_client_version{ glslang::EShTargetVulkan_1_1 };
 	glslang::EShClient k_client{ glslang::EShClientVulkan };
 	glslang::EShTargetLanguageVersion k_language_version{ glslang::EShTargetSpv_1_4 };
-	EShMessages k_messages{ EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault | EShMsgCascadingErrors };
+	EShMessages k_messages{ EShMsgSpvRules | EShMsgVulkanRules | EShMsgDefault | EShMsgCascadingErrors | EShMsgKeepUncalled };
 
 	// Just copy of https://github.com/KhronosGroup/glslang/blob/main/StandAlone/DirStackFileIncluder.h
 	class shader_includer : public glslang::TShader::Includer {
@@ -130,114 +131,6 @@ namespace edge::gfx
 		}
 	};
 
-	static TBuiltInResource GetResources() {
-		//auto props = UDevice->GetPhysical().getProperties();
-		TBuiltInResource resources = {};
-		resources.maxLights = 32;
-		resources.maxClipPlanes = 6;
-		resources.maxTextureUnits = 32;
-		resources.maxTextureCoords = 32;
-		resources.maxVertexAttribs = 64;
-		resources.maxVertexUniformComponents = 4096;
-		resources.maxVaryingFloats = 64;
-		resources.maxVertexTextureImageUnits = 32;
-		resources.maxCombinedTextureImageUnits = 80;
-		resources.maxTextureImageUnits = 32;
-		resources.maxFragmentUniformComponents = 4096;
-		resources.maxDrawBuffers = 32;
-		resources.maxVertexUniformVectors = 128;
-		resources.maxVaryingVectors = 8;
-		resources.maxFragmentUniformVectors = 16;
-		resources.maxVertexOutputVectors = 16;
-		resources.maxFragmentInputVectors = 15;
-		resources.minProgramTexelOffset = -8;
-		resources.maxProgramTexelOffset = 7;
-		resources.maxClipDistances = 8;
-		resources.maxComputeWorkGroupCountX = 65535;
-		resources.maxComputeWorkGroupCountY = 65535;
-		resources.maxComputeWorkGroupCountZ = 65535;
-		resources.maxComputeWorkGroupSizeX = 1024;
-		resources.maxComputeWorkGroupSizeY = 1024;
-		resources.maxComputeWorkGroupSizeZ = 64;
-		resources.maxComputeUniformComponents = 1024;
-		resources.maxComputeTextureImageUnits = 16;
-		resources.maxComputeImageUniforms = 8;
-		resources.maxComputeAtomicCounters = 8;
-		resources.maxComputeAtomicCounterBuffers = 1;
-		resources.maxVaryingComponents = 60;
-		resources.maxVertexOutputComponents = 64;
-		resources.maxGeometryInputComponents = 64;
-		resources.maxGeometryOutputComponents = 128;
-		resources.maxFragmentInputComponents = 128;
-		resources.maxImageUnits = 8;
-		resources.maxCombinedImageUnitsAndFragmentOutputs = 8;
-		resources.maxCombinedShaderOutputResources = 8;
-		resources.maxImageSamples = 0;
-		resources.maxVertexImageUniforms = 0;
-		resources.maxTessControlImageUniforms = 0;
-		resources.maxTessEvaluationImageUniforms = 0;
-		resources.maxGeometryImageUniforms = 0;
-		resources.maxFragmentImageUniforms = 8;
-		resources.maxCombinedImageUniforms = 8;
-		resources.maxGeometryTextureImageUnits = 16;
-		resources.maxGeometryOutputVertices = 256;
-		resources.maxGeometryTotalOutputComponents = 1024;
-		resources.maxGeometryUniformComponents = 1024;
-		resources.maxGeometryVaryingComponents = 64;
-		resources.maxTessControlInputComponents = 128;
-		resources.maxTessControlOutputComponents = 128;
-		resources.maxTessControlTextureImageUnits = 16;
-		resources.maxTessControlUniformComponents = 1024;
-		resources.maxTessControlTotalOutputComponents = 4096;
-		resources.maxTessEvaluationInputComponents = 128;
-		resources.maxTessEvaluationOutputComponents = 128;
-		resources.maxTessEvaluationTextureImageUnits = 16;
-		resources.maxTessEvaluationUniformComponents = 1024;
-		resources.maxTessPatchComponents = 120;
-		resources.maxPatchVertices = 32;
-		resources.maxTessGenLevel = 64;
-		resources.maxViewports = 16;
-		resources.maxVertexAtomicCounters = 0;
-		resources.maxTessControlAtomicCounters = 0;
-		resources.maxTessEvaluationAtomicCounters = 0;
-		resources.maxGeometryAtomicCounters = 0;
-		resources.maxFragmentAtomicCounters = 8;
-		resources.maxCombinedAtomicCounters = 8;
-		resources.maxAtomicCounterBindings = 1;
-		resources.maxVertexAtomicCounterBuffers = 0;
-		resources.maxTessControlAtomicCounterBuffers = 0;
-		resources.maxTessEvaluationAtomicCounterBuffers = 0;
-		resources.maxGeometryAtomicCounterBuffers = 0;
-		resources.maxFragmentAtomicCounterBuffers = 1;
-		resources.maxCombinedAtomicCounterBuffers = 1;
-		resources.maxAtomicCounterBufferSize = 16384;
-		resources.maxTransformFeedbackBuffers = 4;
-		resources.maxTransformFeedbackInterleavedComponents = 64;
-		resources.maxCullDistances = 8;
-		resources.maxCombinedClipAndCullDistances = 8;
-		resources.maxSamples = 4;
-		resources.maxMeshOutputVerticesEXT = resources.maxMeshOutputVerticesNV = 256;
-		resources.maxMeshOutputPrimitivesEXT = resources.maxMeshOutputPrimitivesNV = 512;
-		resources.maxMeshWorkGroupSizeX_EXT = resources.maxMeshWorkGroupSizeX_NV = 32;
-		resources.maxMeshWorkGroupSizeY_EXT = resources.maxMeshWorkGroupSizeY_NV = 1;
-		resources.maxMeshWorkGroupSizeZ_EXT = resources.maxMeshWorkGroupSizeZ_NV = 1;
-		resources.maxTaskWorkGroupSizeX_EXT = resources.maxTaskWorkGroupSizeX_NV = 32;
-		resources.maxTaskWorkGroupSizeY_EXT = resources.maxTaskWorkGroupSizeY_NV = 1;
-		resources.maxTaskWorkGroupSizeZ_EXT = resources.maxTaskWorkGroupSizeZ_NV = 1;
-		resources.maxMeshViewCountEXT = resources.maxMeshViewCountNV = 4;
-
-		resources.limits.nonInductiveForLoops = true;
-		resources.limits.whileLoops = true;
-		resources.limits.doWhileLoops = true;
-		resources.limits.generalUniformIndexing = true;
-		resources.limits.generalAttributeMatrixVectorIndexing = true;
-		resources.limits.generalVaryingIndexing = true;
-		resources.limits.generalSamplerIndexing = true;
-		resources.limits.generalVariableIndexing = true;
-		resources.limits.generalConstantMatrixVectorIndexing = true;
-		return resources;
-	}
-
 	static uint32_t make_hash_name(std::string_view input) {
 		uint32_t hash{ 0u };
 
@@ -289,6 +182,7 @@ namespace edge::gfx
 		shader.setEnvInput(glslang::EShSourceGlsl, language, k_client, 110);
 		shader.setEnvClient(k_client, k_client_version);
 		shader.setEnvTarget(glslang::EShTargetSpv, k_language_version);
+		//shader.setAutoMapBindings(true);
 
 		messages = k_messages;
 #ifndef NDEBUG
@@ -316,7 +210,7 @@ namespace edge::gfx
 	}
 
 	auto GLSLShaderCompiler::collect_dependency_hash(const ShaderCompileInfo& compile_info) -> uint32_t {
-		EShMessages messages{};
+		EShMessages messages{ };
 		auto shader = create_shader(compile_info, messages);
 
 		auto shader_name_cstr = compile_info.path.data();
@@ -337,8 +231,7 @@ namespace edge::gfx
 
 		includer->reset(true);
 
-		auto resources = GetResources();
-		if (!shader.parse(&resources, k_client_version, false, messages, *includer)) {
+		if (!shader.parse(GetDefaultResources(), k_client_version, false, messages, *includer)) {
 			EDGE_LOGE("\nParsing error: In shader \"{}\" \n{}\n{}\n", compile_info.path, shader.getInfoLog(), shader.getInfoDebugLog());
 			return {};
 		}
@@ -374,8 +267,7 @@ namespace edge::gfx
 
 		includer->reset();
 
-		auto resources = GetResources();
-		if (!shader.parse(&resources, k_client_version, false, messages, *includer)) {
+		if (!shader.parse(GetDefaultResources(), k_client_version, false, messages, *includer)) {
 			EDGE_LOGE("\nParsing error: In shader \"{}\" \n{}\n{}\n", compile_info.path, shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
