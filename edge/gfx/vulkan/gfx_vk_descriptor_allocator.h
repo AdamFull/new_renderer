@@ -1,14 +1,19 @@
 #pragma once
 
 #include "../gfx_base.h"
+#include "gfx_vk_descriptor_set_layout.h"
 
 namespace edge::gfx::vulkan
 {
 	class Device;
-	class DescriptorPool;
-	class DescriptorSetLayout;
-	class DescriptorSet;
-	class ResourceDescriptor;
+
+	struct DescriptorPoolBlock {
+		vk::DescriptorPool pool{};
+		PoolSizes inilial_sizes{};
+		PoolSizes avaliable_sizes{};
+		int32_t avaliable_sets{ 1 };
+		bool bindless_support{ false };
+	};
 
 	class DescriptorAllocator final : public IDescriptorAllocator {
 	public:
@@ -23,15 +28,15 @@ namespace edge::gfx::vulkan
 		void set_resource_name(std::string_view name) const noexcept override;
 
 		void reset() override;
-		auto allocate_descriptors(IRootSignature* root_signature) -> IResourceDescriptor* override;
+		auto allocate(std::span<IDescriptorLayout*> layouts) -> bool override;
+		auto free(std::span<IDescriptorLayout*> layouts) -> bool override;
 	private:
-		auto allocate(DescriptorSetLayout& layout) -> DescriptorSet&;
+		auto create_new_pool(const PoolSizes& requested_sizes, bool bindless_support = false) -> DescriptorPoolBlock&;
+		auto lookup_free_pool(const PoolSizes& requested_sizes, int32_t requested_set_count, bool bindless_support = false) -> std::tuple<DescriptorPoolBlock&, size_t>;
 	private:
 		Device& device;
 
-		// TODO: Do i even need to allocate memory here?
-		uint32_t multiplicator{ 2u };
-		std::vector<std::unique_ptr<DescriptorPool>> descriptor_pools{};
-		std::vector<ResourceDescriptor*> allocated_descriptors{};
+		std::vector<DescriptorPoolBlock> pool_blocks{};
+		std::vector<IDescriptorLayout*> allocated_layouts{};
 	};
 }

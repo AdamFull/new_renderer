@@ -50,8 +50,7 @@ namespace edge::gfx::vulkan
 		auto create_pipeline_cache(const PipelineCacheCreateInfo& create_info) const->IPipelineCache* override;
 
 		auto create_descriptor_allocator() const->IDescriptorAllocator* override;
-
-		auto create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) const->ISharedDescriptor* override;
+		auto create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) const->IDescriptorLayout* override;
 
 		auto create_sampler(const SamplerCreateInfo& create_info) const->ISampler* override;
 

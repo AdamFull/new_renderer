@@ -11,12 +11,12 @@ namespace edge::gfx::vulkan
 	public:
 		vk::PipelineLayoutCreateInfo create_info{};
 
-		std::array<vk::DescriptorSetLayout, 8ull> descriptor_set_layouts{};
+		std::array<vk::DescriptorSetLayout, 32ull> descriptor_set_layouts{};
 		std::array<vk::PushConstantRange, 16ull> push_constant_ranges{};
 
 		PipelineLayoutCreateInfo();
 
-		void add_descriptor_set_layout(vk::DescriptorSetLayout layout);
+		void add_descriptor_set_layout(uint32_t set, vk::DescriptorSetLayout layout);
 		vk::PushConstantRange& add_constant_range();
 	};
 

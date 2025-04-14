@@ -27,9 +27,7 @@
 #include "gfx_vk_swapchain.h"
 #include "gfx_vk_shader.h"
 #include "gfx_vk_root_signature.h"
-#include "gfx_vk_descriptor_pool.h"
 #include "gfx_vk_descriptor_allocator.h"
-#include "gfx_vk_shared_descriptor.h"
 
 #include "gfx_vk_util.h"
 
@@ -300,9 +298,8 @@ namespace edge::gfx::vulkan
 		return new DescriptorAllocator(*device);
 	}
 
-	auto GFXContext::create_shared_descriptor(const SharedDescriptorCreateInfo& create_info) const -> ISharedDescriptor*
-	{
-		return new SharedDescriptor(*device, create_info);
+	auto GFXContext::create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) const -> IDescriptorLayout* {
+		return new DescriptorSetLayout(*device, create_info);
 	}
 
 	auto GFXContext::create_sampler(const SamplerCreateInfo& create_info) const -> ISampler*

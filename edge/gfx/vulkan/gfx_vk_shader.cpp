@@ -97,9 +97,6 @@ namespace edge::gfx::vulkan
 			return;
 		}
 
-		if (has_substring(res.name, "global"))
-			return;
-
 		const auto& refl_type = compiler->get_type(res.type_id);
 		auto& decoration = compiler->get_decoration_bitset(refl_type.self);
 		uint32_t member_count = refl_type.member_types.size();
@@ -143,9 +140,6 @@ namespace edge::gfx::vulkan
 			return;
 		}
 
-		if (has_substring(res.name, "global"))
-			return;
-
 		ShaderResource& uniform = reflection.add_shader_resource();
 
 		std::strcpy(uniform.name, res.name.c_str());
@@ -154,6 +148,13 @@ namespace edge::gfx::vulkan
 		uniform.binding = compiler->get_decoration(res.id, spv::DecorationBinding);
 		uniform.type = type;
 		uniform.stages = stage;
+
+		auto type_handle = compiler->get_type(res.type_id);
+		if (!type_handle.array.empty()) {
+			for (auto dim : type_handle.array) {
+				uniform.count *= dim;
+			}
+		}
 	}
 
 	void collect_constants_reflection(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, ShaderStageFlag stage) {
@@ -208,9 +209,10 @@ namespace edge::gfx::vulkan
 		uint32_t code_size{ static_cast<uint32_t>(create_info.code.size() / sizeof(uint32_t)) };
 
 		spirv_cross::CompilerGLSL compiler(code, code_size);
-		auto active = compiler.get_active_interface_variables();
-		auto resources = compiler.get_shader_resources(active);
-		compiler.set_enabled_interface_variables(std::move(active));
+		//auto active = compiler.get_active_interface_variables();
+		//auto resources = compiler.get_shader_resources(active);
+		//compiler.set_enabled_interface_variables(std::move(active));
+		auto resources = compiler.get_shader_resources();
 
 		// Parse execution modes
 		auto& execution_modes = compiler.get_execution_mode_bitset();
@@ -257,9 +259,12 @@ namespace edge::gfx::vulkan
 			}
 		}
 
+		std::unordered_set<uint32_t> descriptor_sets{};
 
 		std::sort(reflection.shader_resources.begin(), reflection.shader_resources.end(), 
-			[](const ShaderResource& a, const ShaderResource& b) {
+			[&descriptor_sets](const ShaderResource& a, const ShaderResource& b) {
+				descriptor_sets.emplace(a.set);
+
 				// First compare by set
 				if (a.set != b.set) {
 					return a.set < b.set;

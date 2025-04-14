@@ -8,8 +8,7 @@
 #include "gfx_vk_texture.h"
 #include "gfx_vk_pipeline.h"
 #include "gfx_vk_root_signature.h"
-#include "gfx_vk_descriptor_set.h"
-#include "gfx_vk_resource_descriptor.h"
+#include "gfx_vk_descriptor_set_layout.h"
 
 #include "../gfx_util.h"
 #include "gfx_vk_util.h"
@@ -77,35 +76,29 @@ namespace edge::gfx::vulkan
 	}
 
 	void CommandList::bind_descriptors(const BindDescriptorsInfo& bind_info) const {
-		auto* vk_root_signature = utl::cast<RootSignature*>(bind_info.root_signature);
-
-		uint32_t first_descriptor_set{ ~0u };
-		uint32_t descriptor_set_count{ 0u };
-		std::array<vk::DescriptorSet, k_max_descriptor_count> descriptor_sets{};
-		for (int32_t i = 0; i < bind_info.resource_descriptors.size(); ++i) {
-			auto* resource_descriptor = bind_info.resource_descriptors[i];
-			if (resource_descriptor) {
-				auto* vk_resource_descriptor = utl::cast<ResourceDescriptor*>(resource_descriptor);
-				auto first_set = vk_resource_descriptor->get_first_set();
-				auto set_count = vk_resource_descriptor->get_set_count();
-				auto& sets = vk_resource_descriptor->get_descriptor_sets();
-
-				// TODO: check that descriptor ranges is not overlapping
-				for (int32_t j = first_set; j < first_set + set_count; ++j) {
-					descriptor_sets[j] = sets[j];
-					first_descriptor_set = std::min(first_descriptor_set, (uint32_t)j);
-					descriptor_set_count++;
-				}
-			}
+		if (bind_info.binding_layouts.empty()) {
+			return;
 		}
 
+		std::vector<vk::DescriptorSet> descriptor_sets{ bind_info.binding_layouts.size() };
+
+		for (int32_t i = 0; i < static_cast<int32_t>(bind_info.binding_layouts.size()); ++i) {
+			auto* vk_layout = bind_info.binding_layouts[i]->as<DescriptorSetLayout*>();
+			auto [descriptor_set, pool_index] = vk_layout->get_descriptor_set();
+
+			descriptor_sets[i] = descriptor_set;
+
+			vk_layout->update();
+		}
+
+		auto* vk_root_signature = bind_info.root_signature->as<RootSignature*>();
 		auto& pipeline_layout = vk_root_signature->get_pipeline_layout();
 		handle_.bindDescriptorSets(
 			pipeline_type_to_vk(bind_info.pipeline_type),
 			pipeline_layout.get_handle(),
-			first_descriptor_set,
-			descriptor_set_count,
-			descriptor_sets.data() + first_descriptor_set,
+			bind_info.first_set,
+			static_cast<uint32_t>(descriptor_sets.size()),
+			descriptor_sets.data(),
 			0u, nullptr);
 	}
 

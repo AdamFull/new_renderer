@@ -1,10 +1,11 @@
 #include "gfx_vk_root_signature.h"
 #include "gfx_vk_device.h"
 #include "gfx_vk_debug.h"
-#include "gfx_vk_shared_descriptor.h"
 #include "gfx_vk_shader.h"
 
 #include "gfx_vk_util.h"
+
+#include "../../util/Logger.h"
 
 namespace edge::gfx::vulkan
 {
@@ -13,8 +14,9 @@ namespace edge::gfx::vulkan
 		create_info.pPushConstantRanges = push_constant_ranges.data();
 	}
 
-	void PipelineLayoutCreateInfo::add_descriptor_set_layout(vk::DescriptorSetLayout layout) {
-		descriptor_set_layouts[create_info.setLayoutCount++] = layout;
+	void PipelineLayoutCreateInfo::add_descriptor_set_layout(uint32_t set, vk::DescriptorSetLayout layout) {
+		descriptor_set_layouts[set] = layout;
+		create_info.setLayoutCount = set + 1;
 	}
 
 	vk::PushConstantRange& PipelineLayoutCreateInfo::add_constant_range() {
@@ -42,21 +44,6 @@ namespace edge::gfx::vulkan
 		device{ device } {
 		const auto& reflection = create_info.shader->get_reflection();
 
-		std::array<DescriptorSetLayoutCreateInfo, 8ull> descriptor_set_layout_create_infos{};
-
-		// Create descriptor set layouts
-		for (auto it = reflection.shader_resources.begin(); it != reflection.shader_resources.end(); ++it) {
-			auto& ci = descriptor_set_layout_create_infos[it->set];
-
-			auto& descriptor_binding = ci.add_binding();
-			descriptor_binding.binding = it->binding;
-			descriptor_binding.descriptorType = descriptor_type_to_vk(it->type);
-			descriptor_binding.descriptorCount = 1u;
-			descriptor_binding.stageFlags = shader_stage_flags_to_vk(it->stages);
-
-			auto& flags = ci.add_binding_flags();
-		}
-
 		PipelineLayoutCreateInfo layout_ci{};
 
 		// Get constant ranges from reflection
@@ -70,23 +57,13 @@ namespace edge::gfx::vulkan
 			}
 		}
 
-		// Allocate descriptr set layouts
-		for (int32_t set = 0; set < 8ull; ++set) {
-			// NOTE: it's very dirty solution i think, but ok for now
-			if (create_info.shared_descriptor) {
-				auto* vk_shared_descriptor = static_cast<SharedDescriptor*>(create_info.shared_descriptor);
-				auto shared_set = vk_shared_descriptor->get_first_set();
-				if (set == shared_set) {
-					auto& shared_layout = vk_shared_descriptor->get_descriptor_set_layout();
-					layout_ci.add_descriptor_set_layout(shared_layout.get_handle());
-				}
+		for (int32_t set = 0; set < create_info.binding_layouts.size(); ++set) {
+			auto* vk_descriptor_set_layout = utl::cast<DescriptorSetLayout*>(create_info.binding_layouts[set]);
+			if (!vk_descriptor_set_layout) {
+				EDGE_LOGE("[Root Signature] missing set slot {}. Cannot create root signature with missing descriptor layout.", set);
+				continue;
 			}
-
-			auto& ci = descriptor_set_layout_create_infos[set];
-			if (ci.create_info.bindingCount > 0) {
-				descriptor_set_layouts[set] = std::make_unique<DescriptorSetLayout>(device, ci);
-				layout_ci.add_descriptor_set_layout(descriptor_set_layouts[set]->get_handle());
-			}
+			layout_ci.add_descriptor_set_layout(set, vk_descriptor_set_layout->get_handle());
 		}
 
 		// Add all immutable samplers
