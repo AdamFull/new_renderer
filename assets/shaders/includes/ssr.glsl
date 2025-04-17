@@ -257,60 +257,17 @@ float screen_fade(vec2 uv)
 	return saturate(1.0 - dot(fade, fade));
 }
 
-#if 1
-float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D depthTexture, int stepCount, float rayLength, float ditherOffset)
-{
-	Camera camera = GetCamera(frameData.defaultCameraID);
-	mat4 projection = GetProjectionMatrix(camera.matrices_offset);
-	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
-
-	vec4 rayStartPS = view_projection * vec4(worldPosition, 1.0);
-	vec4 rayDirPS = view_projection * vec4(-lightDirection * rayLength, 0.0);
-	vec4 rayEndPS = rayStartPS + rayDirPS;
-	rayStartPS.xyz /= rayStartPS.w;
-	rayEndPS.xyz /= rayEndPS.w;
-
-	vec3 rayStep = rayEndPS.xyz - rayStartPS.xyz;
-	float stepSize = 1.0f / stepCount;
-
-	vec4 rayDepthClip = rayStartPS + projection * vec4(0.0, 0.0, rayLength, 0.0);
-	rayDepthClip.xyz /= rayDepthClip.w;
-	float tolerance = abs(rayDepthClip.z - rayStartPS.z) * stepSize * 2.0;
-
-	float occlusion = 0.0f;
-	float hitStep = -1.0f;
-
-	float n = stepSize * ditherOffset + stepSize;
-
-	[[unroll]]
-	for(uint i = 0; i < stepCount; ++i)
-	{
-		vec3 rayPos = rayStartPS.xyz + n * rayStep;
-		float depth = textureLod(depthTexture, rayPos.xy * vec2(0.5f, -0.5f) + vec2(0.5f, 0.5f), 0).r;
-		float diff = rayPos.z - depth;
-
-		bool hit = abs(diff + tolerance) < tolerance;
-		hitStep = hit && hitStep < 0.0f ? n : hitStep;
-		n += stepSize;
-	}
-
-	if(hitStep > 0.0f)
-	{
-		vec2 hitUV = rayStartPS.xy + n * rayStep.xy;
-		hitUV = hitUV * vec2(0.5f, -0.5f) + vec2(0.5f, 0.5f);
-		occlusion = screen_fade(hitUV);
-	}
-	return 1.0f - occlusion;
+bool is_saturated(vec2 uv) {
+	return all(greaterThanEqual(uv, vec2(0.0))) &&
+		all(lessThanEqual(uv, vec2(1.0)));
 }
-#else
-// Settings
-const uint  g_sss_max_steps                     = 32;     // Max ray steps, affects quality and performance.
-const float g_sss_ray_max_distance              = 0.5f;   // Max shadow length, longer shadows are less accurate.
-const float g_sss_thickness                     = 0.05f;  // Depth testing thickness.
-const float g_sss_max_delta_from_original_depth = 0.005f; // The maximum allowed depth deviation from the original pixel (a big deviation decreased the probabilty that the pixel is the occluder).
-const float g_sss_step_length                   = g_sss_ray_max_distance / float(g_sss_max_steps);
 
-bool is_valid_uv(vec2 value) { return (value.x >= 0.0f && value.x <= 1.0f) && (value.y >= 0.0f && value.y <= 1.0f); }
+#if 1
+// Settings
+const uint  g_sss_max_steps = 32;     // Max ray steps, affects quality and performance.
+const float g_sss_ray_max_distance = 0.05f;  // Max shadow length, longer shadows are less accurate.
+const float g_sss_thickness = 0.5f;  // Depth testing thickness.
+const float g_sss_step_length = g_sss_ray_max_distance / float(g_sss_max_steps);
 
 float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D depthTexture, int stepCount, float rayLength, float ditherOffset)
 {
@@ -318,56 +275,91 @@ float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D d
 	mat4 projection = GetProjectionMatrix(camera.matrices_offset);
 	mat4 view = GetViewMatrix(camera.matrices_offset);
 
-	worldPosition.y *= -1.f;
-
 	// Compute ray position and direction (in view-space)
-	vec3 ray_pos = vec3(view * vec4(worldPosition, 1.0));
-	vec3 ray_dir = vec3(view * vec4(-lightDirection, 0.0));
+	vec3 vs_ray_pos = vec3(view * vec4(worldPosition, 1.0f));
+	vec3 ray_dir = vec3(view * vec4(-lightDirection, 0.0f));
 
 	// Compute ray step
-	vec3 ray_step = ray_dir * g_sss_step_length;
-	ray_pos += ray_step;
-
-	// Save the original depth
-	float depth_original = ray_pos.z;
+	vec3 ray_step = ray_dir * g_sss_ray_max_distance;
 
 	// Ray march towards the light
 	float occlusion = 0.0;
 	vec2 ray_uv = vec2(0.0f);
-
-	[[unroll]]
-	for (uint i = 0; i < g_sss_max_steps; i++)
-	{
+	for (uint i = 0; i < g_sss_max_steps; i++) {
 		// Step the ray
-		ray_pos += ray_step;
+		vs_ray_pos += ray_step;
 
-		vec4 uv = projection * vec4(ray_pos, 1.0);
-		ray_uv =  (uv.xy / uv.w) * vec2(0.5f, -0.5f) + 0.5f;
+		vec4 new_tex_coord = projection * vec4(vs_ray_pos, 1.0);
+		new_tex_coord.xyz /= new_tex_coord.w;
+		ray_uv = clip_to_uv(new_tex_coord.xy);
+		ray_uv = clip_to_uv(vs_ray_pos.xy);
 
 		// Ensure the UV coordinates are inside the screen
-		if (!is_valid_uv(ray_uv))
-		    return 1.0f;
+		if (is_saturated(ray_uv)) {
+			// Compute the difference between the ray's and the camera's depth
+			float non_linz = textureLod(depthTexture, ray_uv, 0.0).r;
+			float depth_z = linearize_depth(non_linz, camera.z_near, camera.z_far);
+			float depth_delta = -vs_ray_pos.z - depth_z;
 
-		// Compute the difference between the ray's and the camera's depth
-		float depth_z       = linearizeDepth(textureLod(depthTexture, ray_uv, 0).r, camera.z_near, camera.z_far);
-		float depth_delta   = ray_pos.z - depth_z;
+			// Check if the camera can't "see" the ray (ray depth must be larger than the camera depth, so positive depth_delta)
+			if ((depth_delta > 0.01f) && (abs(depth_delta) < g_sss_thickness)) {
+				// Mark as occluded
+				occlusion = 1.0f;
 
-		bool can_the_camera_see_the_ray     = (depth_delta > 0.0f) && (depth_delta < g_sss_thickness);
-		bool occluded_by_the_original_pixel = abs(ray_pos.z - depth_original) < g_sss_max_delta_from_original_depth;
-		if (can_the_camera_see_the_ray && occluded_by_the_original_pixel)
-		{
-		    // Mark as occluded
-		    occlusion = 1.0f;
+				// Fade out as we approach the edges of the screen
+				occlusion *= screen_fade(ray_uv);
 
-		    // Fade out as we approach the edges of the screen
-		    occlusion *= screen_fade(ray_uv);
-
-		    break;
+				break;
+			}
 		}
 	}
 
-	// Convert to visibility
-	return 1.0f - occlusion;
+	return occlusion;
+}
+#else
+float ScreenSpaceShadows(vec3 worldPosition, vec3 lightDirection, in sampler2D depthTexture, int stepCount, float rayLength, float ditherOffset)
+{
+	Camera camera = GetCamera(frameData.defaultCameraID);
+	mat4 projection = GetProjectionMatrix(camera.matrices_offset);
+	mat4 view = GetViewMatrix(camera.matrices_offset);
+
+	vec3 vs_ray_pos = vec3(view * vec4(worldPosition, 1.0)).xyz;
+	vec3 vs_ray_dir = vec3(view * vec4(-lightDirection, 0.0)).xyz;
+
+	vec3 vs_ray_step = vs_ray_dir * rayLength;
+
+	float occlusion = 0.0;
+	vec2 ray_uv = vec2(0.0);
+	uint hitCount = 0u;
+
+	const float thickness = 0.5;
+	const int max_hits = 3;
+
+	// Raymarch loop: step along the ray and sample the depth texture.
+	for (uint i = 0u; i < stepCount; ++i) {
+		vs_ray_pos += vs_ray_step;
+		ray_uv = view_space_to_uv(vs_ray_pos, projection);
+
+		if (is_saturated(ray_uv)) {
+			// Sample the depth texture using textureLod at LOD 0.
+			float nonLinz = textureLod(depthTexture, ray_uv, 0.0).r;
+			float depth_z = linearize_depth(nonLinz, camera.z_near, camera.z_far);
+
+			// Compute the difference between the current ray depth and the stored depth.
+			float depth_delta = -vs_ray_pos.z - depth_z;
+
+			// Check for a hit based on the depth delta conditions.
+			if ((depth_delta > 0.1) && (abs(depth_delta) < thickness)) {
+				hitCount++;
+				if (hitCount >= max_hits) {
+					occlusion = 1.0;
+					break;
+				}
+			}
+		}
+	}
+
+	return occlusion;
 }
 #endif
 

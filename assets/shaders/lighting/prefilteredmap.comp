@@ -65,6 +65,6 @@ void main()
 
 	px.xy = px_swizzled;
 
-	vec3 R = normalize(cubeDir(uv, px.z));
+	vec3 R = normalize(get_cube_side_direction(uv, px.z));
 	imageStore(write_image0, ivec3(px), vec4(prefilterEnvMap(sample_image0, R, data.roughness), 1.0f));
 }

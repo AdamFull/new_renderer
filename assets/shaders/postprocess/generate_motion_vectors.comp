@@ -35,7 +35,7 @@ void main()
 	vec2 velocity = (clipSpaceLocation.xy - prevClipSpaceLocation.xy) / 2.f;
 
 	// Encode velocity
-	velocity = encodeVelocity(velocity);
+	velocity = encode_velocity(velocity);
 
 	imageStore(write_image0, ivec2(px), vec4(velocity, 1.0, 1.0));
 }

@@ -22,7 +22,7 @@ void main()
 
 	px.xy = px_swizzled;
 
-	vec3 N = normalize(cubeDir(uv, px.z));
+	vec3 N = normalize(get_cube_side_direction(uv, px.z));
 	vec3 up = vec3(0.0f, 1.0f, 0.0f);
 	vec3 right = normalize(cross(up, N));
 	up = cross(N, right);

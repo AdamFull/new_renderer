@@ -46,5 +46,5 @@ void main()
 	vbinst = unpackUnorm4x8(packMOID(vboID, instanceID));
 
 	// Caclulate motion vectors
-	//mv = encodeVelocity(currentPos.xy - oldPos.xy);
+	//mv = encode_velocity(currentPos.xy - oldPos.xy);
 }

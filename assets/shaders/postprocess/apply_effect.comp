@@ -50,7 +50,7 @@ void main()
 	if(postprocess.enable_motion_blur > 0)
 	{
 		vec2 velocity = texture(sample_image1, uv).rg;
-		velocity = decodeVelocity(velocity) * postprocess.mb_scale;
+		velocity = decode_velocity(velocity) * postprocess.mb_scale;
 		velocity = min(vec2(1.0), velocity);
 
 		if(length(velocity) >= postprocess.mb_threshold)
@@ -78,7 +78,7 @@ void main()
 	if(postprocess.enable_dof > 0)
 	{
 		float depth = texture(sample_image2, uv).r;
-		float linear_depth = linearizeDepth(depth, camera.z_near, camera.z_far);
+		float linear_depth = linearize_depth(depth, camera.z_near, camera.z_far);
 
 		vec3 texture_blured = texture(sample_image1, uv).rgb;
 

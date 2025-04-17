@@ -1,138 +1,78 @@
 #ifndef UTIL_GLSL
 #define UTIL_GLSL
 
-vec4 sRGBToLinear(in vec4 srgbIn)
-{
-    vec3 bLess = step(vec3(0.04045),srgbIn.xyz);
-	vec3 linOut = mix( srgbIn.xyz/vec3(12.92), pow((srgbIn.xyz+vec3(0.055))/vec3(1.055),vec3(2.4)), bLess );
-	return vec4(linOut,srgbIn.w);
+uint flatten_2d(in uvec2 index, in uint dimensionsX) {
+	return index.x + index.y * dimensionsX;
 }
 
-vec4 linearTosRGB(vec4 linearRGB)
-{
-    bvec4 cutoff = lessThan(linearRGB, vec4(0.0031308));
-    vec4 higher = vec4(1.055) * pow(linearRGB, vec4(1.0 / 2.4)) - vec4(0.055);
-    vec4 lower = linearRGB * vec4(12.92);
-
-    return mix(higher, lower, cutoff);
+uvec2 unflatten_2d(in uint index, in uint dimensionsX) {
+	return uvec2(index % dimensionsX, index / dimensionsX);
 }
 
-// From http://filmicworlds.com/blog/filmic-tonemapping-operators/
-vec3 Uncharted2Tonemap(vec3 color)
-{
-	float A = 0.15f;
-	float B = 0.50f;
-	float C = 0.10f;
-	float D = 0.20f;
-	float E = 0.02f;
-	float F = 0.30f;
-	float W = 11.2f;
-	return ((color*(A*color+C*B)+D*E)/(color*(A*color+B)+D*F))-E/F;
+uint rng_make_seed(in uint seed) {
+	const uint state = seed * 747796405u + 2891336453u;
+	const uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+	return (word >> 22u) ^ word;
 }
 
-vec3 getTangentSpaceNormalMap(in vec3 normalColor, mat3 TBN, float scale)
-{
-    vec3 normal = normalize(TBN * ((2.0 * normalColor - 1.0) * vec3(scale, scale, 1.0)));
-	return normal;
+uint rng_make_seed(in uvec2 pixel, in uvec2 resolution, in uint frameIndex) {
+	const uint rngState = flatten_2d(pixel, resolution.x) ^ rng_make_seed(frameIndex);
+	return rng_make_seed(rngState);
 }
 
-// Calculate normal in tangent space
-mat3 calculateTBN(vec3 normal, vec4 tangent)
-{
-	vec3 N = normalize(normal);
-	vec3 T = normalize(tangent.xyz);
-    vec3 B = normalize(cross(N, T) * tangent.w);
-	
-	return mat3(T, B, N);
+uint xor_shift(inout uint rng_state) {
+	// Xorshift algorithm from George Marsaglia's paper.
+	rng_state ^= (rng_state << 13);
+	rng_state ^= (rng_state >> 17);
+	rng_state ^= (rng_state << 5);
+	return rng_state;
 }
 
-// Based omn http://byteblacksmith.com/improvements-to-the-canonical-one-liner-glsl-rand-for-opengl-es-2-0/
-float random(vec2 co)
-{
-	float a = 12.9898f;
-	float b = 78.233f;
-	float c = 43758.5453f;
-	float dt= dot(co.xy ,vec2(a,b));
-	float sn= mod(dt,3.14f);
+float rng_random_01(inout uint rng_state) {
+	return uintBitsToFloat(0x3f800000 | xor_shift(rng_state) >> 9) - 1.0;
+}
+
+vec2 rng_random_vec2_01(inout uint rng_state) {
+	return vec2(rng_random_01(rng_state), rng_random_01(rng_state));
+}
+
+vec3 rng_random_vec3_01(inout uint rng_state) {
+	return vec3(rng_random_01(rng_state), rng_random_01(rng_state), rng_random_01(rng_state));
+}
+
+vec4 rng_random_vec4_01(inout uint rng_state) {
+	return vec4(rng_random_01(rng_state), rng_random_01(rng_state), rng_random_01(rng_state), rng_random_01(rng_state));
+}
+
+// Based on http://byteblacksmith.com/improvements-to-the-canonical-one-liner-glsl-rand-for-opengl-es-2-0/
+float random(vec2 co) {
+	const float a = 12.9898f;
+	const float b = 78.233f;
+	const float c = 43758.5453f;
+	const float dt= dot(co.xy ,vec2(a,b));
+	const float sn= mod(dt,3.14f);
 	return fract(sin(sn) * c);
 }
 
-vec3 getPositionFromDepth(vec2 texcoord, float depth, mat4 invViewProjection)
-{
-    vec4 clipSpaceLocation;
-    clipSpaceLocation.x = texcoord.x * 2.0f - 1.0f;
-    clipSpaceLocation.y = texcoord.y * 2.0f - 1.0f;
-    clipSpaceLocation.z = depth;
-    clipSpaceLocation.w = 1.0f;
-    vec4 homogenousLocation = invViewProjection * clipSpaceLocation;
-    return homogenousLocation.xyz / homogenousLocation.w;
+vec3 position_from_depth(vec2 uv, float d, in mat4 converter) {
+	vec4 clip = vec4(uv * 2.0 - 1.0, d, 1.0);
+	vec4 pos = converter * clip;
+	return vec3(pos.xyz / pos.w);
 }
 
-#ifdef FRAGMENT_SHADER
-vec3 getNormalFromDepth(in sampler2D depth_sampler, in vec2 uv, in mat4 invProjection)
-{
-    float depth = texture(depth_sampler, uv).x;
-
-    vec4 clipSpace = vec4(uv * 2.0 - 1.0, depth, 1.0);
-    vec4 viewSpace = invProjection * clipSpace;
-    viewSpace.xyz /= viewSpace.w;
-
-    vec3 pos = viewSpace.xyz;
-    vec3 n = normalize(cross(dFdx(pos), dFdy(pos)));
-    n *= -1;
-
-    return n;
-}
-#endif
-
-float linearizeDepth(in float depth, in float zNear, in float zFar)
-{
-    float z = depth * 2.0f - 1.0f;
-    return (2.0f * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
+vec2 clip_to_uv(in vec2 clip) {
+	return clip * 0.5f + 0.5f;
 }
 
-uvec4 packTextures(vec3 normal_map, vec3 albedo_map, vec4 pbr_map)
-{
-    uvec4 texture_pack;
-    //Storing RG components of normal map in 32bit R component
-    texture_pack.r = packHalf2x16(normal_map.rg);
-    //Storing B component of normal map and R component of albedo in G
-    texture_pack.g = packHalf2x16(vec2(normal_map.b, albedo_map.r));
-    //Storing GB components of albedo in B
-    texture_pack.b = packHalf2x16(albedo_map.gb);
-    // Store metal, roughness, ao and heignt in A component
-    texture_pack.a = packUnorm4x8(pbr_map);
-    return texture_pack;
+float linearize_depth(in float z, in float n, in float f) {
+	return (2.0f * n * f) / (f + n - z * (f - n));
 }
 
-void unpackTextures(in uvec4 texture_pack, out vec3 normal_map, out vec3 albedo_map, out vec4 pbr_map)
-{
-    vec2 pack_R = unpackHalf2x16(texture_pack.r);
-	vec2 pack_G = unpackHalf2x16(texture_pack.g);
-	vec2 pack_B = unpackHalf2x16(texture_pack.b);
-	pbr_map = unpackUnorm4x8(texture_pack.a);
-    normal_map = vec3(pack_R, pack_G.r);
-    albedo_map = vec3(pack_G.g, pack_B);
-}
+//float linearize_depth(in float log_d, in float n, in float f) {
+//	return (n * f) / (f + log_d * (n - f));
+//}
 
-vec4 per_object_motion_blir(sampler2D velocity_texture, sampler2D color_texture, vec2 inUV, float velocityScale, int max_samples)
-{
-    vec2 texelSize = 1.0 / vec2(textureSize(color_texture, 0));
-    vec2 velocity = texture(velocity_texture, inUV * vec2(1.0, -1.0)).rg * velocityScale;
-    float speed = length(velocity / texelSize);
-    int samples = clamp(int(speed), 1, max_samples);
-
-    vec4 motionBlur = texture(color_texture, inUV);
-    for (int i = 1; i < samples; ++i) 
-    {
-        vec2 offset = velocity * (float(i) / float(samples - 1) - 0.5);
-        motionBlur += texture(color_texture, inUV + offset);
-    }
-    motionBlur /= float(samples);
-    return motionBlur;
-}
-
-vec2 encodeVelocity(in vec2 velocity)
+vec2 encode_velocity(in vec2 velocity)
 {
 #ifdef LOW_PRECISION_VELOCITY
     return pow(velocity * 0.5 + 0.5, vec2(3.0));
@@ -141,7 +81,7 @@ vec2 encodeVelocity(in vec2 velocity)
 #endif
 }
 
-vec2 decodeVelocity(in vec2 velocity)
+vec2 decode_velocity(in vec2 velocity)
 {
 #ifdef LOW_PRECISION_VELOCITY
     return pow(velocity, vec2(1.0 / 3.0)) * 2.0 - 1.0;
@@ -161,11 +101,6 @@ float saturate(float t) { return clamp(t, 0.0, 1.0); }
 vec2 saturate(vec2 t) { return clamp(t, vec2(0.0), vec2(1.0)); }
 vec3 saturate(vec3 t) { return clamp(t, vec3(0.0), vec3(1.0)); }
 vec4 saturate(vec4 t) { return clamp(t, vec4(0.0), vec4(1.0)); }
-
-bool is_saturated(float a) { return a == saturate(a); }
-bool is_saturated(vec2 a) { return a == saturate(a); }
-bool is_saturated(vec3 a) { return a == saturate(a); }
-bool is_saturated(vec4 a) { return a == saturate(a); }
 
 float linterp( float t ) {
 	return saturate( 1.0 - abs( 2.0*t - 1.0 ) );
