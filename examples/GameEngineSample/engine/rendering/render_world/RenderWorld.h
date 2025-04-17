@@ -61,6 +61,8 @@ namespace engine
 		private:
 			IRenderer& renderer;
 
+			uint32_t frame_counter{ 0u };
+
 			std::vector<WorldResource> world_resources{};
 
 			std::unique_ptr<DynamicBuffer<shlib::Camera>> world_cameras{};

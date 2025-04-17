@@ -489,6 +489,7 @@ namespace engine
 				frame_data.defaultCameraID = 0;
 				frame_data.draw_count = draw_count;
 				frame_data.mesh_count = submesh_count;
+				frame_data.frameNumber = frame_counter;
 
 				const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&frame_data);
 				uint64_t uniform_size = sizeof(shlib::GlobalUniformData);
@@ -499,6 +500,8 @@ namespace engine
 
 		void RenderWorld::end_frame()
 		{
+			++frame_counter;
+
 			draw_count = 0;
 			light_count = 0;
 			cascaded_shadow_count = 0;
