@@ -88,7 +88,6 @@ namespace render_label
 
 
 	constexpr const uint32_t histogram_buffer = "Histogram"_hash32;
-	constexpr const uint32_t histogram_compute_params = "FHistogramComputeParams"_hash32;
 	constexpr const uint32_t min_log_lum = "minLogLum"_hash32;
 	constexpr const uint32_t log_lum_range = "logLumRange"_hash32;
 	constexpr const uint32_t time_coeff = "timeCoeff"_hash32;
@@ -475,6 +474,19 @@ namespace engine
 
 				zbuffer_depth_target = render_context->AddResource(create_info, nearest_sampler);
 				render_context->set_resource_name(zbuffer_depth_target, "zbuffer_depth_target");
+			}
+
+			uint32_t ssao_target{ ~0u };
+			{
+				TextureResourceCreateInfo create_info{};
+				create_info.width = backbuffer_texture->get_width();
+				create_info.height = backbuffer_texture->get_height();
+				create_info.format = edge::gfx::Format::eR16G16Sfloat;
+				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
+				create_info.resizable = true;
+
+				ssao_target = render_context->AddResource(create_info, nearest_sampler);
+				render_context->set_resource_name(ssao_target, "ssao_target");
 			}
 
 			uint32_t motion_vectors_target{ ~0u };
@@ -1360,6 +1372,50 @@ namespace engine
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
+			// Compute ssao
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "compute_ssao";
+				
+				create_info.draw_callback = [this,
+					zbuffer_depth_target,
+					ssao_target
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					
+					self.BindReadResource(render_label::sample_image0, zbuffer_depth_target, ~0u);
+					self.BindWriteResource(render_label::write_image0, ssao_target, ~0u);
+
+					self.ResolveDependencies(command_list);
+
+					self.BindResources(command_list);
+
+					self.DispatchForTarget(command_list, zbuffer_depth_target, true);
+					};
+
+				render_context->AddNode(render_context->CreateNode(create_info));
+			}
+
+			// Compute ssao blur
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "compute_ssao_blur";
+
+				create_info.draw_callback = [this,
+					ssao_target
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					self.BindReadResource(render_label::write_image0, ssao_target, ~0u);
+					self.BindWriteResource(render_label::write_image0, ssao_target, ~0u);
+
+					self.ResolveDependencies(command_list);
+
+					self.BindResources(command_list);
+
+					self.DispatchForTarget(command_list, ssao_target, true);
+					};
+
+				render_context->AddNode(render_context->CreateNode(create_info));
+			}
+
 #ifdef TILE_MATERIAL_CLASSIFICATION
 			// Clear material indirect buffer
 			{
@@ -1411,7 +1467,6 @@ namespace engine
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 #endif
-			
 			// Resolve materials
 			{
 				ComputeShaderPassCreateInfo create_info{};
@@ -1433,7 +1488,8 @@ namespace engine
 					zbuffer_depth_target,
 					cascaded_shadows_target,
 					directional_shadows_target,
-					omni_shadows_target
+					omni_shadows_target,
+					ssao_target
 #ifdef TILE_MATERIAL_CLASSIFICATION
 					,indirect_material_technique_buffer,
 					material_tiles_buffer
@@ -1465,6 +1521,8 @@ namespace engine
 						self.BindReadResource(render_label::sample_image6, cascaded_shadows_target, ~0u);
 						self.BindReadResource(render_label::sample_image7, directional_shadows_target, ~0u);
 						self.BindReadResource(render_label::sample_image8, omni_shadows_target, ~0u);
+
+						self.BindReadResource(render_label::sample_image9, ssao_target, ~0u);
 
 #ifdef TILE_MATERIAL_CLASSIFICATION
 						self.ReadResource(indirect_material_technique_buffer, ~0u);
@@ -1868,10 +1926,11 @@ namespace engine
 			
 								float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
 			
-								auto& uniform = self.GetUniformBlock(render_label::histogram_compute_params);
+								auto& uniform = self.GetConstantBlock();
 								uniform.Set(render_label::min_log_lum, postprocess.tonemap.lumMin);
 								uniform.Set(render_label::log_lum_range, log_lum_range);
 			
+								self.PushConstantRanges(command_list);
 								self.BindResources(command_list);
 			
 								self.DispatchForTarget(command_list, input_target, true);
@@ -1902,13 +1961,14 @@ namespace engine
 			
 								auto* texture = render_context->GetTexture(input_target);
 			
-								auto& uniform = self.GetUniformBlock(render_label::histogram_compute_params);
+								auto& uniform = self.GetConstantBlock();
 								uniform.Set(render_label::min_log_lum, postprocess.tonemap.lumMin);
 								uniform.Set(render_label::log_lum_range, log_lum_range);
 								uniform.Set(render_label::time_coeff, time_coeff);
 								uniform.Set(render_label::num_pixels_x, static_cast<float>(texture->get_width()));
 								uniform.Set(render_label::num_pixels_y, static_cast<float>(texture->get_height()));
 			
+								self.PushConstantRanges(command_list);
 								self.BindResources(command_list);
 			
 								command_list.dispatch(1u, 1u, 1u);
@@ -1952,7 +2012,6 @@ namespace engine
 				final_target = pass_count % 2 ? input_target : output_target;
 			}
 			
-			
 			// Test output shader
 			{
 				RenderShaderPassCreateInfo create_info{};
@@ -1961,6 +2020,7 @@ namespace engine
 			
 				create_info.draw_callback = [this, 
 					final_target
+					//final_target = ssao_target
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 					{
 						EDGE_PROFILE_ZONE_SCOPED;
@@ -2086,6 +2146,7 @@ namespace engine
 						auto* backbuffer = render_context->GetTexture(backbuffer_resource);
 						glm::vec2 viewport_resolution{ backbuffer->get_width(), backbuffer->get_height() };
 
+						command_list.set_scissor(0, 0, viewport_resolution.x, viewport_resolution.y);
 						command_list.set_viewport(0.f, 0.f, viewport_resolution.x, viewport_resolution.y, 0.f, 1.f);
 
 						// Bind vertex and index buffers

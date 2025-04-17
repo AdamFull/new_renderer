@@ -118,8 +118,8 @@ namespace engine
 			float gpu_delta_time{ 0.f };
 
 			// Shared descriptors
-			edge::gfx::ISharedDescriptor* shared_descriptor{ nullptr };
-			edge::gfx::IResourceDescriptor* global_resource_descriptor{ nullptr };
+			edge::gfx::IDescriptorLayout* global_descriptor{ nullptr };
+			edge::gfx::IDescriptorAllocator* global_descriptor_allocator{ nullptr };
 			std::unique_ptr<UniformPool> global_uniform_pool{};
 
 			ResourceContainer<TextureObject> static_textures{};

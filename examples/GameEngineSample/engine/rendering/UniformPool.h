@@ -6,8 +6,7 @@ namespace engine
 {
 	namespace render
 	{
-		class UniformPoolFrame final
-		{
+		class UniformPoolFrame final {
 		public:
 			UniformPoolFrame(uint64_t whole_size);
 
@@ -18,10 +17,11 @@ namespace engine
 			UniformPoolFrame& operator=(const UniformPoolFrame&) = delete;
 			UniformPoolFrame& operator=(UniformPoolFrame&&) = delete;
 
-			bool IsExpired() const;
-			void Reset() const;
-			bool HasEnoughtSpace(uint64_t requested_size) const;
-			edge::gfx::BufferSuballocation RequestBlock(uint64_t requested_size);
+			void unmap();
+			bool is_expired() const;
+			void reset() const;
+			bool has_enought_space(uint64_t requested_size) const;
+			edge::gfx::BufferSuballocation request_block(uint64_t requested_size);
 		private:
 			edge::gfx::IBuffer* buffer{ nullptr };
 			mutable uint64_t size_remain{ 0ull };
@@ -41,8 +41,9 @@ namespace engine
 			UniformPool& operator=(const UniformPool&) = delete;
 			UniformPool& operator=(UniformPool&&) = delete;
 
-			void Reset();
-			edge::gfx::BufferSuballocation RequestBlock(uint64_t requested_size);
+			void end();
+			void reset();
+			edge::gfx::BufferSuballocation request_block(uint64_t requested_size);
 		private:
 			uint64_t minimal_alignment{ 1ull };
 			uint64_t frame_size{ 4096ull };

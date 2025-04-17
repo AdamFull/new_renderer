@@ -4,6 +4,10 @@
 
 #include <algorithm>
 
+namespace edge::gfx {
+	class DescriptorTable;
+}
+
 namespace engine
 {
 	namespace render
@@ -24,7 +28,7 @@ namespace engine
 			edge::gfx::IShader* shader{ nullptr };
 			edge::gfx::IRootSignature* root_signature{ nullptr };
 			edge::gfx::IPipeline* pipeline{ nullptr };
-			edge::gfx::ISharedDescriptor* shared_descriptor{ nullptr };
+			edge::gfx::DescriptorTable* descriptor_table{ nullptr };
 
 			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
@@ -209,15 +213,13 @@ namespace engine
 			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 			std::function<bool()> enabled_callback{};
 
-			edge::gfx::ISharedDescriptor* shared_descriptor{ nullptr };
-			edge::gfx::IResourceDescriptor* resource_descriptor{ nullptr };
-
 			std::vector<UniformHandle> uniform_handles;
 			std::unique_ptr<UniformHandle> constant_block;
 
 			edge::gfx::IShader* shader{ nullptr };
 			edge::gfx::IRootSignature* root_signature{ nullptr };
 			edge::gfx::IPipeline* pipeline{ nullptr };
+			edge::gfx::DescriptorTable* descriptor_table{ nullptr };
 
 			edge::gfx::IQueryPool* timestamp_query{ nullptr };
 			uint64_t execution_time{ 0ull };

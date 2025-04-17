@@ -2,6 +2,7 @@
 
 #include "../RendererInterface.h"
 #include <edge/gfx/gfx_context.h>
+#include <edge/gfx/gfx_descriptor_table.h>
 #include <edge/gfx/gfx_util.h>
 
 #include <edge/util/Logger.h>
@@ -18,7 +19,7 @@ namespace engine
 			shader{ create_info.shader },
 			root_signature{ create_info.root_signature },
 			pipeline{ create_info.pipeline },
-			shared_descriptor{ create_info.shared_descriptor },
+			descriptor_table{ create_info.descriptor_table },
 			execution_context{ execution_context },
 			one_time{ create_info.one_time },
 			draw_callback{ create_info.draw_callback },
@@ -29,7 +30,7 @@ namespace engine
 			// Create uniform block handlers for resources
 			for (auto it = reflection.shader_resources.begin(); it != reflection.shader_resources.end(); ++it)
 			{
-				if (it->type == edge::gfx::DescriptorType::eUniformBuffer)
+				if (it->type == edge::gfx::DescriptorType::eUniformBuffer && it->set != 0)
 				{
 					uniform_handles.emplace_back(reflection, (*it));
 				}
@@ -108,53 +109,33 @@ namespace engine
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			if (!resource_descriptor)
-			{
-				auto& descriptor_allocator = execution_context.GetCurrentDescriptorAllocator();
-				resource_descriptor = descriptor_allocator.allocate_descriptors(root_signature);
-			}
-
 			// Update uniform buffers
 			for (auto& handle : uniform_handles)
 			{
 				const auto& resource = handle.GetResource();
-
+			
 				// Request memory block for this uniform
 				// TODO: may be request it inside uniform handler?
 				auto uniform_block = execution_context.RequestUniformBlock(resource.size);
 				uniform_block.update(std::span(handle.Data()));
-
+			
 				edge::gfx::BufferDescriptor descriptor{};
 				descriptor.type = resource.type;
-				descriptor.set = resource.set;
 				descriptor.binding = resource.binding;
-
+			
 				descriptor.buffer = &uniform_block.GetBuffer();
 				descriptor.size = uniform_block.GetSize();
 				descriptor.offset = uniform_block.GetOffset();
-
-				resource_descriptor->bind_buffer(descriptor);
-			}
-
-			// Upload all resources
-			resource_descriptor->flush();
-
-			edge::gfx::IResourceDescriptor* resource_descriptors[]{ resource_descriptor, nullptr };
-			uint32_t resource_descriptor_count{ 1u };
-
-			if (shared_descriptor)
-			{
-				resource_descriptors[resource_descriptor_count++] = shared_descriptor->get_latest_descriptors();
+			
+				descriptor_table->bind(resource.set, descriptor);
 			}
 
 			edge::gfx::BindDescriptorsInfo bind_info{};
 			bind_info.pipeline_type = pipeline->get_type();
-			bind_info.resource_descriptors = { resource_descriptors, resource_descriptor_count };
+			bind_info.binding_layouts = descriptor_table->get_layouts();
 			bind_info.root_signature = root_signature;
 
 			command_list.bind_descriptors(bind_info);
-
-			resource_descriptor = nullptr;
 		}
 
 		void ShaderPass::PushConstantRanges(edge::gfx::ICommandList& command_list)
@@ -322,12 +303,6 @@ namespace engine
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			if (!resource_descriptor)
-			{
-				auto& descriptor_allocator = execution_context.GetCurrentDescriptorAllocator();
-				resource_descriptor = descriptor_allocator.allocate_descriptors(root_signature);
-			}
-
 			auto& reflection = shader->get_reflection();
 
 			auto found = std::find_if(reflection.shader_resources.begin(), reflection.shader_resources.end(), 
@@ -345,7 +320,6 @@ namespace engine
 					// Create texture descriptor
 					edge::gfx::TextureDescriptor descriptor{};
 					descriptor.type = refl_resource.type;
-					descriptor.set = refl_resource.set;
 					descriptor.binding = refl_resource.binding;
 
 					descriptor.texture = execution_context.GetTexture(render_resource);
@@ -353,20 +327,19 @@ namespace engine
 					descriptor.subresource_index = subresource_index;
 					descriptor.resource_state = render_resource.GetState();
 
-					resource_descriptor->bind_texture(descriptor);
+					descriptor_table->bind(refl_resource.set, descriptor);
 				}
 				else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer)
 				{
 					// And also create resource descriptor
 					edge::gfx::BufferDescriptor descriptor{};
 					descriptor.type = refl_resource.type;
-					descriptor.set = refl_resource.set;
 					descriptor.binding = refl_resource.binding;
 
 					descriptor.buffer = execution_context.GetBuffer(render_resource);
 					descriptor.size = descriptor.buffer->get_size();
 
-					resource_descriptor->bind_buffer(descriptor);
+					descriptor_table->bind(refl_resource.set, descriptor);
 				}
 				else
 				{

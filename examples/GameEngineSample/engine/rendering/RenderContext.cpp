@@ -64,7 +64,7 @@ namespace engine
 			{
 				descriptor_allocator->reset();
 				command_pool->reset();
-				uniform_pool->Reset();
+				uniform_pool->reset();
 			}
 
 			edge::gfx::ITexture* backbuffer{ nullptr };
@@ -116,14 +116,22 @@ namespace engine
 			edge::gfx::request_timestamp_frequency(&timestamp_frequency);
 
 			// TODO: now it creates just default one
-			edge::gfx::SharedDescriptorCreateInfo shared_descriptor_ci{};
-			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eUniformBuffer, 0u, 1u);
-			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eUniformBuffer, 1u, 1u);
-			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eUniformBuffer, 2u, 1u);
-			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eSampledImage, 3u, shlib::MAX_SAMPLED_TEXTURES);
-			shared_descriptor_ci.descriptions.emplace_back(edge::gfx::DescriptorType::eSampler, 4u, shlib::MAX_SAMPLED_TEXTURES);
+			std::vector<edge::gfx::DescrptorLayoutBindingDesc> binding_descriptions{};
+			binding_descriptions.emplace_back(0u, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
+			binding_descriptions.emplace_back(1u, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
+			binding_descriptions.emplace_back(2u, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
+			binding_descriptions.emplace_back(3u, shlib::MAX_SAMPLED_TEXTURES, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampledImage);
+			binding_descriptions.emplace_back(4u, shlib::MAX_SAMPLED_TEXTURES, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampler);
 
-			shared_descriptor = edge::gfx::create_shared_descriptor(shared_descriptor_ci);
+			edge::gfx::DescriptorLayoutCreateInfo descriptor_layout_ci{};
+			descriptor_layout_ci.bindings = binding_descriptions;
+			descriptor_layout_ci.support_bindless = true;
+			global_descriptor = edge::gfx::create_descriptor_layout(descriptor_layout_ci);
+			global_descriptor->set_resource_name("bindless descriptor");
+
+			global_descriptor_allocator = edge::gfx::create_descriptor_allocator();
+			global_descriptor_allocator->allocate({ &global_descriptor, 1 });
+
 
 			edge::gfx::TextureCreateInfo dummy_texture_ci{};
 			dummy_texture_ci.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eTransferable;
@@ -144,10 +152,11 @@ namespace engine
 			current_frame = render_frames[active_frame_index].get();
 
 			technique_db = std::make_unique<edge::gfx::TechniqueDatabase>();
+			technique_db->add_descriptor_layout(global_descriptor);
 			technique_db->load("/internal/tdbcache");
 			technique_db->load_config({ 
 				"/internal_res/assets/shaders/technique_db.json", 
-				shared_descriptor,
+				global_descriptor_allocator,
 				current_frame->backbuffer->get_format()
 				});
 
@@ -168,7 +177,8 @@ namespace engine
 			edge::gfx::destroy(swapchain);
 
 			edge::gfx::destroy(default_sampler);
-			edge::gfx::destroy(shared_descriptor);
+			edge::gfx::destroy(global_descriptor_allocator);
+			edge::gfx::destroy(global_descriptor);
 			edge::gfx::destroy(timestamp_query);
 
 			for (auto& texture_object : static_textures.Data())
@@ -347,7 +357,7 @@ namespace engine
 			pass_ci.shader = technique.shader;
 			pass_ci.root_signature = technique.root_signature;
 			pass_ci.pipeline = technique.pipeline;
-			pass_ci.shared_descriptor = shared_descriptor;
+			pass_ci.descriptor_table = &technique.table;
 			pass_ci.draw_callback = create_info.draw_callback;
 			pass_ci.enabled_callback = create_info.enabled_callback;
 
@@ -366,7 +376,7 @@ namespace engine
 			pass_ci.shader = technique.shader;
 			pass_ci.root_signature = technique.root_signature;
 			pass_ci.pipeline = technique.pipeline;
-			pass_ci.shared_descriptor = shared_descriptor;
+			pass_ci.descriptor_table = &technique.table;
 			pass_ci.one_time = create_info.one_time;
 			pass_ci.draw_callback = create_info.draw_callback;
 			pass_ci.enabled_callback = create_info.enabled_callback;
@@ -407,13 +417,8 @@ namespace engine
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			global_uniform_pool->Reset();
-
-			shared_descriptor->reset();
-			if (!global_resource_descriptor)
-			{
-				global_resource_descriptor = shared_descriptor->request_descriptors();
-			}
+			global_uniform_pool->reset();
+			technique_db->free_resources();
 
 			bool surface_updated{ false };
 			if (!frame_active)
@@ -512,35 +517,32 @@ namespace engine
 			{
 				if (resource.resource_type != RenderResourceTypeFlag::eStaticImage)
 					continue;
-
+			
 				auto& texture_obj = static_textures.Get(resource.resource_id);
 				if (resource.current_state != edge::gfx::ResourceStateFlag::eShaderReadOnlyResource && texture_obj.texture != dummy_texture)
 				{
 					auto& barrier = texture_barriers.emplace_back(texture_obj.texture, ~0u, resource.current_state, edge::gfx::ResourceStateFlag::eShaderReadOnlyResource);
 					resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 				}
-
+			
 				edge::gfx::TextureDescriptor texture_descriptor{};
 				texture_descriptor.type = edge::gfx::DescriptorType::eSampledImage;
-				texture_descriptor.set = 0;
 				texture_descriptor.binding = 3;
-
+			
 				texture_descriptor.array_index = array_index;
 				texture_descriptor.texture = texture_obj.texture;
 				texture_descriptor.resource_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
-
-				global_resource_descriptor->bind_texture(texture_descriptor);
-
-				edge::gfx::TextureDescriptor sampler_descriptor{};
-				sampler_descriptor.type = edge::gfx::DescriptorType::eSampler;
-				sampler_descriptor.set = 0;
+			
+				global_descriptor->bind(texture_descriptor);
+			
+				edge::gfx::SamplerDescriptor sampler_descriptor{};
 				sampler_descriptor.binding = 4;
-
+			
 				sampler_descriptor.array_index = array_index;
 				sampler_descriptor.sampler = texture_obj.sampler;
-
-				global_resource_descriptor->bind_texture(sampler_descriptor);
-
+			
+				global_descriptor->bind(sampler_descriptor);
+			
 				++array_index;
 			}
 
@@ -558,14 +560,14 @@ namespace engine
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			global_resource_descriptor->flush();
-
 			std::vector<edge::gfx::SemaphoreSubmitInfo> wait_semaphores{};
 			wait_semaphores.emplace_back(acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput);
 			edge::gfx::ResourceUpdater::flush(wait_semaphores, {});
 
 			// Finish performance query
 			current_command_list->end_query(timestamp_query, 1u);
+
+			current_frame->uniform_pool->end();
 
 			// Submit commands
 			current_command_list->end();
@@ -627,7 +629,6 @@ namespace engine
 				render_resource.current_state = edge::gfx::ResourceStateFlag::eUndefined;
 			}
 
-			global_resource_descriptor = nullptr;
 			frame_active = false;
 		}
 
@@ -707,7 +708,7 @@ namespace engine
 
 		edge::gfx::BufferSuballocation RenderContext::RequestUniformBlock(uint64_t block_size)
 		{
-			return current_frame->uniform_pool->RequestBlock(block_size);
+			return current_frame->uniform_pool->request_block(block_size);
 		}
 
 		edge::gfx::ICommandList& RenderContext::GetCurrentCommandList()
@@ -724,12 +725,7 @@ namespace engine
 		{
 			EDGE_PROFILE_ZONE_SCOPED;
 
-			if (!global_resource_descriptor)
-			{
-				global_resource_descriptor = shared_descriptor->request_descriptors();
-			}
-
-			auto buffer_block = global_uniform_pool->RequestBlock(data.size());
+			auto buffer_block = global_uniform_pool->request_block(data.size());
 			buffer_block.update(data);
 
 			edge::gfx::BufferDescriptor buffer_descriptor{};
@@ -739,7 +735,7 @@ namespace engine
 			buffer_descriptor.offset = buffer_block.GetOffset();
 			buffer_descriptor.size = buffer_block.GetSize();
 
-			global_resource_descriptor->bind_buffer(buffer_descriptor);
+			global_descriptor->bind(buffer_descriptor);
 		}
 
 		const uint32_t& RenderContext::GetCurrentFrameIndex() const
