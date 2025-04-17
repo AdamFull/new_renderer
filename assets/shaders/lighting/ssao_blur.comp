@@ -1,0 +1,31 @@
+#include "compute_common.glsl"
+
+//layout(set = 0, binding = 1) uniform sampler2D sample_image0;
+layout(set = 0, binding = 2, rg16f) restrict uniform image2D write_image0;
+
+void main() {
+	const uvec2 image_size = imageSize(write_image0);
+    const vec2 texel_size = 1.0 / vec2(image_size);
+
+	const uvec2 local_id = gl_LocalInvocationID.xy;
+	const uvec2 global_id = gl_GlobalInvocationID.xy;
+
+	uvec2 px;
+	vec2 uv;
+	if(swizzle_workgroups_8x8(global_id, local_id, gl_WorkGroupID.xy, image_size, uv, px))
+		return;
+
+    float result = 0.0;
+    for (int x = -2; x < 2; ++x) {
+        for (int y = -2; y < 2; ++y) {
+            //vec2 offset = vec2(float(x), float(y)) * texel_size;
+            //result += texture(sample_image0, uv + offset).r;
+			result += imageLoad(write_image0, ivec2(px) + ivec2(x, y)).r;
+        }
+    }
+
+	result = result / (4.0 * 4.0);
+
+	float r = imageLoad(write_image0, ivec2(px)).r;
+	imageStore(write_image0, ivec2(px), vec4(r, result, 0, 0));
+}

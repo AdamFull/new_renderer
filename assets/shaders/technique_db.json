@@ -113,76 +113,18 @@
     ]
   },
   {
-    "name": "directional_shadow",
-    "type": "graphics",
+    "name": "compute_ssao",
+    "type": "compute",
     "stages": [
-      {
-        "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.vert",
-        "def": [ "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
-      },
-      {
-        "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.frag",
-        "def": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
-      }
-    ],
-    "rasterization": {
-      "cull_mode": "front"
-    },
-    "depth_stencil": {
-      "depth_format": "d32_sfloat",
-      "depth_test": true,
-      "depth_write": true,
-      "depth_compare_op": "less"
-    },
-    "primitive_topology": "triangle_list"
+      { "path": "/internal_res/assets/shaders/lighting/ssao.comp" }
+    ]
   },
   {
-    "name": "cascaded_shadow",
-    "type": "graphics",
+    "name": "compute_ssao_blur",
+    "type": "compute",
     "stages": [
-      {
-        "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.vert",
-        "def": [ "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "HAS_TANGENT" ]
-      },
-      {
-        "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.frag",
-        "def": [ "HAS_TEXCOORD", "HAS_NORMAL", "CASCADED_SHADOW", "INDEX_16BIT", "HAS_TANGENT" ]
-      }
-    ],
-    "rasterization": {
-      "cull_mode": "front"
-    },
-    "depth_stencil": {
-      "depth_format": "d32_sfloat",
-      "depth_test": true,
-      "depth_write": true,
-      "depth_compare_op": "less"
-    },
-    "primitive_topology": "triangle_list"
-  },
-  {
-    "name": "omni_shadow",
-    "type": "graphics",
-    "stages": [
-      {
-        "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.vert",
-        "def": [ "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "HAS_TANGENT" ]
-      },
-      {
-        "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.frag",
-        "def": [ "HAS_TEXCOORD", "HAS_NORMAL", "OMNI_SHADOW", "INDEX_16BIT", "HAS_TANGENT" ]
-      }
-    ],
-    "rasterization": {
-      "cull_mode": "front"
-    },
-    "depth_stencil": {
-      "depth_format": "d16_unorm",
-      "depth_test": true,
-      "depth_write": true,
-      "depth_compare_op": "less"
-    },
-    "primitive_topology": "triangle_list"
+      { "path": "/internal_res/assets/shaders/lighting/ssao_blur.comp" }
+    ]
   },
 
   {

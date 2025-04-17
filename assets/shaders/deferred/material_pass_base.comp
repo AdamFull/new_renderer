@@ -24,8 +24,10 @@ layout (set = 2, binding = 6) uniform sampler2DArrayShadow sample_image6;
 layout (set = 2, binding = 7) uniform sampler2DArrayShadow sample_image7;
 layout (set = 2, binding = 8) uniform samplerCubeArrayShadow sample_image8;
 
+layout (set = 2, binding = 9) uniform sampler2D sample_image9;
+
 #ifdef TILE_MATERIAL_CLASSIFICATION
-layout(std430, set = 2, binding = 9) buffer MaterialCommandBuffer { uint data[]; } read_buffer0;
+layout(std430, set = 2, binding = 10) buffer MaterialCommandBuffer { uint data[]; } read_buffer0;
 #endif
 
 vec4 sampleTexture(in uint s, in VertexAttribute va)
@@ -151,9 +153,10 @@ vec3 calculateDirectionalLight(in LightCommit light, in VertexAttribute va, in M
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		shadow_factor = getCascadeShadow(sample_image6, light, va, ms, dither);
-		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
+		//shadow_factor = getCascadeShadow(sample_image6, light, va, ms, dither);
 	}
+
+	//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
 
 	return light.color * light.intencity * color * shadow_factor;
 }
@@ -325,7 +328,7 @@ void main()
 		const vec3 origin = vec3(0, PLANET_RADIUS, 0) + camera_pos;
 		
 		float depth = texture(sample_image5, uv).r;
-		dir_world_space.xyz = getPositionFromDepth(uv, 1.0f, GetInvViewProjectionMatrix(camera.matrices_offset));
+		dir_world_space.xyz = position_from_depth(uv, 1.0f, GetInvViewProjectionMatrix(camera.matrices_offset));
 		
 		uint sun_count = 0;
 		for(uint i = 0u; i < frameData.lightCount; i++)
@@ -384,7 +387,8 @@ void main()
 	vec3 kD = (1.0 - F) * (1.0 - ms.metallic);
 	vec3 ambient = kD * diffuse + specular;
 
-	ambient = mix(ambient, ambient * ms.ao, material.occlusionStrenth);
+	ambient = mix(ambient, ambient * ms.ao * texture(sample_image9, uv).g, material.occlusionStrenth);
+	//ambient = ambient * ms.ao * texture(sample_image9, uv).g;
 
 	vec3 res = ambient + ms.emission + Lo;
 	//res *= debug_visualize_cascades(va.linearZ, dither);
