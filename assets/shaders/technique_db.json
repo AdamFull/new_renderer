@@ -120,10 +120,20 @@
     ]
   },
   {
-    "name": "compute_ssao_blur",
+    "name": "compute_ssao_blur_vert",
     "type": "compute",
     "stages": [
       { "path": "/internal_res/assets/shaders/lighting/ssao_blur.comp" }
+    ]
+  },
+  {
+    "name": "compute_ssao_blur_horiz",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/lighting/ssao_blur.comp",
+        "def": [ "HORIZONTAL_PASS" ]
+      }
     ]
   },
 

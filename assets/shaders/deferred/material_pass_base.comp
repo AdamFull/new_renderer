@@ -387,7 +387,7 @@ void main()
 	vec3 kD = (1.0 - F) * (1.0 - ms.metallic);
 	vec3 ambient = kD * diffuse + specular;
 
-	ambient = mix(ambient, ambient * ms.ao * texture(sample_image9, uv).g, material.occlusionStrenth);
+	ambient = mix(ambient, ambient * ms.ao * texture(sample_image9, uv).r, material.occlusionStrenth);
 	//ambient = ambient * ms.ao * texture(sample_image9, uv).g;
 
 	vec3 res = ambient + ms.emission + Lo;

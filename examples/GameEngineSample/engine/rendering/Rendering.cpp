@@ -477,16 +477,21 @@ namespace engine
 			}
 
 			uint32_t ssao_target{ ~0u };
+			uint32_t ssao_target_temp{ ~0u };
 			{
 				TextureResourceCreateInfo create_info{};
 				create_info.width = backbuffer_texture->get_width();
 				create_info.height = backbuffer_texture->get_height();
-				create_info.format = edge::gfx::Format::eR16G16Sfloat;
+				create_info.scale = 0.5f;
+				create_info.format = edge::gfx::Format::eR16Sfloat;
 				create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 				create_info.resizable = true;
 
-				ssao_target = render_context->AddResource(create_info, nearest_sampler);
+				ssao_target = render_context->AddResource(create_info, linear_sampler);
 				render_context->set_resource_name(ssao_target, "ssao_target");
+
+				ssao_target_temp = render_context->AddResource(create_info, linear_sampler);
+				render_context->set_resource_name(ssao_target, "ssao_target_temp");
 			}
 
 			uint32_t motion_vectors_target{ ~0u };
@@ -1395,22 +1400,49 @@ namespace engine
 				render_context->AddNode(render_context->CreateNode(create_info));
 			}
 
-			// Compute ssao blur
+			// Compute ssao blur vert
 			{
 				ComputeShaderPassCreateInfo create_info{};
-				create_info.technique_name = "compute_ssao_blur";
+				create_info.technique_name = "compute_ssao_blur_vert";
 
 				create_info.draw_callback = [this,
-					ssao_target
+					ssao_target,
+					ssao_target_temp,
+					zbuffer_depth_target
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-					self.BindReadResource(render_label::write_image0, ssao_target, ~0u);
+					self.BindReadResource(render_label::sample_image0, ssao_target, ~0u);
+					self.BindReadResource(render_label::sample_image1, zbuffer_depth_target, ~0u);
+					self.BindWriteResource(render_label::write_image0, ssao_target_temp, ~0u);
+
+					self.ResolveDependencies(command_list);
+
+					self.BindResources(command_list);
+
+					self.DispatchForTarget(command_list, ssao_target_temp, true);
+					};
+
+				render_context->AddNode(render_context->CreateNode(create_info));
+			}
+
+			// Compute ssao blur horiz
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "compute_ssao_blur_horiz";
+
+				create_info.draw_callback = [this,
+					ssao_target,
+					ssao_target_temp,
+					zbuffer_depth_target
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					self.BindReadResource(render_label::sample_image0, ssao_target_temp, ~0u);
+					self.BindReadResource(render_label::sample_image1, zbuffer_depth_target, ~0u);
 					self.BindWriteResource(render_label::write_image0, ssao_target, ~0u);
 
 					self.ResolveDependencies(command_list);
 
 					self.BindResources(command_list);
 
-					self.DispatchForTarget(command_list, ssao_target, true);
+					self.DispatchForTarget(command_list, ssao_target_temp, true);
 					};
 
 				render_context->AddNode(render_context->CreateNode(create_info));

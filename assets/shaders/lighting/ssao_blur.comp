@@ -1,31 +1,75 @@
+#include "shader_inputs.glsl"
 #include "compute_common.glsl"
+#include "util.glsl"
 
-//layout(set = 0, binding = 1) uniform sampler2D sample_image0;
-layout(set = 0, binding = 2, rg16f) restrict uniform image2D write_image0;
+#define THREAD_GROUP_SIZE (256)
+#define KERNEL_LENGTH (4)
+#define BLUR_WEIGHTS (2 * KERNEL_LENGTH + 1)
+#define GS_CACHE_SIZE (KERNEL_LENGTH + THREAD_GROUP_SIZE + KERNEL_LENGTH)
+
+shared float gsm_ao_cache[GS_CACHE_SIZE];
+shared float gsm_depth_cache[GS_CACHE_SIZE];
+
+const float blur_weights[KERNEL_LENGTH + 1] = float[](1.0, 0.9, 0.6, 0.15, 0.1);
+const float normalization_factor = 1.0 /
+    (blur_weights[0] + 2.0 * (blur_weights[1] + blur_weights[2] + blur_weights[3] + blur_weights[4]));
+const float blur_weights_normalized[BLUR_WEIGHTS] = float[](
+    blur_weights[4] * normalization_factor,
+    blur_weights[3] * normalization_factor,
+    blur_weights[2] * normalization_factor,
+    blur_weights[1] * normalization_factor,
+    blur_weights[0] * normalization_factor,
+    blur_weights[1] * normalization_factor,
+    blur_weights[2] * normalization_factor,
+    blur_weights[3] * normalization_factor,
+    blur_weights[4] * normalization_factor
+);
+
+#ifdef HORIZONTAL_PASS
+const vec2 direction = vec2(1, 0);
+layout(local_size_x = THREAD_GROUP_SIZE) in;
+#else
+const vec2 direction = vec2(0, 1);
+layout(local_size_y = THREAD_GROUP_SIZE) in;
+#endif
+
+layout(set = 1, binding = 1) uniform sampler2D sample_image0; // ao
+layout(set = 1, binding = 2) uniform sampler2D sample_image1; // depth
+layout(set = 1, binding = 3) restrict uniform writeonly image2D write_image0;
 
 void main() {
-	const uvec2 image_size = imageSize(write_image0);
+    uvec2 group_id = gl_WorkGroupID.xy;
+    uint group_idx = gl_LocalInvocationIndex;
+    
+    const uvec2 image_size = imageSize(write_image0);
     const vec2 texel_size = 1.0 / vec2(image_size);
-
-	const uvec2 local_id = gl_LocalInvocationID.xy;
-	const uvec2 global_id = gl_GlobalInvocationID.xy;
-
-	uvec2 px;
-	vec2 uv;
-	if(swizzle_workgroups_8x8(global_id, local_id, gl_WorkGroupID.xy, image_size, uv, px))
-		return;
-
-    float result = 0.0;
-    for (int x = -2; x < 2; ++x) {
-        for (int y = -2; y < 2; ++y) {
-            //vec2 offset = vec2(float(x), float(y)) * texel_size;
-            //result += texture(sample_image0, uv + offset).r;
-			result += imageLoad(write_image0, ivec2(px) + ivec2(x, y)).r;
-        }
-    }
-
-	result = result / (4.0 * 4.0);
-
-	float r = imageLoad(write_image0, ivec2(px)).r;
-	imageStore(write_image0, ivec2(px), vec4(r, result, 0, 0));
+    
+    const Camera camera = GetCamera(0);
+    
+    const uvec2 multiplier = uvec2(direction) * uint(THREAD_GROUP_SIZE) + (uvec2(1) - uvec2(direction));
+	const uvec2 group_begin = group_id * multiplier;
+    
+	for (uint i = group_idx; i < GS_CACHE_SIZE; i += THREAD_GROUP_SIZE) {
+		vec2 uv = (vec2(group_begin) + 0.5 + direction * float(int(i) - KERNEL_LENGTH)) * texel_size;
+		gsm_ao_cache[i] = textureLod(sample_image0, uv, 0.0).r;
+		gsm_depth_cache[i] = linearize_depth(textureLod(sample_image1, uv, 0.0).r, camera.z_near, camera.z_far);
+	}
+    
+    memoryBarrierShared();
+    barrier();
+    
+    const uint center = group_idx + KERNEL_LENGTH;
+	const float current_ao = gsm_ao_cache[center];
+	const float current_scene_depth = gsm_depth_cache[center];
+    
+    float result = 0;
+	for(int i = 0; i < BLUR_WEIGHTS; ++i) {
+		const uint idx = center + uint(i) - KERNEL_LENGTH;
+		const float d = gsm_depth_cache[idx];
+		const float w = clamp(abs(d - current_scene_depth), 0.0, 1.0);
+        result += mix(gsm_ao_cache[idx], current_ao, w) * blur_weights_normalized[i];
+	}
+    
+    ivec2 pixel = ivec2(group_begin) + ivec2(direction) * int(group_idx);
+    imageStore(write_image0, pixel, vec4(result));
 }

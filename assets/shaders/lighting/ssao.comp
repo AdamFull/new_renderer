@@ -2,17 +2,7 @@
 #include "compute_common.glsl"
 #include "lighting_model.glsl"
 
-//#define USE_TGSM
 #define TILE_SIZE 8
-
-#ifdef USE_TGSM
-#define THREAD_GROUP_SIZE (TILE_SIZE * TILE_SIZE)
-#define TGSM_ROW_SIZE (TILE_SIZE + 2)
-#define TGSM_BUFFER_SIZE (TGSM_ROW_SIZE * TGSM_ROW_SIZE)
-
-shared float tgsm_depth[TGSM_BUFFER_SIZE];
-#define GET_TGSM_DEPTH(gs_location, offset) tgsm_depth[gs_location + flatten_2d(uvec2(offset), TGSM_ROW_SIZE)]
-#endif
 
 layout(local_size_x = TILE_SIZE, local_size_y = TILE_SIZE) in;
 
@@ -24,18 +14,15 @@ const float AO_RADIUS = 0.2f;
 const float AO_DEPTH_THRESHOLD = 0.0025f;
 const float AO_POWER = 1.2f;
 
-#ifdef USE_TGSM
-#define TEXEL_FETCH(offset) GET_TGSM_DEPTH(gs_location, offset)
-#else
-#define TEXEL_FETCH(offset) texelFetch(sample_image0, ivec2(px) + offset, 0).r
-#endif
-
 void main() {
-	uvec2 px;
-	vec2 uv;
+	uvec2 write_px;
+	vec2 write_uv;
 
-	const uvec2 image_size = textureSize(sample_image0, 0);
-	const vec2 texel_size = 1.0 / vec2(image_size);
+	const uvec2 write_image_size = imageSize(write_image0);
+    const vec2 write_texel_size = 1.0 / vec2(write_image_size);
+
+	const uvec2 sample_image_size = textureSize(sample_image0, 0);
+    const vec2 sample_texel_size = 1.0 / vec2(sample_image_size);
 
 	const Camera camera = GetCamera(0);
 	const mat4 inv_proj = GetInvProjectionMatrix(camera.matrices_offset);
@@ -43,38 +30,22 @@ void main() {
 	const uvec2 local_id = gl_LocalInvocationID.xy;
 	const uvec2 global_id = gl_GlobalInvocationID.xy;
 
-#ifdef USE_TGSM
-	const int gs_location = int(flatten_2d(local_id, TGSM_ROW_SIZE)) + TGSM_ROW_SIZE + 1;
-	const int gs_prefetch_location_0 = int(flatten_2d(local_id, TILE_SIZE));
-	const int gs_prefetch_location_1 = gs_prefetch_location_0 + TGSM_BUFFER_SIZE - THREAD_GROUP_SIZE;
-
-	const ivec2 group_start = ivec2(global_id.x & -8, global_id.y & -8);
-
-	ivec2 prefetch_location_0 = group_start - 1 + ivec2(gs_prefetch_location_0 % 10, gs_prefetch_location_0 / 10);
-	ivec2 prefetch_location_1 = group_start - 1 + ivec2(gs_prefetch_location_1 % 10, gs_prefetch_location_1 / 10);
-
-	tgsm_depth[gs_prefetch_location_0] = texelFetch(sample_image0, prefetch_location_0, 0).r;
-	tgsm_depth[gs_prefetch_location_1] = texelFetch(sample_image0, prefetch_location_1, 0).r;
-
-	groupMemoryBarrier();
-	barrier();
-
-	px = global_id;
-	uv = (vec2(px) + 0.5) * texel_size;
-#else
-	if(swizzle_workgroups_8x8(global_id, local_id, gl_WorkGroupID.xy, image_size, uv, px))
+	if(swizzle_workgroups_8x8(global_id, local_id, gl_WorkGroupID.xy, write_image_size, write_uv, write_px))
 		return;
-#endif
 
-	const float c0 = TEXEL_FETCH(ivec2( 0,  0));
-    const float l2 = TEXEL_FETCH(ivec2(-2,  0));
-    const float l1 = TEXEL_FETCH(ivec2(-1,  0));
-    const float r1 = TEXEL_FETCH(ivec2( 1,  0));
-    const float r2 = TEXEL_FETCH(ivec2( 2,  0));
-    const float b2 = TEXEL_FETCH(ivec2( 0, -2));
-    const float b1 = TEXEL_FETCH(ivec2( 0, -1));
-    const float t1 = TEXEL_FETCH(ivec2( 0,  1));
-    const float t2 = TEXEL_FETCH(ivec2( 0,  2));
+	ivec2 sample_px = ivec2(write_px.x * (sample_image_size.x / write_image_size.x),
+                            write_px.y * (sample_image_size.y / write_image_size.y));
+    vec2 sample_uv = vec2(sample_px) / vec2(sample_image_size);
+
+	const float c0 = texelFetch(sample_image0, sample_px + ivec2( 0,  0), 0).r;
+    const float l2 = texelFetch(sample_image0, sample_px + ivec2(-2,  0), 0).r;
+    const float l1 = texelFetch(sample_image0, sample_px + ivec2(-1,  0), 0).r;
+    const float r1 = texelFetch(sample_image0, sample_px + ivec2( 1,  0), 0).r;
+    const float r2 = texelFetch(sample_image0, sample_px + ivec2( 2,  0), 0).r;
+    const float b2 = texelFetch(sample_image0, sample_px + ivec2( 0, -2), 0).r;
+    const float b1 = texelFetch(sample_image0, sample_px + ivec2( 0, -1), 0).r;
+    const float t1 = texelFetch(sample_image0, sample_px + ivec2( 0,  1), 0).r;
+    const float t2 = texelFetch(sample_image0, sample_px + ivec2( 0,  2), 0).r;
 
     // depth slope estimates
     const float dl = abs(l1 * l2 / (2.0 * l2 - l1) - c0);
@@ -83,23 +54,20 @@ void main() {
     const float dt = abs(t1 * t2 / (2.0 * t2 - t1) - c0);
 
      // reconstruct centre position
-    const vec3 ce = position_from_depth(uv, c0, inv_proj);
+    const vec3 ce = position_from_depth(sample_uv, c0, inv_proj);
 
     // choose better neighbor in X and Y
     const vec3 dpdx = (dl < dr)
-        ?  ce - position_from_depth(uv - vec2(texel_size.x, 0.0), l1, inv_proj)
-        : -ce + position_from_depth(uv + vec2(texel_size.x, 0.0), r1, inv_proj);
+        ?  ce - position_from_depth(sample_uv - vec2(sample_texel_size.x, 0.0), l1, inv_proj)
+        : -ce + position_from_depth(sample_uv + vec2(sample_texel_size.x, 0.0), r1, inv_proj);
 
     const vec3 dpdy = (db < dt)
-        ?  ce - position_from_depth(uv - vec2(0.0, texel_size.y), b1, inv_proj)
-        : -ce + position_from_depth(uv + vec2(0.0, texel_size.y), t1, inv_proj);
+        ?  ce - position_from_depth(sample_uv - vec2(0.0, sample_texel_size.y), b1, inv_proj)
+        : -ce + position_from_depth(sample_uv + vec2(0.0, sample_texel_size.y), t1, inv_proj);
 
     const vec3 normal = normalize(cross(dpdx, dpdy));
 
-	float depth = textureLod(sample_image0, uv, 0).r;
-	const vec3 view_pos = position_from_depth(uv, depth, inv_proj);
-
-	uint seed = rng_make_seed(global_id, image_size, frameData.frameNumber);
+	uint seed = rng_make_seed(global_id, write_image_size, 0); // frameData.frameNumber
 	const vec3 random_vec = rng_random_vec3_01(seed) * 2.0f - 1.0f;
 
 	const vec3 tangent = normalize(random_vec - normal * dot(random_vec, normal));
@@ -115,7 +83,7 @@ void main() {
 		const float ao_range = AO_RADIUS * mix(0.2, 1.0, rng_random_01(seed));
 		const vec3 hemisphere = hemispherepoint_uniform(hamm.x, hamm.y);
 		const vec3 cone = tbn * hemisphere;
-		const vec3 vpos = view_pos + cone * ao_range;
+		const vec3 vpos = ce + cone * ao_range;
 
 		vec4 new_tex_coord = projection * vec4(vpos, 1.0);
 		new_tex_coord.xyz /= new_tex_coord.w;
@@ -126,12 +94,12 @@ void main() {
 
 		const float sample_depth = textureLod(sample_image0, new_tex_coord.xy, 0).r;
 		const float linear_depth = -linearize_depth(sample_depth, camera.z_near, camera.z_far);
-		const float range_check = smoothstep(0.0f, 1.0f, AO_RADIUS / abs(view_pos.z - linear_depth));
+		const float range_check = smoothstep(0.0f, 1.0f, AO_RADIUS / abs(ce.z - linear_depth));
 		occlusion += float(linear_depth >= vpos.z + AO_DEPTH_THRESHOLD) * range_check;
 	}
 
 	occlusion = occlusion / AO_SAMPLE_COUNT;
 	occlusion = pow(clamp(1.0f - occlusion, 0.0, 1.0), AO_POWER);
 
-	imageStore(write_image0, ivec2(px), vec4(occlusion, 0.0, 0.0, 1.0));
+	imageStore(write_image0, ivec2(write_px), vec4(occlusion));
 }
