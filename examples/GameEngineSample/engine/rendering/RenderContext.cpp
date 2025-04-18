@@ -262,8 +262,8 @@ namespace engine
 
 			edge::gfx::TextureCreateInfo texture_create_info{};
 			texture_create_info.usage = create_info.usage;
-			texture_create_info.width = create_info.width;
-			texture_create_info.height = create_info.height;
+			texture_create_info.width = create_info.width * create_info.scale;
+			texture_create_info.height = create_info.height * create_info.scale;
 			texture_create_info.depth = create_info.depth;
 			texture_create_info.layers = create_info.layers;
 			texture_create_info.levels = create_info.levels;
