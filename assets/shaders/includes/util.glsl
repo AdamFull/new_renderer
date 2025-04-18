@@ -68,10 +68,6 @@ float linearize_depth(in float z, in float n, in float f) {
 	return (2.0f * n * f) / (f + n - z * (f - n));
 }
 
-//float linearize_depth(in float log_d, in float n, in float f) {
-//	return (n * f) / (f + log_d * (n - f));
-//}
-
 vec2 encode_velocity(in vec2 velocity)
 {
 #ifdef LOW_PRECISION_VELOCITY
