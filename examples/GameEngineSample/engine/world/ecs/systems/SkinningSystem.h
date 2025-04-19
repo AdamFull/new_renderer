@@ -3,23 +3,15 @@
 #include "../../../rendering/RendererInterface.h"
 #include "BaseSystem.h"
 
-namespace engine
-{
-	namespace world
-	{
-		namespace ecs
-		{
-			class CSkinningSystem : public ISystem
-			{
-			public:
-				CSkinningSystem(render::IRenderer& renderer);
-				virtual ~CSkinningSystem() override = default;
+namespace engine::world::ecs {
+	class SkinningSystem final : public ISystem {
+	public:
+		SkinningSystem(render::IRenderer& renderer);
+		virtual ~SkinningSystem() override = default;
 
-				void __Create() override;
-				void __Update(float fDt) override;
-			private:
-				render::IRenderWorld& render_world;
-			};
-		}
-	}
+		void __create() override;
+		void __update(float fDt) override;
+	private:
+		render::IRenderWorld& render_world;
+	};
 }

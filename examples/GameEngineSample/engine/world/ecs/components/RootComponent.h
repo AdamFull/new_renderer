@@ -9,7 +9,7 @@ namespace engine::world::ecs {
 		eScale
 	};
 
-	struct FAnimationChannel {
+	struct AnimationChannel {
 		EPathType path{};
 		uint32_t samplerIndex{ 0u };
 		entt::entity node{ entt::null };
@@ -21,21 +21,21 @@ namespace engine::world::ecs {
 		eCubicSpline
 	};
 
-	struct FAnimationSampler {
+	struct AnimationSampler {
 		EInterpolationType interpolation;
 		std::vector<float> inputs;
 		std::vector<glm::vec4> outputsVec4;
 	};
 
-	struct FMeshAnimation {
+	struct MeshAnimation {
 		std::string name;
-		std::vector<FAnimationSampler> samplers;
-		std::vector<FAnimationChannel> channels;
+		std::vector<AnimationSampler> samplers;
+		std::vector<AnimationChannel> channels;
 		float start = (std::numeric_limits<float>::max)();
 		float end = (std::numeric_limits<float>::min)();
 	};
 
-	struct FMeshSkin {
+	struct MeshSkin {
 		std::string name;
 		entt::entity root{ entt::null };
 		std::vector<glm::mat4> inverseBindMatrices;
@@ -44,18 +44,18 @@ namespace engine::world::ecs {
 		std::vector<uint64_t> indices{};
 	};
 
-	struct FRootComponent {
+	struct RootComponent {
 		static constexpr std::string_view _name{ "Root" };
 		static constexpr std::string_view _name_with_icon = edge::join_v<icon::entity, _name>;
 
-		std::vector<FMeshAnimation> animations;
-		std::vector<FMeshSkin> skins;
+		std::vector<MeshAnimation> animations;
+		std::vector<MeshSkin> skins;
 		std::unordered_map<uint32_t, uint32_t> skinRemap{};
 
 		entt::entity entity;
 	};
 }
 
-REFL_TYPE(engine::world::ecs::FRootComponent, 
-	engine::attr::Name(engine::world::ecs::FRootComponent::_name_with_icon))
+REFL_TYPE(engine::world::ecs::RootComponent,
+	engine::attr::Name(engine::world::ecs::RootComponent::_name_with_icon))
 REFL_END

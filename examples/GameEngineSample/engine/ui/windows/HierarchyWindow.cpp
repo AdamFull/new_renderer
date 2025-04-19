@@ -3,7 +3,6 @@
 #include <imgui.h>
 #include "../../world/EntityManager.h"
 
-#include "../EditorTraits.h"
 #include "../EditorState.h"
 
 using namespace engine;
@@ -12,7 +11,7 @@ using namespace engine::world;
 void HierarchyWindow::__draw(float fDt)
 {
     //auto& actionBuffer = EGEditor->getActionBuffer();
-    auto root = EntityManager::GetRoot();
+    auto root = EntityManager::get_root();
     auto current_size = ImGui::GetWindowSize();
 
     BuildHierarchy(root);
@@ -27,13 +26,15 @@ void HierarchyWindow::__draw(float fDt)
     {
         if (ImGui::BeginMenu("create"))
         {
-            if (ImGui::MenuItem((std::format("{} {}", icon::entity, "GameObject")).c_str()))
-                EntityManager::CreateNode("Gamebject", m_currentSelection);
+            if (ImGui::MenuItem((std::format("{} {}", icon::entity, "GameObject")).c_str())) {
+                EntityManager::create_node("Gamebject", m_currentSelection);
+            }
 
-            EntityManager::IterateRegisteredComponents([entity = m_currentSelection](const FComponentMeta& meta) {
-                    if (!EntityManager::HasComponent(entity, meta.type)) {
+            EntityManager::iterate_registered_components(
+                [entity = m_currentSelection](const ComponentMeta& meta) {
+                    if (!EntityManager::has_component(entity, meta.type)) {
                         if (ImGui::MenuItem(meta.name.data())) {
-                            EntityManager::AddComponent(entity, meta.type);
+                            EntityManager::add_component(entity, meta.type);
                         }
                     }
                 });
@@ -53,7 +54,7 @@ void HierarchyWindow::__draw(float fDt)
         if (ImGui::MenuItem("duplicate"))
         {
             entt::entity attach_to{ root };
-            auto& hierarchy = EntityManager::GetComponent<ecs::FHierarchyComponent>(m_currentSelection);
+            auto& hierarchy = EntityManager::get_component<ecs::HierarchyComponent>(m_currentSelection);
 
             if (hierarchy.parent != entt::null)
                 attach_to = hierarchy.parent;
@@ -93,8 +94,8 @@ void HierarchyWindow::BuildHierarchy(const entt::entity& entity)
 
         uint32_t flags = ImGuiTreeNodeFlags_OpenOnArrow;
 
-        auto& base = EntityManager::GetComponent<ecs::FBaseComponent>(entity);
-        auto& hierarchy = EntityManager::GetComponent<ecs::FHierarchyComponent>(entity);
+        auto& base = EntityManager::get_component<ecs::BaseComponent>(entity);
+        auto& hierarchy = EntityManager::get_component<ecs::HierarchyComponent>(entity);
 
         //Is object selected
         auto isSelected = state->IsSelected(entity);

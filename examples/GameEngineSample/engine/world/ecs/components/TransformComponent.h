@@ -3,7 +3,7 @@
 #include "Component.h"
 
 namespace engine::world::ecs {
-	struct FTransformComponent {
+	struct TransformComponent {
 		static constexpr std::string_view _name{ "Transform" };
 		static constexpr std::string_view _name_with_icon = edge::join_v<icon::transform, _name>;
 
@@ -24,8 +24,8 @@ namespace engine::world::ecs {
 	};
 }
 
-REFL_TYPE(engine::world::ecs::FTransformComponent, 
-	engine::attr::Name(engine::world::ecs::FTransformComponent::_name_with_icon))
+REFL_TYPE(engine::world::ecs::TransformComponent,
+	engine::attr::Name(engine::world::ecs::TransformComponent::_name_with_icon))
 REFL_FIELD(lposition, engine::attr::Name("Position"), engine::attr::Range(-FLT_MAX, FLT_MAX))
 REFL_FIELD(lrotation, engine::attr::Name("Rotation"), engine::attr::Range(0.f, 0.f))
 REFL_FIELD(lscale, engine::attr::Name("Scale"), engine::attr::Range(0.f, FLT_MAX))

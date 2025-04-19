@@ -9,15 +9,14 @@
 #include "ecs/systems/BaseSystem.h"
 #include "ecs/components/components.h"
 
-namespace engine::world
-{
+namespace engine::world {
 	enum class EComponentFlagBits {
 		eNone = 0,
 		eHiddenInEditor = 1 << 0
 	};
 	EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(EComponentFlags, EComponentFlagBits);
 
-	struct FComponentMeta {
+	struct ComponentMeta {
 		std::string_view name{};
 		entt::id_type type{};
 		EComponentFlags flags{};
@@ -34,7 +33,7 @@ namespace engine::world
 	class EntityManager {
 	public:
 		template<typename _Ty>
-		static void RegisterComponent(EComponentFlags flags = EComponentFlagBits::eNone) {
+		static void register_component(EComponentFlags flags = EComponentFlagBits::eNone) {
 			constexpr auto type_desc = refl::reflect<_Ty>();
 
 			auto& meta = m_meta.emplace_back();
@@ -81,90 +80,96 @@ namespace engine::world
 		}
 
 		template<typename _Ty, typename... _Args>
-		static void RegisterSystem(_Args&&... args) {
+		static void register_system(_Args&&... args) {
 			m_vSystems.emplace_back(std::make_unique<_Ty>(std::forward<_Args>(args)...));
 		}
 
-		static entt::entity CreateRoot(std::string_view name);
-		static entt::entity CreateNode(std::string_view name = "", entt::entity parent = entt::null);
-		static void DestroyNode(entt::entity node);
-		static void AttachChild(entt::entity parent, entt::entity child);
-		static void DetachChild(entt::entity parent, entt::entity child);
-		static void DetachChild(entt::entity child);
-		static entt::entity Instantiate(entt::entity prefab);
+		static auto create_root(std::string_view name) -> entt::entity;
+		static auto create_node(std::string_view name = "", entt::entity parent = entt::null) -> entt::entity;
+		static void destroy_node(entt::entity node);
+		static void attach_child(entt::entity parent, entt::entity child);
+		static void detach_child(entt::entity parent, entt::entity child);
+		static void detach_child(entt::entity child);
+		static auto instantiate(entt::entity prefab) -> entt::entity;
 
-		static bool IsValid(entt::entity entity);
+		static auto is_valid(entt::entity entity) -> bool;
 
 		template<typename... _Components>
-		static auto View() {
+		static auto view() {
 			return m_registry.view<_Components...>();
 		}
 
 		template<typename... _Components, typename _Func>
-		static void Each(_Func func) {
+		static void each(_Func func) {
 			auto v = m_registry.view<_Components...>();
 			v.each(func);
 		}
 
 		template<typename _Func>
-		static void IterateComponents(entt::entity entity, _Func&& func) {
+		static void iterate_components(entt::entity entity, _Func&& func) {
 			for (auto&& storage : m_registry.storage()) {
 				if (auto& set = storage.second; set.contains(entity)) {
-					if (auto found = std::find_if(m_meta.begin(), m_meta.end(), 
-						[type = storage.first](const FComponentMeta& meta)  {
-							return meta.type == type; 
-						}); found != m_meta.end())
+					if (auto found = std::find_if(m_meta.begin(), m_meta.end(),
+						[type = storage.first](const ComponentMeta& meta) {
+							return meta.type == type;
+						}); found != m_meta.end()) {
 						func(*found);
+					}
 				}
 			}
 		}
 
 		template<typename _Ty>
-		static _Ty& AddComponent(entt::entity entity, _Ty&& component) {
+		static auto add_component(entt::entity entity, _Ty&& component) -> _Ty& {
 			return m_registry.emplace<_Ty>(entity, std::forward<_Ty>(component));
 		}
 
 		template<typename _Ty>
-		static _Ty& GetComponent(entt::entity entity) {
+		static auto get_component(entt::entity entity) -> _Ty& {
 			return m_registry.get<_Ty>(entity);
 		}
 
 		template<typename _Ty>
-		static _Ty* TryGetComponent(entt::entity entity) {
+		static auto try_get_component(entt::entity entity) -> _Ty* {
 			return m_registry.try_get<_Ty>(entity);
 		}
 
 		template<typename _Ty>
-		static bool HasComponent(entt::entity entity) {
+		static auto has_component(entt::entity entity) -> bool {
 			return m_registry.any_of<_Ty>(entity);
 		}
 
 		// Some runtime stuff
-		static void* AddComponent(entt::entity entity, entt::id_type type);
-		static void* TryGetComponent(entt::entity entity, entt::id_type type);
-		static bool HasComponent(entt::entity entity, entt::id_type type);
+		static auto add_component(entt::entity entity, entt::id_type type) -> void*;
+		static auto try_get_component(entt::entity entity, entt::id_type type) -> void*;
+		static auto has_component(entt::entity entity, entt::id_type type) -> bool;
 
 		template<typename _Func>
-		static void IterateRegisteredComponents(_Func&& func) {
+		static void iterate_registered_components(_Func&& func) {
 			for (const auto& meta : m_meta) {
 				func(meta);
 			}
 		}
 
 
-		static entt::registry& GetRegistry() { return m_registry; }
-		static entt::entity GetRoot() { return m_root; }
+		static auto get_registry() -> entt::registry& {
+			return m_registry; 
+		}
 
-		static nlohmann::json SerializeEntity(entt::entity entity);
-		static entt::entity DeserializeEntity(entt::entity parent, const nlohmann::json& j);
+		static auto get_root() -> entt::entity { 
+			return m_root; 
+		}
 
-		static void Create();
-		static void Update(float dt);
+		static auto serialize_entity(entt::entity entity) -> nlohmann::json;
+		static auto deserialize_entity(entt::entity parent, const nlohmann::json& j) -> entt::entity;
+
+		static void create();
+		static void update(float dt);
 
 	private:
 		static entt::registry m_registry;
 		static entt::entity m_root;
 		static std::vector<std::unique_ptr<ecs::ISystem>> m_vSystems;
-		static std::vector<FComponentMeta> m_meta;
+		static std::vector<ComponentMeta> m_meta;
 	};
 }

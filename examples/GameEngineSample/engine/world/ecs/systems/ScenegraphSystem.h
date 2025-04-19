@@ -4,28 +4,21 @@
 #include "BaseSystem.h"
 #include "../components/fwd.h"
 
-namespace engine
-{
-	namespace world
+namespace engine::world::ecs {
+	class ScenegraphSystem final : public ISystem
 	{
-		namespace ecs
-		{
-			class CScenegraphSystem : public ISystem
-			{
-			public:
-				CScenegraphSystem(render::IRenderer& renderer);
-				virtual ~CScenegraphSystem() override = default;
+	public:
+		ScenegraphSystem(render::IRenderer& renderer);
+		virtual ~ScenegraphSystem() override = default;
 
-				void __Create() override;
-				void __Update(float fDt) override;
-			private:
-				render::IRenderWorld& render_world;
-			private:
-				static void buildHierarchy(entt::entity node);
-				static void initMatrix(FTransformComponent* transform);
-				static void initMatrices(entt::registry* registry, entt::entity node);
-				static void calculateMatrices(entt::registry* registry, entt::entity node);
-			};
-		}
-	}
+		void __create() override;
+		void __update(float fDt) override;
+	private:
+		render::IRenderWorld& render_world;
+	private:
+		static void build_hierarchy(entt::entity node);
+		static void init_matrix(TransformComponent* transform);
+		static void init_matrices(entt::registry* registry, entt::entity node);
+		static void calculate_matrices(entt::registry* registry, entt::entity node);
+	};
 }

@@ -6,7 +6,7 @@
 #include "Component.h"
 
 namespace engine::world::ecs {
-	struct FMeshComponent {
+	struct MeshComponent {
 		static constexpr std::string_view _name{ "Mesh" };
 		static constexpr std::string_view _name_with_icon = edge::join_v<icon::shape, _name>;
 
@@ -16,7 +16,7 @@ namespace engine::world::ecs {
 	};
 }
 
-REFL_TYPE(engine::world::ecs::FMeshComponent, 
-	engine::attr::Name(engine::world::ecs::FMeshComponent::_name_with_icon))
+REFL_TYPE(engine::world::ecs::MeshComponent,
+	engine::attr::Name(engine::world::ecs::MeshComponent::_name_with_icon))
 REFL_FIELD(castShadows, engine::attr::Name("Cast Shadows"))
 REFL_END

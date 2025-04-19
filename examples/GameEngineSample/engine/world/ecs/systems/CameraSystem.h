@@ -3,26 +3,18 @@
 #include "../../../rendering/RendererInterface.h"
 #include "BaseSystem.h"
 
-namespace engine
-{
-	namespace world
-	{
-		namespace ecs
-		{
-			class CameraSystem : public ISystem
-			{
-			public:
-				CameraSystem(render::IRenderer& renderer);
-				virtual ~CameraSystem() override = default;
+namespace engine::world::ecs {
+	class CameraSystem final : public ISystem {
+	public:
+		CameraSystem(render::IRenderer& renderer);
+		virtual ~CameraSystem() override = default;
 
-				void __Create() override;
-				void __Update(float fDt) override;
-			private:
-				void OnConstruct(entt::registry& registry, entt::entity entity);
-				void OnDestruct(entt::registry& registry, entt::entity entity);
-			private:
-				render::IRenderWorld& render_world;
-			};
-		}
-	}
+		void __create() override;
+		void __update(float fDt) override;
+	private:
+		void on_construct(entt::registry& registry, entt::entity entity);
+		void on_destruct(entt::registry& registry, entt::entity entity);
+	private:
+		render::IRenderWorld& render_world;
+	};
 }

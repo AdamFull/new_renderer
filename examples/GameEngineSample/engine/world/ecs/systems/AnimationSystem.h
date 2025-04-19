@@ -2,24 +2,16 @@
 
 #include "BaseSystem.h"
 
-namespace engine
-{
-	namespace world
-	{
-		namespace ecs
-		{
-			class CAnimationSystem : public ISystem
-			{
-			public:
-				CAnimationSystem();
-				virtual ~CAnimationSystem() override = default;
+namespace engine::world::ecs {
+	class AnimationSystem final : public ISystem {
+	public:
+		AnimationSystem();
+		virtual ~AnimationSystem() override = default;
 
-				void __Create() override;
-				void __Update(float fDt) override;
-			private:
-				std::vector<float> m_timers{};
-				std::vector<uint64_t> m_animationIndeces{};
-			};
-		}
-	}
+		void __create() override;
+		void __update(float fDt) override;
+	private:
+		std::vector<float> m_timers{};
+		std::vector<uint64_t> m_animationIndeces{};
+	};
 }

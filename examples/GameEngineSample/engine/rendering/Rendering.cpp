@@ -1048,7 +1048,7 @@ namespace engine
 			
 						int32_t shadow_index{ 0 };
 			
-						auto view = world::EntityManager::View<world::ecs::FDirectionalLightComponent>();
+						auto view = world::EntityManager::view<world::ecs::DirectionalLightComponent>();
 						for (auto [entity, light] : view.each())
 						{
 							if (!light.castShadows)
@@ -1157,7 +1157,7 @@ namespace engine
 			
 						int32_t shadow_index{ 0 };
 			
-						auto view = world::EntityManager::View<world::ecs::FPointLightComponent>();
+						auto view = world::EntityManager::view<world::ecs::PointLightComponent>();
 						for (auto [entity, light] : view.each())
 						{
 							if (!light.castShadows)
@@ -1266,7 +1266,7 @@ namespace engine
 			
 						int32_t shadow_index{ 0 };
 			
-						auto view = world::EntityManager::View<world::ecs::FSpotLightComponent>();
+						auto view = world::EntityManager::view<world::ecs::SpotLightComponent>();
 						for (auto [entity, light] : view.each())
 						{
 							if (!light.castShadows)

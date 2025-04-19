@@ -6,15 +6,15 @@ namespace engine
 	{
 		namespace ecs
 		{
-			struct FBaseComponent;
-			struct FCameraComponent;
-			struct FDirectionalLightComponent;
-			struct FHierarchyComponent;
-			struct FMeshComponent;
-			struct FPointLightComponent;
-			struct FRootComponent;
-			struct FSpotLightComponent;
-			struct FTransformComponent;
+			struct BaseComponent;
+			struct CameraComponent;
+			struct DirectionalLightComponent;
+			struct HierarchyComponent;
+			struct MeshComponent;
+			struct PointLightComponent;
+			struct RootComponent;
+			struct SpotLightComponent;
+			struct TransformComponent;
 		}
 	}
 }

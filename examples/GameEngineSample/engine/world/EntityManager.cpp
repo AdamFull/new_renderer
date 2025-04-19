@@ -9,161 +9,172 @@ using namespace engine::world;
 entt::registry EntityManager::m_registry{};
 entt::entity EntityManager::m_root{};
 std::vector<std::unique_ptr<ecs::ISystem>> EntityManager::m_vSystems;
-std::vector<FComponentMeta> EntityManager::m_meta;
+std::vector<ComponentMeta> EntityManager::m_meta;
 
-entt::entity EntityManager::CreateRoot(std::string_view name)
-{
-	if (m_registry.valid(m_root))
+auto EntityManager::create_root(std::string_view name) -> entt::entity {
+	if (m_registry.valid(m_root)) {
 		return m_root;
+	}
 
-	m_root = CreateNode(name);
-	m_registry.emplace<ecs::FRootComponent>(m_root, ecs::FRootComponent{});
+	m_root = create_node(name);
+	m_registry.emplace<ecs::RootComponent>(m_root, ecs::RootComponent{});
 	return m_root;
 }
 
-entt::entity EntityManager::CreateNode(std::string_view name, entt::entity parent)
-{
+auto EntityManager::create_node(std::string_view name, entt::entity parent) -> entt::entity {
 	entt::entity entity = m_registry.create();
-	m_registry.emplace<ecs::FBaseComponent>(entity, ecs::FBaseComponent{ name });
-	m_registry.emplace<ecs::FTransformComponent>(entity, ecs::FTransformComponent{});
-	m_registry.emplace<ecs::FHierarchyComponent>(entity, ecs::FHierarchyComponent{ parent });
+	m_registry.emplace<ecs::BaseComponent>(entity, ecs::BaseComponent{ name });
+	m_registry.emplace<ecs::TransformComponent>(entity, ecs::TransformComponent{});
+	m_registry.emplace<ecs::HierarchyComponent>(entity, ecs::HierarchyComponent{ parent });
 
-	if(parent != entt::null)
-		AttachChild(parent, entity);
+	if (parent != entt::null) {
+		attach_child(parent, entity);
+	}
 	
-	EDGE_LOGD("[Scene Graph] Entity with id {} was created", static_cast<uint32_t>(entity));
+	EDGE_LOGT("[Scene Graph] Entity with id {} was created", static_cast<uint32_t>(entity));
 
 	return entity;
 }
 
-void EntityManager::DestroyNode(entt::entity node)
-{
-	DetachChild(node);
+void EntityManager::destroy_node(entt::entity node) {
+	detach_child(node);
 	m_registry.destroy(node);
-	EDGE_LOGD("[Scene Graph] Entity with id {} was destroyed", static_cast<uint32_t>(node));
+	EDGE_LOGT("[Scene Graph] Entity with id {} was destroyed", static_cast<uint32_t>(node));
 }
 
-void EntityManager::AttachChild(entt::entity parent, entt::entity child)
-{
-	if (parent == child)
-	{
+void EntityManager::attach_child(entt::entity parent, entt::entity child) {
+	if (parent == child) {
 		EDGE_LOGW("[Scene Graph] Trying to add parent to parent. Parent entity {}, child entity {}.", static_cast<uint32_t>(parent), static_cast<uint32_t>(child));
 		return;
 	}
 
-	auto& phierarchy = m_registry.get<ecs::FHierarchyComponent>(parent);
+	auto& phierarchy = m_registry.get<ecs::HierarchyComponent>(parent);
 	phierarchy.children.emplace_back(child);
 
-	auto& chierarchy = m_registry.get<ecs::FHierarchyComponent>(child);
+	auto& chierarchy = m_registry.get<ecs::HierarchyComponent>(child);
 	chierarchy.parent = parent;
 }
 
-void EntityManager::DetachChild(entt::entity parent, entt::entity child)
-{
-	if (parent == entt::null)
+void EntityManager::detach_child(entt::entity parent, entt::entity child) {
+	if (parent == entt::null) {
 		return;
+	}
 
-	auto& phierarchy = m_registry.get<ecs::FHierarchyComponent>(parent);
+	auto& phierarchy = m_registry.get<ecs::HierarchyComponent>(parent);
 	auto cit = std::remove(phierarchy.children.begin(), phierarchy.children.end(), child);
 
-	if (cit != phierarchy.children.end())
+	if (cit != phierarchy.children.end()) {
 		phierarchy.children.erase(cit);
-	else
+	}
+	else {
 		EDGE_LOGE("[Scene Graph] Entity with is {} is not child of {}", static_cast<uint32_t>(child), static_cast<uint32_t>(parent));
+	}
 
-	auto& chierarchy = m_registry.get<ecs::FHierarchyComponent>(child);
+	auto& chierarchy = m_registry.get<ecs::HierarchyComponent>(child);
 	chierarchy.parent = entt::null;
 }
 
-void EntityManager::DetachChild(entt::entity child)
-{
-	auto& chierarchy = m_registry.get<ecs::FHierarchyComponent>(child);
-	DetachChild(chierarchy.parent, child);
+void EntityManager::detach_child(entt::entity child) {
+	auto& chierarchy = m_registry.get<ecs::HierarchyComponent>(child);
+	detach_child(chierarchy.parent, child);
 }
 
-entt::entity EntityManager::Instantiate(entt::entity prefab)
-{
+auto EntityManager::instantiate(entt::entity prefab) -> entt::entity {
+	// TODO: implement for create instances from prefabs
 	return entt::null;
 }
 
-bool EntityManager::IsValid(entt::entity entity)
-{
+auto EntityManager::is_valid(entt::entity entity) -> bool {
 	return m_registry.valid(entity);
 }
 
-void* EntityManager::AddComponent(entt::entity entity, entt::id_type type)
-{
-	if (auto found = std::find_if(m_meta.begin(), m_meta.end(), [type](const FComponentMeta& meta) {return meta.type == type; }); found != m_meta.end())
+auto EntityManager::add_component(entt::entity entity, entt::id_type type) -> void* {
+	if (auto found = std::find_if(m_meta.begin(), m_meta.end(),
+		[type](const ComponentMeta& meta) {
+			return meta.type == type;
+		}); found != m_meta.end()) {
 		return found->create(entity);
+	}
 
 	return nullptr;
 }
 
-void* EntityManager::TryGetComponent(entt::entity entity, entt::id_type type)
-{
-	if (auto found = std::find_if(m_meta.begin(), m_meta.end(), [type](const FComponentMeta& meta) {return meta.type == type; }); found != m_meta.end())
+void* EntityManager::try_get_component(entt::entity entity, entt::id_type type) {
+	if (auto found = std::find_if(m_meta.begin(), m_meta.end(),
+		[type](const ComponentMeta& meta) {
+			return meta.type == type;
+		}); found != m_meta.end()) {
 		return found->try_get(entity);
+	}
 
 	return nullptr;
 }
 
-bool EntityManager::HasComponent(entt::entity entity, entt::id_type type)
-{
-	if (auto found = std::find_if(m_meta.begin(), m_meta.end(), [type](const FComponentMeta& meta) {return meta.type == type; }); found != m_meta.end())
+bool EntityManager::has_component(entt::entity entity, entt::id_type type) {
+	if (auto found = std::find_if(m_meta.begin(), m_meta.end(),
+		[type](const ComponentMeta& meta) {
+			return meta.type == type;
+		}); found != m_meta.end()) {
 		return found->has(entity);
+	}
 
 	return false;
 }
 
-nlohmann::json EntityManager::SerializeEntity(entt::entity entity)
-{
+nlohmann::json EntityManager::serialize_entity(entt::entity entity) {
 	nlohmann::json j = nlohmann::json::object();
 
-	auto& base = m_registry.get<ecs::FBaseComponent>(entity);
+	auto& base = m_registry.get<ecs::BaseComponent>(entity);
 	j["name"] = base.name;
 	j["enabled"] = base.enabled;
 	j["visible"] = base.visible;
 
 	auto& components = j["components"];
-	IterateComponents(entity, [&components, entity](const FComponentMeta& meta) { meta.serialize(components, entity); });
+	iterate_components(entity,
+		[&components, entity](const ComponentMeta& meta) { 
+			meta.serialize(components, entity); 
+		});
 
 	auto& children = j["children"];
-	auto& hierarchy = m_registry.get<ecs::FHierarchyComponent>(entity);
-	for (entt::entity child : hierarchy.children)
-		children.emplace_back(SerializeEntity(child));
+	auto& hierarchy = m_registry.get<ecs::HierarchyComponent>(entity);
+	for (entt::entity child : hierarchy.children) {
+		children.emplace_back(serialize_entity(child));
+	}
 
 	return j;
 }
 
-entt::entity EntityManager::DeserializeEntity(entt::entity parent, const nlohmann::json& j)
-{
-	entt::entity entity = CreateNode("", parent);
+entt::entity EntityManager::deserialize_entity(entt::entity parent, const nlohmann::json& j) {
+	entt::entity entity = create_node("", parent);
 
-	auto& base = m_registry.get<ecs::FBaseComponent>(entity);
+	auto& base = m_registry.get<ecs::BaseComponent>(entity);
 	j.at("name").get_to(base.name);
 	j.at("enabled").get_to(base.enabled);
 	j.at("visible").get_to(base.visible);
 
 	auto& components = j["components"];
-	IterateComponents(entity, [&components, entity](const FComponentMeta& meta) { meta.deserialize(components, entity); });
+	iterate_components(entity,
+		[&components, entity](const ComponentMeta& meta) { 
+			meta.deserialize(components, entity); 
+		});
 
-	auto& hierarchy = m_registry.get<ecs::FHierarchyComponent>(entity);
+	auto& hierarchy = m_registry.get<ecs::HierarchyComponent>(entity);
 	auto& children = j["children"];
 	for (const auto& child : children)
-		hierarchy.children.emplace_back(DeserializeEntity(entity, child));
+		hierarchy.children.emplace_back(deserialize_entity(entity, child));
 
 	return entity;
 }
 
-void EntityManager::Create()
-{
-	for (auto& system : m_vSystems)
-		system->Create();
+void EntityManager::create() {
+	for (auto& system : m_vSystems) {
+		system->create();
+	}
 }
 
-void EntityManager::Update(float dt)
-{
+void EntityManager::update(float dt) {
 	EDGE_PROFILE_ZONE_SCOPED;
-	for (auto& system : m_vSystems)
-		system->Update(dt);
+	for (auto& system : m_vSystems) {
+		system->update(dt);
+	}
 }

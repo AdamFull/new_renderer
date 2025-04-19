@@ -14,7 +14,7 @@ namespace engine::world::ecs {
 			{ECameraType::ePerspective, "perspective"}
 		})
 
-	struct FPupa {
+	struct Pupa {
 		static constexpr std::string_view _name{ "Pupa" };
 		static constexpr std::string_view _name_with_icon = edge::join_v<icon::shape, _name>;
 
@@ -22,7 +22,7 @@ namespace engine::world::ecs {
 		float boba{ 0.1f };
 	};
 
-	struct FCameraComponent {
+	struct CameraComponent {
 		static constexpr std::string_view _name{ "Camera" };
 		static constexpr std::string_view _name_with_icon = edge::join_v<icon::camera, _name>;
 
@@ -47,7 +47,7 @@ namespace engine::world::ecs {
 
 		uint32_t frustumID{ ~0u };
 
-		std::vector<FPupa> pupas;
+		std::vector<Pupa> pupas;
 	};
 }
 
@@ -56,14 +56,14 @@ EDGE_REGISTER_ENUM_CLASS(engine::world::ecs, ECameraType,
 	EDGE_ENUM_META(engine::world::ecs::ECameraType::ePerspective, "Perspective")
 );
 
-REFL_TYPE(engine::world::ecs::FPupa, 
-	engine::attr::Name(engine::world::ecs::FPupa::_name_with_icon))
+REFL_TYPE(engine::world::ecs::Pupa,
+	engine::attr::Name(engine::world::ecs::Pupa::_name_with_icon))
 REFL_FIELD(biba, engine::attr::Name("Biba"), engine::attr::Range(0.f, 0.f))
 REFL_FIELD(boba, engine::attr::Name("Boba"), engine::attr::Range(0.f, 0.f))
 REFL_END
 
-REFL_TYPE(engine::world::ecs::FCameraComponent, 
-	engine::attr::Name(engine::world::ecs::FCameraComponent::_name_with_icon))
+REFL_TYPE(engine::world::ecs::CameraComponent,
+	engine::attr::Name(engine::world::ecs::CameraComponent::_name_with_icon))
 REFL_FIELD(ctype, engine::attr::Name("Camera Type"))
 REFL_FIELD(fieldOfView, engine::attr::Name("Field Of View"), engine::attr::Range(0.f, 180.f))
 REFL_FIELD(nearPlane, engine::attr::Name("Near Plane"), engine::attr::Range(0.f, FLT_MAX))

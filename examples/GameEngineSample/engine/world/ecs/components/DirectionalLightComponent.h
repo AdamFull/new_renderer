@@ -3,7 +3,7 @@
 #include "Component.h"
 
 namespace engine::world::ecs {
-	struct FDirectionalLightComponent {
+	struct DirectionalLightComponent {
 		static constexpr std::string_view _name{ "Directional Light" };
 		static constexpr std::string_view _name_with_icon = edge::join_v<icon::directional_light, _name>;
 
@@ -16,8 +16,8 @@ namespace engine::world::ecs {
 	};
 }
 
-REFL_TYPE(engine::world::ecs::FDirectionalLightComponent, 
-	engine::attr::Name(engine::world::ecs::FDirectionalLightComponent::_name_with_icon))
+REFL_TYPE(engine::world::ecs::DirectionalLightComponent,
+	engine::attr::Name(engine::world::ecs::DirectionalLightComponent::_name_with_icon))
 REFL_FIELD(color, engine::attr::Name("Color"), engine::attr::ColorField())
 REFL_FIELD(intencity, engine::attr::Name("Intencity"), engine::attr::Range(0.f, 0.f))
 REFL_FIELD(castShadows, engine::attr::Name("Cast Shadows"))

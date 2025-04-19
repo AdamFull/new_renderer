@@ -1,17 +1,15 @@
 #include "BaseSystem.h"
 
-using namespace engine::world::ecs;
+namespace engine::world::ecs {
+	void ISystem::create() {
+		stopwatch.stop<float>();
+		__create();
+		create_time = stopwatch.stop<float>();
+	}
 
-void ISystem::Create()
-{
-	//m_stopWatch.stop<float>();
-	__Create();
-	//m_createTime = m_stopWatch.stop<float>();
-}
-
-void ISystem::Update(float dt)
-{
-	//m_stopWatch.stop<float>();
-	__Update(dt);
-	//m_updateTime = m_stopWatch.stop<float>();
+	void ISystem::update(float dt) {
+		stopwatch.stop<float>();
+		__update(dt);
+		update_time = stopwatch.stop<float>();
+	}
 }

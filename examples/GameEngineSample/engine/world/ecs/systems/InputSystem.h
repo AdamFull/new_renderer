@@ -5,39 +5,30 @@
 
 #include <functional>
 
-namespace engine
-{
-	namespace world
-	{
-		namespace ecs
-		{
-			struct FInputAxis
-			{
-				std::vector<std::function<void(float, float)>> listeners;
-			};
+namespace engine::world::ecs {
+	struct InputAxis {
+		std::vector<std::function<void(float, float)>> listeners;
+	};
 
-			class CInputSystem : public ISystem
-			{
-			public:
-				CInputSystem();
-				virtual ~CInputSystem() override = default;
+	class InputSystem final : public ISystem {
+	public:
+		InputSystem();
+		virtual ~InputSystem() override = default;
 
-				void __Create() override;
-				void __Update(float fDt) override;
+		void __create() override;
+		void __update(float fDt) override;
 
-			protected:
-				void OnAnyInput(const edge::InputEvent& input_event);
-				void HandleKeyboardInput(const edge::KeyInputEvent& input_event);
-				void HandleMouseInput(const edge::MouseButtonInputEvent& input_event);
-				void HandleTouchInput(const edge::TouchInputEvent& input_event);
-			private:
-				edge::KeyDecoder key_decoder{};
-				float m_deltaTime{ 0.f };
-				float oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
+	protected:
+		void on_any_input(const edge::InputEvent& input_event);
+		void handle_keyboard_input(const edge::KeyInputEvent& input_event);
+		void handle_mouse_input(const edge::MouseButtonInputEvent& input_event);
+		void handle_touch_input(const edge::TouchInputEvent& input_event);
+	private:
+		edge::KeyDecoder key_decoder{};
+		float m_deltaTime{ 0.f };
+		float oldX{ 0.f }, oldY{ 0.f }, curX{ 0.f }, curY{ 0.f };
 
-				float movF{ 0.f }, movR{ 0.f }, movU{ 0.f };
-				bool allowRotation{ false };
-			};
-		}
-	}
+		float movF{ 0.f }, movR{ 0.f }, movU{ 0.f };
+		bool allowRotation{ false };
+	};
 }

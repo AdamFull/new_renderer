@@ -277,15 +277,15 @@ namespace engine::world
 
 	Scene::Scene(render::IRenderer& renderer) :
 		renderer{ renderer } {
-		EntityManager::RegisterSystem<ecs::CInputSystem>();
-		EntityManager::RegisterSystem<ecs::CAnimationSystem>();
-		EntityManager::RegisterSystem<ecs::CScenegraphSystem>(renderer);
-		EntityManager::RegisterSystem<ecs::CSkinningSystem>(renderer);
+		EntityManager::register_system<ecs::InputSystem>();
+		EntityManager::register_system<ecs::AnimationSystem>();
+		EntityManager::register_system<ecs::ScenegraphSystem>(renderer);
+		EntityManager::register_system<ecs::SkinningSystem>(renderer);
 
-		EntityManager::RegisterSystem<ecs::CameraSystem>(renderer);
-		EntityManager::RegisterSystem<ecs::CShadowsSystem>(renderer);
-		EntityManager::RegisterSystem<ecs::LightingSystem>(renderer);
-		EntityManager::RegisterSystem<ecs::CMeshSystem>(renderer);
+		EntityManager::register_system<ecs::CameraSystem>(renderer);
+		EntityManager::register_system<ecs::ShadowsSystem>(renderer);
+		EntityManager::register_system<ecs::LightingSystem>(renderer);
+		EntityManager::register_system<ecs::MeshSystem>(renderer);
 	}
 
 	Scene::~Scene() {
@@ -343,7 +343,7 @@ namespace engine::world
 	void Scene::Update(float delta_time)
 	{
 		EDGE_PROFILE_ZONE_SCOPED;
-		EntityManager::Update(delta_time);
+		EntityManager::update(delta_time);
 	}
 
 	void Scene::LoadGLTF(tinygltf::Model& root) {
@@ -422,7 +422,7 @@ namespace engine::world
 
 		// Loading nodes
 		const auto& scene = root.scenes[root.defaultScene > -1 ? root.defaultScene : 0];
-		auto scene_root = EntityManager::CreateRoot(scene.name);
+		auto scene_root = EntityManager::create_root(scene.name);
 
 		for (const auto& node_index : scene.nodes)
 			LoadNode(root, scene_root, node_index);
@@ -430,20 +430,19 @@ namespace engine::world
 		LoadAnimations(root);
 		LoadSkins(root);
 
-		EntityManager::Create();
+		EntityManager::create();
 	}
 
 	void Scene::LoadNode(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index, float global_scale) {
 		const auto& node = root.nodes[node_index];
-
-		auto new_node = EntityManager::CreateNode(node.name);
+		auto new_node = EntityManager::create_node(node.name);
 
 		EDGE_LOGI("[Scene] Loadind node: {}:{}.", node.name, node_index);
 
 		node_to_entity[node_index] = new_node;
 
 		// Parse node local transform
-		auto& transform = EntityManager::GetComponent<ecs::FTransformComponent>(new_node);
+		auto& transform = EntityManager::get_component<ecs::TransformComponent>(new_node);
 
 		if (!node.translation.empty()) {
 			transform.lposition = glm::make_vec3(node.translation.data());
@@ -473,7 +472,7 @@ namespace engine::world
 		if (node.light >= 0)
 			LoadLightComponent(root, node_to_entity[node_index], node_index);
 
-		EntityManager::AttachChild(parent, new_node);
+		EntityManager::attach_child(parent, new_node);
 	}
 
 	// Calculate whole mesh bounds and encoders
@@ -588,7 +587,7 @@ namespace engine::world
 		auto [mesh_id, mesh] = render_world.CreateMesh(joint_count);
 		ComputeMeshBounds(root, gltf_mesh, mesh);
 
-		auto& mesh_component = EntityManager::AddComponent<ecs::FMeshComponent>(parent, ecs::FMeshComponent{});
+		auto& mesh_component = EntityManager::add_component<ecs::MeshComponent>(parent, ecs::MeshComponent{});
 		mesh_component.mesh = mesh_id;
 		mesh_component.skin = gltf_node.skin;
 
@@ -699,7 +698,7 @@ namespace engine::world
 		const auto& node = root.nodes[node_index];
 		const auto& camera = root.cameras[node.camera];
 
-		ecs::FCameraComponent camera_component;
+		ecs::CameraComponent camera_component;
 		if (camera.type.compare("orthographic") == 0) {
 			camera_component.ctype = ecs::ECameraType::eOrthographic;
 			camera_component.xmag = static_cast<float>(camera.orthographic.xmag);
@@ -715,8 +714,8 @@ namespace engine::world
 			camera_component.farPlane = static_cast<float>(camera.perspective.zfar);
 		}
 
-		EntityManager::AddComponent<ecs::FCameraComponent>(parent, std::move(camera_component));
-		auto& nw_camera_component = EntityManager::GetComponent<ecs::FCameraComponent>(parent);
+		EntityManager::add_component<ecs::CameraComponent>(parent, std::move(camera_component));
+		auto& nw_camera_component = EntityManager::get_component<ecs::CameraComponent>(parent);
 
 		engine::render::main_camera_index = static_cast<uint32_t>(nw_camera_component.frustumID);
 	}
@@ -726,38 +725,38 @@ namespace engine::world
 		
 		auto& light = root.lights[node.light];
 		if (light.type.compare("directional") == 0) {
-			ecs::FDirectionalLightComponent light_component;
+			ecs::DirectionalLightComponent light_component;
 			light_component.color = glm::make_vec3(light.color.data());
 			light_component.intencity = static_cast<float>(light.intensity / 638.0);
-			EntityManager::AddComponent<ecs::FDirectionalLightComponent>(parent, std::move(light_component));
+			EntityManager::add_component<ecs::DirectionalLightComponent>(parent, std::move(light_component));
 		}
 		else if (light.type.compare("spot") == 0) {
-			ecs::FSpotLightComponent light_component;
+			ecs::SpotLightComponent light_component;
 			light_component.color = glm::make_vec3(light.color.data());
 			light_component.innerAngle = static_cast<float>(light.spot.innerConeAngle);
 			light_component.outerAngle = static_cast<float>(light.spot.outerConeAngle);
 			light_component.intencity = static_cast<float>(light.intensity / 638.0);
-			EntityManager::AddComponent<ecs::FSpotLightComponent>(parent, std::move(light_component));
+			EntityManager::add_component<ecs::SpotLightComponent>(parent, std::move(light_component));
 		}
 		else if (light.type.compare("point")) {
-			ecs::FPointLightComponent light_component;
+			ecs::PointLightComponent light_component;
 			light_component.color = glm::make_vec3(light.color.data());
 			light_component.intencity = static_cast<float>(light.intensity / 638.0);
 			light_component.radius = static_cast<float>((std::max)(light.range, 1.0));
-			EntityManager::AddComponent<ecs::FPointLightComponent>(parent, std::move(light_component));
+			EntityManager::add_component<ecs::PointLightComponent>(parent, std::move(light_component));
 		}
 	}
 
 	void Scene::LoadAnimations(const tinygltf::Model& root) {
-		auto scene_root = EntityManager::GetRoot();
-		auto& root_component = EntityManager::GetComponent<ecs::FRootComponent>(scene_root);
+		auto scene_root = EntityManager::get_root();
+		auto& root_component = EntityManager::get_component<ecs::RootComponent>(scene_root);
 
 		for (auto& anim : root.animations) {
-			ecs::FMeshAnimation animation;
+			ecs::MeshAnimation animation;
 			animation.name = anim.name;
 
 			for (auto& samp : anim.samplers) {
-				ecs::FAnimationSampler sampler{};
+				ecs::AnimationSampler sampler{};
 
 				if (samp.interpolation == "LINEAR")
 					sampler.interpolation = ecs::EInterpolationType::eLinear;
@@ -819,7 +818,7 @@ namespace engine::world
 
 			// Load animation channdls
 			for (auto& source : anim.channels) {
-				ecs::FAnimationChannel channel{};
+				ecs::AnimationChannel channel{};
 
 				if (source.target_path == "rotation")
 					channel.path = ecs::EPathType::eRotation;
@@ -850,11 +849,11 @@ namespace engine::world
 	}
 
 	void Scene::LoadSkins(const tinygltf::Model& root) {
-		auto scene_root = EntityManager::GetRoot();
-		auto& root_component = EntityManager::GetComponent<ecs::FRootComponent>(scene_root);
+		auto scene_root = EntityManager::get_root();
+		auto& root_component = EntityManager::get_component<ecs::RootComponent>(scene_root);
 
 		for (auto& source : root.skins) {
-			ecs::FMeshSkin skin{};
+			ecs::MeshSkin skin{};
 			skin.name = source.name;
 
 			// Find skeleton root node
