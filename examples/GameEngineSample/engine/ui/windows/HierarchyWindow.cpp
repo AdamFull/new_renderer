@@ -30,12 +30,11 @@ void HierarchyWindow::__draw(float fDt)
             if (ImGui::MenuItem((std::format("{} {}", icon::entity, "GameObject")).c_str()))
                 EntityManager::CreateNode("Gamebject", m_currentSelection);
 
-            EntityManager::IterateRegisteredComponents([entity = m_currentSelection](const FComponentMeta& meta)
-                {
-                    if (!EntityManager::HasComponent(entity, meta.type))
-                    {
-                        if (ImGui::MenuItem(meta.name))
+            EntityManager::IterateRegisteredComponents([entity = m_currentSelection](const FComponentMeta& meta) {
+                    if (!EntityManager::HasComponent(entity, meta.type)) {
+                        if (ImGui::MenuItem(meta.name.data())) {
                             EntityManager::AddComponent(entity, meta.type);
+                        }
                     }
                 });
 

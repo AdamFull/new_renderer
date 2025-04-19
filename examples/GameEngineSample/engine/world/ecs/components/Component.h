@@ -14,8 +14,7 @@
 #include <edge/util/utl_string.hpp>
 #include <edge/util/utl_enum.hpp>
 
-namespace icon
-{
+namespace icon {
 	constexpr std::string_view entity{ ICON_MDI_GRAPH };
 	constexpr std::string_view transform{ ICON_MDI_AXIS }; /*ICON_MDI_VECTOR_LINE*/
 	constexpr std::string_view spot_light{ ICON_MDI_HEAD_LIGHTBULB };
@@ -63,8 +62,3 @@ namespace glm
 	REGISTER_GLM_MATRIX_SERIALIZATION(mat3);
 	REGISTER_GLM_MATRIX_SERIALIZATION(mat4);
 }
-
-#define DECLARE_COMPONENT(clazz, clazz_ico, clazz_name) \
-	using _Self = clazz; \
-	static constexpr std::string_view _NameRaw = std::string_view(clazz_name); \
-	static constexpr std::string_view _Name = edge::join_v<clazz_ico, _NameRaw>;

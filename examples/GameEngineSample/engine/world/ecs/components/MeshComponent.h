@@ -5,25 +5,18 @@
 
 #include "Component.h"
 
-namespace engine
-{
-	namespace world
-	{
-		namespace ecs
-		{
-			struct FMeshComponent
-			{
-				DECLARE_COMPONENT(FMeshComponent, icon::shape, "Mesh renderer")
+namespace engine::world::ecs {
+	struct FMeshComponent {
+		static constexpr std::string_view _name{ "Mesh" };
+		static constexpr std::string_view _name_with_icon = edge::join_v<icon::shape, _name>;
 
-				uint32_t mesh{ ~0u };
-				int32_t skin{ -1 };
-				bool castShadows{ true };
-			};
-		}
-	}
+		uint32_t mesh{ ~0u };
+		int32_t skin{ -1 };
+		bool castShadows{ true };
+	};
 }
 
-REFL_AUTO(
-	type(engine::world::ecs::FMeshComponent),
-	field(castShadows)
-)
+REFL_TYPE(engine::world::ecs::FMeshComponent, 
+	engine::attr::Name(engine::world::ecs::FMeshComponent::_name_with_icon))
+REFL_FIELD(castShadows, engine::attr::Name("Cast Shadows"))
+REFL_END
