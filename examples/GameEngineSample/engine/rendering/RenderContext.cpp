@@ -609,6 +609,7 @@ namespace engine
 				present_info.image_indices = &GetCurrentFrameIndex();
 
 				queue->present(present_info);
+				// TODO: This one makes render waiting current frame. Need to remove it in future
 				current_frame->fence->wait();
 
 				//current_frame_index = (current_frame_index + 1) % swapchain->get_image_count();
