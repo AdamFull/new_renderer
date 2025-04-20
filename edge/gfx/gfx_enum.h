@@ -30,7 +30,8 @@ namespace edge::gfx
 		eRootSignature,
 		ePipeline,
 		ePipelineCache,
-		eDescriptorSetLayout,
+		eDescriptorLayout,
+		eBindingLayout,
 		eDescriptorAllocator,
 		eSharedDescriptor,
 		eQueryPool

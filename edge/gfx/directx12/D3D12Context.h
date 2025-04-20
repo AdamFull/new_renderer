@@ -39,6 +39,7 @@ namespace edge::gfx::d3d12
 
 		auto create_descriptor_allocator() const->IDescriptorAllocator* override;
 		auto create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) const->IDescriptorLayout* override;
+		auto create_binding_layout(IDescriptorLayout* descriptor_layout) const->IBindingLayout* override;
 
 		auto create_sampler(const SamplerCreateInfo& create_info) const->ISampler* override;
 

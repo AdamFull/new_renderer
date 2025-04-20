@@ -71,6 +71,8 @@ namespace engine
 			edge::gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) override;
 			edge::gfx::ICommandList& GetCurrentCommandList() override;
 			edge::gfx::IDescriptorAllocator& GetCurrentDescriptorAllocator() override;
+
+			auto get_binding_layouts(std::span<edge::gfx::IDescriptorLayout*> binding_layouts) -> std::vector<edge::gfx::IBindingLayout*> override;
 		protected:
 			void UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data);
 
@@ -97,6 +99,7 @@ namespace engine
 			std::vector<std::pair<std::shared_ptr<edge::gfx::AsyncResourceHandle>, uint32_t>> pending_resources;
 
 			RenderFrame* current_frame{ nullptr };
+			edge::gfx::IDescriptorLayout* global_descriptor{ nullptr };
 
 			static constexpr size_t k_max_frames_in_flight{ 8ull };
 			std::array<std::unique_ptr<RenderFrame>, k_max_frames_in_flight> render_frames{};
@@ -118,8 +121,6 @@ namespace engine
 			float gpu_delta_time{ 0.f };
 
 			// Shared descriptors
-			edge::gfx::IDescriptorLayout* global_descriptor{ nullptr };
-			edge::gfx::IDescriptorAllocator* global_descriptor_allocator{ nullptr };
 			std::unique_ptr<UniformPool> global_uniform_pool{};
 
 			ResourceContainer<TextureObject> static_textures{};

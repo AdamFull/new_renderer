@@ -23,7 +23,8 @@ namespace edge::gfx {
 	public:
 		~IFence() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eFence;
 		}
 
@@ -36,7 +37,8 @@ namespace edge::gfx {
 	public:
 		~ISemaphore() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eSemaphore;
 		}
 	};
@@ -45,7 +47,8 @@ namespace edge::gfx {
 	public:
 		~IQueue() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eQueue;
 		}
 
@@ -58,7 +61,8 @@ namespace edge::gfx {
 	public:
 		~ISwapchain() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eSwapchain;
 		}
 
@@ -77,7 +81,8 @@ namespace edge::gfx {
 	public:
 		~IBuffer() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eBuffer;
 		}
 
@@ -147,7 +152,8 @@ namespace edge::gfx {
 	public:
 		~ICommandList() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eCommandList;
 		}
 
@@ -197,7 +203,8 @@ namespace edge::gfx {
 	public:
 		~ICommandPool() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eCommandPool;
 		}
 
@@ -209,7 +216,8 @@ namespace edge::gfx {
 	public:
 		~ITexture() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eTexture;
 		}
 
@@ -227,7 +235,8 @@ namespace edge::gfx {
 	public:
 		~ISampler() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eSampler;
 		}
 	};
@@ -236,11 +245,13 @@ namespace edge::gfx {
 	public:
 		~IShader() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eShader;
 		}
 
-		[[nodiscard]] auto get_reflection() const noexcept -> ShaderReflection const& {
+		[[nodiscard]] auto get_reflection() const noexcept 
+			-> ShaderReflection const& {
 			return reflection;
 		}
 
@@ -252,7 +263,8 @@ namespace edge::gfx {
 	public:
 		~IRootSignature() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eRootSignature;
 		}
 	};
@@ -261,7 +273,8 @@ namespace edge::gfx {
 	public:
 		~IPipeline() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::ePipeline;
 		}
 
@@ -272,7 +285,8 @@ namespace edge::gfx {
 	public:
 		~IPipelineCache() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::ePipelineCache;
 		}
 
@@ -283,37 +297,50 @@ namespace edge::gfx {
 	public:
 		~IDescriptorLayout() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
-			return ResourceType::eDescriptorSetLayout;
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
+			return ResourceType::eDescriptorLayout;
+		}
+
+		virtual auto hash() const noexcept -> uint32_t = 0;
+	};
+
+	class IBindingLayout : public IGFXResource {
+	public:
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
+			return ResourceType::eBindingLayout;
 		}
 
 		virtual auto valid() const noexcept -> bool = 0;
-		virtual auto allocated() const noexcept -> bool = 0;
-		virtual auto hash() const noexcept -> uint32_t = 0;
 
 		virtual auto bind(const SamplerDescriptor& sampler_desc) -> void = 0;
 		virtual auto bind(const TextureDescriptor& texture_desc) -> void = 0;
 		virtual auto bind(const BufferDescriptor& buffer_desc) -> void = 0;
+
+		virtual auto get_descriptor_layout() -> IDescriptorLayout* = 0;
 	};
 
 	class IDescriptorAllocator : public IGFXResource {
 	public:
 		~IDescriptorAllocator() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eDescriptorAllocator;
 		}
 
 		virtual void reset() = 0;
-		virtual auto allocate(std::span<IDescriptorLayout*> layouts) -> bool = 0;
-		virtual auto free(std::span<IDescriptorLayout*> layouts) -> bool = 0;
+		virtual auto allocate(std::span<IBindingLayout*> layouts) -> bool = 0;
+		virtual auto free(std::span<IBindingLayout*> layouts) -> bool = 0;
 	};
 
 	class IQueryPool : public IGFXResource {
 	public:
 		~IQueryPool() override = default;
 
-		[[nodiscard]] auto get_resource_type() const noexcept -> ResourceType override final {
+		[[nodiscard]] auto get_resource_type() const noexcept 
+			-> ResourceType override final {
 			return ResourceType::eQueryPool;
 		}
 

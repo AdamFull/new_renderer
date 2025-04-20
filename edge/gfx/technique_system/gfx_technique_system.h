@@ -1,7 +1,6 @@
 #pragma once
 #include "../../util/utl_hash.hpp"
 #include "../gfx_structures.h"
-#include "../gfx_descriptor_table.h"
 
 #include "gfx_shader_compiler.h"
 
@@ -58,7 +57,7 @@ namespace edge::gfx
 			IShader* shader{ nullptr };
 			IRootSignature* root_signature{ nullptr };
 			IPipeline* pipeline{ nullptr };
-			DescriptorTable table;
+			std::vector<IDescriptorLayout*> descriptor_layouts;
 		};
 
 		struct Shader {
@@ -69,7 +68,6 @@ namespace edge::gfx
 
 		struct TechniqueConfigInfo {
 			std::string_view db_path;
-			IDescriptorAllocator* descriptor_allocator{ nullptr };
 			Format backbuffer_format{};
 		};
 
@@ -85,10 +83,8 @@ namespace edge::gfx
 
 		void add_technique(const std::string& name, const TechniqueDesc& technique_desc);
 		auto get_technique(const std::string& name) -> Technique&;
-
-		void free_resources();
 	private:
-		auto create_descriptor_table(IShader* shader, DescriptorTable& table) -> void;
+		auto create_descriptor_table(IShader* shader, std::vector<IDescriptorLayout*>& table_layouts) -> void;
 
 		std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage);
 
@@ -99,7 +95,6 @@ namespace edge::gfx
 		std::unordered_map<uint32_t, Shader> shaders;
 		std::unordered_map<std::string, Technique> techniques;
 
-		IDescriptorAllocator* descriptor_allocator{ nullptr };
-		std::deque<IDescriptorLayout*> descriptors;
+		std::deque<IDescriptorLayout*> descriptor_layouts;
 	};
 }

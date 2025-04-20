@@ -30,6 +30,7 @@ namespace edge
 		class IPipeline;
 		class IPipelineCache;
 		class IDescriptorLayout;
+		class IBindingLayout;
 		class IDescriptorAllocator;
 		class IQueryPool;
 
@@ -396,7 +397,7 @@ namespace edge
 			IRootSignature* root_signature{ nullptr };
 
 			uint32_t first_set{ 0u };
-			std::span<IDescriptorLayout*> binding_layouts{};
+			std::span<IBindingLayout*> binding_layouts{};
 		};
 
 		struct BufferDescriptor {

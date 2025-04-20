@@ -28,8 +28,8 @@ namespace edge::gfx::vulkan
 		void set_resource_name(std::string_view name) const noexcept override;
 
 		void reset() override;
-		auto allocate(std::span<IDescriptorLayout*> layouts) -> bool override;
-		auto free(std::span<IDescriptorLayout*> layouts) -> bool override;
+		auto allocate(std::span<IBindingLayout*> layouts) -> bool override;
+		auto free(std::span<IBindingLayout*> layouts) -> bool override;
 	private:
 		auto create_new_pool(const PoolSizes& requested_sizes, bool bindless_support = false) -> DescriptorPoolBlock&;
 		auto lookup_free_pool(const PoolSizes& requested_sizes, int32_t requested_set_count, bool bindless_support = false) -> std::tuple<DescriptorPoolBlock&, size_t>;
@@ -37,6 +37,6 @@ namespace edge::gfx::vulkan
 		Device& device;
 
 		std::vector<DescriptorPoolBlock> pool_blocks{};
-		std::vector<IDescriptorLayout*> allocated_layouts{};
+		std::vector<IBindingLayout*> allocated_layouts{};
 	};
 }

@@ -111,6 +111,11 @@ namespace edge::gfx::d3d12
 		return nullptr;
 	}
 
+	auto D3D12Context::create_binding_layout(IDescriptorLayout* descriptor_layout) const->IBindingLayout* {
+		assert(false && "NOT IMPLEMENTED");
+		return nullptr;
+	}
+
 	auto D3D12Context::create_sampler(const SamplerCreateInfo& create_info) const -> ISampler*
 	{
 		assert(false && "NOT IMPLEMENTED");

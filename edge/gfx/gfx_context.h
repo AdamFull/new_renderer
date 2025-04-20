@@ -36,6 +36,7 @@ namespace edge::gfx
 
 	[[nodiscard]] auto create_descriptor_allocator() -> IDescriptorAllocator*;
 	[[nodiscard]] auto create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) -> IDescriptorLayout*;
+	[[nodiscard]] auto create_binding_layout(IDescriptorLayout* descriptor_layout) -> IBindingLayout*;
 
 	[[nodiscard]] auto create_sampler(const SamplerCreateInfo& create_info) -> ISampler*;
 
@@ -81,6 +82,7 @@ namespace edge::gfx
 
 		virtual auto create_descriptor_allocator() const->IDescriptorAllocator* = 0;
 		virtual auto create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) const->IDescriptorLayout* = 0;
+		virtual auto create_binding_layout(IDescriptorLayout* descriptor_layout) const->IBindingLayout* = 0;
 
 		virtual auto create_sampler(const SamplerCreateInfo& create_info) const->ISampler* = 0;
 

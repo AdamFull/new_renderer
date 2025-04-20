@@ -129,29 +129,8 @@ namespace edge::gfx::vulkan {
 
 		auto is_bindless() const noexcept -> bool;
 
-		auto valid() const noexcept -> bool override;
-		auto allocated() const noexcept -> bool override {
-			return descriptor_set || !invalidated_sets.empty();
-		}
-
 		auto hash() const noexcept -> uint32_t override {
 			return layout_hash;
-		}
-
-		auto bind(const SamplerDescriptor& sampler_desc) -> void override;
-		auto bind(const TextureDescriptor& texture_desc) -> void override;
-		auto bind(const BufferDescriptor& buffer_desc) -> void override;
-
-		auto update() -> void;
-
-		auto set_descriptor_set(vk::DescriptorSet new_set, int32_t pool_idx) -> void;
-
-		auto get_descriptor_set() const noexcept -> std::tuple<vk::DescriptorSet, int32_t> {
-			return { descriptor_set, descriptor_pool_idx };
-		}
-
-		auto get_invalidated_descriptor_sets() const noexcept -> std::span<const std::pair<vk::DescriptorSet, int32_t>> {
-			return invalidated_sets;
 		}
 
 		auto get_binding_count() const noexcept -> uint32_t {
@@ -164,20 +143,9 @@ namespace edge::gfx::vulkan {
 	private:
 		Device& device;
 
-		vk::DescriptorSet descriptor_set{ nullptr };
-		std::vector<std::pair<vk::DescriptorSet, int32_t>> invalidated_sets{};
-		int32_t descriptor_pool_idx{ -1 };
-
 		PoolSizes pool_sizes{};
 		uint32_t binding_count{ 0u };
 		uint32_t layout_hash{ 0u };
 		bool have_bindless_descriptor{ false };
-		bool is_invalidated{ false };
-
-		std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
-		std::deque<vk::DescriptorImageInfo> image_descriptors{};
-		std::deque<vk::DescriptorBufferInfo> buffer_descriptors{};
-
-		mutable std::string descriptor_name{};
 	};
 }

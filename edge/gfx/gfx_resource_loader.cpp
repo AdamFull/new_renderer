@@ -277,7 +277,7 @@ namespace edge::gfx
 
 				auto& generator = shader_instances[mip_count - 1];
 
-				descriptor_allocator->allocate({ &binding_layout, 1 });
+				//descriptor_allocator->allocate({ &binding_layout, 1 });
 
 				cmd_list->bind_pipeline(generator.pipeline);
 
@@ -297,7 +297,7 @@ namespace edge::gfx
 				bind_resource.resource_state = resource_state;
 
 				// Bind texture slot
-				binding_layout->bind(bind_resource);
+				//binding_layout->bind(bind_resource);
 
 				// Make texture writable now
 				texture_barrier.src_state = resource_state;
@@ -311,13 +311,13 @@ namespace edge::gfx
 				for (int32_t i = 0; i < mip_count; ++i) {
 					bind_resource.binding = i + 1;
 					bind_resource.subresource_index = mip + i;
-					binding_layout->bind(bind_resource);
+					//binding_layout->bind(bind_resource);
 				}
 
 				// Finally bind descriptor
 				BindDescriptorsInfo bind_info{};
 				bind_info.pipeline_type = PipelineType::eCompute;
-				bind_info.binding_layouts = { &binding_layout, 1 };
+				//bind_info.binding_layouts = { &binding_layout, 1 };
 				bind_info.root_signature = generator.root_signature;
 
 				cmd_list->bind_descriptors(bind_info);

@@ -187,6 +187,8 @@ namespace engine
 			virtual edge::gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) = 0;
 			virtual edge::gfx::ICommandList& GetCurrentCommandList() = 0;
 			virtual edge::gfx::IDescriptorAllocator& GetCurrentDescriptorAllocator() = 0;
+
+			virtual auto get_binding_layouts(std::span<edge::gfx::IDescriptorLayout*> binding_layouts) -> std::vector<edge::gfx::IBindingLayout*> = 0;
 		};
 	}
 }

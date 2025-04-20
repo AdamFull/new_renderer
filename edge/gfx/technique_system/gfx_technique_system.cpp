@@ -89,8 +89,6 @@ namespace edge::gfx
 			return false;
 		}
 
-		descriptor_allocator = config.descriptor_allocator;
-
 		for (const auto& technique : json) {
 			TechniqueDesc technique_desc;
 			technique_desc.type = technique["type"].get<TechniqueType>();
@@ -186,6 +184,9 @@ namespace edge::gfx
 			try_parse_to("primitive_topology", technique, technique_desc.primitive_topology);
 
 			std::string technique_name = technique["name"].get<std::string>();
+			if (technique_name == "clear_counters") {
+				volatile int iiiii = 0;
+			}
 			add_technique(technique_name, technique_desc);
 		}
 
@@ -245,16 +246,17 @@ namespace edge::gfx
 	}
 
 	void TechniqueDatabase::add_descriptor_layout(IDescriptorLayout* layout) {
-		auto found = std::find_if(descriptors.begin(), descriptors.end(), [layout](const IDescriptorLayout* l) {
+		auto found = std::find_if(descriptor_layouts.begin(), descriptor_layouts.end(), 
+			[layout](const IDescriptorLayout* l) {
 			return layout->hash() == l->hash();
 			});
 
-		if (found != descriptors.end()) {
+		if (found != descriptor_layouts.end()) {
 			EDGE_LOGW("[Technique System] Descriptor \"{}\" is already exists.");
 			return;
 		}
 
-		descriptors.push_back(layout);
+		descriptor_layouts.push_back(layout);
 	}
 
 	void TechniqueDatabase::add_technique(const std::string& name, const TechniqueDesc& technique_desc) {
@@ -289,16 +291,16 @@ namespace edge::gfx
 				});
 		}
 
-		Technique new_technique{name, nullptr, nullptr, nullptr, descriptor_allocator };
+		Technique new_technique{name, nullptr, nullptr, nullptr };
 
 		new_technique.shader = create_shader(shader_stages);
 		new_technique.shader->set_resource_name(name);
 
-		create_descriptor_table(new_technique.shader, new_technique.table);
+		create_descriptor_table(new_technique.shader, new_technique.descriptor_layouts);
 
 		RootSignatureCreateInfo root_sign_ci{};
 		root_sign_ci.shader = new_technique.shader;
-		root_sign_ci.binding_layouts = new_technique.table.get_layouts();
+		root_sign_ci.binding_layouts = new_technique.descriptor_layouts;
 		// TODO: lookup for root signature
 		new_technique.root_signature = create_root_signature(root_sign_ci);
 		new_technique.root_signature->set_resource_name(name);
@@ -360,13 +362,7 @@ namespace edge::gfx
 		return fallback_technique;
 	}
 
-	void TechniqueDatabase::free_resources() {
-		for (auto& [name, technique] : techniques) {
-			technique.table.reset();
-		}
-	}
-
-	auto TechniqueDatabase::create_descriptor_table(IShader* shader, DescriptorTable& table) -> void {
+	auto TechniqueDatabase::create_descriptor_table(IShader* shader, std::vector<IDescriptorLayout*>& table_layouts) -> void {
 		struct DescriptorSpaceDesc {
 			std::vector<DescrptorLayoutBindingDesc> bindings;
 			uint32_t hash{ 0u };
@@ -381,35 +377,38 @@ namespace edge::gfx
 			auto& binding = space.bindings.emplace_back();
 			binding.binding = it->binding;
 			binding.count = it->count;
-			binding.stages = ShaderStageFlag::eAll;//it->stages;
+			binding.stages = ShaderStageFlag::eAll;//it->stages; TODO
 			binding.type = it->type;
 
 			space.hash = gfx::hash(binding, space.hash);
 		}
 
+		// Update layout table
 		for (int32_t space_idx = 0; space_idx < descriptor_spaces.size(); ++space_idx) {
 			auto& space_desc = descriptor_spaces[space_idx];
 			if (space_desc.bindings.empty()) {
 				continue;
 			}
 
-			auto found = std::find_if(descriptors.begin(), descriptors.end(),
+			auto found = std::find_if(descriptor_layouts.begin(), descriptor_layouts.end(),
 				[&space_desc](IDescriptorLayout* layout) {
 					return layout->hash() == space_desc.hash;
 				});
 
-			if (found != descriptors.end()) {
-				table.add_layout(space_idx, *found);
+			if (found != descriptor_layouts.end()) {
+				//table_layouts[space_idx] = *found;
+				table_layouts.emplace_back(*found);
 				continue;
 			}
 
-			auto& new_layout = descriptors.emplace_back();
+			auto& new_layout = descriptor_layouts.emplace_back();
 
 			DescriptorLayoutCreateInfo layout_ci{};
 			layout_ci.bindings = space_desc.bindings;
 			new_layout = create_descriptor_layout(layout_ci);
 
-			table.add_layout(space_idx, new_layout);
+			//table_layouts[space_idx] = new_layout;
+			table_layouts.emplace_back(new_layout);
 		}
 	}
 

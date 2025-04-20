@@ -2,6 +2,7 @@
 #include "gfx_vk_debug.h"
 #include "gfx_vk_device.h"
 #include "gfx_vk_root_signature.h"
+#include "gfx_vk_descriptor_binding_layout.h"
 
 #include "../../util/Logger.h"
 #include "../../util/utl_profiler.h"
@@ -67,14 +68,14 @@ namespace edge::gfx::vulkan
 		}
 
 		for (auto& layout : allocated_layouts) {
-			auto* vk_layout = layout->as<DescriptorSetLayout*>();
+			auto* vk_layout = layout->as<DescriptorBindingLayout*>();
 			vk_layout->set_descriptor_set(nullptr, -1);
 		}
 
 		allocated_layouts.clear();
 	}
 
-	auto DescriptorAllocator::allocate(std::span<IDescriptorLayout*> layouts) -> bool {
+	auto DescriptorAllocator::allocate(std::span<IBindingLayout*> layouts) -> bool {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		PoolSizes required_sizes{};
@@ -84,7 +85,8 @@ namespace edge::gfx::vulkan
 		std::vector<vk::DescriptorSetLayout> descriptor_set_layouts{ layouts.size() };
 
 		for (int32_t i = 0; i < static_cast<int32_t>(layouts.size()); ++i) {
-			auto* vk_layout = layouts[i]->as<DescriptorSetLayout*>();
+			auto* vk_binding_layout = layouts[i]->as<DescriptorBindingLayout*>();
+			auto* vk_layout = vk_binding_layout->get_descriptor_layout()->as<DescriptorSetLayout*>();
 			required_sizes += vk_layout->get_required_descriptor_count();
 
 			descriptor_set_layouts[i] = vk_layout->get_handle();
@@ -112,8 +114,8 @@ namespace edge::gfx::vulkan
 		}
 
 		for (int32_t i = 0; i < layouts.size(); ++i) {
-			auto* vk_layout = layouts[i]->as<DescriptorSetLayout*>();
-			vk_layout->set_descriptor_set(allocated_descriptor_sets[i], pool_idx);
+			auto* vk_binding_layout = layouts[i]->as<DescriptorBindingLayout*>();
+			vk_binding_layout->set_descriptor_set(allocated_descriptor_sets[i], pool_idx);
 		}
 
 		allocated_layouts.insert(allocated_layouts.end(), layouts.begin(), layouts.end());
@@ -121,36 +123,33 @@ namespace edge::gfx::vulkan
 		return true;
 	}
 
-	auto DescriptorAllocator::free(std::span<IDescriptorLayout*> layouts) -> bool {
+	auto DescriptorAllocator::free(std::span<IBindingLayout*> layouts) -> bool {
 		std::vector<std::vector<vk::DescriptorSet>> descriptor_sets{ pool_blocks.size() };
 
-		auto add_deallocate_descriptor = [this, &descriptor_sets](DescriptorSetLayout* layout, vk::DescriptorSet set, int32_t pool_idx) {
+		auto add_deallocate_descriptor = [this, &descriptor_sets](IBindingLayout* layout, vk::DescriptorSet set, int32_t pool_idx) {
 			if (!set || pool_idx < 0) {
 				EDGE_LOGE("[VK Descriptor Allocator] failed to deallocate descriptor memory for pool \"{}\".", pool_idx);
 				return;
 			}
 
+			auto* descriptor_layout = layout->get_descriptor_layout();
+			auto* vk_descriptor_layout = descriptor_layout->as<DescriptorSetLayout*>();
+
 			auto& pool = pool_blocks[pool_idx];
 			pool.avaliable_sets += 1;
-			pool.avaliable_sizes += layout->get_required_descriptor_count();
+			pool.avaliable_sizes += vk_descriptor_layout->get_required_descriptor_count();
 
 			descriptor_sets[pool_idx].push_back(set);
 			};
 
 		// Prepare descriptors to utilize
 		for (const auto& layout : layouts) {
-			auto* vk_layout = layout->as<DescriptorSetLayout*>();
-
-			// Deallocate all invalidated descriptors
-			auto invalidated_sets = vk_layout->get_invalidated_descriptor_sets();
-			for (auto& [set, pool_idx] : invalidated_sets) {
-				add_deallocate_descriptor(vk_layout, set, pool_idx);
-			}
+			auto* vk_binding_layout = layout->as<DescriptorBindingLayout*>();
 
 			// Deallocate last descriptor
-			auto [set, pool_idx] = vk_layout->get_descriptor_set();
-			add_deallocate_descriptor(vk_layout, set, pool_idx);
-			vk_layout->set_descriptor_set(nullptr, -1);
+			auto [set, pool_idx] = vk_binding_layout->get_descriptor_set();
+			add_deallocate_descriptor(layout, set, pool_idx);
+			vk_binding_layout->set_descriptor_set(nullptr, -1);
 		}
 
 		// Free individual descriptors

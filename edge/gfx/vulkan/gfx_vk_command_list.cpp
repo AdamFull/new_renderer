@@ -8,7 +8,7 @@
 #include "gfx_vk_texture.h"
 #include "gfx_vk_pipeline.h"
 #include "gfx_vk_root_signature.h"
-#include "gfx_vk_descriptor_set_layout.h"
+#include "gfx_vk_descriptor_binding_layout.h"
 
 #include "../gfx_util.h"
 #include "gfx_vk_util.h"
@@ -80,15 +80,30 @@ namespace edge::gfx::vulkan
 			return;
 		}
 
+		std::vector<vk::WriteDescriptorSet> descriptor_updates{};
 		std::vector<vk::DescriptorSet> descriptor_sets{ bind_info.binding_layouts.size() };
 
+		// Collect updates and descriptor sets to bind
 		for (int32_t i = 0; i < static_cast<int32_t>(bind_info.binding_layouts.size()); ++i) {
-			auto* vk_layout = bind_info.binding_layouts[i]->as<DescriptorSetLayout*>();
-			auto [descriptor_set, pool_index] = vk_layout->get_descriptor_set();
+			auto* vk_binding_layout = bind_info.binding_layouts[i]->as<DescriptorBindingLayout*>();
+			auto [descriptor_set, pool_index] = vk_binding_layout->get_descriptor_set();
 
 			descriptor_sets[i] = descriptor_set;
 
-			vk_layout->update();
+			vk_binding_layout->collect_updates(descriptor_updates);
+		}
+
+		// Update all collected descriptor writes
+		if (!descriptor_updates.empty()) {
+			auto& device = command_pool.get_device();
+			device.get_handle()
+				.updateDescriptorSets(static_cast<uint32_t>(descriptor_updates.size()), descriptor_updates.data(), 0, nullptr);
+		}
+
+		// Invalidate descriptor updates
+		for (int32_t i = 0; i < static_cast<int32_t>(bind_info.binding_layouts.size()); ++i) {
+			auto* vk_binding_layout = bind_info.binding_layouts[i]->as<DescriptorBindingLayout*>();
+			vk_binding_layout->mark_updated();
 		}
 
 		auto* vk_root_signature = bind_info.root_signature->as<RootSignature*>();

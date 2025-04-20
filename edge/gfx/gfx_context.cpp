@@ -189,6 +189,15 @@ namespace edge::gfx
 		return gfx_context->create_descriptor_layout(create_info);
 	}
 
+	auto create_binding_layout(IDescriptorLayout* descriptor_layout) -> IBindingLayout* {
+		if (!gfx_context) {
+			EDGE_LOGE("[GFX] Graphics context is not initialized yet.");
+			return nullptr;
+		}
+
+		return gfx_context->create_binding_layout(descriptor_layout);
+	}
+
 	auto create_sampler(const SamplerCreateInfo& create_info) -> ISampler* {
 		if (!gfx_context) {
 			EDGE_LOGE("[GFX] Graphics context is not initialized yet.");

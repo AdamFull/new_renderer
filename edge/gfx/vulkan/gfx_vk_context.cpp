@@ -28,6 +28,7 @@
 #include "gfx_vk_shader.h"
 #include "gfx_vk_root_signature.h"
 #include "gfx_vk_descriptor_allocator.h"
+#include "gfx_vk_descriptor_binding_layout.h"
 
 #include "gfx_vk_util.h"
 
@@ -300,6 +301,10 @@ namespace edge::gfx::vulkan
 
 	auto GFXContext::create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) const -> IDescriptorLayout* {
 		return new DescriptorSetLayout(*device, create_info);
+	}
+
+	auto GFXContext::create_binding_layout(IDescriptorLayout* descriptor_layout) const->IBindingLayout* {
+		return new DescriptorBindingLayout(*device, descriptor_layout);
 	}
 
 	auto GFXContext::create_sampler(const SamplerCreateInfo& create_info) const -> ISampler*
