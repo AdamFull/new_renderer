@@ -85,6 +85,7 @@ namespace edge::gfx
 		auto get_technique(const std::string& name) -> Technique&;
 	private:
 		auto create_descriptor_table(IShader* shader, std::vector<IDescriptorLayout*>& table_layouts) -> void;
+		auto lookup_root_signature(IShader* shader, std::span<IDescriptorLayout*> table_layouts) -> IRootSignature*;
 
 		std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage);
 
@@ -95,6 +96,7 @@ namespace edge::gfx
 		std::unordered_map<uint32_t, Shader> shaders;
 		std::unordered_map<std::string, Technique> techniques;
 
+		std::deque<IRootSignature*> root_signatures;
 		std::deque<IDescriptorLayout*> descriptor_layouts;
 	};
 }

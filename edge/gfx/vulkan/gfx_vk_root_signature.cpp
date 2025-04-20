@@ -54,11 +54,15 @@ namespace edge::gfx::vulkan
 				auto& variable = reflection.shader_variables.data[i];
 				range.stageFlags = shader_stage_flags_to_vk(reflection.constants.stages);
 				range.size += variable.size;
+
+				self_hash_ = murmur_hash(static_cast<int32_t>(reflection.constants.stages), self_hash_);
+				self_hash_ = murmur_hash(variable.size, self_hash_);
 			}
 		}
 
 		for (int32_t set = 0; set < create_info.binding_layouts.size(); ++set) {
 			auto* vk_descriptor_set_layout = utl::cast<DescriptorSetLayout*>(create_info.binding_layouts[set]);
+			self_hash_ += vk_descriptor_set_layout->hash();
 			if (!vk_descriptor_set_layout) {
 				EDGE_LOGE("[Root Signature] missing set slot {}. Cannot create root signature with missing descriptor layout.", set);
 				continue;
@@ -86,5 +90,9 @@ namespace edge::gfx::vulkan
 	void RootSignature::set_resource_name(std::string_view name) const noexcept {
 		auto& debug_utils = device.get_debug_utils();
 		debug_utils.set_debug_name(pipeline_layout->get_handle(), name);
+	}
+
+	auto RootSignature::hash() const noexcept -> uint32_t {
+		return self_hash_;
 	}
 }

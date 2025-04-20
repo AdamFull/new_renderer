@@ -184,9 +184,6 @@ namespace edge::gfx
 			try_parse_to("primitive_topology", technique, technique_desc.primitive_topology);
 
 			std::string technique_name = technique["name"].get<std::string>();
-			if (technique_name == "clear_counters") {
-				volatile int iiiii = 0;
-			}
 			add_technique(technique_name, technique_desc);
 		}
 
@@ -271,18 +268,24 @@ namespace edge::gfx
 			ShaderStageFlag stage_flag{};
 
 			auto ext = fs::get_ext(stage.path);
-			if (ext.compare(".vert") == 0)
+			if (ext.compare(".vert") == 0) {
 				stage_flag = ShaderStageFlag::eVertex;
-			else if (ext.compare(".tesc") == 0)
+			}
+			else if (ext.compare(".tesc") == 0) {
 				stage_flag = ShaderStageFlag::eTessellationControl;
-			else if (ext.compare(".tese") == 0)
+			}
+			else if (ext.compare(".tese") == 0) {
 				stage_flag = ShaderStageFlag::eTessellationEvaluation;
-			else if (ext.compare(".geom") == 0)
+			}
+			else if (ext.compare(".geom") == 0) {
 				stage_flag = ShaderStageFlag::eGeometry;
-			else if (ext.compare(".frag") == 0)
+			}
+			else if (ext.compare(".frag") == 0) {
 				stage_flag = ShaderStageFlag::eFragment;
-			else if (ext.compare(".comp") == 0)
+			}
+			else if (ext.compare(".comp") == 0) {
 				stage_flag = ShaderStageFlag::eCompute;
+			}
 
 			shader_stages.push_back({
 				.stage = stage_flag,
@@ -297,13 +300,8 @@ namespace edge::gfx
 		new_technique.shader->set_resource_name(name);
 
 		create_descriptor_table(new_technique.shader, new_technique.descriptor_layouts);
-
-		RootSignatureCreateInfo root_sign_ci{};
-		root_sign_ci.shader = new_technique.shader;
-		root_sign_ci.binding_layouts = new_technique.descriptor_layouts;
-		// TODO: lookup for root signature
-		new_technique.root_signature = create_root_signature(root_sign_ci);
-		new_technique.root_signature->set_resource_name(name);
+		new_technique.root_signature = lookup_root_signature(new_technique.shader, new_technique.descriptor_layouts);
+		//new_technique.root_signature->set_resource_name(name);
 
 		if (technique_desc.type == TechniqueType::eCompute) {
 			ComputePipelineCreateInfo pipeline_ci{};
@@ -410,6 +408,35 @@ namespace edge::gfx
 			//table_layouts[space_idx] = new_layout;
 			table_layouts.emplace_back(new_layout);
 		}
+	}
+
+	auto TechniqueDatabase::lookup_root_signature(IShader* shader, std::span<IDescriptorLayout*> table_layouts) -> IRootSignature* {
+		uint32_t root_sign_hash{ 0u };
+
+		auto& reflection = shader->get_reflection();
+		if (reflection.constants.range_begin != ~0u) {
+			for (int32_t i = reflection.constants.range_begin; i < reflection.constants.variable_count; ++i) {
+				auto& variable = reflection.shader_variables.data[i];
+				root_sign_hash = murmur_hash(static_cast<int32_t>(reflection.constants.stages), root_sign_hash);
+				root_sign_hash = murmur_hash(variable.size, root_sign_hash);
+			}
+		}
+
+		for (auto& layout : table_layouts) {
+			root_sign_hash += layout->hash();
+		}
+
+		auto found = std::find_if(root_signatures.begin(), root_signatures.end(),
+			[&root_sign_hash](IRootSignature* root_sign) { return root_sign_hash == root_sign->hash(); });
+
+		if (found != root_signatures.end()) {
+			return *found;
+		}
+
+		RootSignatureCreateInfo root_sign_ci{};
+		root_sign_ci.shader = shader;
+		root_sign_ci.binding_layouts = table_layouts;
+		return root_signatures.emplace_back(create_root_signature(root_sign_ci));
 	}
 
 	std::span<const uint8_t> TechniqueDatabase::get_or_compile_shader(const TechniqueDesc::ShaderStage& stage) {

@@ -13,6 +13,8 @@ namespace edge::gfx {
 
 		[[nodiscard]] virtual auto get_resource_type() const noexcept -> ResourceType = 0;
 
+		virtual auto hash() const noexcept -> uint32_t { return 0; };
+
 		template<typename _Ty>
 		[[nodiscard]] auto as() -> _Ty {
 			return utl::cast<_Ty>(this);
@@ -301,8 +303,6 @@ namespace edge::gfx {
 			-> ResourceType override final {
 			return ResourceType::eDescriptorLayout;
 		}
-
-		virtual auto hash() const noexcept -> uint32_t = 0;
 	};
 
 	class IBindingLayout : public IGFXResource {
