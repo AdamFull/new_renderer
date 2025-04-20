@@ -37,7 +37,7 @@ namespace engine::world::ecs {
 	}
 
 	SkinningSystem::SkinningSystem(render::IRenderer& renderer) :
-		render_world{ renderer.GetRenderWorld() } {
+		render_world{ renderer.get_render_world() } {
 	}
 
 	void SkinningSystem::__create() {
@@ -86,7 +86,7 @@ namespace engine::world::ecs {
 #endif
 		}
 		// TODO: RENDER WORLD
-		//auto& render_world = m_pRenderInterface->GetRenderWorld();
+		//auto& render_world = m_pRenderInterface->get_render_world();
 		//auto& world_stats = render_world->GetStats();
 
 		//for (uint64_t idx = 0ull; idx < root_component.skins.size(); ++idx)

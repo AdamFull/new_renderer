@@ -130,15 +130,15 @@ namespace edge::gfx {
 			//buffer.Update(data, data_size, offset);
 		}
 
-		[[nodiscard]] auto GetBuffer() noexcept -> IBuffer& {
+		[[nodiscard]] auto get_buffer() noexcept -> IBuffer& {
 			return buffer;
 		}
 
-		[[nodiscard]] auto GetSize() const noexcept -> uint64_t {
+		[[nodiscard]] auto get_size() const noexcept -> uint64_t {
 			return size;
 		}
 
-		[[nodiscard]] auto GetOffset() const noexcept -> uint64_t {
+		[[nodiscard]] auto get_offset() const noexcept -> uint64_t {
 			return offset;
 		}
 	private:

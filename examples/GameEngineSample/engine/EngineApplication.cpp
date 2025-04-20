@@ -86,7 +86,7 @@ namespace engine
 
 
 
-		renderer->Render(delta_time);
+		renderer->render(delta_time);
 
 		//// Pre update zone BEGIN
 		//m_pSystemManager->PreUpdate(delta_time);

@@ -67,7 +67,7 @@ void DrawBouncingText(glm::vec2& position, glm::vec2& velocity, const glm::vec2&
 }
 
 CDebugDrawEngineSystem::CDebugDrawEngineSystem(render::IRenderer& renderer) :
-    render_world{ renderer.GetRenderWorld() }
+    render_world{ renderer.get_render_world() }
 {
 }
 
@@ -89,7 +89,7 @@ void CDebugDrawEngineSystem::PreUpdate(float dt)
 	using namespace ImDbg;
 
 	//auto& render_backend = m_pRenderInterface->GetRenderBackend();
-	//auto& render_world = m_pRenderInterface->GetRenderWorld();
+	//auto& render_world = m_pRenderInterface->get_render_world();
 	//auto resolution = render_backend->GetScreenRenderRect();
 
 	//const auto& camera = render_world->GetDefaultCamera();

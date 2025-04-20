@@ -49,11 +49,11 @@ namespace engine::render {
 		UniformHandle(const edge::gfx::ShaderReflection& reflection, const edge::gfx::ShaderResource& resource) :
 			reflection{ reflection },
 			resource{ resource } {
-			data.resize(resource.size);
+			data_.resize(resource.size);
 		}
 
 		// For render script
-		void Set(uint32_t name, const void* raw_data, uint64_t size) {
+		void set(uint32_t name, const void* raw_data, uint64_t size) {
 			auto var_begin = reflection.shader_variables.begin() + resource.range_begin;
 			auto var_end = reflection.shader_variables.begin() + resource.variable_count;
 
@@ -70,11 +70,11 @@ namespace engine::render {
 				size = variable.size;
 			}
 
-			std::memcpy(data.data() + variable.offset, raw_data, size);
+			std::memcpy(data_.data() + variable.offset, raw_data, size);
 		}
 
 		template<class _Ty>
-		void Set(uint32_t name, const _Ty& object, uint64_t size = 0ull) {
+		void set(uint32_t name, const _Ty& object, uint64_t size = 0ull) {
 			auto var_begin = reflection.shader_variables.begin() + resource.range_begin;
 			auto var_end = reflection.shader_variables.begin() + resource.variable_count;
 
@@ -91,11 +91,11 @@ namespace engine::render {
 				size = std::min(sizeof(_Ty), static_cast<size_t>(variable.size));
 			}
 
-			std::memcpy(data.data() + variable.offset, &object, size);
+			std::memcpy(data_.data() + variable.offset, &object, size);
 		}
 
 		template<class _Ty>
-		_Ty* Get(uint32_t name) {
+		_Ty* get(uint32_t name) {
 			auto var_begin = reflection.shader_variables.begin() + resource.range_begin;
 			auto var_end = reflection.shader_variables.begin() + resource.variable_count;
 
@@ -113,81 +113,81 @@ namespace engine::render {
 				return nullptr;
 			}
 
-			return reinterpret_cast<_Ty*>(data.data() + variable.offset);
+			return reinterpret_cast<_Ty*>(data_.data() + variable.offset);
 		}
 
 		template<typename _Ty>
-		_Ty& As(size_t offset = 0ull) {
+		_Ty& as(size_t offset = 0ull) {
 			assert(sizeof(_Ty) + offset <= resource.size);
-			return *reinterpret_cast<_Ty*>(&data[offset]);
+			return *reinterpret_cast<_Ty*>(&data_[offset]);
 		}
 
-		const std::vector<char>& Data() const {
-			return data;
+		const std::vector<char>& data() const {
+			return data_;
 		}
 
-		uint32_t GetNameHash() const {
+		uint32_t get_name_hash() const {
 			return resource.name_hash;
 		}
 
-		const edge::gfx::ShaderResource& GetResource() {
+		const edge::gfx::ShaderResource& get_resource() {
 			return resource;
 		}
 
 	private:
 		const edge::gfx::ShaderReflection& reflection;
 		const edge::gfx::ShaderResource& resource;
-		std::vector<char> data{};
+		std::vector<char> data_{};
 	};
 
-	class ShaderPass : public ExecutionNode {
+	class ShaderPass : public IExecutionNode {
 	public:
-		ShaderPass(ExecutionContext& execution_context, const PassCreateInfo& create_info);
+		ShaderPass(IExecutionContext& execution_context, const PassCreateInfo& create_info);
 		virtual ~ShaderPass();
 
-		void Execute(edge::gfx::ICommandList& command_list, float delta_time) override;
+		void execute(edge::gfx::ICommandList& command_list, float delta_time) override;
 
-		UniformHandle& GetUniformBlock(uint32_t name_hash);
-		UniformHandle& GetUniformBlock(const char* name);
+		auto get_uniform_block(uint32_t name_hash) -> UniformHandle&;
+		auto get_uniform_block(const char* name) -> UniformHandle&;
 
-		UniformHandle& GetConstantBlock();
+		auto get_constant_block() -> UniformHandle&;
 
-		void ReadResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index);
-		void ReadResource(uint32_t render_resource_id, uint32_t subresource_index);
-		void WriteResource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index);
-		void WriteResource(uint32_t render_resource_id, uint32_t subresource_index);
+		void read_resource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index);
+		void read_resource(uint32_t render_resource_id, uint32_t subresource_index);
+		void write_resource(uint32_t binding_point, uint32_t render_resource_id, uint32_t subresource_index);
+		void write_resource(uint32_t render_resource_id, uint32_t subresource_index);
 
-		void ResolveDependencies(edge::gfx::ICommandList& command_list);
+		void resolve_dependencies(edge::gfx::ICommandList& command_list);
 
-		void BindResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
-		void BindReadResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
-		void BindWriteResource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
+		void bind_resource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
+		void bind_read_resource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
+		void bind_write_resource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 
-		void DispatchForBuffer(edge::gfx::ICommandList& command_list, uint32_t buffer_id, bool divide_by_locals);
-		void DispatchForTarget(edge::gfx::ICommandList& command_list, uint32_t target_it, bool divide_by_locals);
-		void FinalizeTarget(edge::gfx::ICommandList& command_list, uint32_t binding_point, uint32_t target);
+		void dispatch_for_buffer(edge::gfx::ICommandList& command_list, uint32_t buffer_id, bool divide_by_locals);
+		void dispatch_for_target(edge::gfx::ICommandList& command_list, uint32_t target_it, bool divide_by_locals);
+		void finalize_target(edge::gfx::ICommandList& command_list, uint32_t binding_point, uint32_t target);
 
-		virtual void Begin(edge::gfx::ICommandList& command_list) = 0;
-		virtual void End(edge::gfx::ICommandList& command_list) = 0;
+		virtual void begin(edge::gfx::ICommandList& command_list) = 0;
+		virtual void end(edge::gfx::ICommandList& command_list) = 0;
 
-		virtual ShaderPassType GetPassType() = 0;
+		virtual ShaderPassType get_pass_type() = 0;
 
-		bool CanExecute() const;
-		void BindResources(edge::gfx::ICommandList& command_list);
-		void PushConstantRanges(edge::gfx::ICommandList& command_list);
-		void DivideWorkgroupByLocalSizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z);
+		bool can_execute() const;
+		void bind_resources(edge::gfx::ICommandList& command_list);
+		void push_constant_ranges(edge::gfx::ICommandList& command_list);
+		void divide_workgroup_by_local_sizes(uint32_t& group_x, uint32_t& group_y, uint32_t& group_z);
 
 	protected:
-		void ResourceDependency(uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
-		void ResourceDependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
-		void CollectProfileData();
-		virtual void _Execute(edge::gfx::ICommandList& command_list, float delta_time) = 0;
+		void resource_dependency(uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
+		void resource_dependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
+		void collect_profile_data();
+		virtual void _execute(edge::gfx::ICommandList& command_list, float delta_time) = 0;
 	protected:
-		ExecutionContext& execution_context;
+		IExecutionContext& execution_context;
 
 		std::string debug_name{};
 		bool one_time{ false };
-		bool can_execute{ true };
+		bool can_execute_{ true };
 
 		std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 		std::function<bool()> enabled_callback{};

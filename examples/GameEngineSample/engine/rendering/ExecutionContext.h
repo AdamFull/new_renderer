@@ -2,193 +2,176 @@
 
 #include <edge/gfx/gfx_base.h>
 
-namespace engine
-{
-	namespace render
+namespace engine::render {
+	class ShaderPass;
+
+	enum class RenderResourceTypeFlag : uint16_t {
+		eRenderTarget = 1 << 0,
+		eStorageTarget = 1 << 1,
+		eStaticImage = 1 << 2,
+		eBackbuffer = 1 << 3,
+		eAllImage = eRenderTarget | eStorageTarget | eStaticImage | eBackbuffer,
+		eStorageBuffer = 1 << 4,
+		eIndirectBuffer = 1 << 5,
+		eAllBuffer = eStorageBuffer | eIndirectBuffer
+	};
+	EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
+
+	struct RenderResource {
+		RenderResourceTypeFlag resource_type{};
+		// Id of real resource
+		uint32_t resource_id{ ~0u };
+
+		edge::gfx::ResourceStateFlags current_state{};
+
+		bool finalized{ false };
+
+		//std::unordered_set<ResourceAccess> usages{};
+
+		edge::gfx::AccessTypeFlags GetAccess() const {
+			if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eRead)) {
+				return edge::gfx::AccessTypeFlag::eRead;
+			}
+			else if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eWrite)) {
+				return edge::gfx::AccessTypeFlag::eWrite;
+			}
+			else if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eRead | edge::gfx::ResourceStateFlag::eWrite)) {
+				return edge::gfx::AccessTypeFlag::eRead | edge::gfx::AccessTypeFlag::eWrite;
+			}
+
+			return {};
+		}
+
+		auto GetState() const noexcept -> edge::gfx::ResourceStateFlags {
+			return current_state;
+		}
+
+		auto SetState(edge::gfx::ResourceStateFlags new_state) noexcept -> void {
+			current_state = new_state;
+		}
+	};
+
+	enum class ResourceAttachmentTypeFlag {
+		eColor = 1 << 0,
+		eDepth = 1 << 1,
+		eStencil = 1 << 2,
+		eDepthStencil = eDepth | eStencil
+	};
+	EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceAttachmentTypeFlags, ResourceAttachmentTypeFlag);
+
+	// Describes out attachment like color or depth/stencil attachment
+	struct RenderResourceAttachment {
+		edge::gfx::AccessTypeFlags access{};
+
+		ResourceAttachmentTypeFlags flags{};
+
+		// Index of render resource
+		uint32_t render_resource_id{ ~0u };
+
+		// Render resource clear color
+		edge::gfx::ClearColor clear_color{};
+	};
+
+	struct ShaderPassCreateInfo {
+		// Shader name in shader cache
+		std::string technique_name{};
+
+		std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
+		std::function<bool()> enabled_callback{};
+
+		// Means that this pass will be executed only one time
+		bool one_time{ false };
+	};
+
+	struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo {
+	};
+
+	struct RenderShaderPassCreateInfo : ShaderPassCreateInfo
 	{
-		class ShaderPass;
+		std::vector<RenderResourceAttachment> resource_attachments{};
 
-		enum class RenderResourceTypeFlag : uint16_t
-		{
-			eRenderTarget = 1 << 0,
-			eStorageTarget = 1 << 1,
-			eStaticImage = 1 << 2,
-			eBackbuffer = 1 << 3,
-			eAllImage = eRenderTarget | eStorageTarget | eStaticImage | eBackbuffer,
-			eStorageBuffer = 1 << 4,
-			eIndirectBuffer = 1 << 5,
-			eAllBuffer = eStorageBuffer | eIndirectBuffer
-		};
-		EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
+		void add_write_attachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, edge::gfx::ClearColor clear_color = {}) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color); }
+		void add_read_attachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eRead, flags, render_resource_id, edge::gfx::ClearColor{}); }
+	};
 
-		struct RenderResource
-		{
-			RenderResourceTypeFlag resource_type{};
-			// Id of real resource
-			uint32_t resource_id{ ~0u };
+	struct TextureResourceCreateInfo {
+		edge::gfx::TextureUsageFlags usage{};
 
-			edge::gfx::ResourceStateFlags current_state{};
+		uint32_t width{ 1u };
+		uint32_t height{ 1u };
+		uint32_t depth{ 1u };
 
-			bool finalized{ false };
+		uint32_t layers{ 1u };
+		uint32_t levels{ 1u };
 
-			//std::unordered_set<ResourceAccess> usages{};
+		bool resizable{ false };
+		float scale{ 1.f };
+		uint32_t scale_parent_resource{ ~0u };
 
-			edge::gfx::AccessTypeFlags GetAccess() const
-			{
-				if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eRead))
-					return edge::gfx::AccessTypeFlag::eRead;
-				else if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eWrite))
-					return edge::gfx::AccessTypeFlag::eWrite;
-				else if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eRead | edge::gfx::ResourceStateFlag::eWrite))
-					return edge::gfx::AccessTypeFlag::eRead | edge::gfx::AccessTypeFlag::eWrite;
+		edge::gfx::Format format{ edge::gfx::Format::eUndefined };
+	};
 
-				return {};
-			}
+	struct TextureObject {
+		edge::gfx::ITexture* texture{ nullptr };
+		edge::gfx::ISampler* sampler{ nullptr };
 
-			edge::gfx::ResourceStateFlags GetState() const
-			{
-				return current_state;
-			}
+		edge::gfx::TextureUsageFlags usage{};
+		bool resizable{ false };
+		float scale{ 1.f };
+		uint32_t scale_parent_resource{ ~0u };
+	};
 
-			void SetState(edge::gfx::ResourceStateFlags new_state)
-			{
-				current_state = new_state;
-			}
-		};
+	struct BufferObject {
+		edge::gfx::IBuffer* buffer{ nullptr };
+	};
 
-		enum class ResourceAttachmentTypeFlag
-		{
-			eColor = 1 << 0,
-			eDepth = 1 << 1,
-			eStencil = 1 << 2,
-			eDepthStencil = eDepth | eStencil
-		};
-		EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(ResourceAttachmentTypeFlags, ResourceAttachmentTypeFlag);
+	class IExecutionNode {
+	public:
+		virtual ~IExecutionNode() = default;
 
-		// Describes out attachment like color or depth/stencil attachment
-		struct RenderResourceAttachment
-		{
-			edge::gfx::AccessTypeFlags access{};
+		virtual void execute(edge::gfx::ICommandList& command_list, float delta_time) = 0;
+	};
 
-			ResourceAttachmentTypeFlags flags{};
+	class IExecutionContext {
+	public:
+		virtual ~IExecutionContext() = default;
 
-			// Index of render resource
-			uint32_t render_resource_id{ ~0u };
+		virtual auto add_resource() -> uint32_t = 0;
+		virtual auto add_resource_sync(std::string_view path, edge::gfx::ISampler* sampler = nullptr) -> uint32_t = 0;
+		virtual auto add_resource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) -> uint32_t = 0;
+		virtual auto add_resource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) -> uint32_t = 0;
+		virtual auto add_resource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) -> uint32_t = 0;
+		virtual auto add_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t = 0;
 
-			// Render resource clear color
-			edge::gfx::ClearColor clear_color{};
-		};
+		virtual void set_resource_name(uint32_t resource_index, std::string_view name) = 0;
 
-		struct ShaderPassCreateInfo
-		{
-			// Shader name in shader cache
-			std::string technique_name{};
+		virtual auto get_resource(uint32_t resource_index) -> RenderResource & = 0;
+		virtual auto get_resource(uint32_t resource_index) const ->RenderResource const& = 0;
 
-			std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
-			std::function<bool()> enabled_callback{};
+		virtual auto create_node(std::string_view group_name, uint32_t group_color = 0xFFFFFFFF) -> std::unique_ptr<IExecutionNode> = 0;
+		virtual auto create_node(const RenderShaderPassCreateInfo& create_info) -> std::unique_ptr<IExecutionNode> = 0;
+		virtual auto create_node(const ComputeShaderPassCreateInfo& create_info) -> std::unique_ptr<IExecutionNode> = 0;
 
-			// Means that this pass will be executed only one time
-			bool one_time{ false };
-		};
+		virtual void add_node(std::unique_ptr<IExecutionNode>&& node) = 0;
+		virtual void execute(float delta_time) = 0;
 
-		struct ComputeShaderPassCreateInfo : ShaderPassCreateInfo
-		{
+		virtual void update_global_binding(uint32_t binding, std::span<const uint8_t> data) = 0;
 
-		};
+		virtual void begin() = 0;
+		virtual void end() = 0;
 
-		struct RenderShaderPassCreateInfo : ShaderPassCreateInfo
-		{
-			std::vector<RenderResourceAttachment> resource_attachments{};
+		virtual auto get_texture(uint32_t resource_index) -> edge::gfx::ITexture* = 0;
+		virtual auto get_texture(const RenderResource& render_resource) -> edge::gfx::ITexture* = 0;
 
-			void AddWriteAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, edge::gfx::ClearColor clear_color = {}) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color); }
-			void AddReadAttachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eRead, flags, render_resource_id, edge::gfx::ClearColor{}); }
-		};
+		virtual auto get_sampler(uint32_t resource_index) -> edge::gfx::ISampler* = 0;
+		virtual auto get_sampler(const RenderResource& render_resource) -> edge::gfx::ISampler* = 0;
 
-		struct TextureResourceCreateInfo
-		{
-			edge::gfx::TextureUsageFlags usage{};
+		virtual auto get_buffer(uint32_t resource_index) -> edge::gfx::IBuffer* = 0;
+		virtual auto get_buffer(const RenderResource& render_resource) -> edge::gfx::IBuffer* = 0;
 
-			uint32_t width{ 1u };
-			uint32_t height{ 1u };
-			uint32_t depth{ 1u };
+		virtual auto request_uniform_block(uint64_t block_size) -> edge::gfx::BufferSuballocation = 0;
+		virtual auto get_current_command_list() -> edge::gfx::ICommandList & = 0;
 
-			uint32_t layers{ 1u };
-			uint32_t levels{ 1u };
-
-			bool resizable{ false };
-			float scale{ 1.f };
-			uint32_t scale_parent_resource{ ~0u };
-
-			edge::gfx::Format format{ edge::gfx::Format::eUndefined };
-		};
-
-		struct TextureObject
-		{
-			edge::gfx::ITexture* texture{ nullptr };
-			edge::gfx::ISampler* sampler{ nullptr };
-
-			edge::gfx::TextureUsageFlags usage{};
-			bool resizable{ false };
-			float scale{ 1.f };
-			uint32_t scale_parent_resource{ ~0u };
-		};
-
-		struct BufferObject
-		{
-			edge::gfx::IBuffer* buffer{ nullptr };
-		};
-
-		class ExecutionNode
-		{
-		public:
-			virtual ~ExecutionNode() = default;
-
-			virtual void Execute(edge::gfx::ICommandList& command_list, float delta_time) = 0;
-		};
-
-		class ExecutionContext
-		{
-		public:
-			virtual ~ExecutionContext() = default;
-
-			virtual uint32_t AddResource() = 0;
-			virtual uint32_t AddResourceSync(std::string_view path, edge::gfx::ISampler* sampler = nullptr) = 0;
-			virtual uint32_t AddResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) = 0;
-			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) = 0;
-			virtual uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) = 0;
-			virtual uint32_t AddResource(const edge::gfx::BufferCreateInfo& create_info) = 0;
-
-			virtual void set_resource_name(uint32_t resource_index, std::string_view name) = 0;
-
-			virtual RenderResource& GetResource(uint32_t resource_index) = 0;
-			virtual RenderResource const& GetResource(uint32_t resource_index) const = 0;
-
-			virtual std::unique_ptr<ExecutionNode> CreateNode(std::string_view group_name, uint32_t group_color = 0xFFFFFFFF) = 0;
-			virtual std::unique_ptr<ExecutionNode> CreateNode(const RenderShaderPassCreateInfo& create_info) = 0;
-			virtual std::unique_ptr<ExecutionNode> CreateNode(const ComputeShaderPassCreateInfo& create_info) = 0;
-
-			virtual void AddNode(std::unique_ptr<ExecutionNode>&& node) = 0;
-			virtual void Execute(float delta_time) = 0;
-
-			virtual void UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data) = 0;
-
-			virtual void Begin() = 0;
-			virtual void End() = 0;
-
-			virtual edge::gfx::ITexture* GetTexture(uint32_t resource_index) = 0;
-			virtual edge::gfx::ITexture* GetTexture(const RenderResource& render_resource) = 0;
-
-			virtual edge::gfx::ISampler* GetSampler(uint32_t resource_index) = 0;
-			virtual edge::gfx::ISampler* GetSampler(const RenderResource& render_resource) = 0;
-
-			virtual edge::gfx::IBuffer* GetBuffer(uint32_t resource_index) = 0;
-			virtual edge::gfx::IBuffer* GetBuffer(const RenderResource& render_resource) = 0;
-
-			virtual edge::gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) = 0;
-			virtual edge::gfx::ICommandList& GetCurrentCommandList() = 0;
-			virtual edge::gfx::IDescriptorAllocator& GetCurrentDescriptorAllocator() = 0;
-
-			virtual auto get_binding_layouts(std::span<edge::gfx::IDescriptorLayout*> binding_layouts) -> std::vector<edge::gfx::IBindingLayout*> = 0;
-		};
-	}
+		virtual auto get_binding_layouts(std::span<edge::gfx::IDescriptorLayout*> binding_layouts) -> std::vector<edge::gfx::IBindingLayout*> = 0;
+	};
 }

@@ -367,7 +367,7 @@ namespace engine::world
 
 			std::array<char, 1024ull> buffer{};
 			auto image_path = edge::fs::path_append(scene_root_directory, url_decode(image.uri), std::span(buffer));
-			resources.textures.push_back(renderer.AddRenderResource(image_path, texture_sampler));
+			resources.textures.push_back(renderer.add_render_resource(image_path, texture_sampler));
 		}
 
 		for (uint64_t idx = 0ull; idx < root.materials.size(); ++idx) {
@@ -417,7 +417,7 @@ namespace engine::world
 			render_material.alphaCutoff = static_cast<float>(material.alphaCutoff);
 			render_material.doubleSided = material.doubleSided;
 
-			renderer.AddMaterial(render_material);
+			renderer.add_material(render_material);
 		}
 
 		// Loading nodes
@@ -572,7 +572,7 @@ namespace engine::world
 	}
 
 	void Scene::LoadMeshComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index) {
-		auto& render_world = renderer.GetRenderWorld();
+		auto& render_world = renderer.get_render_world();
 
 		const auto& gltf_node = root.nodes[node_index];
 		const auto& gltf_mesh = root.meshes[gltf_node.mesh];
@@ -584,7 +584,7 @@ namespace engine::world
 		}
 
 		// Create gpu mesh instance 
-		auto [mesh_id, mesh] = render_world.CreateMesh(joint_count);
+		auto [mesh_id, mesh] = render_world.create_mesh(joint_count);
 		ComputeMeshBounds(root, gltf_mesh, mesh);
 
 		auto& mesh_component = EntityManager::add_component<ecs::MeshComponent>(parent, ecs::MeshComponent{});
@@ -601,8 +601,8 @@ namespace engine::world
 
 			// Load vertices
 			render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
-			auto geometry_buffer_id = renderer.RequestDeinterleavedGeometryBuffer(geometry_ci);
-			auto& geometry_buffer = renderer.LookUpGeometryBuffer(geometry_buffer_id);
+			auto geometry_buffer_id = renderer.request_deinterleaved_geometry_buffer(geometry_ci);
+			auto& geometry_buffer = renderer.lookup_geometry_buffer(geometry_buffer_id);
 
 			shlib::BoundingBox bb{};
 			VertexData vertex_data{};
@@ -680,7 +680,7 @@ namespace engine::world
 				index_stream.count = stream.count;
 			}
 
-			auto vertex_range = geometry_buffer.AddMesh(attribute_streams, index_stream);
+			auto vertex_range = geometry_buffer.add_mesh(attribute_streams, index_stream);
 
 			shlib::SubMesh submesh{};
 			submesh.first_index = vertex_range.first_index;
@@ -690,7 +690,7 @@ namespace engine::world
 			submesh.material = primitive.material;
 			submesh.ebb = shlib::EncodeBoundingBox(bb, mesh.bb_enc);
 
-			render_world.AttachSubmesh(mesh_id, submesh);
+			render_world.attach_submesh(mesh_id, submesh);
 		}
 	}
 

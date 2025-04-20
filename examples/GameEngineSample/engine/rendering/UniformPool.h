@@ -2,52 +2,48 @@
 
 #include <edge/gfx/gfx_base.h>
 
-namespace engine
-{
-	namespace render
+namespace engine::render {
+	class UniformPoolFrame final {
+	public:
+		UniformPoolFrame(uint64_t whole_size);
+
+		UniformPoolFrame(const UniformPoolFrame&) = delete;
+		UniformPoolFrame(UniformPoolFrame&& other);
+		~UniformPoolFrame();
+
+		UniformPoolFrame& operator=(const UniformPoolFrame&) = delete;
+		UniformPoolFrame& operator=(UniformPoolFrame&&) = delete;
+
+		void unmap();
+		bool is_expired() const;
+		void reset() const;
+		bool has_enought_space(uint64_t requested_size) const;
+		edge::gfx::BufferSuballocation request_block(uint64_t requested_size);
+	private:
+		edge::gfx::IBuffer* buffer{ nullptr };
+		mutable uint64_t size_remain{ 0ull };
+
+		mutable int32_t expired_countdown{ 0 };
+	};
+
+	class UniformPool final
 	{
-		class UniformPoolFrame final {
-		public:
-			UniformPoolFrame(uint64_t whole_size);
+	public:
+		UniformPool(uint64_t frame_size = 4096ull);
 
-			UniformPoolFrame(const UniformPoolFrame&) = delete;
-			UniformPoolFrame(UniformPoolFrame&& other);
-			~UniformPoolFrame();
+		UniformPool(const UniformPool&) = delete;
+		UniformPool(UniformPool&& other);
+		~UniformPool() = default;
 
-			UniformPoolFrame& operator=(const UniformPoolFrame&) = delete;
-			UniformPoolFrame& operator=(UniformPoolFrame&&) = delete;
+		UniformPool& operator=(const UniformPool&) = delete;
+		UniformPool& operator=(UniformPool&&) = delete;
 
-			void unmap();
-			bool is_expired() const;
-			void reset() const;
-			bool has_enought_space(uint64_t requested_size) const;
-			edge::gfx::BufferSuballocation request_block(uint64_t requested_size);
-		private:
-			edge::gfx::IBuffer* buffer{ nullptr };
-			mutable uint64_t size_remain{ 0ull };
-
-			mutable int32_t expired_countdown{ 0 };
-		};
-
-		class UniformPool final
-		{
-		public:
-			UniformPool(uint64_t frame_size = 4096ull);
-
-			UniformPool(const UniformPool&) = delete;
-			UniformPool(UniformPool&& other);
-			~UniformPool() = default;
-
-			UniformPool& operator=(const UniformPool&) = delete;
-			UniformPool& operator=(UniformPool&&) = delete;
-
-			void end();
-			void reset();
-			edge::gfx::BufferSuballocation request_block(uint64_t requested_size);
-		private:
-			uint64_t minimal_alignment{ 1ull };
-			uint64_t frame_size{ 4096ull };
-			std::vector<std::unique_ptr<UniformPoolFrame>> pool_frames;
-		};
-	}
+		void end();
+		void reset();
+		edge::gfx::BufferSuballocation request_block(uint64_t requested_size);
+	private:
+		uint64_t minimal_alignment{ 1ull };
+		uint64_t frame_size{ 4096ull };
+		std::vector<std::unique_ptr<UniformPoolFrame>> pool_frames;
+	};
 }

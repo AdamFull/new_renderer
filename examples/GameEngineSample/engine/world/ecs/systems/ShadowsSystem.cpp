@@ -21,7 +21,7 @@ namespace engine::world::ecs {
 	constexpr const float cascade_split_lambda = 0.7f;
 
 	ShadowsSystem::ShadowsSystem(render::IRenderer& renderer) :
-		render_world{ renderer.GetRenderWorld() } {
+		render_world{ renderer.get_render_world() } {
 	}
 
 	void ShadowsSystem::__create() {
@@ -33,7 +33,7 @@ namespace engine::world::ecs {
 		return;
 
 		// TODO: get current player camera?
-		auto& camera = render_world.GetRenderCamera(render::main_camera_index);
+		auto& camera = render_world.get_render_camera(render::main_camera_index);
 
 		int32_t light_count{ 0 };
 
@@ -93,7 +93,7 @@ namespace engine::world::ecs {
 
 						// Project frustum corners into world space
 						for (auto& corner : frustumCorners) {
-							glm::vec4 invCorner = render_world.GetCameraMatrix(render::main_camera_index, shlib::inv_view_projection_matrix_offset) * corner;
+							glm::vec4 invCorner = render_world.get_camera_matrix(render::main_camera_index, shlib::inv_view_projection_matrix_offset) * corner;
 							corner = invCorner / invCorner.w;
 						}
 
@@ -142,9 +142,9 @@ namespace engine::world::ecs {
 
 						lastSplitDist = cascadeSplits[i];
 
-						render_world.UpdateRenderCamera(light.shadow_casters[i], lightViewMatrix, lightProjectionMatrix, false, shlib::cascade_shadow_map_resolution, shlib::cascade_shadow_map_resolution);
+						render_world.update_render_camera(light.shadow_casters[i], lightViewMatrix, lightProjectionMatrix, false, shlib::cascade_shadow_map_resolution, shlib::cascade_shadow_map_resolution);
 
-						auto& camera = render_world.GetRenderCamera(light.shadow_casters[i]);
+						auto& camera = render_world.get_render_camera(light.shadow_casters[i]);
 						shadow_commit.matrix_offsets[i] = camera.matrices_offset;
 
 						// Update meshes
@@ -153,7 +153,7 @@ namespace engine::world::ecs {
 							if (!base.visible)
 								continue;
 
-							render_world.AddGeometryDraw(light.shadow_casters[i], mesh_component.mesh);
+							render_world.add_geometry_draw(light.shadow_casters[i], mesh_component.mesh);
 						}
 					}
 
@@ -161,7 +161,7 @@ namespace engine::world::ecs {
 
 					// Set shadow index and increment it
 					light.shadowIndex = dir_light_count++;
-					render_world.AddShadow(shadow_commit);
+					render_world.add_shadow(shadow_commit);
 				}
 
 				++light_count;
@@ -200,9 +200,9 @@ namespace engine::world::ecs {
 
 					for (uint64_t idx = 0ull; idx < matrices.size(); ++idx) {
 						auto& view = matrices[idx];
-						render_world.UpdateRenderCamera(light.shadow_casters[idx], view, shadowProj, true, shlib::point_light_shadow_map_resolution, shlib::point_light_shadow_map_resolution);
+						render_world.update_render_camera(light.shadow_casters[idx], view, shadowProj, true, shlib::point_light_shadow_map_resolution, shlib::point_light_shadow_map_resolution);
 
-						auto& camera = render_world.GetRenderCamera(light.shadow_casters[idx]);
+						auto& camera = render_world.get_render_camera(light.shadow_casters[idx]);
 						shadow_commit.matrix_offsets[idx] = camera.matrices_offset;
 
 						// Update meshes
@@ -212,11 +212,11 @@ namespace engine::world::ecs {
 								continue;
 							}
 
-							render_world.AddGeometryDraw(light.shadow_casters[idx], mesh_component.mesh);
+							render_world.add_geometry_draw(light.shadow_casters[idx], mesh_component.mesh);
 						}
 					}
 
-					render_world.AddShadow(shadow_commit);
+					render_world.add_shadow(shadow_commit);
 				}
 
 				++light_count;
@@ -236,7 +236,7 @@ namespace engine::world::ecs {
 				if (light.castShadows && base.enabled && spot_light_count < shlib::max_spot_light_count) {
 					shlib::SpotShadowCommit shadow_commit{};
 
-					auto& camera = render_world.GetRenderCamera(light.shadow_caster);
+					auto& camera = render_world.get_render_camera(light.shadow_caster);
 					shadow_commit.matrix_offset = camera.matrices_offset;
 
 					auto light_dir = light.toTarget ? light.target : glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
@@ -245,9 +245,9 @@ namespace engine::world::ecs {
 					shadow_commit.index = light_count;
 
 					light.shadowIndex = spot_light_count++;
-					render_world.AddShadow(shadow_commit);
+					render_world.add_shadow(shadow_commit);
 
-					render_world.UpdateRenderCamera(light.shadow_caster, shadowView, shadowProj, true, shlib::spot_light_shadow_map_resolution, shlib::spot_light_shadow_map_resolution);
+					render_world.update_render_camera(light.shadow_caster, shadowView, shadowProj, true, shlib::spot_light_shadow_map_resolution, shlib::spot_light_shadow_map_resolution);
 
 					// Update meshes
 					auto mview = EntityManager::view<TransformComponent, BaseComponent, MeshComponent>();
@@ -255,7 +255,7 @@ namespace engine::world::ecs {
 						if (!base.visible)
 							continue;
 
-						render_world.AddGeometryDraw(light.shadow_caster, mesh_component.mesh);
+						render_world.add_geometry_draw(light.shadow_caster, mesh_component.mesh);
 					}
 				}
 

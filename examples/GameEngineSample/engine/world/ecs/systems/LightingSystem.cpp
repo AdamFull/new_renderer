@@ -13,7 +13,7 @@ using namespace engine::render;
 
 namespace engine::world::ecs {
 	LightingSystem::LightingSystem(render::IRenderer& renderer) :
-		render_world{ renderer.GetRenderWorld() } {
+		render_world{ renderer.get_render_world() } {
 		auto& registry = EntityManager::get_registry();
 
 		// TODO register constructors and destructors here
@@ -57,7 +57,7 @@ namespace engine::world::ecs {
 				commit.shadowIndex = light.shadowIndex;
 				commit.castShadows = static_cast<int>(light.castShadows);
 
-				render_world.AddLight(commit);
+				render_world.add_light(commit);
 				directional_light_count++;
 			}
 		}
@@ -84,7 +84,7 @@ namespace engine::world::ecs {
 				commit.shadowIndex = light.shadowIndex;
 				commit.castShadows = static_cast<int>(light.castShadows);
 
-				render_world.AddLight(commit);
+				render_world.add_light(commit);
 				point_light_count++;
 			}
 		}
@@ -111,7 +111,7 @@ namespace engine::world::ecs {
 				commit.shadowIndex = light.shadowIndex;
 				commit.castShadows = static_cast<int>(light.castShadows);
 
-				render_world.AddLight(commit);
+				render_world.add_light(commit);
 				spot_light_count++;
 			}
 		}
@@ -121,7 +121,7 @@ namespace engine::world::ecs {
 		auto& light = registry.get<DirectionalLightComponent>(entity);
 
 		for (int32_t i = 0; i < shlib::cascade_shadow_map_cascade_count; ++i) {
-			auto [camera_id, render_camera] = render_world.CreateCamera();
+			auto [camera_id, render_camera] = render_world.create_camera();
 			light.shadow_casters.emplace_back(camera_id);
 		}
 	}
@@ -136,7 +136,7 @@ namespace engine::world::ecs {
 		auto& light = registry.get<PointLightComponent>(entity);
 
 		for (int32_t i = 0; i < light.shadow_casters.size(); ++i) {
-			auto [camera_id, render_camera] = render_world.CreateCamera();
+			auto [camera_id, render_camera] = render_world.create_camera();
 			light.shadow_casters[i] = camera_id;
 		}
 	}
@@ -150,7 +150,7 @@ namespace engine::world::ecs {
 	void LightingSystem::on_construct_spot_light(entt::registry& registry, entt::entity entity) {
 		auto& light = registry.get<SpotLightComponent>(entity);
 
-		auto [camera_id, render_camera] = render_world.CreateCamera();
+		auto [camera_id, render_camera] = render_world.create_camera();
 		light.shadow_caster = camera_id;
 	}
 

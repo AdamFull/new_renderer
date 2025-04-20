@@ -203,45 +203,45 @@ namespace engine::render {
 		edge::gfx::destroy(default_sampler);
 		edge::gfx::destroy(timestamp_query);
 
-		for (auto& texture_object : static_textures.Data()) {
+		for (auto& texture_object : static_textures.data()) {
 			edge::gfx::destroy(texture_object.texture);
 		}
 
-		for (auto& texture_object : render_targets.Data()) {
+		for (auto& texture_object : render_targets.data()) {
 			edge::gfx::destroy(texture_object.texture);
 		}
 
-		for (auto& buffer_object : buffers.Data()) {
+		for (auto& buffer_object : buffers.data()) {
 			edge::gfx::destroy(buffer_object.buffer);
 		}
 	}
 
-	uint32_t RenderContext::AddResource() {
+	auto RenderContext::add_resource() -> uint32_t {
 		// Just creates empty resource)
 		auto& new_resource = render_resources.emplace_back();
 		return render_resources.size() - 1ull;
 	}
 
-	uint32_t RenderContext::AddResourceSync(std::string_view path, edge::gfx::ISampler* sampler) {
+	auto RenderContext::add_resource_sync(std::string_view path, edge::gfx::ISampler* sampler) -> uint32_t {
 		auto& new_resource = render_resources.emplace_back();
 		new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
 		edge::gfx::ITexture* texture = edge::gfx::ResourceUpdater::load_texture_sync(path.data(), new_resource.current_state);
-		new_resource.resource_id = static_textures.Add(TextureObject{ texture, sampler ? sampler : default_sampler });
+		new_resource.resource_id = static_textures.add(TextureObject{ texture, sampler ? sampler : default_sampler });
 
 		return render_resources.size() - 1ull;
 	}
 
-	uint32_t RenderContext::AddResource(std::string_view path, edge::gfx::ISampler* sampler) {
+	auto RenderContext::add_resource(std::string_view path, edge::gfx::ISampler* sampler) -> uint32_t {
 		auto& new_resource = render_resources.emplace_back();
 		new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
-		new_resource.resource_id = static_textures.Add(TextureObject{ dummy_texture, sampler ? sampler : default_sampler });
+		new_resource.resource_id = static_textures.add(TextureObject{ dummy_texture, sampler ? sampler : default_sampler });
 		pending_resources.emplace_back(std::make_pair(edge::gfx::ResourceUpdater::load_texture(path.data()), (uint32_t)(render_resources.size() - 1ull)));
 
 		return render_resources.size() - 1ull;
 	}
 
-	uint32_t RenderContext::AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) {
+	auto RenderContext::add_resource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) -> uint32_t {
 		auto& new_resource = render_resources.emplace_back();
 		new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
@@ -256,23 +256,26 @@ namespace engine::render {
 
 		edge::gfx::ITexture* texture = edge::gfx::create_texture(texture_create_info);
 		edge::gfx::ResourceUpdater::update_texture(texture, new_resource.current_state, texture_data);
-		new_resource.resource_id = static_textures.Add(TextureObject{ texture, default_sampler });
+		new_resource.resource_id = static_textures.add(TextureObject{ texture, default_sampler });
 
 		//new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 		return render_resources.size() - 1ull;
 	}
 
-	uint32_t RenderContext::AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler) {
+	auto RenderContext::add_resource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler) -> uint32_t {
 		auto& new_resource = render_resources.emplace_back();
 
 		// TODO: What if it's storage target and render target at the same time?
-		if (create_info.usage & edge::gfx::TextureUsageFlag::eStorage)
+		if (create_info.usage & edge::gfx::TextureUsageFlag::eStorage) {
 			new_resource.resource_type = RenderResourceTypeFlag::eStorageTarget;
-		else if (create_info.usage & edge::gfx::TextureUsageFlag::eRenderTarget)
+		}
+		else if (create_info.usage & edge::gfx::TextureUsageFlag::eRenderTarget) {
 			new_resource.resource_type = RenderResourceTypeFlag::eRenderTarget;
-		else
+		}
+		else {
 			new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
+		}
 
 		edge::gfx::TextureCreateInfo texture_create_info{};
 		texture_create_info.usage = create_info.usage;
@@ -291,23 +294,27 @@ namespace engine::render {
 		texture_object.scale = create_info.scale;
 		texture_object.scale_parent_resource = create_info.scale_parent_resource;
 
-		if ((create_info.usage & edge::gfx::TextureUsageFlag::eRenderTarget) || (create_info.usage & edge::gfx::TextureUsageFlag::eStorage))
-			new_resource.resource_id = render_targets.Add(std::move(texture_object));
-		else
-			new_resource.resource_id = static_textures.Add(std::move(texture_object));
+		if ((create_info.usage & edge::gfx::TextureUsageFlag::eRenderTarget) || (create_info.usage & edge::gfx::TextureUsageFlag::eStorage)) {
+			new_resource.resource_id = render_targets.add(std::move(texture_object));
+		}
+		else {
+			new_resource.resource_id = static_textures.add(std::move(texture_object));
+		}
 
 		return render_resources.size() - 1ull;
 	}
 
-	uint32_t RenderContext::AddResource(const edge::gfx::BufferCreateInfo& create_info) {
+	auto RenderContext::add_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t {
 		edge::gfx::IBuffer* buffer = edge::gfx::create_buffer(create_info);
-		auto handle = buffers.Add(BufferObject{ buffer });
+		auto handle = buffers.add(BufferObject{ buffer });
 		if (create_info.usage != edge::gfx::BufferUsageFlag::eStagingBuffer && create_info.usage != edge::gfx::BufferUsageFlag::eUniformBuffer) {
 			auto& new_resource = render_resources.emplace_back();
-			if (create_info.usage & edge::gfx::BufferUsageFlag::eIndirect)
+			if (create_info.usage & edge::gfx::BufferUsageFlag::eIndirect) {
 				new_resource.resource_type = RenderResourceTypeFlag::eIndirectBuffer;
-			else if (create_info.usage & edge::gfx::BufferUsageFlag::eStorage)
+			}
+			else if (create_info.usage & edge::gfx::BufferUsageFlag::eStorage) {
 				new_resource.resource_type = RenderResourceTypeFlag::eStorageBuffer;
+			}
 
 			new_resource.resource_id = handle;
 
@@ -325,34 +332,34 @@ namespace engine::render {
 			resource = current_frame->backbuffer;
 		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage) {
-			auto& texture_object = static_textures.Get(render_resource.resource_id);
+			auto& texture_object = static_textures.get(render_resource.resource_id);
 			resource = texture_object.texture;
 		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage) {
-			auto& texture_object = render_targets.Get(render_resource.resource_id);
+			auto& texture_object = render_targets.get(render_resource.resource_id);
 			resource = texture_object.texture;
 		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer) {
-			auto& buffer_object = buffers.Get(render_resource.resource_id);
+			auto& buffer_object = buffers.get(render_resource.resource_id);
 			resource = buffer_object.buffer;
 		}
 
 		resource->set_resource_name(name);
 	}
 
-	RenderResource& RenderContext::GetResource(uint32_t resource_index) {
+	auto RenderContext::get_resource(uint32_t resource_index) -> RenderResource& {
 		return render_resources[resource_index];
 	}
 
-	RenderResource const& RenderContext::GetResource(uint32_t resource_index) const {
+	auto RenderContext::get_resource(uint32_t resource_index) const -> RenderResource const& {
 		return render_resources[resource_index];
 	}
 
-	std::unique_ptr<ExecutionNode> RenderContext::CreateNode(std::string_view group_name, uint32_t group_color) {
+	auto RenderContext::create_node(std::string_view group_name, uint32_t group_color) -> std::unique_ptr<IExecutionNode> {
 		return std::make_unique<GroupNode>(group_name, group_color);
 	}
 
-	std::unique_ptr<ExecutionNode> RenderContext::CreateNode(const RenderShaderPassCreateInfo& create_info) {
+	auto RenderContext::create_node(const RenderShaderPassCreateInfo& create_info) -> std::unique_ptr<IExecutionNode> {
 		auto& technique = technique_db->get_technique(create_info.technique_name);
 
 		RenderPassCreateInfo pass_ci{};
@@ -363,14 +370,12 @@ namespace engine::render {
 		pass_ci.descriptor_layouts = technique.descriptor_layouts;
 		pass_ci.draw_callback = create_info.draw_callback;
 		pass_ci.enabled_callback = create_info.enabled_callback;
-
 		pass_ci.resource_attachments = create_info.resource_attachments;
 
-		auto new_pass = std::make_unique<RenderPass>(*this, pass_ci);
-		return new_pass;
+		return std::make_unique<RenderPass>(*this, pass_ci);
 	}
 
-	std::unique_ptr<ExecutionNode> RenderContext::CreateNode(const ComputeShaderPassCreateInfo& create_info) {
+	auto RenderContext::create_node(const ComputeShaderPassCreateInfo& create_info) -> std::unique_ptr<IExecutionNode> {
 		auto& technique = technique_db->get_technique(create_info.technique_name);
 
 		ComputePassCreateInfo pass_ci{};
@@ -383,24 +388,23 @@ namespace engine::render {
 		pass_ci.draw_callback = create_info.draw_callback;
 		pass_ci.enabled_callback = create_info.enabled_callback;
 
-		auto new_pass = std::make_unique<ComputePass>(*this, pass_ci);
-		return new_pass;
+		return std::make_unique<ComputePass>(*this, pass_ci);
 	}
 
-	void RenderContext::AddNode(std::unique_ptr<ExecutionNode>&& node) {
+	void RenderContext::add_node(std::unique_ptr<IExecutionNode>&& node) {
 		graph_nodes.emplace_back(std::move(node));
 	}
 
-	void RenderContext::Execute(float delta_time) {
+	void RenderContext::execute(float delta_time) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto& command_list = *current_command_list;
 
 		for (auto& node : graph_nodes) {
-			node->Execute(command_list, delta_time);
+			node->execute(command_list, delta_time);
 		}
 
-		auto& backbuffer_resource = GetResource(0);
+		auto& backbuffer_resource = get_resource(0);
 
 		edge::gfx::TextureBarrierDesc texture_barrier{};
 		edge::gfx::ResourceBarrierInfo resource_barriers{};
@@ -414,7 +418,7 @@ namespace engine::render {
 		command_list.resource_barrier(resource_barriers);
 	}
 
-	void RenderContext::Begin() {
+	void RenderContext::begin() {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		global_uniform_pool->reset();
@@ -422,7 +426,7 @@ namespace engine::render {
 		bool surface_updated{ false };
 		if (!frame_active) {
 			if (swapchain) {
-				surface_updated = HandleSurfaceChange();
+				surface_updated = handle_surface_change();
 			}
 
 			auto previous_frame = render_frames[active_frame_index].get();
@@ -433,7 +437,7 @@ namespace engine::render {
 
 			if (swapchain) {
 				if (!swapchain->acquire_next_image(acquired_semaphore, nullptr, &active_frame_index)) {
-					surface_updated = HandleSurfaceChange(true);
+					surface_updated = handle_surface_change(true);
 
 					bool acquire_result{ false };
 					if (surface_updated) {
@@ -464,7 +468,7 @@ namespace engine::render {
 
 		// Update render targets if needed
 		if (surface_updated) {
-			UpdateRenderTargets();
+			update_render_targets();
 		}
 
 		// Get previous frame time 
@@ -489,7 +493,7 @@ namespace engine::render {
 				auto& render_resource = render_resources[it->second];
 				render_resource.current_state = resource_desc->state;
 
-				auto& resource = static_textures.Get(render_resource.resource_id);
+				auto& resource = static_textures.get(render_resource.resource_id);
 				resource.texture = resource_desc->resource->as<edge::gfx::ITexture*>();
 				it = pending_resources.erase(it);
 			}
@@ -507,7 +511,7 @@ namespace engine::render {
 				continue;
 			}
 
-			auto& texture_obj = static_textures.Get(resource.resource_id);
+			auto& texture_obj = static_textures.get(resource.resource_id);
 			if (resource.current_state != edge::gfx::ResourceStateFlag::eShaderReadOnlyResource && texture_obj.texture != dummy_texture) {
 				auto& barrier = texture_barriers.emplace_back(texture_obj.texture, ~0u, resource.current_state, edge::gfx::ResourceStateFlag::eShaderReadOnlyResource);
 				resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
@@ -544,7 +548,7 @@ namespace engine::render {
 		}
 	}
 
-	void RenderContext::End() {
+	void RenderContext::end() {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		std::vector<edge::gfx::SemaphoreSubmitInfo> wait_semaphores{};
@@ -590,7 +594,7 @@ namespace engine::render {
 			edge::gfx::PresentInfo present_info = {};
 			present_info.wait_semaphores = { &wait_semaphore, 1 };
 			present_info.swapchains = { &swapchain, 1 };
-			present_info.image_indices = &GetCurrentFrameIndex();
+			present_info.image_indices = &get_current_frame_index();
 
 			queue->present(present_info);
 			//current_frame->fence->wait();
@@ -616,56 +620,56 @@ namespace engine::render {
 		frame_active = false;
 	}
 
-	edge::gfx::ITexture* RenderContext::GetTexture(uint32_t resource_index) {
+	auto RenderContext::get_texture(uint32_t resource_index) -> edge::gfx::ITexture* {
 		auto& render_resource = render_resources[resource_index];
-		return GetTexture(render_resource);
+		return get_texture(render_resource);
 	}
 
-	edge::gfx::ITexture* RenderContext::GetTexture(const RenderResource& render_resource) {
+	auto RenderContext::get_texture(const RenderResource& render_resource) -> edge::gfx::ITexture* {
 		if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer) {
 			return current_frame->backbuffer;
 		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage) {
-			auto& texture_object = static_textures.Get(render_resource.resource_id);
+			auto& texture_object = static_textures.get(render_resource.resource_id);
 			return texture_object.texture;
 		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage) {
-			auto& texture_object = render_targets.Get(render_resource.resource_id);
+			auto& texture_object = render_targets.get(render_resource.resource_id);
 			return texture_object.texture;
 		}
 
 		return nullptr;
 	}
 
-	edge::gfx::ISampler* RenderContext::GetSampler(uint32_t resource_index) {
+	auto RenderContext::get_sampler(uint32_t resource_index) -> edge::gfx::ISampler* {
 		auto& render_resource = render_resources[resource_index];
-		return GetSampler(render_resource);
+		return get_sampler(render_resource);
 	}
 
-	edge::gfx::ISampler* RenderContext::GetSampler(const RenderResource& render_resource) {
+	auto RenderContext::get_sampler(const RenderResource& render_resource) -> edge::gfx::ISampler* {
 		if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer) {
 			return default_sampler;
 		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage) {
-			auto& texture_object = static_textures.Get(render_resource.resource_id);
+			auto& texture_object = static_textures.get(render_resource.resource_id);
 			return texture_object.sampler;
 		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage) {
-			auto& texture_object = render_targets.Get(render_resource.resource_id);
+			auto& texture_object = render_targets.get(render_resource.resource_id);
 			return texture_object.sampler;
 		}
 
 		return default_sampler;
 	}
 
-	edge::gfx::IBuffer* RenderContext::GetBuffer(uint32_t resource_index) {
+	auto RenderContext::get_buffer(uint32_t resource_index) -> edge::gfx::IBuffer* {
 		auto& render_resource = render_resources[resource_index];
-		return GetBuffer(render_resource);
+		return get_buffer(render_resource);
 	}
 
-	edge::gfx::IBuffer* RenderContext::GetBuffer(const RenderResource& render_resource) {
+	auto RenderContext::get_buffer(const RenderResource& render_resource) -> edge::gfx::IBuffer* {
 		if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer) {
-			auto& buffer_object = buffers.Get(render_resource.resource_id);
+			auto& buffer_object = buffers.get(render_resource.resource_id);
 			return buffer_object.buffer;
 		}
 
@@ -676,16 +680,12 @@ namespace engine::render {
 	//	return edge::gfx::SemaphoreSubmitInfo{ previous_frame_semaphore, 0ull, edge::gfx::StageFlag::eAllCommands };
 	//}
 
-	edge::gfx::BufferSuballocation RenderContext::RequestUniformBlock(uint64_t block_size) {
+	edge::gfx::BufferSuballocation RenderContext::request_uniform_block(uint64_t block_size) {
 		return current_frame->uniform_pool->request_block(block_size);
 	}
 
-	edge::gfx::ICommandList& RenderContext::GetCurrentCommandList() {
+	edge::gfx::ICommandList& RenderContext::get_current_command_list() {
 		return *current_command_list;
-	}
-
-	edge::gfx::IDescriptorAllocator& RenderContext::GetCurrentDescriptorAllocator() {
-		return *current_frame->descriptor_allocator;
 	}
 
 	auto RenderContext::get_binding_layouts(std::span<edge::gfx::IDescriptorLayout*> descriptor_layouts) 
@@ -700,7 +700,7 @@ namespace engine::render {
 		return binding_layouts;
 	}
 
-	void RenderContext::UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data) {
+	void RenderContext::update_global_binding(uint32_t binding, std::span<const uint8_t> data) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto buffer_block = global_uniform_pool->request_block(data.size());
@@ -709,19 +709,19 @@ namespace engine::render {
 		edge::gfx::BufferDescriptor buffer_descriptor{};
 		buffer_descriptor.type = edge::gfx::DescriptorType::eUniformBuffer;
 		buffer_descriptor.binding = binding;
-		buffer_descriptor.buffer = &buffer_block.GetBuffer();
-		buffer_descriptor.offset = buffer_block.GetOffset();
-		buffer_descriptor.size = buffer_block.GetSize();
+		buffer_descriptor.buffer = &buffer_block.get_buffer();
+		buffer_descriptor.offset = buffer_block.get_offset();
+		buffer_descriptor.size = buffer_block.get_size();
 
 		auto* current_global_binding_layout = current_frame->lookup_and_allocate_binding_layout(global_descriptor);
 		current_global_binding_layout->bind(buffer_descriptor);
 	}
 
-	const uint32_t& RenderContext::GetCurrentFrameIndex() const {
+	const uint32_t& RenderContext::get_current_frame_index() const {
 		return active_frame_index;
 	}
 
-	void RenderContext::UpdateSwapchain(uint32_t width, uint32_t height) {
+	void RenderContext::update_swapchain(uint32_t width, uint32_t height) {
 		edge::gfx::SwapChainCreateInfo new_swapchain_ci{};
 		new_swapchain_ci.window = &window;
 		new_swapchain_ci.old_swapchain = swapchain;
@@ -730,10 +730,10 @@ namespace engine::render {
 
 		swapchain = edge::gfx::create_swapchain(new_swapchain_ci);
 		edge::gfx::destroy(new_swapchain_ci.old_swapchain);
-		UpdateResources();
+		update_resources();
 	}
 
-	void RenderContext::UpdateSwapchain(uint32_t image_count) {
+	void RenderContext::update_swapchain(uint32_t image_count) {
 		edge::gfx::SwapChainCreateInfo new_swapchain_ci{};
 		new_swapchain_ci.window = &window;
 		new_swapchain_ci.old_swapchain = swapchain;
@@ -741,10 +741,10 @@ namespace engine::render {
 
 		swapchain = edge::gfx::create_swapchain(new_swapchain_ci);
 		edge::gfx::destroy(new_swapchain_ci.old_swapchain);
-		UpdateResources();
+		update_resources();
 	}
 
-	bool RenderContext::HandleSurfaceChange(bool force_update) {
+	bool RenderContext::handle_surface_change(bool force_update) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		if (!swapchain) {
@@ -770,7 +770,7 @@ namespace engine::render {
 			EDGE_PROFILE_ZONE_SCOPED_NAMED("ISwapchain update");
 			// Recreate swapchain
 			queue->wait_idle();
-			UpdateSwapchain(surface_width, surface_height);
+			update_swapchain(surface_width, surface_height);
 
 			active_frame_index = 0u;
 
@@ -780,14 +780,14 @@ namespace engine::render {
 		return false;
 	}
 
-	void RenderContext::UpdateRenderTargets() {
+	void RenderContext::update_render_targets() {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		uint32_t width, height;
 		swapchain->get_surface_extent(width, height);
 
 		// Update/resize render targets here if it's needed
-		for (auto& target : render_targets.Data()) {
+		for (auto& target : render_targets.data()) {
 			// TODO: resize only if texture is able to resize 
 			if (!target.resizable) {
 				continue;
@@ -801,7 +801,7 @@ namespace engine::render {
 			create_info.format = target.texture->get_format();
 
 			if (target.scale_parent_resource != ~0u) {
-				edge::gfx::ITexture* parent = GetTexture(target.scale_parent_resource);
+				edge::gfx::ITexture* parent = get_texture(target.scale_parent_resource);
 
 				create_info.width = parent->get_width() * target.scale;
 				create_info.height = parent->get_height() * target.scale;
@@ -816,7 +816,7 @@ namespace engine::render {
 		}
 	}
 
-	void RenderContext::UpdateResources() {
+	void RenderContext::update_resources() {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto image_count = swapchain->get_image_count();

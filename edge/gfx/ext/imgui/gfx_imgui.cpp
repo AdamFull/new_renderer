@@ -622,8 +622,8 @@ namespace edge
 					//for (int32_t i = 0; i < draw_data->CmdListsCount; i++)
 					//{
 					//	const ImDrawList* cmd_list = draw_data->CmdLists[i];
-					//	geometry_buffer.AddVertexStreamData(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
-					//	geometry_buffer.AddIndexStreamData(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
+					//	geometry_buffer.add_vertex_stream_data(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size, sizeof(ImDrawVert));
+					//	geometry_buffer.add_index_stream_data(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size, sizeof(ImDrawIdx));
 					//
 					//	total_vertices += cmd_list->VtxBuffer.Size;
 					//	total_indices += cmd_list->IdxBuffer.Size;

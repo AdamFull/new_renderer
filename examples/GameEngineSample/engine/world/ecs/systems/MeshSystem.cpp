@@ -14,7 +14,7 @@
 
 namespace engine::world::ecs {
 	MeshSystem::MeshSystem(render::IRenderer& renderer) :
-		render_world{ renderer.GetRenderWorld() } {
+		render_world{ renderer.get_render_world() } {
 		EntityManager::register_component<MeshComponent>();
 	}
 
@@ -37,11 +37,11 @@ namespace engine::world::ecs {
 
 			if (mesh_component.skin != -1) {
 				const auto& skin = root_component.skins[mesh_component.skin];
-				render_world.UpdateJointMatrices(mesh_component.mesh, skin.jointMatrices);
+				render_world.update_joint_matrices(mesh_component.mesh, skin.jointMatrices);
 			}
 
-			render_world.UpdateMeshMatrices(mesh_component.mesh, transform.gmodel);
-			render_world.AddGeometryDraw(render::main_camera_index, mesh_component.mesh);
+			render_world.update_mesh_matrices(mesh_component.mesh, transform.gmodel);
+			render_world.add_geometry_draw(render::main_camera_index, mesh_component.mesh);
 		}
 	}
 }

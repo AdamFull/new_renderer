@@ -9,123 +9,115 @@
 
 #include <edge/gfx/gfx_base.h>
 
-namespace edge
-{
+namespace edge {
 	class Window;
 
-	namespace gfx
-	{
+	namespace gfx {
 		class TechniqueDatabase;
 	}
 }
 
-namespace engine
-{
-	namespace render
-	{
-		class IRenderer;
-		class UniformPool;
+namespace engine::render {
+	class IRenderer;
+	class UniformPool;
 
-		class RenderContext final : public ExecutionContext
-		{
-		public:
-			RenderContext(edge::Window* window);
-			~RenderContext();
+	class RenderContext final : public IExecutionContext {
+	public:
+		RenderContext(edge::Window* window);
+		~RenderContext();
 
-			RenderContext(const RenderContext&) = delete;
-			RenderContext(RenderContext&&) = delete;
-			RenderContext& operator=(const RenderContext&) = delete;
-			RenderContext& operator=(RenderContext&&) = delete;
+		RenderContext(const RenderContext&) = delete;
+		RenderContext(RenderContext&&) = delete;
+		RenderContext& operator=(const RenderContext&) = delete;
+		RenderContext& operator=(RenderContext&&) = delete;
 
-			uint32_t AddResource() override;
-			uint32_t AddResourceSync(std::string_view path, edge::gfx::ISampler* sampler = nullptr) override;
-			uint32_t AddResource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) override;
-			uint32_t AddResource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) override;
-			uint32_t AddResource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) override;
-			uint32_t AddResource(const edge::gfx::BufferCreateInfo& create_info) override;
+		auto add_resource() -> uint32_t override;
+		auto add_resource_sync(std::string_view path, edge::gfx::ISampler* sampler = nullptr) -> uint32_t override;
+		auto add_resource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) -> uint32_t override;
+		auto add_resource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) -> uint32_t override;
+		auto add_resource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) -> uint32_t override;
+		auto add_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t override;
 
-			void set_resource_name(uint32_t resource_index, std::string_view name) override;
+		void set_resource_name(uint32_t resource_index, std::string_view name) override;
 
-			RenderResource& GetResource(uint32_t resource_index) override;
-			RenderResource const& GetResource(uint32_t resource_index) const override;
+		auto get_resource(uint32_t resource_index) -> RenderResource& override;
+		auto get_resource(uint32_t resource_index) const -> RenderResource const&override;
 
-			std::unique_ptr<ExecutionNode> CreateNode(std::string_view group_name, uint32_t group_color = 0xFFFFFFFF) override;
-			std::unique_ptr<ExecutionNode> CreateNode(const RenderShaderPassCreateInfo& create_info) override;
-			std::unique_ptr<ExecutionNode> CreateNode(const ComputeShaderPassCreateInfo& create_info) override;
+		auto create_node(std::string_view group_name, uint32_t group_color = 0xFFFFFFFF) -> std::unique_ptr<IExecutionNode> override;
+		auto create_node(const RenderShaderPassCreateInfo& create_info) -> std::unique_ptr<IExecutionNode> override;
+		auto create_node(const ComputeShaderPassCreateInfo& create_info) -> std::unique_ptr<IExecutionNode> override;
 
-			void AddNode(std::unique_ptr<ExecutionNode>&& node) override;
-			void Execute(float delta_time) override;
+		void add_node(std::unique_ptr<IExecutionNode>&& node) override;
+		void execute(float delta_time) override;
 
-			void Begin() override;
-			void End() override;
+		void begin() override;
+		void end() override;
 
-			edge::gfx::ITexture* GetTexture(uint32_t resource_index) override;
-			edge::gfx::ITexture* GetTexture(const RenderResource& render_resource) override;
+		auto get_texture(uint32_t resource_index) -> edge::gfx::ITexture* override;
+		auto get_texture(const RenderResource& render_resource) -> edge::gfx::ITexture* override;
 
-			edge::gfx::ISampler* GetSampler(uint32_t resource_index) override;
-			edge::gfx::ISampler* GetSampler(const RenderResource& render_resource) override;
+		auto get_sampler(uint32_t resource_index) -> edge::gfx::ISampler* override;
+		auto get_sampler(const RenderResource& render_resource) -> edge::gfx::ISampler* override;
 
-			edge::gfx::IBuffer* GetBuffer(uint32_t resource_index) override;
-			edge::gfx::IBuffer* GetBuffer(const RenderResource& render_resource) override;
+		auto get_buffer(uint32_t resource_index) -> edge::gfx::IBuffer* override;
+		auto get_buffer(const RenderResource& render_resource) -> edge::gfx::IBuffer* override;
 
-			edge::gfx::BufferSuballocation RequestUniformBlock(uint64_t block_size) override;
-			edge::gfx::ICommandList& GetCurrentCommandList() override;
-			edge::gfx::IDescriptorAllocator& GetCurrentDescriptorAllocator() override;
+		auto request_uniform_block(uint64_t block_size) -> edge::gfx::BufferSuballocation override;
+		auto get_current_command_list() -> edge::gfx::ICommandList& override;
 
-			auto get_binding_layouts(std::span<edge::gfx::IDescriptorLayout*> binding_layouts) -> std::vector<edge::gfx::IBindingLayout*> override;
-		protected:
-			void UpdateGlobalBinding(uint32_t binding, std::span<const uint8_t> data);
+		auto get_binding_layouts(std::span<edge::gfx::IDescriptorLayout*> binding_layouts) -> std::vector<edge::gfx::IBindingLayout*> override;
+	protected:
+		void update_global_binding(uint32_t binding, std::span<const uint8_t> data);
 
-			const uint32_t& GetCurrentFrameIndex() const;
+		auto get_current_frame_index() const -> const uint32_t&;
 
-			void UpdateSwapchain(uint32_t width, uint32_t height);
-			void UpdateSwapchain(uint32_t image_count);
+		void update_swapchain(uint32_t width, uint32_t height);
+		void update_swapchain(uint32_t image_count);
 
-			bool HandleSurfaceChange(bool force_update = false);
+		bool handle_surface_change(bool force_update = false);
 
-			class RenderFrame;
-			void UpdateRenderTargets();
-			void UpdateResources();
-		private:
-			const edge::Window& window;
-			const edge::gfx::IQueue* queue;
+		class RenderFrame;
+		void update_render_targets();
+		void update_resources();
+	private:
+		const edge::Window& window;
+		const edge::gfx::IQueue* queue;
 
-			std::unique_ptr<edge::gfx::TechniqueDatabase> technique_db{};
+		std::unique_ptr<edge::gfx::TechniqueDatabase> technique_db{};
 
-			edge::gfx::ISwapchain* swapchain{ nullptr };
-			//vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
+		edge::gfx::ISwapchain* swapchain{ nullptr };
+		//vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
 
-			edge::gfx::ITexture* dummy_texture{ nullptr };
-			std::vector<std::pair<std::shared_ptr<edge::gfx::AsyncResourceHandle>, uint32_t>> pending_resources;
+		edge::gfx::ITexture* dummy_texture{ nullptr };
+		std::vector<std::pair<std::shared_ptr<edge::gfx::AsyncResourceHandle>, uint32_t>> pending_resources;
 
-			RenderFrame* current_frame{ nullptr };
-			edge::gfx::IDescriptorLayout* global_descriptor{ nullptr };
+		RenderFrame* current_frame{ nullptr };
+		edge::gfx::IDescriptorLayout* global_descriptor{ nullptr };
 
-			static constexpr size_t k_max_frames_in_flight{ 8ull };
-			std::array<std::unique_ptr<RenderFrame>, k_max_frames_in_flight> render_frames{};
-			uint32_t active_frame_index{ 0u };
-			bool frame_active{ false };
+		static constexpr size_t k_max_frames_in_flight{ 8ull };
+		std::array<std::unique_ptr<RenderFrame>, k_max_frames_in_flight> render_frames{};
+		uint32_t active_frame_index{ 0u };
+		bool frame_active{ false };
 
-			edge::gfx::ISemaphore* acquired_semaphore{ nullptr };
-			edge::gfx::ISemaphore* previous_frame_semaphore{ nullptr };
-			edge::gfx::ICommandList* current_command_list{ nullptr };
+		edge::gfx::ISemaphore* acquired_semaphore{ nullptr };
+		edge::gfx::ISemaphore* previous_frame_semaphore{ nullptr };
+		edge::gfx::ICommandList* current_command_list{ nullptr };
 
-			std::vector<std::unique_ptr<ExecutionNode>> graph_nodes{};
-			std::vector<RenderResource> render_resources{};
+		std::vector<std::unique_ptr<IExecutionNode>> graph_nodes{};
+		std::vector<RenderResource> render_resources{};
 
-			edge::gfx::ISampler* default_sampler{ nullptr };
+		edge::gfx::ISampler* default_sampler{ nullptr };
 
-			// Performance counters
-			edge::gfx::IQueryPool* timestamp_query{ nullptr };
-			float timestamp_frequency{ 0.f };
-			float gpu_delta_time{ 0.f };
+		// Performance counters
+		edge::gfx::IQueryPool* timestamp_query{ nullptr };
+		float timestamp_frequency{ 0.f };
+		float gpu_delta_time{ 0.f };
 
-			// Shared descriptors
-			std::unique_ptr<UniformPool> global_uniform_pool{};
+		// Shared descriptors
+		std::unique_ptr<UniformPool> global_uniform_pool{};
 
-			ResourceContainer<TextureObject> static_textures{};
-			ResourceContainer<TextureObject> render_targets{};
-			ResourceContainer<BufferObject> buffers{};
-		};
-	}
+		ResourceContainer<TextureObject> static_textures{};
+		ResourceContainer<TextureObject> render_targets{};
+		ResourceContainer<BufferObject> buffers{};
+	};
 }

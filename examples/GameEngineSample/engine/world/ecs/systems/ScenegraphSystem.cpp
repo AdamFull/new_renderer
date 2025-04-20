@@ -13,7 +13,7 @@
 
 namespace engine::world::ecs {
 	ScenegraphSystem::ScenegraphSystem(render::IRenderer& renderer) :
-		render_world{ renderer.GetRenderWorld() } {
+		render_world{ renderer.get_render_world() } {
 		EntityManager::register_component<RootComponent>(EComponentFlagBits::eHiddenInEditor);
 		EntityManager::register_component<BaseComponent>(EComponentFlagBits::eHiddenInEditor);
 		EntityManager::register_component<HierarchyComponent>(EComponentFlagBits::eHiddenInEditor);
