@@ -26,8 +26,8 @@ namespace edge::utl {
     public:
         void update(_Ty dt) {
             if (accumulator > static_cast<_Ty>(1)) {
-                meanFps = counter;
-                meanTime = accumulator / static_cast<_Ty>(counter);
+                mean_fps = counter;
+                mean_time = accumulator / static_cast<_Ty>(counter);
 
                 accumulator = static_cast<_Ty>(0);
                 counter = static_cast<_KTy>(0);
@@ -39,17 +39,17 @@ namespace edge::utl {
         }
 
         const _Ty& delta_time() const {
-            return meanTime;
+            return mean_time;
         }
 
         const _KTy& fps() const {
-            return meanFps;
+            return mean_fps;
         }
     private:
         _Ty accumulator{};
         _KTy counter{};
-        _Ty meanTime{};
-        _KTy meanFps{};
+        _Ty mean_time{};
+        _KTy mean_fps{};
     };
 
     using fps_counter32 = FrameCounter<float, uint32_t>;

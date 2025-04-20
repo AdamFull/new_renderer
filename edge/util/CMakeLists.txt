@@ -9,8 +9,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/debugbreak.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/lockfree_ring_buffer.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Logger.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Performance.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Performance.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/Result.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Serialization.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utl_base.h"

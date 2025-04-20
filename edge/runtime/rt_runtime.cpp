@@ -47,6 +47,8 @@ namespace edge {
 	auto Runtime::main_loop_frame() -> int32_t {
 		EDGE_PROFILE_ZONE_SCOPED;
 
+		auto delta_time = stopwatch.stop<float>();
+
 		//try
 		{
 			// Load the requested app
@@ -64,7 +66,7 @@ namespace edge {
 				return -1;
 			}
 
-			update();
+			update(delta_time);
 
 			if (app->should_close()) {
 				std::string id = app->get_name();
@@ -74,7 +76,7 @@ namespace edge {
 
 			window->process_events();
 
-			counter.Frame();
+			frame_counter.update(delta_time);
 		}
 		//catch (std::exception& e)
 		//{
@@ -90,12 +92,10 @@ namespace edge {
 		return 0;
 	}
 
-	void Runtime::update() {
+	void Runtime::update(float delta_time) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
-		auto delta_time = counter.GetFrameTime();
-
-		auto new_windows_name = std::format("{} [{:.2f} fps; {:.2f} ms]", app->get_name(), counter.GetFps(), delta_time);
+		auto new_windows_name = std::format("{} [{} fps; {:.2f} ms]", app->get_name(), frame_counter.fps(), delta_time);
 		//auto winname = std::format("Vulkan App {} fps ({:.2f} ms); {} gpu fps ({:.2f} ms); gpu memory ({:.2f}/{:.2f} Gb)", cpuCounter.fps(), cpuCounter.delta_time() * 1000.f, gpuCounter.fps(), gpuCounter.delta_time() * 1000.f, used_gpu_memory, total_gpu_memory);
 		window->set_title(new_windows_name);
 
@@ -171,11 +171,7 @@ namespace edge {
 		app_create_info = nullptr;
 
 		if (app) {
-			auto execution_time = counter.ElapsedSeconds();
-			EDGE_LOGI("[Runtime] Closing App (Runtime: {:.1f})", execution_time);
-
 			auto app_id = app->get_name();
-
 			app->finish();
 		}
 

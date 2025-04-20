@@ -2,7 +2,7 @@
 
 #include "rt_application.h"
 #include "rt_window.h"
-#include "../util/Performance.h"
+#include "../util/utl_stopwatch.hpp"
 
 namespace edge {
 	class IRuntimeContext;
@@ -42,7 +42,7 @@ namespace edge {
 		/**
 		 * @brief Runs the application for one frame
 		 */
-		void update();
+		void update(float delta_time);
 
 		/**
 		 * @brief Terminates the platform and the application
@@ -132,6 +132,7 @@ namespace edge {
         std::string external_data_path{};
 
 	private:
-		FPSCounter counter{};
+		utl::Stopwatch stopwatch{};
+		utl::FrameCounter<float, uint32_t> frame_counter{};
 	};
 }
