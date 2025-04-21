@@ -36,7 +36,6 @@ add_library(engine_common INTERFACE)
 target_link_libraries(engine_common
     INTERFACE
     EnTT::EnTT 
-    imgui
 )
 
 target_link_libraries(${PROJECT_NAME}
