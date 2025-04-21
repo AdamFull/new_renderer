@@ -1,6 +1,7 @@
 #include "GroupExecutionNode.h"
 
 #include <edge/util/utl_profiler.h>
+#include <edge/gfx/gfx_profiler.h>
 
 namespace engine::render {
 	GroupNode::GroupNode(std::string_view name, uint32_t color) :
@@ -23,12 +24,10 @@ namespace engine::render {
 			return;
 		}
 
-		command_list.begin_marker(group_name.c_str(), group_color);
-
+		EDGE_GFX_PROFILER_BEGIN_ZONE_NC(command_list, group_name, group_color);
 		for (auto& node : graph_nodes) {
 			node->execute(command_list, delta_time);
 		}
-
-		command_list.end_marker();
+		EDGE_GFX_PROFILER_END_ZONE(command_list);
 	}
 }

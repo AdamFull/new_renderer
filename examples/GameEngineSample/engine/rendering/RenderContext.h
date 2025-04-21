@@ -110,7 +110,7 @@ namespace engine::render {
 
 		// Performance counters
 		edge::gfx::IQueryPool* timestamp_query{ nullptr };
-		float timestamp_frequency{ 0.f };
+		double timestamp_frequency{ 0.f };
 		float gpu_delta_time{ 0.f };
 
 		// Shared descriptors

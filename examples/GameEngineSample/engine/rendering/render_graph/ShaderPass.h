@@ -180,7 +180,6 @@ namespace engine::render {
 	protected:
 		void resource_dependency(uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
 		void resource_dependency(uint32_t binding_point, uint32_t resource_id, uint32_t sebresource_id, edge::gfx::AccessTypeFlags access);
-		void collect_profile_data();
 		virtual void _execute(edge::gfx::ICommandList& command_list, float delta_time) = 0;
 	protected:
 		IExecutionContext& execution_context;
@@ -200,13 +199,7 @@ namespace engine::render {
 		edge::gfx::IPipeline* pipeline{ nullptr };
 		std::vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
 
-		edge::gfx::IQueryPool* timestamp_query{ nullptr };
-		uint64_t execution_time{ 0ull };
-		float timestamp_frequency{ 0.f };
-		float pass_delta_time{ 0.f };
-
 		// Per frame barriers
-
 		std::vector<edge::gfx::BufferBarrierDesc> buffer_barriers{};
 		std::vector<edge::gfx::TextureBarrierDesc> texture_barriers{};
 		std::vector<edge::gfx::MemoryBarrierDesc> memory_barriers{};

@@ -16,6 +16,7 @@
 //#include <imdbg.h>
 
 #include <edge/util/utl_profiler.h>
+#include <edge/gfx/gfx_profiler.h>
 
 namespace engine
 {
@@ -69,45 +70,18 @@ namespace engine
 		return true;
 	}
 
-	void EngineApplication::update(float delta_time)
-	{
+	void EngineApplication::update(float delta_time) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
-		//ImDbg::NewFrame();
-
 		ui->NewFrame(delta_time);
+		EDGE_GFX_PROFILER_FRAME_MARK();
 
-		for (auto& window : app_windows)
+		for (auto& window : app_windows) {
 			window->Draw(delta_time);
+		}
 
 		scene->Update(delta_time);
 
-		//ImDbg::end_frame();
-
-
-
 		renderer->render(delta_time);
-
-		//// Pre update zone BEGIN
-		//m_pSystemManager->PreUpdate(delta_time);
-		//m_pRenderInterface->PreUpdate(delta_time);
-		//// Pre update zone END
-		//
-		//// Update zone BEGIN
-		//m_pScene->Update(delta_time);
-		//m_pInputMapper->Update(delta_time);
-		//m_pSystemManager->Update(delta_time);
-		//m_pRenderInterface->Update(delta_time);
-		//// Update zone END
-		//
-		//// Post update zone BEGIN
-		//m_pSystemManager->PostUpdate(delta_time);
-		//m_pRenderInterface->PostUpdate(delta_time);
-		//// Post update zone EMD
-		//
-		//// Render zone BEGIN
-		//m_pSystemManager->Render();
-		//m_pRenderInterface->Render();
-		//// Render zone END
 	}
 }

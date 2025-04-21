@@ -18,7 +18,7 @@ void InspectorWindow::Create()
 
 void InspectorWindow::__draw(float fDt)
 {
-	auto& state = EditorState::GetInstance();
+	auto& state = EditorState::get_instance();
 	//auto& imageLoader = graphics->getImageLoader();
 	//auto& debug_draw = graphics->getDebugDraw();
 	auto selected = state->GetSelection();

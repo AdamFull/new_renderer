@@ -8,6 +8,7 @@
 #include <edge/util/utl_hash.hpp>
 
 #include <edge/util/utl_profiler.h>
+#include <edge/gfx/gfx_profiler.h>
 
 namespace engine::render {
 	ShaderPass::ShaderPass(IExecutionContext& execution_context, const PassCreateInfo& create_info) :
@@ -32,16 +33,6 @@ namespace engine::render {
 
 		// Also add push constant block
 		constant_block = std::make_unique<UniformHandle>(reflection, reflection.constants);
-
-		// Create timestamp query 
-		edge::gfx::QueryPoolCreateInfo query_pool_ci{};
-		query_pool_ci.query_count = 2u;
-		query_pool_ci.type = edge::gfx::QueryType::eTimestamp;
-
-		timestamp_query = edge::gfx::create_query_pool(query_pool_ci);
-		timestamp_query->reset(0u);
-
-		edge::gfx::request_timestamp_frequency(&timestamp_frequency);
 	}
 
 	ShaderPass::~ShaderPass() {
@@ -51,30 +42,16 @@ namespace engine::render {
 	void ShaderPass::execute(edge::gfx::ICommandList& command_list, float delta_time) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
-		if (!can_execute_) {
-			return;
-		}
-
 		if (enabled_callback && !enabled_callback()) {
 			return;
 		}
 
-		// Collect previous frame data
-		collect_profile_data();
-
-		command_list.begin_marker(debug_name.c_str(), 0xFFFF11FF);
-
-		// Reset performance counter
-		command_list.reset_query(timestamp_query, 0u, 2u);
-		command_list.begin_query(timestamp_query, 0u);
-
-		// Bind pipeline
-		command_list.bind_pipeline(pipeline);
-
-		_execute(command_list, delta_time);
-
-		command_list.end_query(timestamp_query, 1u);
-		command_list.end_marker();
+		EDGE_GFX_PROFILER_BEGIN_ZONE_NC(command_list, debug_name, 0xFFFF11FF);
+		if (can_execute_) {
+			command_list.bind_pipeline(pipeline);
+			_execute(command_list, delta_time);
+		}
+		EDGE_GFX_PROFILER_END_ZONE(command_list);
 
 		// Update one time flag for single time passes
 		if (one_time) {
@@ -238,21 +215,6 @@ namespace engine::render {
 
 			render_resource.SetState(new_state);
 		}
-	}
-
-	void ShaderPass::collect_profile_data() {
-		uint64_t timestamps[2] = {};
-		timestamp_query->get_data(0u, &timestamps[0]);
-
-		uint64_t elapsed_time = timestamps[1] - timestamps[0];
-		if (timestamps[1] <= timestamps[0])
-		{
-			elapsed_time = 0ull;
-		}
-
-		execution_time = elapsed_time;
-
-		pass_delta_time = static_cast<float>(elapsed_time) * timestamp_frequency / 1000000000.f;
 	}
 
 	UniformHandle& ShaderPass::get_constant_block() {

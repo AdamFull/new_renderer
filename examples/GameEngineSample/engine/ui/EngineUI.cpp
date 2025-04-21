@@ -411,7 +411,7 @@ namespace engine
 		//io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;  // We can Create multi-viewports on the Renderer side (optional)
 
 		// Load additional fonts
-		auto& font_manager = ImFontManager::GetInstance();
+		auto& font_manager = ImFontManager::get_instance();
 		font_manager->SetFileReaderFn([](std::string_view path, std::vector<uint8_t>& out) { return edge::fs::read_file(path, out); });
 
 		std::vector<uint8_t> data;

@@ -2,6 +2,7 @@
 
 #include <edge/util/utl_enum.hpp>
 #include <edge/util/utl_type_traits.hpp>
+#include <edge/util/utl_imgui.hpp>
 
 #include "Attributes.h"
 #include "ImGuiElements.h"
@@ -290,13 +291,12 @@ namespace engine {
 				});
 
 			bool changed{ false };
-			if (ImGui::TreeNode(type_name.data())) {
+			if (auto tree_node = edge::imui::make_scoped_tree_node(type_name.data())) {
 				auto fields = filter(members, [](auto member) { return is_field(member); });
 				for_each(fields, [&](auto member) {
 					changed |= edit_member(type, member);
 					});
 				ImGui::Separator();
-				ImGui::TreePop();
 			}
 
 			return changed;

@@ -1,17 +1,12 @@
 #include "EditorWindow.h"
 
-#include <imgui.h>
+#include <edge/util/utl_imgui.hpp>
 
 using namespace engine;
 
 void IEditorWindow::Draw(float fDt)
 {
-	if (m_bIsOpen)
-	{
-		if (ImGui::Begin(m_name.c_str(), &m_bIsOpen))
-		{
-			__draw(fDt);
-			ImGui::End();
-		}
+	if (auto window = edge::imui::make_scoped_window(m_name.c_str(), &m_bIsOpen)) {
+		__draw(fDt);
 	}
 }

@@ -480,7 +480,7 @@ namespace engine::render {
 			elapsed_time = 0ull;
 		}
 
-		gpu_delta_time = static_cast<float>(elapsed_time) * timestamp_frequency / 1000000000.f;
+		gpu_delta_time = static_cast<double>(elapsed_time) * timestamp_frequency / 1000000000.0;
 
 		// Reset performance query
 		current_command_list->reset_query(timestamp_query, 0u, 2u);

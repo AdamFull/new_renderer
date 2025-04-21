@@ -118,7 +118,7 @@ namespace ImGui
         return UniversalEdit<_Ty, _Count>(label, value,
             [min, max, speed](std::string_view label, _Ty* value)
             {
-                return DragScalar(label.data(), DataTypeByType_v<_Ty>, value, speed, &min, &max, FormatByType_v<_Ty>);
+                return DragScalar(label.data(), DataTypeEnum<_Ty>, value, speed, &min, &max, DataTypeFormat<_Ty>);
             });
     }
 
@@ -128,7 +128,7 @@ namespace ImGui
         return UniversalEdit<_Ty, _Count>(label, value,
             [min, max](std::string_view label, _Ty* value)
             {
-                return SliderScalar(label.data(), DataTypeByType_v<_Ty>, value, &min, &max, FormatByType_v<_Ty>);
+                return SliderScalar(label.data(), DataTypeEnum<_Ty>, value, &min, &max, DataTypeFormat<_Ty>);
             });
     }
 
@@ -138,7 +138,7 @@ namespace ImGui
         return UniversalEdit<_Ty, _Count>(label, value,
             [step, fast_step](std::string_view label, _Ty* value)
             {
-                return InputScalar(label.data(), DataTypeByType_v<_Ty>, value, &step, &fast_step, FormatByType_v<_Ty>);
+                return InputScalar(label.data(), DataTypeEnum<_Ty>, value, &step, &fast_step, DataTypeFormat<_Ty>);
             });
     }
 

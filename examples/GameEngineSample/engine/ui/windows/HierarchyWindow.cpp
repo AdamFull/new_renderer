@@ -64,7 +64,7 @@ void HierarchyWindow::__draw(float fDt)
 
         if (ImGui::MenuItem("delete", "DEL"))
         {
-            auto& state = EditorState::GetInstance();
+            auto& state = EditorState::get_instance();
             if (state->IsSelected(m_currentSelection))
                 state->SetSelection(root);
             
@@ -80,13 +80,13 @@ void HierarchyWindow::__draw(float fDt)
     if (ImGui::InvisibleButton("###unselect_all_btn", ImVec2(size_x, size_y)))
     {
         m_currentSelection = root;
-        EditorState::GetInstance()->DeselectAll();
+        EditorState::get_instance()->DeselectAll();
     }
 }
 
 void HierarchyWindow::BuildHierarchy(const entt::entity& entity)
 {
-    auto& state = EditorState::GetInstance();
+    auto& state = EditorState::get_instance();
 
     if (entity != entt::null)
     {

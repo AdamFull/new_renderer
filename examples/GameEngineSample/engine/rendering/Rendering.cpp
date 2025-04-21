@@ -1338,73 +1338,80 @@ namespace engine::render
 
 		// Compute ssao
 		{
-			ComputeShaderPassCreateInfo create_info{};
-			create_info.technique_name = "compute_ssao";
+			auto group_node = render_context->create_node("SSAO", 0xFFFF33FF);
+			auto* node = static_cast<GroupNode*>(group_node.get());
 
-			create_info.draw_callback = [this,
-				zbuffer_depth_target,
-				ssao_target
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "compute_ssao";
 
-				self.bind_read_resource(render_label::sample_image0, zbuffer_depth_target, ~0u);
-				self.bind_write_resource(render_label::write_image0, ssao_target, ~0u);
+				create_info.draw_callback = [this,
+					zbuffer_depth_target,
+					ssao_target
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 
-				self.resolve_dependencies(command_list);
+					self.bind_read_resource(render_label::sample_image0, zbuffer_depth_target, ~0u);
+					self.bind_write_resource(render_label::write_image0, ssao_target, ~0u);
 
-				self.bind_resources(command_list);
+					self.resolve_dependencies(command_list);
 
-				self.dispatch_for_target(command_list, zbuffer_depth_target, true);
-				};
+					self.bind_resources(command_list);
 
-			render_context->add_node(render_context->create_node(create_info));
-		}
+					self.dispatch_for_target(command_list, zbuffer_depth_target, true);
+					};
 
-		// Compute ssao blur vert
-		{
-			ComputeShaderPassCreateInfo create_info{};
-			create_info.technique_name = "compute_ssao_blur_vert";
+				node->add_node(render_context->create_node(create_info));
+			}
 
-			create_info.draw_callback = [this,
-				ssao_target,
-				ssao_target_temp,
-				zbuffer_depth_target
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-				self.bind_read_resource(render_label::sample_image0, ssao_target, ~0u);
-				self.bind_read_resource(render_label::sample_image1, zbuffer_depth_target, ~0u);
-				self.bind_write_resource(render_label::write_image0, ssao_target_temp, ~0u);
+			// Compute ssao blur vert
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "compute_ssao_blur_vert";
 
-				self.resolve_dependencies(command_list);
+				create_info.draw_callback = [this,
+					ssao_target,
+					ssao_target_temp,
+					zbuffer_depth_target
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					self.bind_read_resource(render_label::sample_image0, ssao_target, ~0u);
+					self.bind_read_resource(render_label::sample_image1, zbuffer_depth_target, ~0u);
+					self.bind_write_resource(render_label::write_image0, ssao_target_temp, ~0u);
 
-				self.bind_resources(command_list);
+					self.resolve_dependencies(command_list);
 
-				self.dispatch_for_target(command_list, ssao_target_temp, true);
-				};
+					self.bind_resources(command_list);
 
-			render_context->add_node(render_context->create_node(create_info));
-		}
+					self.dispatch_for_target(command_list, ssao_target_temp, true);
+					};
 
-		// Compute ssao blur horiz
-		{
-			ComputeShaderPassCreateInfo create_info{};
-			create_info.technique_name = "compute_ssao_blur_horiz";
+				node->add_node(render_context->create_node(create_info));
+			}
 
-			create_info.draw_callback = [this,
-				ssao_target,
-				ssao_target_temp,
-				zbuffer_depth_target
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-				self.bind_read_resource(render_label::sample_image0, ssao_target_temp, ~0u);
-				self.bind_read_resource(render_label::sample_image1, zbuffer_depth_target, ~0u);
-				self.bind_write_resource(render_label::write_image0, ssao_target, ~0u);
+			// Compute ssao blur horiz
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "compute_ssao_blur_horiz";
 
-				self.resolve_dependencies(command_list);
+				create_info.draw_callback = [this,
+					ssao_target,
+					ssao_target_temp,
+					zbuffer_depth_target
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					self.bind_read_resource(render_label::sample_image0, ssao_target_temp, ~0u);
+					self.bind_read_resource(render_label::sample_image1, zbuffer_depth_target, ~0u);
+					self.bind_write_resource(render_label::write_image0, ssao_target, ~0u);
 
-				self.bind_resources(command_list);
+					self.resolve_dependencies(command_list);
 
-				self.dispatch_for_target(command_list, ssao_target_temp, true);
-				};
+					self.bind_resources(command_list);
 
-			render_context->add_node(render_context->create_node(create_info));
+					self.dispatch_for_target(command_list, ssao_target_temp, true);
+					};
+
+				node->add_node(render_context->create_node(create_info));
+			}
+
+			render_context->add_node(std::move(group_node));
 		}
 
 #ifdef TILE_MATERIAL_CLASSIFICATION
