@@ -352,10 +352,10 @@ namespace edge::gfx::vulkan
 		}
 	}
 
-	void GFXContext::request_timestamp_frequency(float* frequency) const {
+	void GFXContext::request_timestamp_frequency(double* frequency) const {
 		auto& physical = instance->get_best_device();
 		auto& properties = physical.get_properties();
-		*frequency = properties.limits.timestampPeriod;
+		*frequency = (double)properties.limits.timestampPeriod;
 	}
 
 	void GFXContext::request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const {

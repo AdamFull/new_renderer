@@ -234,7 +234,7 @@ namespace edge::gfx
 		gfx_context->request_minimal_buffer_alignment(usage, alignment);
 	}
 
-	void request_timestamp_frequency(float* frequency) {
+	void request_timestamp_frequency(double* frequency) {
 		if (!gfx_context) {
 			EDGE_LOGE("[GFX] Graphics context is not initialized yet.");
 			return;

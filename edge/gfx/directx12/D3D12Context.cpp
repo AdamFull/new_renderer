@@ -138,7 +138,7 @@ namespace edge::gfx::d3d12
 		assert(false && "NOT IMPLEMENTED");
 	}
 
-	void D3D12Context::request_timestamp_frequency(float* frequency) const
+	void D3D12Context::request_timestamp_frequency(double* frequency) const
 	{
 		assert(false && "NOT IMPLEMENTED");
 	}

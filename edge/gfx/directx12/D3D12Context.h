@@ -48,7 +48,7 @@ namespace edge::gfx::d3d12
 		void wait_for_fences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const override;
 
 		void request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment) const override;
-		void request_timestamp_frequency(float* frequency) const override;
+		void request_timestamp_frequency(double* frequency) const override;
 		void request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const override;
 	};
 }

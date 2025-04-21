@@ -60,7 +60,7 @@ namespace edge::gfx::vulkan
 		void wait_for_fences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const override;
 
 		void request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment) const override;
-		void request_timestamp_frequency(float* frequency) const override;
+		void request_timestamp_frequency(double* frequency) const override;
 		void request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const override;
 	private:
 		void enable_device_features(PhysicalDevice& device);
