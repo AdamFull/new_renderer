@@ -9,24 +9,6 @@ namespace engine
 {
 	using namespace entt::literals;
 
-	namespace traits
-	{
-		template<typename T>
-		struct is_vector : std::false_type {};
-
-		template<typename T, typename A>
-		struct is_vector<std::vector<T, A>> : std::true_type {};
-
-		template<typename T>
-		struct is_map : std::false_type {};
-
-		template<typename K, typename V, typename C, typename A>
-		struct is_map<std::map<K, V, C, A>> : std::true_type {};
-
-		template<typename K, typename V, typename H, typename E, typename A>
-		struct is_map<std::unordered_map<K, V, H, E, A>> : std::true_type {};
-	}
-
 	namespace conc
 	{
 		template<typename _Ty>
@@ -35,16 +17,22 @@ namespace engine
 
 	namespace attr
 	{
-		struct HiddenField : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
+		struct Hide : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
 		struct Name : refl::attr::usage::type, refl::attr::usage::field {
 			constexpr Name(std::string_view name) :
 				name{ name } {}
 			std::string_view name{};
 		};
-		struct Hint : refl::attr::usage::type, refl::attr::usage::field {
-			constexpr Hint(std::string_view hint) :
-				hint{ hint } {}
-			std::string_view hint{};
+		struct Hint : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {
+			constexpr Hint(std::string_view text) :
+				text{ text } {}
+			std::string_view text{};
+		};
+
+		struct ReadOnly : refl::attr::usage::type, refl::attr::usage::field {
+			constexpr ReadOnly(std::string_view format) :
+				format{ format } {}
+			std::string_view format{};
 		};
 
 		template<typename _Ty>
@@ -56,13 +44,13 @@ namespace engine
 			_Ty max;
 		};
 
-		struct SliderField : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
-		struct InputField : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
+		struct Slider : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
+		struct Input : refl::attr::usage::type, refl::attr::usage::field, refl::attr::usage::function {};
 
-		struct ColorField : refl::attr::usage::field, refl::attr::usage::function {};
+		struct ColorEdit : refl::attr::usage::field, refl::attr::usage::function {};
 
 		template<size_t N>
-		struct DropdownField : refl::attr::usage::field, refl::attr::usage::function { std::array<const char*, N> fields; };
+		struct Dropdown : refl::attr::usage::field, refl::attr::usage::function { std::array<const char*, N> fields; };
 	}
 
 	template<typename _Ty>

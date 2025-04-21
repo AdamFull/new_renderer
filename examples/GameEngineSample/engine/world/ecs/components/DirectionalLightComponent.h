@@ -18,7 +18,7 @@ namespace engine::world::ecs {
 
 REFL_TYPE(engine::world::ecs::DirectionalLightComponent,
 	engine::attr::Name(engine::world::ecs::DirectionalLightComponent::_name_with_icon))
-REFL_FIELD(color, engine::attr::Name("Color"), engine::attr::ColorField())
+REFL_FIELD(color, engine::attr::Name("Color"), engine::attr::ColorEdit())
 REFL_FIELD(intencity, engine::attr::Name("Intencity"), engine::attr::Range(0.f, 0.f))
 REFL_FIELD(castShadows, engine::attr::Name("Cast Shadows"))
 REFL_END

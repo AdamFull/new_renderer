@@ -22,7 +22,7 @@ namespace engine::world::ecs {
 
 REFL_TYPE(engine::world::ecs::SpotLightComponent,
 	engine::attr::Name(engine::world::ecs::SpotLightComponent::_name_with_icon))
-REFL_FIELD(color, engine::attr::Name("Color"), engine::attr::ColorField())
+REFL_FIELD(color, engine::attr::Name("Color"), engine::attr::ColorEdit())
 REFL_FIELD(target, engine::attr::Name("Target Direction"), engine::attr::Range(0.f, 0.f))
 REFL_FIELD(intencity, engine::attr::Name("Intencity"), engine::attr::Range(0.f, 0.f))
 REFL_FIELD(innerAngle, engine::attr::Name("Inner Angle"), engine::attr::Range(0.f, 3.14f))

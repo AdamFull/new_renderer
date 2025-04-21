@@ -1,30 +1,12 @@
 #pragma once
 
 #include <edge/util/utl_enum.hpp>
+#include <edge/util/utl_type_traits.hpp>
+
 #include "Attributes.h"
 #include "ImGuiElements.h"
 
 namespace engine {
-	template<typename T> struct is_std_vector : std::false_type {};
-	template<typename... Ts> struct is_std_vector<std::vector<Ts...>> : std::true_type {};
-
-	template<typename T> struct is_std_map : std::false_type {};
-	template<typename... Ts> struct is_std_map<std::map<Ts...>> : std::true_type {};
-	template<typename... Ts> struct is_std_map<std::unordered_map<Ts...>> : std::true_type {};
-
-	template<typename T> struct is_std_container : std::false_type {};
-	template<typename... Ts> struct is_std_container<std::vector<Ts...>> : std::true_type {};
-	template<typename... Ts> struct is_std_container<std::map<Ts...>> : std::true_type {};
-	template<typename... Ts> struct is_std_container<std::unordered_map<Ts...>> : std::true_type {};
-
-	template<typename _Ty> struct is_glm_vec : std::false_type {};
-	template<glm::length_t N, typename _Ty, glm::qualifier Q>
-	struct is_glm_vec<glm::vec<N, _Ty, Q>> : std::true_type {};
-
-	template<typename _Ty> struct is_glm_quat : std::false_type {};
-	template<typename _Ty, glm::qualifier _Q> 
-	struct is_glm_quat<glm::qua<_Ty, _Q>> : std::true_type {};
-
 	class InspectorDrawer {
 	public:
 		// TODO: check ability to use requires with has_attribute
@@ -38,15 +20,25 @@ namespace engine {
 			
 			auto* ptr = reinterpret_cast<_Ty*>(&value);
 
-			if constexpr (has_attribute<attr::SliderField>(member)) {
+			if constexpr (has_attribute<attr::Slider>(member)) {
 				return ImGui::Slider<_Ty, _N>(label.data(), ptr, range.min, range.max);
 			}
-			else if constexpr (has_attribute<attr::InputField>(member)) {
+			else if constexpr (has_attribute<attr::Input>(member)) {
 				return ImGui::Input<_Ty, _N>(label.data(), ptr, range.min, range.max);
 			}
 			// TODO: Check that it's vec3 or vec4
-			else if constexpr (has_attribute<attr::ColorField>(member)) {
+			else if constexpr (has_attribute<attr::ColorEdit>(member)) {
 				return ImGui::GColorEdit3(label.data(), ptr);
+			}
+			else if constexpr (has_attribute<attr::ReadOnly>(member)) {
+				auto read_only = get_attribute<attr::ReadOnly>(member);
+				for (int32_t i = 0; i < _N; ++i) {
+					ImGui::Text(read_only.format.data(), ptr[i]);
+					if (i < _N - 1) {
+						ImGui::SameLine();
+					}
+				}
+				return false;
 			}
 			
 			return ImGui::Drag<_Ty, _N>(label.data(), ptr, range.min, range.max, 0.01f);
@@ -60,6 +52,22 @@ namespace engine {
 				return true;
 			}
 			return false;
+		}
+
+		template<typename _Ty, std::size_t _N, typename _Member>
+		bool edit_std_array(std::string_view label, std::array<_Ty, _N>& array, _Member member) {
+			bool edited{ false };
+			if (ImGui::TreeNodeEx(label.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+				for (int32_t i = 0; i < array.size(); ++i) {
+					ImGui::PushID(i);
+					edited |= edit_field(std::format("Element {}", i), array[i], member);
+					ImGui::PopID();
+				}
+
+				ImGui::TreePop();
+			}
+
+			return edited;
 		}
 
 		template<typename _Ty, typename _Member>
@@ -105,8 +113,14 @@ namespace engine {
 		}
 
 		template<typename _Ty, typename _Member>
+		bool edit_field(std::string_view label, _Ty& value, _Member member)
+			requires edge::utl::is_std_array<_Ty>::value {
+			return edit_std_array(label, value, member);
+		}
+
+		template<typename _Ty, typename _Member>
 		bool edit_field(std::string_view label, _Ty& value, _Member member) 
-		requires is_std_vector<_Ty>::value {
+		requires edge::utl::is_std_vector<_Ty>::value {
 			return edit_std_vector(label, value, member);
 		}
 
@@ -119,11 +133,16 @@ namespace engine {
 				range = get_attribute<attr::Range>(member);
 			}
 
-			if constexpr (has_attribute<attr::SliderField>(member)) {
+			if constexpr (has_attribute<attr::Slider>(member)) {
 				return ImGui::Slider<_Ty, 1>(label.data(), &value, range.min, range.max);
 			}
-			else if constexpr (has_attribute<attr::InputField>(member)) {
+			else if constexpr (has_attribute<attr::Input>(member)) {
 				return ImGui::Input<_Ty, 1>(label.data(), &value, range.min, range.max);
+			}
+			else if constexpr (has_attribute<attr::ReadOnly>(member)) {
+				auto read_only = get_attribute<attr::ReadOnly>(member);
+				ImGui::GText(label, read_only.format.data(), value);
+				return false;
 			}
 			
 			return ImGui::Drag<_Ty, 1>(label.data(), &value, range.min, range.max, 0.01f);
@@ -132,14 +151,14 @@ namespace engine {
 		// For glm vectors support
 		template<typename _Ty, typename _Member>
 		bool edit_field(std::string_view label, _Ty& value, _Member member) 
-		requires is_glm_vec<_Ty>::value {
+		requires edge::utl::is_glm_vec<_Ty>::value {
 			return edit_glm_vec(label, value, member);
 		}
 
 		// For glm quaternion
 		template<typename _Ty, typename _Member>
 		bool edit_field(std::string_view label, _Ty& value, _Member member)
-			requires is_glm_quat<_Ty>::value {
+			requires edge::utl::is_glm_quat<_Ty>::value {
 			return edit_glm_quat(label, value, member);
 		}
 
@@ -212,6 +231,15 @@ namespace engine {
 			auto& value = member(component);
 			bool edited = edit_field(label, value, member);
 
+			if constexpr (has_attribute<attr::Hint>(member)) {
+				constexpr auto hint_attr = get_attribute<attr::Hint>(member);
+				if (ImGui::IsItemHovered()) {
+					ImGui::BeginTooltip();
+					ImGui::Text(hint_attr.text.data());
+					ImGui::EndTooltip();
+				}
+			}
+
 			ImGui::PopID();
 
 			return edited;
@@ -230,7 +258,7 @@ namespace engine {
 
 			// Find all displayable members
 			auto members = filter(type_desc.members, [](auto member) {
-				return !has_attribute<attr::HiddenField>(member);
+				return !has_attribute<attr::Hide>(member);
 				});
 
 			bool changed{ false };
@@ -258,7 +286,7 @@ namespace engine {
 
 			// Find all displayable members
 			auto members = filter(type_desc.members, [](auto member) {
-				return !has_attribute<attr::HiddenField>(member);
+				return !has_attribute<attr::Hide>(member);
 				});
 
 			bool changed{ false };
@@ -275,3 +303,7 @@ namespace engine {
 		}
 	};
 }
+
+/*
+
+*/

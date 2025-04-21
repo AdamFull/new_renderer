@@ -29,5 +29,5 @@ REFL_TYPE(engine::world::ecs::TransformComponent,
 REFL_FIELD(lposition, engine::attr::Name("Position"), engine::attr::Range(-FLT_MAX, FLT_MAX))
 REFL_FIELD(lrotation, engine::attr::Name("Rotation"), engine::attr::Range(0.f, 0.f))
 REFL_FIELD(lscale, engine::attr::Name("Scale"), engine::attr::Range(0.f, FLT_MAX))
-REFL_FIELD(lmodel, engine::attr::HiddenField())
+REFL_FIELD(lmodel, engine::attr::Hide())
 REFL_END
