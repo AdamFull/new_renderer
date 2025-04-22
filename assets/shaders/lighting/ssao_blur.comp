@@ -2,7 +2,7 @@
 #include "compute_common.glsl"
 #include "util.glsl"
 
-#define THREAD_GROUP_SIZE (256)
+#define THREAD_GROUP_SIZE (512)
 #define KERNEL_LENGTH (4)
 #define BLUR_WEIGHTS (2 * KERNEL_LENGTH + 1)
 #define GS_CACHE_SIZE (KERNEL_LENGTH + THREAD_GROUP_SIZE + KERNEL_LENGTH)

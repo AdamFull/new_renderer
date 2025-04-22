@@ -63,7 +63,6 @@ namespace edge::gfx {
 			void draw_flame(float x, float y, float width, float total_time, int depth);
 		};
 
-		auto _evaluate() -> bool;
 		void _draw();
 
 		ZoneNode root{};
