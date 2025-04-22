@@ -24,7 +24,7 @@ namespace edge::gfx {
 			}
 
 			// Store time in seconds
-			time = static_cast<double>(elapsed_time) * timestamp_freq * 1000000.0;
+			time = static_cast<double>(elapsed_time) * timestamp_freq * 1e-6;
 		}
 		
 		avg_time = avg_time * 0.95 + time * 0.05;
@@ -188,23 +188,6 @@ namespace edge::gfx {
 				child_x += child_width;
 			}
 		}
-	}
-
-	auto Profiler::_evaluate() -> bool {
-		if (!query_index) {
-			return false;
-		}
-
-		uint64_t timestamps[MAX_PROFILE_ZONES * 2u] = {};
-		query_pool->get_data(0u, query_index, &timestamps[0]);
-		query_pool->reset(0u, query_index);
-		query_index = 0u;
-
-		current_zone = &root;
-		root.evaluate(timestamps, timestamp_freq);
-		root.reset();
-
-		return true;
 	}
 
 	void Profiler::_draw() {
@@ -395,8 +378,15 @@ namespace edge::gfx {
 	}
 
 	void Profiler::frame_mark() {
-		if (is_paused || !_evaluate()) {
-			return;
+		if (query_index) {
+			uint64_t timestamps[MAX_PROFILE_ZONES * 2u] = {};
+			query_pool->get_data(0u, query_index, &timestamps[0]);
+			query_pool->reset(0u, query_index);
+			query_index = 0u;
+
+			current_zone = &root;
+			root.evaluate(timestamps, timestamp_freq);
+			root.reset();
 		}
 
 		_draw();
