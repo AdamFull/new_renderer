@@ -61,7 +61,7 @@ namespace edge::gfx::vulkan
 
 		void request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment) const override;
 		void request_timestamp_frequency(double* frequency) const override;
-		void request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const override;
+		void request_memory_stats(MemoryUsageStats& memory_stats) const override;
 	private:
 		void enable_device_features(PhysicalDevice& device);
 	private:

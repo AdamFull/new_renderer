@@ -46,7 +46,7 @@ namespace edge::gfx
 
 	void request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment);
 	void request_timestamp_frequency(double* frequency);
-	void request_memory_usage(uint64_t* total_memory, uint64_t* used_memory);
+	void request_memory_stats(MemoryUsageStats& memory_stats);
 
 	// TODO: may be return pointers here and add release function also
 	class IGFXContext {
@@ -92,6 +92,6 @@ namespace edge::gfx
 
 		virtual void request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment) const = 0;
 		virtual void request_timestamp_frequency(double* frequency) const = 0;
-		virtual void request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const = 0;
+		virtual void request_memory_stats(MemoryUsageStats& memory_stats) const = 0;
 	};
 }

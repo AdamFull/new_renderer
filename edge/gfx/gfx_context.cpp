@@ -243,12 +243,12 @@ namespace edge::gfx
 		gfx_context->request_timestamp_frequency(frequency);
 	}
 
-	void request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) {
+	void request_memory_stats(MemoryUsageStats& memory_stats) {
 		if (!gfx_context) {
 			EDGE_LOGE("[GFX] Graphics context is not initialized yet.");
 			return;
 		}
 
-		gfx_context->request_memory_usage(total_memory, used_memory);
+		gfx_context->request_memory_stats(memory_stats);
 	}
 }

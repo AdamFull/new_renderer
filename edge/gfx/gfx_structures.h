@@ -452,6 +452,17 @@ namespace edge
 			std::atomic_bool done{ false };
 		};
 
+		struct MemoryHeapInfo {
+			std::string_view name{};
+			uint64_t total_size{};
+			uint64_t used_size{};
+			uint64_t budget{};
+		};
+
+		struct MemoryUsageStats {
+			std::vector<MemoryHeapInfo> memory_heaps{};
+		};
+
 		uint32_t hash(const VertexAttributeDescription& desc, uint32_t hash = 0u);
 		uint32_t hash(const VertexBindingDescription& desc, uint32_t hash = 0u);
 		uint32_t hash(const VertexLayout& layout, uint32_t hash = 0u);

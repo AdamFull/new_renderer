@@ -358,8 +358,7 @@ namespace edge::gfx::vulkan
 		*frequency = (double)properties.limits.timestampPeriod;
 	}
 
-	void GFXContext::request_memory_usage(uint64_t* total_memory, uint64_t* used_memory) const {
-		vk::MemoryHeapFlags memory_flags{ vk::MemoryHeapFlagBits::eDeviceLocal };
+	void GFXContext::request_memory_stats(MemoryUsageStats& memory_stats) const {
 		vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget_props{};
 		vk::PhysicalDeviceMemoryProperties2 memory_props{};
 		memory_props.pNext = &memory_budget_props;
@@ -367,18 +366,19 @@ namespace edge::gfx::vulkan
 		auto& physical_device = instance->get_best_device();
 		physical_device.get_handle().getMemoryProperties2(&memory_props);
 
-		*total_memory = 0ull;
-		*used_memory = 0ull;
+		static std::string_view dedicated_vram_str{ "Dedicated VRAM" };
+		static std::string_view shared_system_str{ "Shared System" };
 
-		auto heaps_count = static_cast<uint64_t>(memory_props.memoryProperties.memoryHeapCount);
-		for (int32_t i = 0; i < heaps_count; ++i)
-		{
-			auto heapFlags = memory_props.memoryProperties.memoryHeaps[i].flags;
-			if (heapFlags & memory_flags)
-			{
-				*total_memory += memory_budget_props.heapBudget[i];
-				*used_memory += memory_budget_props.heapUsage[i];
-			}
+		auto heap_count = static_cast<uint64_t>(memory_props.memoryProperties.memoryHeapCount);
+		for (int32_t i = 0; i < heap_count; ++i) {
+			auto& heap = memory_props.memoryProperties.memoryHeaps[i];
+
+			MemoryHeapInfo heap_info{};
+			heap_info.name = ((heap.flags & vk::MemoryHeapFlagBits::eDeviceLocal) == vk::MemoryHeapFlagBits::eDeviceLocal) ? dedicated_vram_str : shared_system_str;
+			heap_info.total_size = heap.size;
+			heap_info.budget = memory_budget_props.heapBudget[i];
+			heap_info.used_size = memory_budget_props.heapUsage[i];
+			memory_stats.memory_heaps.push_back(heap_info);
 		}
 	}
 
