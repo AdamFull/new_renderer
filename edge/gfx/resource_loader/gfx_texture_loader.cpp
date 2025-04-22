@@ -20,7 +20,7 @@ namespace edge::gfx
 	public:
 		STBTextureLoader(std::span<const uint8_t> data) {
 			int32_t image_width, image_height, image_channel_count;
-			image_data = stbi_load_from_memory(data.data(), data.size(), &image_width, &image_height, &image_channel_count, STBI_rgb_alpha);
+			image_data = stbi_load_from_memory(data.data(), static_cast<int>(data.size()), &image_width, &image_height, &image_channel_count, STBI_rgb_alpha);
 
 			texture_ci.usage |= gfx::TextureUsageFlag::eSamplable | gfx::TextureUsageFlag::eStorage | gfx::TextureUsageFlag::eTransferable;
 			texture_ci.width = image_width;
