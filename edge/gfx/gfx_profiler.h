@@ -45,8 +45,8 @@ namespace edge::gfx {
 
 			std::array<float, MAX_HISTORY_SIZE> history;
 
-			uint64_t begin_query{ ~0ull };
-			uint64_t end_query{ ~0ull };
+			uint32_t begin_query{ ~0u };
+			uint32_t end_query{ ~0u };
 
 			ZoneNode* parent{ nullptr };
 			std::vector<std::unique_ptr<ZoneNode>> children{};
@@ -60,7 +60,7 @@ namespace edge::gfx {
 			void draw_stats();
 			void draw();
 
-			void draw_flame(float x, float y, float width, float total_time, int depth);
+			void draw_flame(float x, float y, float width, double total_time, int depth);
 		};
 
 		void _draw();
@@ -69,7 +69,7 @@ namespace edge::gfx {
 		ZoneNode* current_zone{ nullptr };
 
 		IQueryPool* query_pool{ nullptr };
-		uint64_t query_index{ 0u };
+		uint32_t query_index{ 0u };
 
 		double timestamp_freq{ 0.0 };
 		bool is_paused{ false };

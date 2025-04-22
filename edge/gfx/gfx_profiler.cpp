@@ -5,7 +5,7 @@
 #include "../util/utl_imgui.hpp"
 #include <imgui_internal.h>
 
-static constexpr float _threshold_ms{ 1.f };
+static constexpr double _threshold_ms{ 1.f };
 static constexpr float fg_bar_height = 20.0f;
 
 namespace edge::gfx {
@@ -14,7 +14,7 @@ namespace edge::gfx {
 			child->evaluate(timestamps, timestamp_freq);
 		}
 
-		if (begin_query == ~0ull || end_query == ~0ull) {
+		if (begin_query == ~0u || end_query == ~0u) {
 			time = get_included_time();
 		}
 		else {
@@ -54,7 +54,7 @@ namespace edge::gfx {
 	}
 
 	auto Profiler::ZoneNode::get_included_time() -> double {
-		float accum_time{ 0.f };
+		double accum_time{ 0.f };
 
 		if (!children.empty()) {
 			for (auto& child : children) {
@@ -77,8 +77,8 @@ namespace edge::gfx {
 	}
 
 	void Profiler::ZoneNode::reset() {
-		begin_query = ~0ull;
-		end_query = ~0ull;
+		begin_query = ~0u;
+		end_query = ~0u;
 
 		for (auto& child : children) {
 			child->reset();
@@ -131,7 +131,7 @@ namespace edge::gfx {
 		}
 	}
 
-	void Profiler::ZoneNode::draw_flame(float x, float y, float width, float total_time, int depth) {
+	void Profiler::ZoneNode::draw_flame(float x, float y, float width, double total_time, int depth) {
 		if (width < 1.0f) {
 			return;
 		}
@@ -169,7 +169,7 @@ namespace edge::gfx {
 
 		// Tooltip on hover
 		if (ImGui::IsMouseHoveringRect(node_min, node_max)) {
-			float percentage = total_time > 0.0f ? (time / total_time) * 100.0f : 0.0f;
+			double percentage = total_time > 0.0 ? (time / total_time) * 100.0 : 0.0;
 
 			ImGui::BeginTooltip();
 			ImGui::Text("%s", name.data());
@@ -230,12 +230,12 @@ namespace edge::gfx {
 				}
 
 				ImGui::PlotLines("##FrameTime", root.history.data(), MAX_HISTORY_SIZE, 0,
-					nullptr, 0.0f, root.max_time * 1.1f, ImVec2(-1, 80));
+					nullptr, 0.0f, static_cast<float>(root.max_time * 1.1), ImVec2(-1, 80));
 
 				ImDrawList* draw_list = ImGui::GetWindowDrawList();
 				ImVec2 p_min = ImGui::GetItemRectMin();
 				ImVec2 p_max = ImGui::GetItemRectMax();
-				float threshold_y = p_max.y - (p_max.y - p_min.y) * (_threshold_ms / (root.max_time * 1.1f));
+				float threshold_y = p_max.y - (p_max.y - p_min.y) * static_cast<float>(_threshold_ms / (root.max_time * 1.1));
 				draw_list->AddLine(ImVec2(p_min.x, threshold_y), ImVec2(p_max.x, threshold_y),
 					ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 0.0f, 0.0f, 0.5f)));
 			}
@@ -320,6 +320,25 @@ namespace edge::gfx {
 				}
 
 				if (auto memory_stats_tab = edge::imui::make_scoped_tab_item("Memory Stats")) {
+					MemoryUsageStats memory_stats{};
+					request_memory_stats(memory_stats);
+
+					if (auto child_window = edge::imui::make_scoped_child_window("MemoryStats", ImVec2(0, 0))) {
+						for (auto& memory_heap : memory_stats.memory_heaps) {
+							if (auto memory_heap_id = imui::make_scoped_push_id(memory_heap.name.data())) {
+								ImGui::Text("%s:", memory_heap.name.data());
+
+								const float used_mb = static_cast<float>(memory_heap.used_size) / (1024.0f * 1024.0f);
+								const float budget_mb = static_cast<float>(memory_heap.budget) / (1024.0f * 1024.0f);
+								const float total_mb = static_cast<float>(memory_heap.total_size) / (1024.0f * 1024.0f);
+
+								char overlay[64];
+								const float ratio = static_cast<float>(memory_heap.used_size) / memory_heap.budget;
+								snprintf(overlay, sizeof(overlay), "%.1f/%.1f MB (%.1f%%)", used_mb, budget_mb, ratio * 100.0f);
+								ImGui::ProgressBar(ratio, ImVec2(-1, 20), overlay);
+							}
+						}
+					}
 				}
 
 				if (auto resource_stats_tab = edge::imui::make_scoped_tab_item("Resource Stats")) {
