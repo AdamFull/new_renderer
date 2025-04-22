@@ -91,4 +91,10 @@ namespace edge::imui {
         ImGui::PushID(id);
         return {};
     }
+
+    [[nodiscard]] inline auto make_scoped_push_id(const char* str)
+        -> ScopeExit<ImGui::PopID> {
+        ImGui::PushID(str);
+        return {};
+    }
 }
