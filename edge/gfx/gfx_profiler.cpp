@@ -302,17 +302,60 @@ namespace edge::gfx {
 				}
 
 				if (auto flame_graph = edge::imui::make_scoped_tab_item("Flame Graph")) {
-					if (auto child_window = edge::imui::make_scoped_child_window("FlameGraph", ImVec2(0, 0), true)) {
+					ImGuiWindowFlags child_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar;
+					if (auto child_window = edge::imui::make_scoped_child_window("FlameGraph", ImVec2(0, 0), 0, child_flags)) {
+						static float zoom = 1.0f;
+						static float scroll_x = 0.0f;
+
+						const float zoom_step{ 0.1f };
+						const float zoom_min{ 0.1f };
+						const float zoom_max{ 50.0f };
+
+						ImGui::SliderFloat("##zoom_slider", &zoom, zoom_min, zoom_max);
+						ImGui::SameLine();
+						if (ImGui::Button("Reset Zoom")) {
+							zoom = 1.0f;
+							scroll_x = 0.0f;
+						}
+						ImGui::Separator();
+
 						ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
 						ImVec2 canvas_size = ImGui::GetContentRegionAvail();
 
+						auto& io = ImGui::GetIO();
+						ImVec2 mouse_pos = io.MousePos;
+
+						if (ImGui::IsWindowHovered()) {
+							float wheel = io.MouseWheel;
+							if (wheel != 0.0f) {
+								float old_zoom = zoom;
+								zoom = std::clamp(zoom * (1.0f + zoom_step * wheel), zoom_min, zoom_max);
+
+								float mouse_pos_in_canvas = mouse_pos.x - canvas_pos.x;
+								scroll_x = (scroll_x + mouse_pos_in_canvas) * (zoom / old_zoom) - mouse_pos_in_canvas;
+							}
+						}
+
+						if (ImGui::IsWindowHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+							scroll_x -= io.MouseDelta.x;
+						}
+
+						float total_width = canvas_size.x * zoom;
+						float max_scroll = std::max(0.0f, total_width - canvas_size.x);
+						scroll_x = std::clamp(scroll_x, 0.0f, max_scroll);
+
 						if (root.time > 0.0) {
-							float x = canvas_pos.x;
+							ImDrawList* draw_list = ImGui::GetWindowDrawList();
+							ImGui::PushClipRect(canvas_pos, canvas_pos + canvas_size, true);
+
+							float x = canvas_pos.x - scroll_x;
 							for (const auto& child : root.children) {
-								float child_width = static_cast<float>((child->time / root.time) * canvas_size.x);
+								float child_width = static_cast<float>((child->time / root.time) * total_width);
 								child->draw_flame(x, canvas_pos.y, child_width, 0);
 								x += child_width;
 							}
+
+							ImGui::PopClipRect();
 						}
 
 						// Set scrollable area
