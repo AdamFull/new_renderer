@@ -31,7 +31,6 @@ namespace edge::gfx {
 
 		void frame_mark();
 	private:
-		static constexpr size_t MAX_FRAMES{ 3 };
 		static constexpr size_t MAX_PROFILE_ZONES{ 128 };
 		static constexpr size_t MAX_HISTORY_SIZE{ 120 };
 
@@ -61,27 +60,17 @@ namespace edge::gfx {
 			void draw_stats();
 			void draw();
 
-			void draw_flame(float x, float y, float width, int depth);
+			void draw_flame(float x, float y, float width, float total_time, int depth);
 		};
 
-		struct FrameData {
-			FrameData() noexcept;
-			~FrameData();
+		auto _evaluate() -> bool;
+		void _draw();
 
-			void begin_zone(ICommandList& cmd_list, std::string_view label);
-			void end_zone(ICommandList& cmd_list);
-			auto evaluate(double timestamp_freq) -> bool;
-			void draw(bool& is_paused);
+		ZoneNode root{};
+		ZoneNode* current_zone{ nullptr };
 
-			ZoneNode root{};
-			ZoneNode* current_zone{ nullptr };
-
-			IQueryPool* query_pool{ nullptr };
-			uint64_t query_index{ 0u };
-		};
-
-		std::vector<std::unique_ptr<FrameData>> frames{};
-		uint32_t current_frame_idx{ 0 };
+		IQueryPool* query_pool{ nullptr };
+		uint64_t query_index{ 0u };
 
 		double timestamp_freq{ 0.0 };
 		bool is_paused{ false };

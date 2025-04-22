@@ -23,7 +23,8 @@ namespace edge::gfx {
 				elapsed_time = 0ull;
 			}
 
-			time = static_cast<double>(elapsed_time) * timestamp_freq / 1000000.0;
+			// Store time in seconds
+			time = static_cast<double>(elapsed_time) * timestamp_freq * 1000000.0;
 		}
 		
 		avg_time = avg_time * 0.95 + time * 0.05;
@@ -130,7 +131,7 @@ namespace edge::gfx {
 		}
 	}
 
-	void Profiler::ZoneNode::draw_flame(float x, float y, float width, int depth) {
+	void Profiler::ZoneNode::draw_flame(float x, float y, float width, float total_time, int depth) {
 		if (width < 1.0f) {
 			return;
 		}
@@ -159,7 +160,7 @@ namespace edge::gfx {
 
 		// Draw time
 		char time_str[32];
-		snprintf(time_str, sizeof(time_str), "%.6f ms", time);
+		snprintf(time_str, sizeof(time_str), "%.4f ms", time);
 		ImVec2 time_text_size = ImGui::CalcTextSize(time_str);
 		if (time_text_size.x < (width - 4.0f)) {
 			draw_list->AddText(ImVec2(node_max.x - time_text_size.x - 2.0f, node_min.y + (fg_bar_height - time_text_size.y) * 0.5f),
@@ -168,9 +169,11 @@ namespace edge::gfx {
 
 		// Tooltip on hover
 		if (ImGui::IsMouseHoveringRect(node_min, node_max)) {
+			float percentage = total_time > 0.0f ? (time / total_time) * 100.0f : 0.0f;
+
 			ImGui::BeginTooltip();
 			ImGui::Text("%s", name.data());
-			ImGui::Text("Time: %.6f ms", time);
+			ImGui::Text("Time: %.2f ms (%.2f%%)", time, percentage);
 			ImGui::Text("Avg: %.6f ms", avg_time);
 			ImGui::Text("Min: %.6f ms / Max: %.2f ms", min_time, max_time);
 			ImGui::EndTooltip();
@@ -181,44 +184,13 @@ namespace edge::gfx {
 			float child_x = x;
 			for (const auto& child : children) {
 				float child_width = static_cast<float>((child->time / time) * width);
-				child->draw_flame(child_x, y, child_width, depth + 1);
+				child->draw_flame(child_x, y, child_width, total_time, depth + 1);
 				child_x += child_width;
 			}
 		}
 	}
 
-	Profiler::FrameData::FrameData() noexcept {
-		current_zone = &root;
-
-		QueryPoolCreateInfo create_info{};
-		create_info.type = QueryType::eTimestamp;
-		create_info.query_count = MAX_PROFILE_ZONES * 2u;
-		query_pool = create_query_pool(create_info);
-		query_pool->reset(0u, create_info.query_count);
-	}
-
-	Profiler::FrameData::~FrameData() {
-		if (query_pool) {
-			destroy(query_pool);
-		}
-	}
-
-	void Profiler::FrameData::begin_zone(ICommandList& cmd_list, std::string_view label) {
-		current_zone = current_zone->lookup_zone(label);
-		current_zone->begin_query = query_index++;
-		cmd_list.begin_query(query_pool, current_zone->begin_query);
-	}
-
-	void Profiler::FrameData::end_zone(ICommandList& cmd_list) {
-		current_zone->end_query = query_index++;
-		cmd_list.end_query(query_pool, current_zone->end_query);
-
-		if (current_zone->parent) {
-			current_zone = current_zone->parent;
-		}
-	}
-
-	auto Profiler::FrameData::evaluate(double timestamp_freq) -> bool {
+	auto Profiler::_evaluate() -> bool {
 		if (!query_index) {
 			return false;
 		}
@@ -235,7 +207,7 @@ namespace edge::gfx {
 		return true;
 	}
 
-	void Profiler::FrameData::draw(bool& is_paused) {
+	void Profiler::_draw() {
 		if (auto window = edge::imui::make_scoped_window("Frame Viewer")) {
 			if (is_paused) {
 				if (ImGui::Button("Continue Profiling")) {
@@ -351,7 +323,7 @@ namespace edge::gfx {
 							float x = canvas_pos.x - scroll_x;
 							for (const auto& child : root.children) {
 								float child_width = static_cast<float>((child->time / root.time) * total_width);
-								child->draw_flame(x, canvas_pos.y, child_width, 0);
+								child->draw_flame(x, canvas_pos.y, child_width, root.time, 0);
 								x += child_width;
 							}
 
@@ -363,20 +335,35 @@ namespace edge::gfx {
 						ImGui::Dummy(ImVec2(canvas_size.x, (max_depth + 1) * fg_bar_height));
 					}
 				}
+
+				if (auto memory_stats_tab = edge::imui::make_scoped_tab_item("Memory Stats")) {
+				}
+
+				if (auto resource_stats_tab = edge::imui::make_scoped_tab_item("Resource Stats")) {
+				}
+
+				if (auto hw_info_tab = edge::imui::make_scoped_tab_item("Hardware Info")) {
+				}
 			}
 		}
 	}
 
 	Profiler::Profiler() {
-		frames.resize(1);
-		for (auto& frame : frames) {
-			frame = std::make_unique<FrameData>();
-		}
+		current_zone = &root;
+
+		QueryPoolCreateInfo create_info{};
+		create_info.type = QueryType::eTimestamp;
+		create_info.query_count = MAX_PROFILE_ZONES * 2u;
+		query_pool = create_query_pool(create_info);
+		query_pool->reset(0u, create_info.query_count);
+
 		request_timestamp_frequency(&timestamp_freq);
 	}
 
 	Profiler::~Profiler() {
-
+		if (query_pool) {
+			destroy(query_pool);
+		}
 	}
 
 
@@ -386,9 +373,10 @@ namespace edge::gfx {
 		}
 
 		cmd_list.begin_marker(label, color);
-
-		auto& frame_data = frames[current_frame_idx];
-		frame_data->begin_zone(cmd_list, label);
+		
+		current_zone = current_zone->lookup_zone(label);
+		current_zone->begin_query = query_index++;
+		cmd_list.begin_query(query_pool, current_zone->begin_query);
 	}
 
 	void Profiler::end_zone(ICommandList& cmd_list) {
@@ -398,17 +386,19 @@ namespace edge::gfx {
 
 		cmd_list.end_marker();
 
-		auto& frame_data = frames[current_frame_idx];
-		frame_data->end_zone(cmd_list);
+		current_zone->end_query = query_index++;
+		cmd_list.end_query(query_pool, current_zone->end_query);
+
+		if (current_zone->parent) {
+			current_zone = current_zone->parent;
+		}
 	}
 
 	void Profiler::frame_mark() {
-
-		auto& prev_frame = frames[current_frame_idx];
-		if (!is_paused && prev_frame->evaluate(timestamp_freq)) {
-			current_frame_idx = (current_frame_idx + 1u) % frames.size();
+		if (is_paused || !_evaluate()) {
+			return;
 		}
 
-		prev_frame->draw(is_paused);
+		_draw();
 	}
 }
