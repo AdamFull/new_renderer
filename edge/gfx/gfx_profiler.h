@@ -12,12 +12,14 @@
 #define EDGE_GFX_PROFILER_BEGIN_ZONE_NC(cmd_list, label, color) edge::gfx::Profiler::get_instance()->begin_zone(cmd_list, label, color);
 #define EDGE_GFX_PROFILER_END_ZONE(cmd_list) edge::gfx::Profiler::get_instance()->end_zone(cmd_list);
 #define EDGE_GFX_PROFILER_FRAME_MARK() edge::gfx::Profiler::get_instance()->frame_mark();
+#define EDGE_GFX_PROFILER_DRAW_UI() edge::gfx::Profiler::get_instance()->draw_ui();
 #else
 #define EDGE_GFX_PROFILER_BEGIN_ZONE(cmd_list, label)
 #define EDGE_GFX_PROFILER_BEGIN_ZONE_N(cmd_list, label) edge::gfx::Profiler::get_instance()->begin_zone(cmd_list, label);
 #define EDGE_GFX_PROFILER_BEGIN_ZONE_NC(cmd_list, label, color)
 #define EDGE_GFX_PROFILER_END_ZONE()
 #define EDGE_GFX_PROFILER_FRAME_MARK()
+#define EDGE_GFX_PROFILER_DRAW_UI() 
 #endif
 
 namespace edge::gfx {
@@ -30,6 +32,7 @@ namespace edge::gfx {
 		void end_zone(ICommandList& cmd_list);
 
 		void frame_mark();
+		void draw_ui();
 	private:
 		static constexpr size_t MAX_PROFILE_ZONES{ 128 };
 		static constexpr size_t MAX_HISTORY_SIZE{ 120 };
@@ -62,8 +65,6 @@ namespace edge::gfx {
 
 			void draw_flame(float x, float y, float width, double total_time, int depth);
 		};
-
-		void _draw();
 
 		ZoneNode root{};
 		ZoneNode* current_zone{ nullptr };

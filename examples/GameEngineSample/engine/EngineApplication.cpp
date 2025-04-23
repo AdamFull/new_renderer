@@ -74,7 +74,8 @@ namespace engine
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		ui->NewFrame(delta_time);
-		EDGE_GFX_PROFILER_FRAME_MARK();
+
+		EDGE_GFX_PROFILER_DRAW_UI();
 
 		for (auto& window : app_windows) {
 			window->Draw(delta_time);
@@ -83,5 +84,7 @@ namespace engine
 		scene->Update(delta_time);
 
 		renderer->render(delta_time);
+
+		EDGE_GFX_PROFILER_FRAME_MARK();
 	}
 }

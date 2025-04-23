@@ -190,7 +190,66 @@ namespace edge::gfx {
 		}
 	}
 
-	void Profiler::_draw() {
+	Profiler::Profiler() {
+		current_zone = &root;
+
+		QueryPoolCreateInfo create_info{};
+		create_info.type = QueryType::eTimestamp;
+		create_info.query_count = MAX_PROFILE_ZONES * 2u;
+		query_pool = create_query_pool(create_info);
+		query_pool->reset(0u, create_info.query_count);
+
+		request_timestamp_frequency(&timestamp_freq);
+	}
+
+	Profiler::~Profiler() {
+		if (query_pool) {
+			destroy(query_pool);
+		}
+	}
+
+
+	void Profiler::begin_zone(ICommandList& cmd_list, std::string_view label, uint32_t color) {
+		if (is_paused) {
+			return;
+		}
+
+		cmd_list.begin_marker(label, color);
+		
+		current_zone = current_zone->lookup_zone(label);
+		current_zone->begin_query = query_index++;
+		cmd_list.begin_query(query_pool, current_zone->begin_query);
+	}
+
+	void Profiler::end_zone(ICommandList& cmd_list) {
+		if (is_paused) {
+			return;
+		}
+
+		cmd_list.end_marker();
+
+		current_zone->end_query = query_index++;
+		cmd_list.end_query(query_pool, current_zone->end_query);
+
+		if (current_zone->parent) {
+			current_zone = current_zone->parent;
+		}
+	}
+
+	void Profiler::frame_mark() {
+		if (query_index) {
+			uint64_t timestamps[MAX_PROFILE_ZONES * 2u] = {};
+			query_pool->get_data(0u, query_index, &timestamps[0]);
+			query_pool->reset(0u, query_index);
+			query_index = 0u;
+
+			current_zone = &root;
+			root.evaluate(timestamps, timestamp_freq);
+			root.reset();
+		}
+	}
+
+	void Profiler::draw_ui() {
 		if (auto window = edge::imui::make_scoped_window("Frame Viewer")) {
 			if (is_paused) {
 				if (ImGui::Button("Continue Profiling")) {
@@ -348,66 +407,5 @@ namespace edge::gfx {
 				}
 			}
 		}
-	}
-
-	Profiler::Profiler() {
-		current_zone = &root;
-
-		QueryPoolCreateInfo create_info{};
-		create_info.type = QueryType::eTimestamp;
-		create_info.query_count = MAX_PROFILE_ZONES * 2u;
-		query_pool = create_query_pool(create_info);
-		query_pool->reset(0u, create_info.query_count);
-
-		request_timestamp_frequency(&timestamp_freq);
-	}
-
-	Profiler::~Profiler() {
-		if (query_pool) {
-			destroy(query_pool);
-		}
-	}
-
-
-	void Profiler::begin_zone(ICommandList& cmd_list, std::string_view label, uint32_t color) {
-		if (is_paused) {
-			return;
-		}
-
-		cmd_list.begin_marker(label, color);
-		
-		current_zone = current_zone->lookup_zone(label);
-		current_zone->begin_query = query_index++;
-		cmd_list.begin_query(query_pool, current_zone->begin_query);
-	}
-
-	void Profiler::end_zone(ICommandList& cmd_list) {
-		if (is_paused) {
-			return;
-		}
-
-		cmd_list.end_marker();
-
-		current_zone->end_query = query_index++;
-		cmd_list.end_query(query_pool, current_zone->end_query);
-
-		if (current_zone->parent) {
-			current_zone = current_zone->parent;
-		}
-	}
-
-	void Profiler::frame_mark() {
-		if (query_index) {
-			uint64_t timestamps[MAX_PROFILE_ZONES * 2u] = {};
-			query_pool->get_data(0u, query_index, &timestamps[0]);
-			query_pool->reset(0u, query_index);
-			query_index = 0u;
-
-			current_zone = &root;
-			root.evaluate(timestamps, timestamp_freq);
-			root.reset();
-		}
-
-		_draw();
 	}
 }
