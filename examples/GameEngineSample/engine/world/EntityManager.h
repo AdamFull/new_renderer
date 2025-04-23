@@ -25,7 +25,7 @@ namespace engine::world {
 		std::function<void* (entt::entity)> try_get;
 		std::function<void(entt::entity)> destroy;
 		std::function<bool(entt::entity)> has;
-		std::function<void(InspectorDrawer&, entt::entity)> edit;
+		std::function<void(entt::entity)> edit;
 		std::function<void(nlohmann::json&, entt::entity)> serialize;
 		std::function<void(const nlohmann::json&, entt::entity)> deserialize;
 	};
@@ -51,11 +51,11 @@ namespace engine::world {
 			meta.destroy = [&registry = m_registry](entt::entity entity) { registry.remove<_Ty>(entity); };
 			meta.has = [&registry = m_registry](entt::entity entity) { return registry.any_of<_Ty>(entity); };
 
-			meta.edit = [&registry = m_registry](InspectorDrawer& drawer, entt::entity entity) {
+			meta.edit = [&registry = m_registry](entt::entity entity) {
 					if constexpr (refl::is_reflectable<_Ty>()) {
 						auto* component = registry.try_get<_Ty>(entity);
 						if (component) {
-							drawer.draw_big(*component);
+							InspectorDrawer::draw_big(*component);
 						}
 					}
 				};

@@ -14,7 +14,6 @@ namespace engine
 
 		void Create() override;
 	private:
-		InspectorDrawer m_drawer{};
 		void __draw(float fDt) override;
 	};
 }

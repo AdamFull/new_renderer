@@ -10,125 +10,28 @@
 namespace engine {
 	class InspectorDrawer {
 	public:
-		// TODO: check ability to use requires with has_attribute
-		template<glm::length_t _N, typename _Ty, glm::qualifier _Q, typename _Member>
-		bool edit_glm_vec(std::string_view label, glm::vec<_N, _Ty, _Q>& value, _Member member) {
-			// Try to get min max values
-			attr::Range<_Ty> range;
-			if constexpr (has_attribute<attr::Range>(member)) {
-				range = get_attribute<attr::Range>(member);
-			}
-			
-			auto* ptr = reinterpret_cast<_Ty*>(&value);
-
-			if constexpr (has_attribute<attr::Slider>(member)) {
-				return ImGui::Slider<_Ty, _N>(label.data(), ptr, range.min, range.max);
-			}
-			else if constexpr (has_attribute<attr::Input>(member)) {
-				return ImGui::Input<_Ty, _N>(label.data(), ptr, range.min, range.max);
-			}
-			// TODO: Check that it's vec3 or vec4
-			else if constexpr (has_attribute<attr::ColorEdit>(member)) {
-				return ImGui::GColorEdit3(label.data(), ptr);
-			}
-			else if constexpr (has_attribute<attr::ReadOnly>(member)) {
-				auto read_only = get_attribute<attr::ReadOnly>(member);
-				for (int32_t i = 0; i < _N; ++i) {
-					ImGui::Text(read_only.format.data(), ptr[i]);
-					if (i < _N - 1) {
-						ImGui::SameLine();
-					}
-				}
-				return false;
-			}
-			
-			return ImGui::Drag<_Ty, _N>(label.data(), ptr, range.min, range.max, 0.01f);
-		}
-
-		template<typename _Ty, glm::qualifier _Q, typename _Member>
-		bool edit_glm_quat(std::string_view label, glm::qua<_Ty, _Q>& value, _Member member) {
-			auto angles = glm::degrees(glm::eulerAngles(value));
-			if (edit_glm_vec(label, angles, member)) {
-				value = glm::qua<_Ty, _Q>(glm::radians(angles));
-				return true;
-			}
-			return false;
-		}
-
-		template<typename _Ty, std::size_t _N, typename _Member>
-		bool edit_std_array(std::string_view label, std::array<_Ty, _N>& array, _Member member) {
-			bool edited{ false };
-			if (ImGui::TreeNodeEx(label.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
-				for (int32_t i = 0; i < array.size(); ++i) {
-					ImGui::PushID(i);
-					edited |= edit_field(std::format("Element {}", i), array[i], member);
-					ImGui::PopID();
-				}
-
-				ImGui::TreePop();
-			}
-
-			return edited;
-		}
-
-		template<typename _Ty, typename _Member>
-		bool edit_std_vector(std::string_view label, std::vector<_Ty>& vector, _Member member) {
-			bool edited{ false };
-			if (ImGui::TreeNodeEx(label.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
-				// Add resize field
-				int vector_size = static_cast<int>(vector.size());
-				if (ImGui::GDragInt<1>("Size", &vector_size, 1, 1)) {
-					if (vector_size < 0) {
-						vector_size = 0;
-					}
-				
-					if (vector_size != static_cast<int>(vector.size())) {
-						vector.resize(vector_size);
-					}
-				}
-
-				for (int32_t i = 0; i < vector.size(); ++i) {
-					ImGui::PushID(i);
-					edited |= edit_field(std::format("Element {}", i), vector[i], member);
-					ImGui::PopID();
-				}
-
-				if (ImGui::Button("Add")) {
-					vector.emplace_back();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Remove") && !vector.empty()) {
-					vector.pop_back();
-				}
-
-				ImGui::TreePop();
-			}
-
-			return edited;
-		}
-
 		// For other cases
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member) {
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member) {
 			return false;
 		}
 
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member)
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member)
 			requires edge::utl::is_std_array<_Ty>::value {
 			return edit_std_array(label, value, member);
 		}
 
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member) 
-		requires edge::utl::is_std_vector<_Ty>::value {
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member)
+			requires edge::utl::is_std_vector<_Ty>::value {
 			return edit_std_vector(label, value, member);
 		}
 
 		// For scalar numeric types
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member)
-		requires std::is_arithmetic_v<_Ty> && (!std::is_same_v<_Ty, bool>) {
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member)
+			requires std::is_arithmetic_v<_Ty> && (!std::is_same_v<_Ty, bool>) {
 			attr::Range<_Ty> range;
 			if constexpr (has_attribute<attr::Range>(member)) {
 				range = get_attribute<attr::Range>(member);
@@ -145,40 +48,40 @@ namespace engine {
 				ImGui::GText(label, read_only.format.data(), value);
 				return false;
 			}
-			
+
 			return ImGui::Drag<_Ty, 1>(label.data(), &value, range.min, range.max, 0.01f);
 		}
 
 		// For glm vectors support
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member) 
-		requires edge::utl::is_glm_vec<_Ty>::value {
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member)
+			requires edge::utl::is_glm_vec<_Ty>::value {
 			return edit_glm_vec(label, value, member);
 		}
 
 		// For glm quaternion
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member)
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member)
 			requires edge::utl::is_glm_quat<_Ty>::value {
 			return edit_glm_quat(label, value, member);
 		}
 
 		// For boolean
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member)
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member)
 			requires std::is_same_v<_Ty, bool> {
 			return ImGui::GCheckbox(label.data(), &value);
 		}
 
 		// For enums with metadata
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member) 
-			requires std::is_enum_v<_Ty> && edge::has_enum_metadata<_Ty> {
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member)
+			requires std::is_enum_v<_Ty>&& edge::has_enum_metadata<_Ty> {
 			std::string_view selected;
 			auto it = std::find_if(edge::enum_metadata<_Ty>.begin(), edge::enum_metadata<_Ty>.end(), [&value](auto& pair) { return pair.first == value; });
 			if (it != edge::enum_metadata<_Ty>.end())
 				selected = it->second;
-			
+
 			bool changed = false;
 			if (ImGui::GBeginTable(label.data())) {
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
@@ -189,22 +92,22 @@ namespace engine {
 							value = entry;
 							changed = true;
 						}
-			
+
 						if (isSelected)
 							ImGui::SetItemDefaultFocus();
 					}
 					ImGui::EndCombo();
 				}
-			
+
 				ImGui::GEndTable();
 			}
-			
+
 			return changed;
 		}
 
 		// For enums without metadata
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member)
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member)
 			requires std::is_enum_v<_Ty> && (!edge::has_enum_metadata<_Ty>) {
 			int i = static_cast<int>(value);
 			bool r = ImGui::InputInt(label.data(), &i);
@@ -214,13 +117,13 @@ namespace engine {
 
 		// For reflectible (complicated) types
 		template<typename _Ty, typename _Member>
-		bool edit_field(std::string_view label, _Ty& value, _Member member) 
+		static inline bool edit_field(std::string_view label, _Ty& value, _Member member)
 			requires conc::Reflectable<_Ty> {
 			return draw_small(value);
 		}
 
 		template<typename _Comp, typename _Member>
-		bool edit_member(_Comp& component, _Member member) {
+		static inline bool edit_member(_Comp& component, _Member member) {
 			std::string_view label{ member.name.c_str() };
 			if constexpr (has_attribute<attr::Name>(member)) {
 				constexpr auto field_name_attr = get_attribute<attr::Name>(member);
@@ -247,7 +150,7 @@ namespace engine {
 		}
 
 		template<typename _Ty>
-		bool draw_big(_Ty& type) 
+		static inline bool draw_big(_Ty& type)
 			requires conc::Reflectable<_Ty> {
 			constexpr auto type_desc = refl::reflect<_Ty>();
 
@@ -266,7 +169,7 @@ namespace engine {
 			if (ImGui::CollapsingHeader(type_name.data(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap)) {
 				auto fields = filter(members, [](auto member) { return is_field(member); });
 				for_each(fields, [&](auto member) {
-						changed |= edit_member(type, member);
+					changed |= edit_member(type, member);
 					});
 				ImGui::Separator();
 			}
@@ -275,7 +178,7 @@ namespace engine {
 		}
 
 		template<typename _Ty>
-		bool draw_small(_Ty& type)
+		static inline bool draw_small(_Ty& type)
 			requires conc::Reflectable<_Ty> {
 			constexpr auto type_desc = refl::reflect<_Ty>();
 
@@ -300,6 +203,103 @@ namespace engine {
 			}
 
 			return changed;
+		}
+	private:
+		// TODO: check ability to use requires with has_attribute
+		template<glm::length_t _N, typename _Ty, glm::qualifier _Q, typename _Member>
+		static inline bool edit_glm_vec(std::string_view label, glm::vec<_N, _Ty, _Q>& value, _Member member) {
+			// Try to get min max values
+			attr::Range<_Ty> range;
+			if constexpr (has_attribute<attr::Range>(member)) {
+				range = get_attribute<attr::Range>(member);
+			}
+
+			auto* ptr = reinterpret_cast<_Ty*>(&value);
+
+			if constexpr (has_attribute<attr::Slider>(member)) {
+				return ImGui::Slider<_Ty, _N>(label.data(), ptr, range.min, range.max);
+			}
+			else if constexpr (has_attribute<attr::Input>(member)) {
+				return ImGui::Input<_Ty, _N>(label.data(), ptr, range.min, range.max);
+			}
+			// TODO: Check that it's vec3 or vec4
+			else if constexpr (has_attribute<attr::ColorEdit>(member)) {
+				return ImGui::GColorEdit3(label.data(), ptr);
+			}
+			else if constexpr (has_attribute<attr::ReadOnly>(member)) {
+				auto read_only = get_attribute<attr::ReadOnly>(member);
+				for (int32_t i = 0; i < _N; ++i) {
+					ImGui::Text(read_only.format.data(), ptr[i]);
+					if (i < _N - 1) {
+						ImGui::SameLine();
+					}
+				}
+				return false;
+			}
+
+			return ImGui::Drag<_Ty, _N>(label.data(), ptr, range.min, range.max, 0.01f);
+		}
+
+		template<typename _Ty, glm::qualifier _Q, typename _Member>
+		static inline bool edit_glm_quat(std::string_view label, glm::qua<_Ty, _Q>& value, _Member member) {
+			auto angles = glm::degrees(glm::eulerAngles(value));
+			if (edit_glm_vec(label, angles, member)) {
+				value = glm::qua<_Ty, _Q>(glm::radians(angles));
+				return true;
+			}
+			return false;
+		}
+
+		template<typename _Ty, std::size_t _N, typename _Member>
+		static inline bool edit_std_array(std::string_view label, std::array<_Ty, _N>& array, _Member member) {
+			bool edited{ false };
+			if (ImGui::TreeNodeEx(label.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+				for (int32_t i = 0; i < array.size(); ++i) {
+					ImGui::PushID(i);
+					edited |= edit_field(std::format("Element {}", i), array[i], member);
+					ImGui::PopID();
+				}
+
+				ImGui::TreePop();
+			}
+
+			return edited;
+		}
+
+		template<typename _Ty, typename _Member>
+		static inline bool edit_std_vector(std::string_view label, std::vector<_Ty>& vector, _Member member) {
+			bool edited{ false };
+			if (ImGui::TreeNodeEx(label.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+				// Add resize field
+				int vector_size = static_cast<int>(vector.size());
+				if (ImGui::GDragInt<1>("Size", &vector_size, 1, 1)) {
+					if (vector_size < 0) {
+						vector_size = 0;
+					}
+
+					if (vector_size != static_cast<int>(vector.size())) {
+						vector.resize(vector_size);
+					}
+				}
+
+				for (int32_t i = 0; i < vector.size(); ++i) {
+					ImGui::PushID(i);
+					edited |= edit_field(std::format("Element {}", i), vector[i], member);
+					ImGui::PopID();
+				}
+
+				if (ImGui::Button("Add")) {
+					vector.emplace_back();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Remove") && !vector.empty()) {
+					vector.pop_back();
+				}
+
+				ImGui::TreePop();
+			}
+
+			return edited;
 		}
 	};
 }

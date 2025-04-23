@@ -53,7 +53,7 @@ void InspectorWindow::__draw(float fDt)
 			[&](const ComponentMeta& meta) {
 				if (!meta.name.empty() && !(meta.flags & EComponentFlagBits::eHiddenInEditor)) {
 					ImGui::PushID(meta.name.data());
-					meta.edit(m_drawer, selected);
+					meta.edit(selected);
 					ImGui::PopID();
 				}
 			});
