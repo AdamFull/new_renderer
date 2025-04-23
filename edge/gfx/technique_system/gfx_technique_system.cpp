@@ -41,13 +41,23 @@ namespace edge::gfx
 	}
 
 	TechniqueDatabase::~TechniqueDatabase() {
+		for (auto& root_signature : root_signatures) {
+			destroy(root_signature);
+		}
+
 		for (auto& [name, technique] : techniques) {
 			destroy(technique.pipeline);
-			destroy(technique.root_signature);
 			destroy(technique.shader);
 		}
 
-		techniques.clear();
+		// TODO: first layout (for now) is not controlled by this class
+		int32_t layout_cnt{ 0 };
+		for (auto& descriptor_layout : descriptor_layouts) {
+			if (layout_cnt != 0) {
+				destroy(descriptor_layout);
+			}
+			++layout_cnt;
+		}
 
 		size_t cache_size{ 0 };
 		pipeline_cache->get_data(cache_size, nullptr);
