@@ -150,7 +150,7 @@ namespace engine {
 		}
 
 		template<typename _Ty>
-		static inline bool draw_big(_Ty& type)
+		static inline bool draw_big(_Ty& type, int32_t flags = 0)
 			requires conc::Reflectable<_Ty> {
 			constexpr auto type_desc = refl::reflect<_Ty>();
 
@@ -166,7 +166,7 @@ namespace engine {
 				});
 
 			bool changed{ false };
-			if (ImGui::CollapsingHeader(type_name.data(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap)) {
+			if (ImGui::CollapsingHeader(type_name.data(), flags)) {
 				auto fields = filter(members, [](auto member) { return is_field(member); });
 				for_each(fields, [&](auto member) {
 					changed |= edit_member(type, member);

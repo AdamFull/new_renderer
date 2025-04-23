@@ -55,7 +55,7 @@ namespace engine::world {
 					if constexpr (refl::is_reflectable<_Ty>()) {
 						auto* component = registry.try_get<_Ty>(entity);
 						if (component) {
-							InspectorDrawer::draw_big(*component);
+							InspectorDrawer::draw_big(*component, ImGuiTreeNodeFlags_DefaultOpen);
 						}
 					}
 				};
