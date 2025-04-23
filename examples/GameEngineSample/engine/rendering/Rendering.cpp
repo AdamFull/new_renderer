@@ -1911,10 +1911,10 @@ namespace engine::render
 							self.bind_write_resource(render_label::histogram_buffer, histogram_buffer, ~0u);
 							self.resolve_dependencies(command_list);
 
-							float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
+							float log_lum_range = postprocess.tonemap.lum_max - postprocess.tonemap.lum_min;
 
 							auto& uniform = self.get_constant_block();
-							uniform.set(render_label::min_log_lum, postprocess.tonemap.lumMin);
+							uniform.set(render_label::min_log_lum, postprocess.tonemap.lum_min);
 							uniform.set(render_label::log_lum_range, log_lum_range);
 
 							self.push_constant_ranges(command_list);
@@ -1942,13 +1942,13 @@ namespace engine::render
 							self.bind_write_resource(render_label::write_image0, avg_brightness_target, ~0u);
 							self.resolve_dependencies(command_list);
 
-							float log_lum_range = postprocess.tonemap.lumMax - postprocess.tonemap.lumMin;
+							float log_lum_range = postprocess.tonemap.lum_max - postprocess.tonemap.lum_min;
 							float time_coeff = glm::clamp<float>(1.0f - glm::exp(-delta_time * postprocess.tonemap.tau), 0.0, 1.0);
 
 							auto* texture = render_context->get_texture(input_target);
 
 							auto& uniform = self.get_constant_block();
-							uniform.set(render_label::min_log_lum, postprocess.tonemap.lumMin);
+							uniform.set(render_label::min_log_lum, postprocess.tonemap.lum_min);
 							uniform.set(render_label::log_lum_range, log_lum_range);
 							uniform.set(render_label::time_coeff, time_coeff);
 							uniform.set(render_label::num_pixels_x, static_cast<float>(texture->get_width()));

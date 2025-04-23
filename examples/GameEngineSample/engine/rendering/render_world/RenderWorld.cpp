@@ -363,7 +363,7 @@ namespace engine::render {
 			postprocessing.enable_tonemap = static_cast<uint32_t>(postprocess.tonemap.enable);
 			postprocessing.tm_gamma = postprocess.tonemap.gamma;
 			postprocessing.tm_exposure = postprocess.tonemap.exposure;
-			postprocessing.tm_white_point = postprocess.tonemap.whitePoint;
+			postprocessing.tm_white_point = postprocess.tonemap.white_point;
 			postprocessing.tm_adaptive = postprocess.tonemap.adaptive;
 			// Bloom
 			postprocessing.enable_bloom = static_cast<uint32_t>(postprocess.bloom.enable);

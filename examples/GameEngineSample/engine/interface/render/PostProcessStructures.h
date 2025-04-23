@@ -59,9 +59,9 @@ namespace engine::render {
 		bool adaptive{ false };
 		float gamma{ 2.2f };
 		float exposure{ 0.5f };
-		float whitePoint{ 4.f };
-		float lumMin{ -5.f };
-		float lumMax{ 3.f };
+		float white_point{ 4.f };
+		float lum_min{ -5.f };
+		float lum_max{ 3.f };
 		float tau{ 1.1f };
 	};
 
@@ -117,4 +117,48 @@ REFL_FIELD(near_field, engine::attr::Range(0.1f, INFINITY), engine::attr::Name("
 REFL_FIELD(near_transition, engine::attr::Range(0.1f, INFINITY), engine::attr::Name("Near Transmission"))
 REFL_FIELD(far_field, engine::attr::Range(0.1f, INFINITY), engine::attr::Name("Far Field"))
 REFL_FIELD(far_transition, engine::attr::Range(0.1f, INFINITY), engine::attr::Name("Far Transmission"))
+REFL_END
+
+REFL_TYPE(engine::render::PostProcessBloom, engine::attr::Name("Bloom"))
+REFL_FIELD(enable, engine::attr::Name("Enable"))
+REFL_FIELD(threshold, engine::attr::Range(0.1f, 1.0f), engine::attr::Name("Threshold"))
+REFL_FIELD(filter_radius, engine::attr::Range(0.01f, 10.0f), engine::attr::Name("Filter Radius"))
+REFL_FIELD(strength, engine::attr::Range(0.1f, 2.0f), engine::attr::Name("Strength"))
+REFL_END
+
+REFL_TYPE(engine::render::PostProcessCA, engine::attr::Name("Barell Chromatic Aberration"))
+REFL_FIELD(enable, engine::attr::Name("Enable"))
+REFL_FIELD(distortion, engine::attr::Range(0.1f, 5.0f), engine::attr::Name("Distortion Amount"))
+REFL_FIELD(iterations, engine::attr::Range(1, 24), engine::attr::Name("Iteration Count"))
+REFL_END
+
+REFL_TYPE(engine::render::PostProcessVignette, engine::attr::Name("Vignette"))
+REFL_FIELD(enable, engine::attr::Name("Enable"))
+REFL_FIELD(inner, engine::attr::Range(0.1f, INFINITY), engine::attr::Name("Inner"))
+REFL_FIELD(outer, engine::attr::Range(0.1f, INFINITY), engine::attr::Name("Outer"))
+REFL_FIELD(opacity, engine::attr::Range(0.1f, 1.f), engine::attr::Name("Border Opacity"))
+REFL_END
+
+REFL_TYPE(engine::render::PostProcessFilmGrain, engine::attr::Name("Film Grain"))
+REFL_FIELD(enable, engine::attr::Name("Enable"))
+REFL_FIELD(amount, engine::attr::Range(0.1f, 1.0f), engine::attr::Name("Amount"))
+REFL_END
+
+REFL_TYPE(engine::render::PostProcessTonemap, engine::attr::Name("Tonemapping"))
+REFL_FIELD(enable, engine::attr::Name("Enable"))
+REFL_FIELD(adaptive, engine::attr::Name("Adaptive"))
+REFL_FIELD(gamma, engine::attr::Range(0.1f, 5.0f), engine::attr::Name("Gamma"))
+REFL_FIELD(exposure, engine::attr::Range(-5.0f, 5.0f), engine::attr::Name("Exposure"))
+REFL_FIELD(white_point, engine::attr::Range(0.01f, INFINITY), engine::attr::Name("White Point"))
+REFL_FIELD(lum_min, engine::attr::Range(-INFINITY, INFINITY), engine::attr::Name("Luma Min"))
+REFL_FIELD(lum_max, engine::attr::Range(-INFINITY, INFINITY), engine::attr::Name("Luma Max"))
+REFL_FIELD(tau, engine::attr::Range(0.1f, 10.0f), engine::attr::Name("Adaptation Speed"))
+REFL_END
+
+REFL_TYPE(engine::render::PostProcessMotionBlur, engine::attr::Name("Motion Blur"))
+REFL_FIELD(enable, engine::attr::Name("Enable"))
+REFL_FIELD(scele, engine::attr::Range(0.1f, 5.0f), engine::attr::Name("Blur Scale"))
+REFL_FIELD(max_samples, engine::attr::Range(1, 24), engine::attr::Name("Max Samples"))
+REFL_FIELD(max_velocity, engine::attr::Range(0.1f, INFINITY), engine::attr::Name("Max Velocity"))
+REFL_FIELD(threshold, engine::attr::Range(0.1f, 5.0f), engine::attr::Name("Threshold"))
 REFL_END
