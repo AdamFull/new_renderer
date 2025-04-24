@@ -14,8 +14,8 @@
 
 #include "GeometryBuffer.h"
 
-#include <assets/shaders/includes/shlib.h>
-#include <assets/shaders/includes/debug_text.h>
+#include "../../assets/shaders/includes/shlib.h"
+#include "../../assets/shaders/includes/debug_text.h"
 
 #include <edge/util/Logger.h>
 
@@ -92,6 +92,32 @@ namespace render_label {
 	constexpr const uint32_t time_coeff = "timeCoeff"_hash32;
 	constexpr const uint32_t num_pixels_x = "numPixelsX"_hash32;
 	constexpr const uint32_t num_pixels_y = "numPixelsY"_hash32;
+
+	constexpr const uint32_t enabled = "enabled"_hash32;
+	constexpr const uint32_t quality = "quality"_hash32;
+	constexpr const uint32_t threshold = "threshold"_hash32;
+	constexpr const uint32_t threshold_min = "threshold_min"_hash32;
+	constexpr const uint32_t scale = "scale"_hash32;
+	constexpr const uint32_t max_samples = "max_samples"_hash32;
+	constexpr const uint32_t strength = "strength"_hash32;
+	constexpr const uint32_t sample_count = "sample_count"_hash32;
+	constexpr const uint32_t polygon_count = "polygon_count"_hash32;
+	constexpr const uint32_t near_field = "near_field"_hash32;
+	constexpr const uint32_t near_transition = "near_transition"_hash32;
+	constexpr const uint32_t far_field = "far_field"_hash32;
+	constexpr const uint32_t far_transition = "far_transition"_hash32;
+	constexpr const uint32_t focus_point = "focus_point"_hash32;
+	constexpr const uint32_t iterations = "iterations"_hash32;
+	constexpr const uint32_t distortion = "distortion"_hash32;
+	constexpr const uint32_t adaptive = "adaptive"_hash32;
+	constexpr const uint32_t white_point = "white_point"_hash32;
+	constexpr const uint32_t exposure = "exposure"_hash32;
+	constexpr const uint32_t gamma = "gamma"_hash32;
+	constexpr const uint32_t filter_radius = "filter_radius"_hash32;
+	constexpr const uint32_t amount = "amount"_hash32;
+	constexpr const uint32_t opacity = "opacity"_hash32;
+	constexpr const uint32_t inner_radius = "inner_radius"_hash32;
+	constexpr const uint32_t outer_radius = "outer_radius"_hash32;
 }
 
 namespace engine::render
@@ -1576,7 +1602,6 @@ namespace engine::render
 
 					self.bind_write_resource(render_label::write_image0, motion_vectors_target, ~0u);
 					self.bind_read_resource(render_label::sample_image0, zbuffer_depth_target, ~0u);
-
 					self.resolve_dependencies(command_list);
 					self.bind_resources(command_list);
 
@@ -1586,8 +1611,8 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
-		uint32_t input_target = hdr0;
-		uint32_t output_target = hdr1;
+		input_target_id = hdr0;
+		output_target_id = hdr1;
 
 		// Copy history
 		{
@@ -1595,28 +1620,39 @@ namespace engine::render
 			create_info.technique_name = "copy_image";
 
 			create_info.draw_callback = [this,
-				input_target,
 				hdr0_history
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					self.bind_read_resource(render_label::sample_image0, input_target, ~0u);
+					self.bind_read_resource(render_label::sample_image0, input_target_id, ~0u);
 					self.bind_write_resource(render_label::write_image0, hdr0_history, ~0u);
-
 					self.resolve_dependencies(command_list);
 					self.bind_resources(command_list);
 
-					self.dispatch_for_target(command_list, input_target, true);
+					self.dispatch_for_target(command_list, input_target_id, true);
 				};
 
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
-		uint32_t final_target = input_target;
-
 		// Post processing
 		{
 			uint32_t pass_count{ 0u };
+
+			auto post_proc_node = render_context->create_node("Post Processing", 0xFFFF33FF);
+			auto* pp_node = static_cast<GroupNode*>(post_proc_node.get());
+			pp_node->set_pre_callback(
+				[this](edge::gfx::ICommandList& command_list, float delta_time) {
+					current_input_target_id = input_target_id;
+					current_output_target_id = output_target_id;
+					last_output_target_id = input_target_id;
+				});
+			pp_node->set_post_callback(
+				[this](edge::gfx::ICommandList& command_list, float delta_time) {
+					if (current_input_target_id != input_target_id) {
+						last_output_target_id = output_target_id;
+					}
+				});
 
 			// FXAA 
 			{
@@ -1624,27 +1660,30 @@ namespace engine::render
 				create_info.technique_name = "apply_fxaa_effect";
 
 				create_info.enabled_callback = []() -> bool { return postprocess.fxaa.enable; };
-				create_info.draw_callback = [this,
-					input_target,
-					output_target,
-					enabled = &postprocess.fxaa.enable
+				create_info.draw_callback = [this
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 						EDGE_PROFILE_ZONE_SCOPED;
 
-						self.bind_read_resource(render_label::sample_image0, input_target, ~0u);
-						self.bind_write_resource(render_label::write_image0, output_target, ~0u);
+						if (postprocess.fxaa.enable) {
+							self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+							self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+							self.resolve_dependencies(command_list);
+							self.bind_resources(command_list);
 
-						self.resolve_dependencies(command_list);
-						self.bind_resources(command_list);
+							auto& pc = self.get_constant_block();
+							pc.set(render_label::enabled, static_cast<int32_t>(postprocess.fxaa.enable));
+							pc.set(render_label::quality, postprocess.fxaa.quality);
+							pc.set(render_label::threshold, postprocess.fxaa.threshold);
+							pc.set(render_label::threshold_min, postprocess.fxaa.threshold_min);
+							self.push_constant_ranges(command_list);
 
-						self.dispatch_for_target(command_list, input_target, true);
+							self.dispatch_for_target(command_list, current_input_target_id, true);
+
+							std::swap(current_input_target_id, current_output_target_id);
+						}
 					};
 
-				if (postprocess.fxaa.enable) {
-					SWAP_COUNT(input_target, output_target);
-				}
-
-				render_context->add_node(render_context->create_node(create_info));
+				pp_node->add_node(render_context->create_node(create_info));
 			}
 
 			// Apply motion blur
@@ -1654,34 +1693,37 @@ namespace engine::render
 
 				create_info.enabled_callback = []() -> bool { return postprocess.motionblur.enable; };
 				create_info.draw_callback = [this,
-					input_target,
-					output_target,
 					motion_vectors_target
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 						EDGE_PROFILE_ZONE_SCOPED;
 
-						self.bind_read_resource(render_label::sample_image0, input_target, ~0u);
-						self.bind_read_resource(render_label::sample_image1, motion_vectors_target, ~0u);
-						self.bind_write_resource(render_label::write_image0, output_target, ~0u);
+						if (postprocess.fxaa.enable) {
+							self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+							self.bind_read_resource(render_label::sample_image1, motion_vectors_target, ~0u);
+							self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+							self.resolve_dependencies(command_list);
+							self.bind_resources(command_list);
 
-						self.resolve_dependencies(command_list);
-						self.bind_resources(command_list);
+							auto& pc = self.get_constant_block();
+							pc.set(render_label::enabled, static_cast<int32_t>(postprocess.motionblur.enable));
+							pc.set(render_label::scale, postprocess.motionblur.scele);
+							pc.set(render_label::threshold, postprocess.motionblur.threshold);
+							pc.set(render_label::max_samples, postprocess.motionblur.max_samples);
+							self.push_constant_ranges(command_list);
 
-						self.dispatch_for_target(command_list, input_target, true);
+							self.dispatch_for_target(command_list, current_input_target_id, true);
+
+							std::swap(current_input_target_id, current_output_target_id);
+						}
 					};
 
-				if (postprocess.motionblur.enable) {
-					SWAP_COUNT(input_target, output_target);
-				}
-
-				render_context->add_node(render_context->create_node(create_info));
+				pp_node->add_node(render_context->create_node(create_info));
 			}
 
 			// Compute dof
 			{
 				auto group_node = render_context->create_node("DOF", 0xFFFF33FF);
 				auto* node = static_cast<GroupNode*>(group_node.get());
-				node->set_group_enabled_callback([]() -> bool { return postprocess.dof.enable; });
 
 				// Compute bokeh
 				{
@@ -1689,17 +1731,23 @@ namespace engine::render
 					create_info.technique_name = "bokeh_filter";
 
 					create_info.draw_callback = [this,
-						input_target,
 						hdr0_div2
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
+							if (postprocess.dof.enable) {
+								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+								self.bind_write_resource(render_label::write_image0, hdr0_div2, ~0u);
+								self.resolve_dependencies(command_list);
+								self.bind_resources(command_list);
 
-							self.bind_read_resource(render_label::sample_image0, input_target, ~0u);
-							self.bind_write_resource(render_label::write_image0, hdr0_div2, ~0u);
-							self.resolve_dependencies(command_list);
-							self.bind_resources(command_list);
+								auto& pc = self.get_constant_block(); 
+								pc.set(render_label::enabled, static_cast<int32_t>(postprocess.dof.enable));
+								pc.set(render_label::sample_count, postprocess.dof.bokeh_samples);
+								pc.set(render_label::polygon_count, postprocess.dof.bokeh_poly);
+								self.push_constant_ranges(command_list);
 
-							self.dispatch_for_target(command_list, input_target, true);
+								self.dispatch_for_target(command_list, current_input_target_id, true);
+							}
 						};
 
 					node->add_node(std::move(render_context->create_node(create_info)));
@@ -1711,38 +1759,44 @@ namespace engine::render
 					create_info.technique_name = "apply_dof_effect";
 
 					create_info.draw_callback = [this,
-						input_target,
-						output_target,
 						hdr0_div2,
 						zbuffer_depth_target
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
-							self.bind_read_resource(render_label::sample_image0, input_target, ~0u);
-							self.bind_read_resource(render_label::sample_image1, hdr0_div2, ~0u);
-							self.bind_read_resource(render_label::sample_image2, zbuffer_depth_target, ~0u);
-							self.bind_write_resource(render_label::write_image0, output_target, ~0u);
-							self.resolve_dependencies(command_list);
-							self.bind_resources(command_list);
+							if (postprocess.dof.enable) {
+								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+								self.bind_read_resource(render_label::sample_image1, hdr0_div2, ~0u);
+								self.bind_read_resource(render_label::sample_image2, zbuffer_depth_target, ~0u);
+								self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+								self.resolve_dependencies(command_list);
+								self.bind_resources(command_list);
 
-							self.dispatch_for_target(command_list, input_target, true);
+								auto& pc = self.get_constant_block();
+								pc.set(render_label::enabled, static_cast<int32_t>(postprocess.dof.enable));
+								pc.set(render_label::near_field, postprocess.dof.near_field);
+								pc.set(render_label::near_transition, postprocess.dof.near_transition);
+								pc.set(render_label::far_field, postprocess.dof.far_field);
+								pc.set(render_label::far_transition, postprocess.dof.far_transition);
+								pc.set(render_label::focus_point, postprocess.dof.focus_point);
+								self.push_constant_ranges(command_list);
+
+								self.dispatch_for_target(command_list, current_input_target_id, true);
+
+								std::swap(current_input_target_id, current_output_target_id);
+							}
 						};
 
 					node->add_node(std::move(render_context->create_node(create_info)));
 				}
 
-				if (postprocess.dof.enable) {
-					SWAP_COUNT(input_target, output_target);
-				}
-
-				render_context->add_node(std::move(group_node));
+				pp_node->add_node(std::move(group_node));
 			}
 
 			// Compute bloom
 			{
 				auto group_node = render_context->create_node("bloom", 0xFF3333FF);
 				auto* node = static_cast<GroupNode*>(group_node.get());
-				node->set_group_enabled_callback([]() -> bool { return postprocess.bloom.enable; });
 
 				// Starting from brightness detection pass
 				{
@@ -1750,17 +1804,22 @@ namespace engine::render
 					create_info.technique_name = bloom_use_brightness ? "brightdetect" : "copy_image";
 
 					create_info.draw_callback = [this,
-						input_target,
 						hdr0_div2
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
-							self.bind_read_resource(render_label::sample_image0, input_target, ~0u);
-							self.bind_write_resource(render_label::write_image0, hdr0_div2, ~0u);
-							self.resolve_dependencies(command_list);
-							self.bind_resources(command_list);
+							if (postprocess.bloom.enable) {
+								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+								self.bind_write_resource(render_label::write_image0, hdr0_div2, ~0u);
+								self.resolve_dependencies(command_list);
+								self.bind_resources(command_list);
 
-							self.dispatch_for_target(command_list, hdr0_div2, true);
+								auto& pc = self.get_constant_block();
+								pc.set(render_label::threshold, postprocess.bloom.threshold);
+								self.push_constant_ranges(command_list);
+
+								self.dispatch_for_target(command_list, hdr0_div2, true);
+							}
 						};
 
 					node->add_node(std::move(render_context->create_node(create_info)));
@@ -1778,15 +1837,15 @@ namespace engine::render
 						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 								EDGE_PROFILE_ZONE_SCOPED;
 
-								self.write_resource(render_label::write_image0, bloom_target, ~0u);
+								if (postprocess.bloom.enable) {
+									self.write_resource(render_label::write_image0, bloom_target, ~0u);
+									self.bind_read_resource(render_label::sample_image0, hdr0_div2, ~0u);
+									self.bind_resource(render_label::write_image0, bloom_target, ~0u);
+									self.resolve_dependencies(command_list);
+									self.bind_resources(command_list);
 
-								self.bind_read_resource(render_label::sample_image0, hdr0_div2, ~0u);
-								self.bind_resource(render_label::write_image0, bloom_target, ~0u);
-
-								self.resolve_dependencies(command_list);
-								self.bind_resources(command_list);
-
-								self.dispatch_for_target(command_list, bloom_target, true);
+									self.dispatch_for_target(command_list, bloom_target, true);
+								}
 							};
 
 						node->add_node(std::move(render_context->create_node(create_info)));
@@ -1801,22 +1860,23 @@ namespace engine::render
 						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 								EDGE_PROFILE_ZONE_SCOPED;
 
-								auto target = render_context->get_texture(bloom_target);
+								if (postprocess.bloom.enable) {
+									auto target = render_context->get_texture(bloom_target);
 
-								for (int32_t mip = 1; mip < bloom_blur_depth; ++mip) {
-									self.bind_read_resource(render_label::sample_image0, bloom_target, mip - 1);
-									self.bind_write_resource(render_label::write_image0, bloom_target, mip);
+									for (int32_t mip = 1; mip < bloom_blur_depth; ++mip) {
+										self.bind_read_resource(render_label::sample_image0, bloom_target, mip - 1);
+										self.bind_write_resource(render_label::write_image0, bloom_target, mip);
+										self.resolve_dependencies(command_list);
+										self.bind_resources(command_list);
 
-									self.resolve_dependencies(command_list);
-									self.bind_resources(command_list);
+										uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 
-									uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+										group_x = target->get_width() >> mip;
+										group_y = target->get_height() >> mip;
 
-									group_x = target->get_width() >> mip;
-									group_y = target->get_height() >> mip;
-
-									self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
-									command_list.dispatch(group_x, group_y, group_z);
+										self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
+										command_list.dispatch(group_x, group_y, group_z);
+									}
 								}
 							};
 
@@ -1833,23 +1893,27 @@ namespace engine::render
 						bloom_target
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
+							if (postprocess.bloom.enable) {
+								auto target = render_context->get_texture(bloom_target);
 
-							auto target = render_context->get_texture(bloom_target);
+								for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip) {
+									self.bind_read_resource(render_label::sample_image0, bloom_target, mip);
+									self.bind_write_resource(render_label::write_image0, bloom_target, mip - 1);
+									self.resolve_dependencies(command_list);
+									self.bind_resources(command_list);
 
-							for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip) {
-								self.bind_read_resource(render_label::sample_image0, bloom_target, mip);
-								self.bind_write_resource(render_label::write_image0, bloom_target, mip - 1);
+									auto& pc = self.get_constant_block();
+									pc.set(render_label::filter_radius, postprocess.bloom.filter_radius);
+									self.push_constant_ranges(command_list);
 
-								self.resolve_dependencies(command_list);
-								self.bind_resources(command_list);
+									uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 
-								uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+									group_x = target->get_width() >> (mip - 1);
+									group_y = target->get_height() >> (mip - 1);
 
-								group_x = target->get_width() >> (mip - 1);
-								group_y = target->get_height() >> (mip - 1);
-
-								self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
-								command_list.dispatch(group_x, group_y, group_z);
+									self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
+									command_list.dispatch(group_x, group_y, group_z);
+								}
 							}
 						};
 
@@ -1862,39 +1926,39 @@ namespace engine::render
 					create_info.technique_name = "apply_bloom_effect";
 
 					create_info.draw_callback = [this,
-						input_target,
-						output_target,
 						bloom_target,
 						dirt_mask_texture
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
-							self.bind_write_resource(render_label::write_image0, output_target, ~0u);
-							self.bind_read_resource(render_label::sample_image0, input_target, ~0u);
-							self.bind_read_resource(render_label::sample_image1, bloom_target, ~0u);
-							self.bind_resource(render_label::sample_image2, dirt_mask_texture, ~0u);
+							if (postprocess.bloom.enable) {
+								self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+								self.bind_read_resource(render_label::sample_image1, bloom_target, ~0u);
+								self.bind_resource(render_label::sample_image2, dirt_mask_texture, ~0u);
+								self.resolve_dependencies(command_list);
+								self.bind_resources(command_list);
 
-							self.resolve_dependencies(command_list);
-							self.bind_resources(command_list);
+								auto& pc = self.get_constant_block();
+								pc.set(render_label::enabled, static_cast<int32_t>(postprocess.bloom.enable));
+								pc.set(render_label::strength, postprocess.bloom.strength);
+								self.push_constant_ranges(command_list);
 
-							self.dispatch_for_target(command_list, output_target, true);
+								self.dispatch_for_target(command_list, current_output_target_id, true);
+								std::swap(current_input_target_id, current_output_target_id);
+							}
 						};
 
 					node->add_node(std::move(render_context->create_node(create_info)));
 				}
 
-				render_context->add_node(std::move(group_node));
-
-				if (postprocess.bloom.enable) {
-					SWAP_COUNT(input_target, output_target);
-				}
+				pp_node->add_node(std::move(group_node));
 			}
 
 			// Tonemapping 
 			{
 				auto group_node = render_context->create_node("tonemapping", 0xFFF9F51F);
 				auto* node = static_cast<GroupNode*>(group_node.get());
-				node->set_group_enabled_callback([]() -> bool { return postprocess.tonemap.enable; });
 
 				// Compute histogram
 				{
@@ -1902,25 +1966,25 @@ namespace engine::render
 					create_info.technique_name = "compute_histogram";
 
 					create_info.draw_callback = [this,
-						input_target,
 						histogram_buffer
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
-							self.bind_read_resource(render_label::sample_image0, input_target, ~0u);
-							self.bind_write_resource(render_label::histogram_buffer, histogram_buffer, ~0u);
-							self.resolve_dependencies(command_list);
+							if (postprocess.tonemap.enable) {
+								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+								self.bind_write_resource(render_label::histogram_buffer, histogram_buffer, ~0u);
+								self.resolve_dependencies(command_list);
+								self.bind_resources(command_list);
 
-							float log_lum_range = postprocess.tonemap.lum_max - postprocess.tonemap.lum_min;
+								float log_lum_range = postprocess.tonemap.lum_max - postprocess.tonemap.lum_min;
 
-							auto& uniform = self.get_constant_block();
-							uniform.set(render_label::min_log_lum, postprocess.tonemap.lum_min);
-							uniform.set(render_label::log_lum_range, log_lum_range);
+								auto& uniform = self.get_constant_block();
+								uniform.set(render_label::min_log_lum, postprocess.tonemap.lum_min);
+								uniform.set(render_label::log_lum_range, log_lum_range);
+								self.push_constant_ranges(command_list);
 
-							self.push_constant_ranges(command_list);
-							self.bind_resources(command_list);
-
-							self.dispatch_for_target(command_list, input_target, true);
+								self.dispatch_for_target(command_list, current_input_target_id, true);
+							}
 						};
 
 					node->add_node(std::move(render_context->create_node(create_info)));
@@ -1933,31 +1997,32 @@ namespace engine::render
 
 					create_info.draw_callback = [this,
 						avg_brightness_target,
-						histogram_buffer,
-						input_target
+						histogram_buffer
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
-							self.bind_read_resource(render_label::histogram_buffer, histogram_buffer, ~0u);
-							self.bind_write_resource(render_label::write_image0, avg_brightness_target, ~0u);
-							self.resolve_dependencies(command_list);
+							if (postprocess.tonemap.enable) {
+								self.bind_read_resource(render_label::histogram_buffer, histogram_buffer, ~0u);
+								self.bind_write_resource(render_label::write_image0, avg_brightness_target, ~0u);
+								self.resolve_dependencies(command_list);
 
-							float log_lum_range = postprocess.tonemap.lum_max - postprocess.tonemap.lum_min;
-							float time_coeff = glm::clamp<float>(1.0f - glm::exp(-delta_time * postprocess.tonemap.tau), 0.0, 1.0);
+								float log_lum_range = postprocess.tonemap.lum_max - postprocess.tonemap.lum_min;
+								float time_coeff = glm::clamp<float>(1.0f - glm::exp(-delta_time * postprocess.tonemap.tau), 0.0, 1.0);
 
-							auto* texture = render_context->get_texture(input_target);
+								auto* texture = render_context->get_texture(current_input_target_id);
 
-							auto& uniform = self.get_constant_block();
-							uniform.set(render_label::min_log_lum, postprocess.tonemap.lum_min);
-							uniform.set(render_label::log_lum_range, log_lum_range);
-							uniform.set(render_label::time_coeff, time_coeff);
-							uniform.set(render_label::num_pixels_x, static_cast<float>(texture->get_width()));
-							uniform.set(render_label::num_pixels_y, static_cast<float>(texture->get_height()));
+								auto& uniform = self.get_constant_block();
+								uniform.set(render_label::min_log_lum, postprocess.tonemap.lum_min);
+								uniform.set(render_label::log_lum_range, log_lum_range);
+								uniform.set(render_label::time_coeff, time_coeff);
+								uniform.set(render_label::num_pixels_x, static_cast<float>(texture->get_width()));
+								uniform.set(render_label::num_pixels_y, static_cast<float>(texture->get_height()));
 
-							self.push_constant_ranges(command_list);
-							self.bind_resources(command_list);
+								self.push_constant_ranges(command_list);
+								self.bind_resources(command_list);
 
-							command_list.dispatch(1u, 1u, 1u);
+								command_list.dispatch(1u, 1u, 1u);
+							}
 						};
 
 					node->add_node(std::move(render_context->create_node(create_info)));
@@ -1969,33 +2034,98 @@ namespace engine::render
 					create_info.technique_name = "apply_tonemap_effect";
 
 					create_info.draw_callback = [this,
-						input_target,
-						output_target,
 						avg_brightness_target
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
-							self.bind_write_resource(render_label::write_image0, output_target, ~0u);
-							self.bind_read_resource(render_label::sample_image0, input_target, ~0u);
-							self.bind_read_resource(render_label::sample_image1, avg_brightness_target, ~0u);
+							if (postprocess.tonemap.enable) {
+								self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+								self.bind_read_resource(render_label::sample_image1, avg_brightness_target, ~0u);
+								self.resolve_dependencies(command_list);
+								self.bind_resources(command_list);
 
-							self.resolve_dependencies(command_list);
-							self.bind_resources(command_list);
+								auto& pc = self.get_constant_block();
+								pc.set(render_label::enabled, static_cast<int32_t>(postprocess.tonemap.enable));
+								pc.set(render_label::adaptive, postprocess.tonemap.adaptive);
+								pc.set(render_label::white_point, postprocess.tonemap.white_point);
+								pc.set(render_label::exposure, postprocess.tonemap.exposure);
+								pc.set(render_label::gamma, postprocess.tonemap.gamma);
+								self.push_constant_ranges(command_list);
 
-							self.dispatch_for_target(command_list, input_target, true);
+								self.dispatch_for_target(command_list, current_input_target_id, true);
+
+								std::swap(current_input_target_id, current_output_target_id);
+							}
 						};
-
-					if (postprocess.tonemap.enable) {
-						SWAP_COUNT(input_target, output_target);
-					}
 
 					node->add_node(render_context->create_node(create_info));
 				}
 
-				render_context->add_node(std::move(group_node));
+				pp_node->add_node(std::move(group_node));
 			}
 
-			final_target = pass_count % 2 ? output_target : input_target;
+			// Film grain
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "apply_film_grain_effect";
+
+				create_info.draw_callback = [this
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					EDGE_PROFILE_ZONE_SCOPED;
+
+					if (postprocess.filmgrain.enable) {
+						self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+						self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+						self.resolve_dependencies(command_list);
+						self.bind_resources(command_list);
+
+						auto& pc = self.get_constant_block();
+						pc.set(render_label::enabled, static_cast<int32_t>(postprocess.filmgrain.enable));
+						pc.set(render_label::amount, postprocess.filmgrain.amount);
+						self.push_constant_ranges(command_list);
+
+						self.dispatch_for_target(command_list, current_input_target_id, true);
+
+						std::swap(current_input_target_id, current_output_target_id);
+					}
+					};
+
+				pp_node->add_node(render_context->create_node(create_info));
+			}
+
+			// 
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "apply_vignette_effect";
+
+				create_info.draw_callback = [this
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					EDGE_PROFILE_ZONE_SCOPED;
+
+					if (postprocess.vignette.enable) {
+						self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+						self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+						self.resolve_dependencies(command_list);
+						self.bind_resources(command_list);
+
+						auto& pc = self.get_constant_block();
+						pc.set(render_label::enabled, static_cast<int32_t>(postprocess.vignette.enable));
+						pc.set(render_label::opacity, postprocess.vignette.opacity);
+						pc.set(render_label::inner_radius, postprocess.vignette.inner);
+						pc.set(render_label::outer_radius, postprocess.vignette.outer);
+						self.push_constant_ranges(command_list);
+
+						self.dispatch_for_target(command_list, current_input_target_id, true);
+
+						std::swap(current_input_target_id, current_output_target_id);
+					}
+					};
+
+				pp_node->add_node(render_context->create_node(create_info));
+			}
+
+			render_context->add_node(std::move(post_proc_node));
 		}
 
 		// Test output shader
@@ -2004,8 +2134,7 @@ namespace engine::render
 			create_info.technique_name = "screenspace";
 			create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 
-			create_info.draw_callback = [this,
-				final_target
+			create_info.draw_callback = [this
 				//final_target = ssao_target
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
@@ -2019,7 +2148,7 @@ namespace engine::render
 					command_list.set_viewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 					command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 
-					self.bind_read_resource(render_label::sample_image0, final_target, ~0u);
+					self.bind_read_resource(render_label::sample_image0, last_output_target_id, ~0u);
 
 					self.resolve_dependencies(command_list);
 					self.bind_resources(command_list);

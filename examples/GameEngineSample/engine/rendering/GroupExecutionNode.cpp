@@ -13,15 +13,11 @@ namespace engine::render {
 		graph_nodes.emplace_back(std::move(node));
 	}
 
-	void GroupNode::set_group_enabled_callback(std::function<bool()>&& callback) {
-		enabled_callback = std::move(callback);
-	}
-
 	void GroupNode::execute(edge::gfx::ICommandList& command_list, float delta_time) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
-		if (enabled_callback && !enabled_callback()) {
-			return;
+		if (pre_callback) {
+			pre_callback(command_list, delta_time);
 		}
 
 		EDGE_GFX_PROFILER_BEGIN_ZONE_NC(command_list, group_name, group_color);
@@ -29,5 +25,9 @@ namespace engine::render {
 			node->execute(command_list, delta_time);
 		}
 		EDGE_GFX_PROFILER_END_ZONE(command_list);
+
+		if (post_callback) {
+			post_callback(command_list, delta_time);
+		}
 	}
 }

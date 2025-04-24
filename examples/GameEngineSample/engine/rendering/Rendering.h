@@ -49,5 +49,11 @@ namespace engine::render {
 		std::vector<std::unique_ptr<GeometryBuffer>> geometry_buffers{};
 
 		uint32_t backbuffer_resource{ ~0u };
+
+		uint32_t input_target_id{ ~0u };
+		uint32_t output_target_id{ ~0u };
+		uint32_t current_input_target_id{ ~0u };
+		uint32_t current_output_target_id{ ~0u };
+		uint32_t last_output_target_id{ ~0u };
 	};
 }
