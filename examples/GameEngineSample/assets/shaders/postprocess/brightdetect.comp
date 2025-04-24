@@ -1,0 +1,28 @@
+#include "compute_common.glsl"
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(binding = 0) uniform writeonly image2D write_image0;
+layout(binding = 1) uniform sampler2D sample_image0;
+
+layout(push_constant) uniform PushConstant {
+	float threshold;
+} pc;
+
+void main()
+{
+	uvec2 image_size = imageSize(write_image0);
+
+	uvec2 px = uvec2(0, 0);
+	vec2 uv = vec2(0.0, 0.0);
+	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+		return;
+
+	vec3 color = texture(sample_image0, uv).rgb;
+	
+	float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
+	if(brightness > pc.threshold)
+        imageStore(write_image0, ivec2(px), vec4(color, 1.0));
+    else
+        imageStore(write_image0, ivec2(px), vec4(0.0, 0.0, 0.0, 1.0));
+}

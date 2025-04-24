@@ -1,0 +1,241 @@
+#include "compute_common.glsl"
+#include "util.glsl"
+#include "math.glsl"
+#include "shader_inputs.glsl"
+
+#ifdef FXAA 
+#include "nvidia_fxaa.glsl"
+#endif
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 1, binding = 1) uniform writeonly image2D write_image0;
+layout(set = 1, binding = 2) uniform sampler2D sample_image0;
+
+#if defined(MOTION_BLUR)
+layout(set = 1, binding = 3) uniform sampler2D sample_image1;
+#elif defined(BLOOM)
+layout(set = 1, binding = 3) uniform sampler2D sample_image1;
+layout(set = 1, binding = 4) uniform sampler2D sample_image2;
+#elif defined(DOF)
+layout(set = 1, binding = 3) uniform sampler2D sample_image1;
+layout(set = 1, binding = 4) uniform sampler2D sample_image2;
+#elif defined(TONEMAP)
+layout(set = 1, binding = 3, r32f) uniform image1D sample_image1;
+#endif
+
+layout(push_constant) uniform PushConstant {
+	int enabled;
+#if defined(FXAA)
+	float quality;
+	float threshold;
+	float threshold_min;
+#elif defined(MOTION_BLUR)
+	float scale;
+	float threshold;
+	int max_samples;
+#elif defined(BLOOM)
+	float strength;
+#elif defined(DOF)
+	float near_field;
+	float near_transition;
+	float far_field;
+	float far_transition;
+	float focus_point;
+#elif defined(CHROMATIC_ABERRATION)
+	int iterations;
+	float distortion;
+#elif defined(TONEMAP)
+	int adaptive;
+	float white_point;
+	float exposure;
+	float gamma;
+#elif defined(GAUSSIAN_BLUR)
+	float scale;
+    float strength;
+#elif defined(FILM_GRAIN)
+	float amount;
+#elif defined(VIGNETTE)
+	float opacity;
+	float inner_radius;
+	float outer_radius;
+#endif
+} pc;
+		
+void main()
+{
+	if(pc.enabled < 0) {
+		return;
+	}
+
+	uvec2 image_size = imageSize(write_image0);
+
+	uvec2 px = uvec2(0, 0);
+	vec2 uv = vec2(0.0, 0.0);
+	if(swizzle_workgroups_8x8(gl_GlobalInvocationID.xy, gl_LocalInvocationID.xy, gl_WorkGroupID.xy, image_size, uv, px))
+		return;
+	
+	vec4 color = texture(sample_image0, uv);
+	vec2 texel_size = 1.0 / vec2(textureSize(sample_image0, 0));
+#if defined(FXAA)
+	color.rgb = FxaaPixelShader(uv, sample_image0, pc.quality, pc.threshold, pc.threshold_min).rgb;
+#elif defined(MOTION_BLUR)
+	vec2 velocity = texture(sample_image1, uv).rg;
+	velocity = decode_velocity(velocity) * pc.scale;
+	velocity = min(vec2(1.0), velocity);
+
+	if(length(velocity) >= pc.threshold) {
+		float speed = length(velocity / texel_size);
+		int n_samples = clamp(int(speed), 1, pc.max_samples);
+
+		for (int i = 1; i < n_samples; ++i)  {
+			vec2 offset = velocity * (float(i) / float(n_samples - 1) - 0.5);
+			color += texture(sample_image0, uv + offset);
+		}
+		color /= float(n_samples);
+	}
+#elif defined(BLOOM)
+	const float dirtMaskIntensity = 1.0f;
+	vec3 dirt = texture(sample_image2, vec2(uv.x, 1.f - uv.y)).rgb * dirtMaskIntensity;
+	vec3 bloom = texture(sample_image1, uv).rgb;
+	color.rgb = mix(color.rgb, bloom + bloom * dirt, vec3(pc.strength));
+#elif defined(DOF)
+	Camera camera = GetCamera(frameData.defaultCameraID);
+
+	float depth = texture(sample_image2, uv).r;
+	float linear_depth = linearize_depth(depth, camera.z_near, camera.z_far);
+
+	vec3 texture_blured = texture(sample_image1, uv).rgb;
+
+	float near_end = pc.near_field + pc.near_transition;
+	float far_start = pc.far_field - pc.far_transition;
+	
+	float near_visibility = smoothstep(pc.near_field * pc.focus_point, near_end * pc.focus_point, linear_depth);
+	float far_visibility = 1.0f - smoothstep(far_start * pc.focus_point, pc.far_field * pc.focus_point, linear_depth);
+	
+	vec3 temp = mix(texture_blured, color.rgb, near_visibility);
+	color.rgb = mix(texture_blured, temp, far_visibility);
+#elif defined(CHROMATIC_ABERRATION)
+	const float reci_num_iter_f = 1.0 / float(pc.iterations);
+	
+	vec4 sumcol = vec4(0.0);
+	vec4 sumw = vec4(0.0);	
+	for ( int i= 0; i < pc.iterations; ++i )
+	{
+		float t = float(i) * reci_num_iter_f;
+		vec4 w = spectrum_offset( t );
+		sumw += w;
+		sumcol += w * texture( sample_image0, barrelDistortion(uv, 0.6 * pc.distortion * t ) );
+	}
+
+	color.rgb = (sumcol / sumw).rgb;
+#elif defined(TONEMAP)
+	float avgLum = imageLoad(sample_image1, 0).x;
+	
+	vec3 Yxy = convertRGB2Yxy(color.rgb);
+	
+	float lp = Yxy.x / (9.6 * avgLum + 0.0001);
+	
+	if(pc.adaptive > 0) {
+		Yxy.x = reinhard2(lp, pc.white_point);
+	}
+	else {
+		Yxy.x = Yxy.x * pow(2.0, pc.exposure);
+	}
+	
+	color.rgb = convertYxy2RGB(Yxy);
+	color.rgb = toGamma(color.rgb, pc.gamma);
+#elif defined(GAUSSIAN_BLUR)
+	#ifdef HORIZONTAL
+		vec2 direction = vec2(pc.strength, 0.0);
+	#else
+		vec2 direction = vec2(0.0, pc.strength);
+	#endif // HORIZONTAL
+
+	#if defined(BLUR_TYPE_5)
+		{
+			vec2 off1 = vec2(1.3333333333333333f) * direction;
+			color += texture(sample_image0, uv) * 0.29411764705882354 * pc.scale;
+			color += texture(sample_image0, uv + (off1 / image_size)) * 0.35294117647058826f * pc.scale;
+			color += texture(sample_image0, uv - (off1 / image_size)) * 0.35294117647058826f * pc.scale;
+		}
+	#elif defined(BLUR_TYPE_9)
+		{
+			vec2 off1 = vec2(1.3846153846f) * direction;
+			vec2 off2 = vec2(3.2307692308f) * direction;
+			color += texture(sample_image0, uv) * 0.2270270270f * pc.scale;
+			color += texture(sample_image0, uv + (off1 / image_size)) * 0.3162162162f * pc.scale;
+			color += texture(sample_image0, uv - (off1 / image_size)) * 0.3162162162f * pc.scale;
+			color += texture(sample_image0, uv + (off2 / image_size)) * 0.0702702703f * pc.scale;
+			color += texture(sample_image0, uv - (off2 / image_size)) * 0.0702702703f * pc.scale;
+		}
+	#elif defined(BLUR_TYPE_13)
+		{
+			vec2 off1 = vec2(1.411764705882353f) * direction;
+			vec2 off2 = vec2(3.2941176470588234f) * direction;
+			vec2 off3 = vec2(5.176470588235294f) * direction;
+			color += texture(sample_image0, uv) * 0.1964825501511404f * pc.scale;
+			color += texture(sample_image0, uv + (off1 / image_size)) * 0.2969069646728344f * pc.scale;
+			color += texture(sample_image0, uv - (off1 / image_size)) * 0.2969069646728344f * pc.scale;
+			color += texture(sample_image0, uv + (off2 / image_size)) * 0.09447039785044732f * pc.scale;
+			color += texture(sample_image0, uv - (off2 / image_size)) * 0.09447039785044732f * pc.scale;
+			color += texture(sample_image0, uv + (off3 / image_size)) * 0.010381362401148057f * pc.scale;
+			color += texture(sample_image0, uv - (off3 / image_size)) * 0.010381362401148057f * pc.scale;
+		}
+	#endif // BLUR_TYPE
+
+#elif defined(FILM_GRAIN)
+	float random_intensity = fract(10000 * sin((gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * frameData.dt) * PI));
+	color.rgb += pc.amount * random_intensity;
+#elif defined(VIGNETTE)
+	vec3 tmp_color = color.rgb;
+	tmp_color *= 1.0f - smoothstep(pc.inner_radius, pc.outer_radius, length(uv - 0.5f));
+	color.rgb = mix(color.rgb, tmp_color, pc.opacity);
+//#elif defined(LENSFLARE)
+	
+	//vec2 main = uv-pos;
+	//vec2 uvd = uv*(length(uv));
+	//
+	//float ang = atan(main.x,main.y);
+	//float dist=length(main); dist = pow(dist,.1);
+	//float n = noise(vec2(ang*16.0,dist*32.0));
+	//
+	//float f0 = 1.0/(length(uv-pos)*16.0+1.0);
+	//
+	//f0 = f0 + f0*(sin(noise(sin(ang*2.+pos.x)*4.0 - cos(ang*3.+pos.y))*16.)*.1 + dist*.1 + .8);
+	//
+	//float f1 = max(0.01-pow(length(uv+1.2*pos),1.9),.0)*7.0;
+	//
+	//float f2 = max(1.0/(1.0+32.0*pow(length(uvd+0.8*pos),2.0)),.0)*00.25;
+	//float f22 = max(1.0/(1.0+32.0*pow(length(uvd+0.85*pos),2.0)),.0)*00.23;
+	//float f23 = max(1.0/(1.0+32.0*pow(length(uvd+0.9*pos),2.0)),.0)*00.21;
+	//
+	//vec2 uvx = mix(uv,uvd,-0.5);
+	//
+	//float f4 = max(0.01-pow(length(uvx+0.4*pos),2.4),.0)*6.0;
+	//float f42 = max(0.01-pow(length(uvx+0.45*pos),2.4),.0)*5.0;
+	//float f43 = max(0.01-pow(length(uvx+0.5*pos),2.4),.0)*3.0;
+	//
+	//uvx = mix(uv,uvd,-.4);
+	//
+	//float f5 = max(0.01-pow(length(uvx+0.2*pos),5.5),.0)*2.0;
+	//float f52 = max(0.01-pow(length(uvx+0.4*pos),5.5),.0)*2.0;
+	//float f53 = max(0.01-pow(length(uvx+0.6*pos),5.5),.0)*2.0;
+	//
+	//uvx = mix(uv,uvd,-0.5);
+	//
+	//float f6 = max(0.01-pow(length(uvx-0.3*pos),1.6),.0)*6.0;
+	//float f62 = max(0.01-pow(length(uvx-0.325*pos),1.6),.0)*3.0;
+	//float f63 = max(0.01-pow(length(uvx-0.35*pos),1.6),.0)*5.0;
+	//
+	//vec3 c = vec3(.0);
+	//
+	//c.r+=f2+f4+f5+f6; c.g+=f22+f42+f52+f62; c.b+=f23+f43+f53+f63;
+	//c = c*1.3 - vec3(length(uvd)*.05);
+	//c+=vec3(f0);
+	//
+	//color.rgb *= c;
+#endif
+
+	imageStore(write_image0, ivec2(px), color);
+}
