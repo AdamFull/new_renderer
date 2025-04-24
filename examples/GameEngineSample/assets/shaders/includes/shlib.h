@@ -7,6 +7,9 @@
 
 SHLIB_NS_BEGIN
 
+CONSTANT uint32_t SRV_TEXTURE_SLOT = 2;
+CONSTANT uint32_t SAMPLER_SLOT = 3;
+
 struct GPUBufferDesc
 {
 	uint64_t address;
@@ -132,78 +135,6 @@ CB_BEGIN(GlobalBufferReference, 0, 1)
 
 	GET_PTR_T(Camera) cameraBuffer;
 CB_END_E()
-
-CB_BEGIN(GlobalPostProcessingData, 0, 2)
-	// fxaa
-	int enable_fxaa;
-	float fxaa_quality;
-	float fxaa_threshold;
-	float fxaa_threshold_min;
-	// fxaa
-
-	// tonemap
-	int enable_tonemap;
-	float tm_gamma;
-	float tm_exposure;
-	float tm_white_point;
-	int tm_adaptive;
-	// tonemap
-
-	// bloom
-	int enable_bloom;
-	float b_bloom_strength;
-	float b_threshold;
-	float b_filter_radius;
-	// bloom
-
-	// dof
-	int enable_dof;
-	int df_sample_count;
-	float df_poly;
-	float df_focus_point;
-	float df_near_field;
-	float df_near_transition;
-	float df_far_field;
-	float df_far_transition;
-	// dof
-
-	// chromatic aberration
-	int enable_chromatic_aberration;
-	float ca_distortion;
-	int ca_iterations;
-	// chromatic aberration
-
-	// fog
-	int enable_fog;
-	ALIGN_AS(16) vec3 fog_color;
-	float fog_density;
-	float fog_max;
-	// fog
-
-	// film grain
-	int enable_film_grain;
-	float fg_amount;
-	// film grain
-
-	// vignette
-	int enable_vignette;
-	float v_inner_radius;
-	float v_outer_radius;
-	float v_opacity;
-	// vignette
-
-	// per object motion blur
-	int enable_motion_blur;
-	float mb_scale;
-	int mb_max_samples;
-	float mb_max_velocity;
-	float mb_threshold;
-	// per object motion blur
-
-	// ao blur
-	int blur_range;
-	// ao blur
-CB_END(postprocess)
 
 SHLIB_NS_END
 

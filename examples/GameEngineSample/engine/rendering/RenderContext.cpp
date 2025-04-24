@@ -149,9 +149,8 @@ namespace engine::render {
 		std::vector<edge::gfx::DescrptorLayoutBindingDesc> binding_descriptions{};
 		binding_descriptions.emplace_back(0u, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
 		binding_descriptions.emplace_back(1u, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
-		binding_descriptions.emplace_back(2u, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
-		binding_descriptions.emplace_back(3u, shlib::MAX_SAMPLED_TEXTURES, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampledImage);
-		binding_descriptions.emplace_back(4u, shlib::MAX_SAMPLED_TEXTURES, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampler);
+		binding_descriptions.emplace_back(2u, shlib::MAX_SAMPLED_TEXTURES, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampledImage);
+		binding_descriptions.emplace_back(3u, shlib::MAX_SAMPLED_TEXTURES, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampler);
 
 		edge::gfx::DescriptorLayoutCreateInfo descriptor_layout_ci{};
 		descriptor_layout_ci.bindings = binding_descriptions;
@@ -519,7 +518,7 @@ namespace engine::render {
 
 			edge::gfx::TextureDescriptor texture_descriptor{};
 			texture_descriptor.type = edge::gfx::DescriptorType::eSampledImage;
-			texture_descriptor.binding = 3;
+			texture_descriptor.binding = shlib::SRV_TEXTURE_SLOT;
 
 			texture_descriptor.array_index = array_index;
 			texture_descriptor.texture = texture_obj.texture;
@@ -529,7 +528,7 @@ namespace engine::render {
 			current_global_binding_layout->bind(texture_descriptor);
 
 			edge::gfx::SamplerDescriptor sampler_descriptor{};
-			sampler_descriptor.binding = 4;
+			sampler_descriptor.binding = shlib::SAMPLER_SLOT;
 
 			sampler_descriptor.array_index = array_index;
 			sampler_descriptor.sampler = texture_obj.sampler;

@@ -351,59 +351,6 @@ namespace engine::render {
 
 		auto& render_context = renderer.get_render_context();
 
-		// Post process data
-		{
-			shlib::GlobalPostProcessingData postprocessing{};
-			// FXAA
-			postprocessing.enable_fxaa = static_cast<uint32_t>(postprocess.fxaa.enable);
-			postprocessing.fxaa_quality = fxaa_quality_variant[postprocess.fxaa.quality];
-			postprocessing.fxaa_threshold = fxaa_threshold_variant[postprocess.fxaa.threshold];
-			postprocessing.fxaa_threshold_min = fxaa_threshold_min_variant[postprocess.fxaa.threshold_min];
-			// Tonemapping
-			postprocessing.enable_tonemap = static_cast<uint32_t>(postprocess.tonemap.enable);
-			postprocessing.tm_gamma = postprocess.tonemap.gamma;
-			postprocessing.tm_exposure = postprocess.tonemap.exposure;
-			postprocessing.tm_white_point = postprocess.tonemap.white_point;
-			postprocessing.tm_adaptive = postprocess.tonemap.adaptive;
-			// Bloom
-			postprocessing.enable_bloom = static_cast<uint32_t>(postprocess.bloom.enable);
-			postprocessing.b_bloom_strength = postprocess.bloom.strength;
-			postprocessing.b_threshold = postprocess.bloom.threshold;
-			postprocessing.b_filter_radius = postprocess.bloom.filter_radius;
-			// Dof
-			postprocessing.enable_dof = static_cast<uint32_t>(postprocess.dof.enable);
-			postprocessing.df_sample_count = postprocess.dof.bokeh_samples;
-			postprocessing.df_poly = postprocess.dof.bokeh_poly;
-			postprocessing.df_focus_point = postprocess.dof.focus_point;
-			postprocessing.df_near_field = postprocess.dof.near_field;
-			postprocessing.df_near_transition = postprocess.dof.near_transition;
-			postprocessing.df_far_field = postprocess.dof.far_field;
-			postprocessing.df_far_transition = postprocess.dof.far_transition;
-			// Chromatic aberration
-			postprocessing.enable_chromatic_aberration = static_cast<uint32_t>(postprocess.aberration.enable);
-			postprocessing.ca_distortion = postprocess.aberration.distortion;
-			postprocessing.ca_iterations = postprocess.aberration.iterations;
-			// Film grain
-			postprocessing.enable_film_grain = static_cast<uint32_t>(postprocess.filmgrain.enable);
-			postprocessing.fg_amount = postprocess.filmgrain.amount;
-			// Vignette
-			postprocessing.enable_vignette = static_cast<uint32_t>(postprocess.vignette.enable);
-			postprocessing.v_inner_radius = postprocess.vignette.inner;
-			postprocessing.v_outer_radius = postprocess.vignette.outer;
-			postprocessing.v_opacity = postprocess.vignette.opacity;
-			// Motion blur
-			postprocessing.enable_motion_blur = static_cast<uint32_t>(postprocess.motionblur.enable);
-			postprocessing.mb_scale = (delta_time / 0.01666666f) * postprocess.motionblur.scele;
-			postprocessing.mb_max_samples = postprocess.motionblur.max_samples;
-			postprocessing.mb_max_velocity = postprocess.motionblur.max_velocity;
-			postprocessing.mb_threshold = postprocess.motionblur.threshold;
-
-			const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&postprocessing);
-			uint64_t uniform_size = sizeof(shlib::GlobalPostProcessingData);
-
-			render_context.update_global_binding(2, std::span(uniform_data, uniform_size));
-		}
-
 		// Bind global buffers
 		{
 			shlib::GlobalBufferReference buffers{};

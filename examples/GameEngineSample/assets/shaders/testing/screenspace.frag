@@ -11,12 +11,6 @@ void main()
 	vec2 texel_size = 1.0 / vec2(textureSize(sample_image0, 0));
 	vec4 color = texture(sample_image0, inUV);
 
-	//if(postprocess.enable_film_grain > 0)
-	//{
-	//	float randomIntensity = fract(10000 * sin((gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * frameData.dt) * 3.14));
-	//	color.rgb += postprocess.fg_amount * randomIntensity;
-	//}
-
 	// https://www.shadertoy.com/view/dlcfRX
 	//color.rgb = mat3(.842, .0423, .0424, .0784, .878, .0784, .0792, .0792, .879) * color.rgb;
 	//color.rgb = clamp((log2(color.rgb) + 12.47393) / 16.5, vec3(0), vec3(1));

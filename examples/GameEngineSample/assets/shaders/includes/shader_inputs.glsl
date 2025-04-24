@@ -9,8 +9,8 @@
 #extension GL_ARB_shader_viewport_layer_array : require
 
 // Bindless texture
-layout(set = 0, binding = 3) uniform texture2D globalTextures[MAX_SAMPLED_TEXTURES];
-layout(set = 0, binding = 4) uniform sampler globalSamplers[MAX_SAMPLED_TEXTURES];
+layout(set = 0, binding = SRV_TEXTURE_SLOT) uniform texture2D globalTextures[MAX_SAMPLED_TEXTURES];
+layout(set = 0, binding = SAMPLER_SLOT) uniform sampler globalSamplers[MAX_SAMPLED_TEXTURES];
 
 Mesh GetMesh(uint index) { return meshBuffer[index].data; }
 SubMesh GetSubMesh(uint index) { return submeshBuffer[index].data; }
