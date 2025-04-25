@@ -40,16 +40,14 @@ mat4 GetPrevViewProjectionMatrix(uint global_offset) { return GetMatrixById(glob
 mat4 GetInvViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_view_projection_matrix_offset); }
 mat4 GetReprojectionMatrix(uint global_offset) { return GetMatrixById(global_offset, reprojection_matrix_offset); }
 
-#define GET_SAMPLER_2D(texture_index, mip_level) sampler2D(globalTextures[texture_index + mip_level], globalSamplers[0])
-
-vec4 SampleTexture2D(uint32_t texture_index, uint32_t mip_level, vec2 uv)
+vec4 SampleTexture2D(uint32_t t, uint32_t s, vec2 uv)
 {
-	return texture(GET_SAMPLER_2D(texture_index, mip_level), uv);
+	return texture(sampler2D(globalTextures[t], globalSamplers[s]), uv);
 }
 
-vec4 SampleTexture2DGrad(uint32_t texture_index, uint32_t mip_level, vec2 uv, vec2 uv_dx, vec2 uv_dy)
+vec4 SampleTexture2DGrad(uint32_t t, uint32_t s, vec2 uv, vec2 uv_dx, vec2 uv_dy)
 {
-	return textureGrad(GET_SAMPLER_2D(texture_index, mip_level), uv, uv_dx, uv_dy);
+	return textureGrad(sampler2D(globalTextures[t], globalSamplers[s]), uv, uv_dx, uv_dy);
 }
 
 #endif // SHADER_INPUTS_GLSL

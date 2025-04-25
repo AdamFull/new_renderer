@@ -22,11 +22,11 @@ struct Material
 #ifdef __cplusplus
 	Material() :
 		alphaMode{}, alphaCutoff{ 0.5f },
-		baseColorTexture{ ~0u }, baseColorFactor{ 1.0f },
-		metallicRoughnessTexture{ ~0u }, metallicFactor{ 1.f }, roughnessFactor{ 1.f },
-		normalTexture{ ~0u }, normalScale{ 1.f },
-		occlusionTexture{ ~0u }, occlusionStrenth{ 1.f },
-		emissiveTexture{ ~0u }, emissiveFactor{ 0.f },
+		base_color_texture{ ~0u }, base_color_sampler{ ~0u }, baseColorFactor{ 1.0f },
+		metallic_roughness_texture{ ~0u }, metallic_roughness_sampler{ ~0u }, metallicFactor{ 1.f }, roughnessFactor{ 1.f },
+		normal_texture{ ~0u }, normal_sampler{ ~0u }, normalScale{ 1.f },
+		occlusion_texture{ ~0u }, occlusion_sampler{ ~0u }, occlusionStrenth{ 1.f },
+		emissive_texture{ ~0u }, emissive_sampler{ ~0u }, emissiveFactor{ 0.f },
 		doubleSided{ 0u },
 		// KHR_materials_clearcoat
 		clearcoatFactor{ 0.f }, clearcoatRoughnessFactor{ 0.f },
@@ -50,20 +50,25 @@ struct Material
 	uint32_t alphaMode;
 	float alphaCutoff;
 
-	uint32_t baseColorTexture;
+	uint32_t base_color_texture;
+	uint32_t base_color_sampler;
 	ALIGN_AS(16) vec4 baseColorFactor;
 
-	uint32_t metallicRoughnessTexture;
+	uint32_t metallic_roughness_texture;
+	uint32_t metallic_roughness_sampler;
 	float metallicFactor;
 	float roughnessFactor;
 
-	uint32_t normalTexture;
+	uint32_t normal_texture;
+	uint32_t normal_sampler;
 	float normalScale;
 
-	uint32_t occlusionTexture;
+	uint32_t occlusion_texture;
+	uint32_t occlusion_sampler;
 	float occlusionStrenth;
 
-	uint32_t emissiveTexture;
+	uint32_t emissive_texture;
+	uint32_t emissive_sampler;
 	ALIGN_AS(16) vec3 emissiveFactor;
 
 	uint32_t doubleSided;

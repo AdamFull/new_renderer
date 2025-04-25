@@ -36,9 +36,9 @@ layout(set = 2, binding = 0) uniform sampler sampler_point;
 layout(set = 2, binding = 1) uniform sampler sampler_linear;
 layout(set = 2, binding = 2) uniform sampler sampler_shadow_linear;
 
-vec4 sampleTexture(in uint s, in VertexAttribute va)
+vec4 sampleTexture(in uint t, in uint s, in VertexAttribute va)
 {
-	return SampleTexture2DGrad(s, 0, va.uv, va.uv_dx, va.uv_dy);
+	return SampleTexture2DGrad(t, s, va.uv, va.uv_dx, va.uv_dy);
 }
 
 MaterialSample sampleMaterial(in Material mat, in VertexAttribute va)
@@ -47,24 +47,24 @@ MaterialSample sampleMaterial(in Material mat, in VertexAttribute va)
 
 	// Sample albedo
 	vec4 base_color = mat.baseColorFactor * va.color;
-	if(mat.baseColorTexture != INVALID_HANDLE)
-		base_color *= sampleTexture(mat.baseColorTexture, va);
+	if(mat.base_color_texture != INVALID_HANDLE)
+		base_color *= sampleTexture(mat.base_color_texture, mat.base_color_sampler, va);
 
 	res.albedo = base_color.rgb;
 	res.opacity = base_color.a;
 
 	// Sample emission
 	res.emission = mat.emissiveFactor;
-	if(mat.emissiveTexture != INVALID_HANDLE)
-		res.emission *= sampleTexture(mat.emissiveTexture, va).rgb;
+	if(mat.emissive_texture != INVALID_HANDLE)
+		res.emission *= sampleTexture(mat.emissive_texture, mat.emissive_sampler, va).rgb;
 	res.emission *= mat.emissiveStrength;
 
 	// Sample metallic roughness
 	res.metallic = mat.metallicFactor;
 	res.roughness = mat.roughnessFactor;
-	if(mat.metallicRoughnessTexture != INVALID_HANDLE)
+	if(mat.metallic_roughness_texture != INVALID_HANDLE)
 	{
-		vec4 mr = sampleTexture(mat.metallicRoughnessTexture, va);
+		vec4 mr = sampleTexture(mat.metallic_roughness_texture, mat.metallic_roughness_sampler, va);
 		res.metallic *= mr.b;
 		res.roughness *= mr.g;
 	}
@@ -72,9 +72,9 @@ MaterialSample sampleMaterial(in Material mat, in VertexAttribute va)
 
 	// Sample normals
 	res.normal = va.normal;
-	if(mat.normalTexture != INVALID_HANDLE)
+	if(mat.normal_texture != INVALID_HANDLE)
 	{
-		vec3 raw_normal = sampleTexture(mat.normalTexture, va).rgb;
+		vec3 raw_normal = sampleTexture(mat.normal_texture, mat.normal_sampler, va).rgb;
 
 		// Some textures can have only rg channels, we need to decode third
 		if(raw_normal.b == 0)
@@ -97,8 +97,8 @@ MaterialSample sampleMaterial(in Material mat, in VertexAttribute va)
 
 	// Sample AO
 	res.ao = 1.0;
-	if(mat.occlusionTexture != INVALID_HANDLE)
-		res.ao = sampleTexture(mat.occlusionTexture, va).r;
+	if(mat.occlusion_texture != INVALID_HANDLE)
+		res.ao = sampleTexture(mat.occlusion_texture, mat.occlusion_sampler, va).r;
 
 	res.ior = mat.ior;
 

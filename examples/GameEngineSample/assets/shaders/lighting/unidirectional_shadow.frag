@@ -17,9 +17,9 @@ void main()
 	if(material != ~0u)
 	{
 		Material mat = GetMaterial(material);
-		if(mat.baseColorTexture != ~0u)
+		if(mat.base_color_texture != ~0u)
 		{
-			float smaple = SampleTexture2D(mat.baseColorTexture, 0, inUV).a;
+			float smaple = SampleTexture2D(mat.base_color_texture, mat.base_color_sampler, 0, inUV).a;
 			if(smaple < 1.f)
 				discard;
 		}

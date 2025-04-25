@@ -36,8 +36,8 @@ void main()
 	Material material = GetMaterial(submesh.material);
 	
 	float opacity = material.baseColorFactor.a;
-	if(material.baseColorTexture != INVALID_HANDLE)
-		opacity = SampleTexture2D(material.baseColorTexture, 0, texCoord).a;
+	if(material.base_color_texture != INVALID_HANDLE)
+		opacity = SampleTexture2D(material.base_color_texture, material.base_color_sampler, texCoord).a;
 	
 	if(material.alphaMode == 1u && opacity < material.alphaCutoff)
 		discard;

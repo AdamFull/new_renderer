@@ -347,6 +347,8 @@ namespace engine::world
 	}
 
 	void Scene::LoadGLTF(tinygltf::Model& root) {
+
+		resources.textures.resize(root.images.size(), ~0u);
 		// Load textures
 		for (const auto& texture : root.textures) {
 			int32_t texture_source{ texture.source };
@@ -356,11 +358,6 @@ namespace engine::world
 			}
 
 			auto& image = root.images[texture_source];
-			auto& sampler = root.samplers[texture.sampler];
-
-			// TODO: Use sampler cache
-			auto sampler_create_info = GetSamplerCreateInfo(sampler);
-			auto texture_sampler = renderer.add_render_resource(sampler_create_info);
 
 			// TODO: add ability to override format and sampler params
 			// TODO: find format from materials
@@ -370,54 +367,69 @@ namespace engine::world
 			resources.textures.push_back(renderer.add_render_resource(image_path));
 		}
 
+		auto load_texture = [this, &root](int32_t texture_index, uint32_t& out_tex, uint32_t& out_sampler) -> void {
+			if (texture_index >= 0) {
+				auto& texture = root.textures[texture_index];
+				if (texture.source < 0) {
+					EDGE_LOGE("[Scene] Loading basisu textures is currently unavaliable.");
+					return;
+				}
+
+				auto& img_handle = resources.textures[texture.source];
+				if (img_handle != ~0u) {
+					out_tex = img_handle;
+				}
+				else {
+					auto& image = root.images[texture.source];
+
+					std::array<char, 1024ull> buffer{};
+					auto image_path = edge::fs::path_append(scene_root_directory, url_decode(image.uri), std::span(buffer));
+					img_handle = out_tex = renderer.add_render_resource(image_path);
+				}
+
+				auto sampler_create_info = GetSamplerCreateInfo(root.samplers[texture.sampler]);
+				out_sampler = renderer.add_render_resource(sampler_create_info);
+			}};
+
 		for (uint64_t idx = 0ull; idx < root.materials.size(); ++idx) {
 			auto& material = root.materials[idx];
-			shlib::Material render_material{};
+			shlib::Material mat{};
 
 			// TODO: add my own ext that will contain shader EXT_material_shader or something. But in my case it will contain name in format {library}:{shader_name} and other helpfull data
 
 			// Attach base color (aka albedo)
-			if (auto& texture = material.pbrMetallicRoughness.baseColorTexture; texture.index >= 0)
-				render_material.baseColorTexture = resources.textures[texture.index];
+			load_texture(material.pbrMetallicRoughness.baseColorTexture.index, mat.base_color_texture, mat.base_color_sampler);
 
 			// Attach metallic roughness texture (metallic = green, roughness = blue)
-			if (auto& texture = material.pbrMetallicRoughness.metallicRoughnessTexture; texture.index >= 0)
-				render_material.metallicRoughnessTexture = resources.textures[texture.index];
+			load_texture(material.pbrMetallicRoughness.metallicRoughnessTexture.index, mat.metallic_roughness_texture, mat.metallic_roughness_sampler);
 
 			// Attach normal map texture
-			if (auto& texture = material.normalTexture; texture.index >= 0)
-			{
-				render_material.normalScale = static_cast<float>(texture.scale);
-				render_material.normalTexture = resources.textures[texture.index];
-			}
+			load_texture(material.normalTexture.index, mat.normal_texture, mat.normal_sampler);
+			mat.normalScale = static_cast<float>(material.normalTexture.scale);
 
 			// Attach baked ambient occlusion texture
-			if (auto& texture = material.occlusionTexture; texture.index >= 0)
-			{
-				render_material.occlusionStrenth = static_cast<float>(texture.strength);
-				render_material.occlusionTexture = resources.textures[texture.index];
-			}
+			load_texture(material.occlusionTexture.index, mat.occlusion_texture, mat.occlusion_sampler);
+			mat.occlusionStrenth = static_cast<float>(material.occlusionTexture.strength);
 
 			// Attach emissive texture
-			if (auto& texture = material.emissiveTexture; texture.index >= 0)
-				render_material.emissiveTexture = resources.textures[texture.index];
+			load_texture(material.emissiveTexture.index, mat.emissive_texture, mat.emissive_sampler);
 
-			render_material.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-			render_material.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
-			render_material.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
-			render_material.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
+			mat.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
+			mat.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
+			mat.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
+			mat.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
 			if (material.alphaMode.compare("BLEND") == 0)
-				render_material.alphaMode = 0;
+				mat.alphaMode = 0;
 			else if (material.alphaMode.compare("MASK") == 0)
-				render_material.alphaMode = 1;
+				mat.alphaMode = 1;
 			else
-				render_material.alphaMode = 2;
+				mat.alphaMode = 2;
 
-			render_material.alphaCutoff = static_cast<float>(material.alphaCutoff);
-			render_material.doubleSided = material.doubleSided;
+			mat.alphaCutoff = static_cast<float>(material.alphaCutoff);
+			mat.doubleSided = material.doubleSided;
 
-			renderer.add_material(render_material);
+			renderer.add_material(mat);
 		}
 
 		// Loading nodes

@@ -183,29 +183,39 @@ namespace engine::render
 
 		shlib::Material new_material{ material };
 
-		if (new_material.baseColorTexture != ~0u) {
-			auto& resource = render_context->get_resource(new_material.baseColorTexture);
-			new_material.baseColorTexture = resource.resource_id;
+		if (new_material.base_color_texture != ~0u) {
+			auto& tex = render_context->get_resource(new_material.base_color_texture);
+			new_material.base_color_texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.base_color_sampler);
+			new_material.base_color_sampler = sam.resource_id;
 		}
 
-		if (new_material.metallicRoughnessTexture != ~0u) {
-			auto& resource = render_context->get_resource(new_material.metallicRoughnessTexture);
-			new_material.metallicRoughnessTexture = resource.resource_id;
+		if (new_material.metallic_roughness_texture != ~0u) {
+			auto& tex = render_context->get_resource(new_material.metallic_roughness_texture);
+			new_material.metallic_roughness_texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.metallic_roughness_sampler);
+			new_material.metallic_roughness_sampler = sam.resource_id;
 		}
 
-		if (new_material.normalTexture != ~0u) {
-			auto& resource = render_context->get_resource(new_material.normalTexture);
-			new_material.normalTexture = resource.resource_id;
+		if (new_material.normal_texture != ~0u) {
+			auto& tex = render_context->get_resource(new_material.normal_texture);
+			new_material.normal_texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.normal_sampler);
+			new_material.normal_sampler = sam.resource_id;
 		}
 
-		if (new_material.occlusionTexture != ~0u) {
-			auto& resource = render_context->get_resource(new_material.occlusionTexture);
-			new_material.occlusionTexture = resource.resource_id;
+		if (new_material.occlusion_texture != ~0u) {
+			auto& tex = render_context->get_resource(new_material.occlusion_texture);
+			new_material.occlusion_texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.occlusion_sampler);
+			new_material.occlusion_sampler = sam.resource_id;
 		}
 
-		if (new_material.emissiveTexture != ~0u) {
-			auto& resource = render_context->get_resource(new_material.emissiveTexture);
-			new_material.emissiveTexture = resource.resource_id;
+		if (new_material.emissive_texture != ~0u) {
+			auto& tex = render_context->get_resource(new_material.emissive_texture);
+			new_material.emissive_texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.occlusion_sampler);
+			new_material.occlusion_sampler = sam.resource_id;
 		}
 
 		render_world->add_material(new_material);
