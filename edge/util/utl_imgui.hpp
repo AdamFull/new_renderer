@@ -97,4 +97,9 @@ namespace edge::imui {
         ImGui::PushID(str);
         return {};
     }
+
+    [[nodiscard]] inline auto make_scoped_table(const char* str_id, int columns, ImGuiTableFlags flags = 0, const ImVec2& outer_size = ImVec2(0.0f, 0.0f), float inner_width = 0.0f)
+        -> ScopeExit<ImGui::EndTable> {
+        return { ImGui::BeginTable(str_id, columns, flags, outer_size, inner_width) };
+    }
 }

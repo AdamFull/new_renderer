@@ -85,52 +85,6 @@ namespace edge::gfx {
 		}
 	}
 
-	void Profiler::ZoneNode::draw_stats() {
-		ImGui::NextColumn();
-
-		// Color red if exceeds threshold
-		ImVec4 text_color = time > _threshold_ms ?
-			ImVec4(1.0f, 0.3f, 0.3f, 1.0f) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-		ImGui::TextColored(text_color, "%.6f", time);
-
-		ImGui::NextColumn();
-		ImGui::TextColored(
-			avg_time > _threshold_ms ? ImVec4(1.0f, 0.3f, 0.3f, 1.0f) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f),
-			"%.6f", avg_time);
-
-		ImGui::NextColumn();
-		ImGui::Text("%.6f / %.6f", min_time, max_time);
-
-		ImGui::NextColumn();
-	}
-
-	void Profiler::ZoneNode::draw() {
-		if (auto push_id = edge::imui::make_scoped_push_id(this)) {
-			ImVec4 text_color = time > _threshold_ms ?
-				ImVec4(1.0f, 0.3f, 0.3f, 1.0f) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-			if (auto push_color = edge::imui::make_scoped_style_color(ImGuiCol_Text, text_color)) {
-				bool has_children = !children.empty();
-				if (has_children) {
-					if (auto tree_node = edge::imui::make_scoped_tree_node(name.data())) {
-						draw_stats();
-						for (auto& child : children) {
-							child->draw();
-						}
-					}
-					else {
-						draw_stats();
-					}
-				}
-				else {
-					ImGui::TextUnformatted(name.data());
-					draw_stats();
-				}
-			}
-		}
-	}
-
 	void Profiler::ZoneNode::draw_flame(float x, float y, float width, double total_time, int depth) {
 		if (width < 1.0f) {
 			return;
@@ -190,6 +144,32 @@ namespace edge::gfx {
 		}
 	}
 
+	static bool str_icontains(const char* hay, const char* needle) {
+		return needle[0] == '\0' || ImStristr(hay, nullptr, needle, nullptr) != nullptr;
+	}
+
+	bool Profiler::ZoneNode::draw_table_row(float depth) {
+		ImGui::TableNextColumn();
+		ImGui::Indent(depth * 20.0f);
+		ImGui::Bullet();  ImGui::SameLine();
+		ImGui::TextUnformatted(name.data());
+		ImGui::Unindent(depth * 20.0f);
+
+		ImVec4 col_time = time > _threshold_ms ? ImVec4(1, .3f, .3f, 1) : ImVec4(1, 1, 1, 1);
+		auto push = imui::make_scoped_style_color(ImGuiCol_Text, col_time);
+
+		ImGui::TableNextColumn(); ImGui::Text("%.6f", time);
+		ImGui::TableNextColumn(); ImGui::Text("%.6f", avg_time);
+		ImGui::TableNextColumn(); ImGui::Text("%.6f/%.6f", min_time, max_time);
+
+		bool child_drawn = false;
+		for (auto& c : children) {
+			child_drawn |= c->draw_table_row(depth + 1.f);
+		}
+
+		return child_drawn;
+	}
+
 	Profiler::Profiler() {
 		current_zone = &root;
 
@@ -215,7 +195,7 @@ namespace edge::gfx {
 		}
 
 		cmd_list.begin_marker(label, color);
-		
+
 		current_zone = current_zone->lookup_zone(label);
 		current_zone->begin_query = query_index++;
 		cmd_list.begin_query(query_pool, current_zone->begin_query);
@@ -250,7 +230,7 @@ namespace edge::gfx {
 	}
 
 	void Profiler::draw_ui() {
-		if (auto window = edge::imui::make_scoped_window("Frame Viewer")) {
+		if (auto window = imui::make_scoped_window("Frame Viewer")) {
 			if (is_paused) {
 				if (ImGui::Button("Continue Profiling")) {
 					is_paused = false;
@@ -301,23 +281,30 @@ namespace edge::gfx {
 
 			ImGui::Separator();
 
-			if (auto tab_bar = edge::imui::make_scoped_tab_bar("ProfilerViews")) {
-				if (auto detailed_stats = edge::imui::make_scoped_tab_item("Detailed Stats")) {
-					ImGui::Columns(4, nullptr, true);
-					ImGui::Text("Scope"); ImGui::NextColumn();
-					ImGui::Text("Time (ms)"); ImGui::NextColumn();
-					ImGui::Text("Avg (ms)"); ImGui::NextColumn();
-					ImGui::Text("Min/Max (ms)"); ImGui::NextColumn();
-					ImGui::Separator();
-					for (auto& child : root.children) {
-						child->draw();
+			if (auto tab_bar = imui::make_scoped_tab_bar("ProfilerViews")) {
+				if (auto detailed_stats = imui::make_scoped_tab_item("Detailed Stats")) {
+					const ImGuiTableFlags flags =
+						ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Borders |
+						ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg;
+
+					const float table_height = ImGui::GetContentRegionAvail().y;
+
+					if (auto table = imui::make_scoped_table("ProfileStatsTable", 4, flags, ImVec2(0, table_height))) {
+						ImGui::TableSetupColumn("Scope", ImGuiTableColumnFlags_WidthFixed);
+						ImGui::TableSetupColumn("Time (ms)", ImGuiTableColumnFlags_WidthFixed);
+						ImGui::TableSetupColumn("Avg (ms)", ImGuiTableColumnFlags_WidthFixed);
+						ImGui::TableSetupColumn("Min/Max", ImGuiTableColumnFlags_WidthFixed);
+						ImGui::TableHeadersRow();
+
+						for (auto& c : root.children) {
+							c->draw_table_row();
+						}
 					}
-					ImGui::Columns(1);
 				}
 
-				if (auto flame_graph = edge::imui::make_scoped_tab_item("Flame Graph")) {
+				if (auto flame_graph = imui::make_scoped_tab_item("Flame Graph")) {
 					ImGuiWindowFlags child_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar;
-					if (auto child_window = edge::imui::make_scoped_child_window("FlameGraph", ImVec2(0, 0), 0, child_flags)) {
+					if (auto child_window = imui::make_scoped_child_window("FlameGraph", ImVec2(0, 0), 0, child_flags)) {
 						static float zoom = 1.0f;
 						static float scroll_x = 0.0f;
 
@@ -378,11 +365,11 @@ namespace edge::gfx {
 					}
 				}
 
-				if (auto memory_stats_tab = edge::imui::make_scoped_tab_item("Memory Stats")) {
+				if (auto memory_stats_tab = imui::make_scoped_tab_item("Memory Stats")) {
 					MemoryUsageStats memory_stats{};
 					request_memory_stats(memory_stats);
 
-					if (auto child_window = edge::imui::make_scoped_child_window("MemoryStats", ImVec2(0, 0))) {
+					if (auto child_window = imui::make_scoped_child_window("MemoryStats", ImVec2(0, 0))) {
 						for (auto& memory_heap : memory_stats.memory_heaps) {
 							if (auto memory_heap_id = imui::make_scoped_push_id(memory_heap.name.data())) {
 								ImGui::Text("%s:", memory_heap.name.data());
@@ -400,10 +387,10 @@ namespace edge::gfx {
 					}
 				}
 
-				if (auto resource_stats_tab = edge::imui::make_scoped_tab_item("Resource Stats")) {
+				if (auto resource_stats_tab = imui::make_scoped_tab_item("Resource Stats")) {
 				}
 
-				if (auto hw_info_tab = edge::imui::make_scoped_tab_item("Hardware Info")) {
+				if (auto hw_info_tab = imui::make_scoped_tab_item("Hardware Info")) {
 				}
 			}
 		}

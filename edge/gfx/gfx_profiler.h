@@ -60,10 +60,8 @@ namespace edge::gfx {
 			auto get_max_depth() -> int;
 			void reset();
 
-			void draw_stats();
-			void draw();
-
 			void draw_flame(float x, float y, float width, double total_time, int depth);
+			bool draw_table_row(float depth = 0.f);
 		};
 
 		ZoneNode root{};
