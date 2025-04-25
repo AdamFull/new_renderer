@@ -16,10 +16,10 @@ namespace engine::render {
 		Renderer(edge::Window* window);
 		~Renderer();
 
-		uint32_t add_render_resource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) override;
-		uint32_t add_render_resource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) override;
-
-		uint32_t add_render_resource(const edge::gfx::BufferCreateInfo& create_info) override;
+		auto add_render_resource(std::string_view path) -> uint32_t override;
+		auto add_render_resource(const TextureResourceCreateInfo& create_info) -> uint32_t override;
+		auto add_render_resource(const edge::gfx::SamplerCreateInfo& create_info) -> uint32_t override;
+		auto add_render_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t override;
 
 		void add_material(const shlib::Material& material) override;
 

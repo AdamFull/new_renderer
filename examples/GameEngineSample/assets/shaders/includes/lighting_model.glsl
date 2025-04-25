@@ -100,12 +100,12 @@ vec3 importanceSample_GGX(in vec2 Xi, in float roughness, in vec3 normal) {
 	return normalize(tangentX * H.x + tangentY * H.y + normal * H.z);
 }
 
-vec3 prefilteredReflection(in vec3 R, in float roughness, in samplerCube prefiltered) {
-	const float lod = roughness * float(textureQueryLevels(prefiltered));
+vec3 prefilteredReflection(in vec3 R, in float roughness, in textureCube prefiltered, in sampler cube_sampler) {
+	const float lod = roughness * float(textureQueryLevels(samplerCube(prefiltered, cube_sampler)));
 	const float lodf = floor(lod);
 	const float lodc = ceil(lod);
-	const vec3 a = pow(textureLod(prefiltered, R, lodf).rgb, vec3(2.2f));
-	const vec3 b = pow(textureLod(prefiltered, R, lodc).rgb, vec3(2.2f));
+	const vec3 a = pow(textureLod(samplerCube(prefiltered, cube_sampler), R, lodf).rgb, vec3(2.2f));
+	const vec3 b = pow(textureLod(samplerCube(prefiltered, cube_sampler), R, lodc).rgb, vec3(2.2f));
 	return mix(a, b, lod - lodf);
 }
 

@@ -40,7 +40,7 @@ mat4 GetPrevViewProjectionMatrix(uint global_offset) { return GetMatrixById(glob
 mat4 GetInvViewProjectionMatrix(uint global_offset) { return GetMatrixById(global_offset, inv_view_projection_matrix_offset); }
 mat4 GetReprojectionMatrix(uint global_offset) { return GetMatrixById(global_offset, reprojection_matrix_offset); }
 
-#define GET_SAMPLER_2D(texture_index, mip_level) sampler2D(globalTextures[texture_index + mip_level], globalSamplers[texture_index + mip_level])
+#define GET_SAMPLER_2D(texture_index, mip_level) sampler2D(globalTextures[texture_index + mip_level], globalSamplers[0])
 
 vec4 SampleTexture2D(uint32_t texture_index, uint32_t mip_level, vec2 uv)
 {

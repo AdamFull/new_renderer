@@ -13,22 +13,28 @@ layout(local_size_x = MATERIAL_TILE_SIZE, local_size_y = MATERIAL_TILE_SIZE, loc
 //#define TILE_MATERIAL_CLASSIFICATION
 #define DISABLE_SHADOWS
 
-layout(set = 2, binding = 0) uniform writeonly image2D write_image0;
-layout(set = 2, binding = 1) uniform sampler2D sample_image0;
-layout(set = 2, binding = 2) uniform samplerCube sample_image1;
-layout(set = 2, binding = 3) uniform samplerCube sample_image2;
-layout(set = 2, binding = 4) uniform sampler2D sample_image5;
-//layout(set = 2, binding = 5) uniform sampler2D prev_frame_color;
+layout(set = 1, binding = 1) uniform writeonly image2D image0;
+layout(set = 1, binding = 2) uniform texture2D texture0; // BRDFlut
+layout(set = 1, binding = 3) uniform textureCube texture1; // Irradiance cubemap
+layout(set = 1, binding = 4) uniform textureCube texture2; // Prefiltered cubemap
+layout(set = 1, binding = 5) uniform texture2D texture3; // Visibility buffer
+layout(set = 1, binding = 6) uniform texture2D texture4; // Visibility buffer
+layout(set = 1, binding = 7) uniform texture2D texture5; // depth
+//layout(set = 2, binding = 8) uniform texture2D prev_frame_color;
 
-layout (set = 2, binding = 6) uniform sampler2DArrayShadow sample_image6;
-layout (set = 2, binding = 7) uniform sampler2DArrayShadow sample_image7;
-layout (set = 2, binding = 8) uniform samplerCubeArrayShadow sample_image8;
+layout (set = 1, binding = 9) uniform texture2DArray texture6;
+layout (set = 1, binding = 10) uniform texture2DArray texture7;
+layout (set = 1, binding = 11) uniform textureCubeArray texture8;
 
-layout (set = 2, binding = 9) uniform sampler2D sample_image9;
+layout (set = 1, binding = 12) uniform texture2D texture9; // Ambient occlusion
 
 #ifdef TILE_MATERIAL_CLASSIFICATION
-layout(std430, set = 2, binding = 10) buffer MaterialCommandBuffer { uint data[]; } read_buffer0;
+layout(std430, set = 1, binding = 13) buffer MaterialCommandBuffer { uint data[]; } read_buffer0;
 #endif
+
+layout(set = 2, binding = 0) uniform sampler sampler_point;
+layout(set = 2, binding = 1) uniform sampler sampler_linear;
+layout(set = 2, binding = 2) uniform sampler sampler_shadow_linear;
 
 vec4 sampleTexture(in uint s, in VertexAttribute va)
 {
@@ -125,7 +131,7 @@ uint getScadowCascadeSplit(in CascadedShadowCommit shadow, in float view_depth, 
 	return cascade_index;
 }
 
-float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in LightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+float getCascadeShadow(texture2DArray shadowmap_tex, in LightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 {
 	CascadedShadowCommit commit = GetCascadedShadowCommit(light.shadowIndex);
 
@@ -137,9 +143,9 @@ float getCascadeShadow(sampler2DArrayShadow shadowmap_tex, in LightCommit light,
 
 	float shadow_sample = 1.f;
 	if (enableCascadedPCF)
-		shadow_sample = cascadeShadowFilterPCF(shadowmap_tex, shadowCoord, cascadeIndex, 0.005);
+		shadow_sample = cascadeShadowFilterPCF(shadowmap_tex, sampler_shadow_linear, shadowCoord, cascadeIndex, 0.005);
 	else
-		shadow_sample = cascadeShadowProjection(shadowmap_tex, shadowCoord, vec2(0.0), cascadeIndex, 0.005);
+		shadow_sample = cascadeShadowProjection(shadowmap_tex, sampler_shadow_linear, shadowCoord, vec2(0.0), cascadeIndex, 0.005);
 
 	return shadow_sample;
 }
@@ -153,10 +159,8 @@ vec3 calculateDirectionalLight(in LightCommit light, in VertexAttribute va, in M
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		//shadow_factor = getCascadeShadow(sample_image6, light, va, ms, dither);
+		//shadow_factor = getCascadeShadow(texture6, light, va, ms, dither);
 	}
-
-	//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
 
 	return light.color * light.intencity * color * shadow_factor;
 }
@@ -164,7 +168,7 @@ vec3 calculateDirectionalLight(in LightCommit light, in VertexAttribute va, in M
 
 
 
-float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in LightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+float getOmniShadow(textureCubeArray shadowmap_tex, in LightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 {
 	OmniShadowCommit commit = GetOmniShadowCommit(light.shadowIndex);
 
@@ -178,9 +182,9 @@ float getOmniShadow(samplerCubeArrayShadow shadowmap_tex, in LightCommit light, 
 
 	bool enablePCF = true;
 	if (enablePCF)
-		shadow = omniShadowFilterPCF(shadowmap_tex, shadowClip, bias, commit.farPlane, light.shadowIndex);
+		shadow = omniShadowFilterPCF(shadowmap_tex, sampler_shadow_linear, shadowClip, bias, commit.farPlane, light.shadowIndex);
 	else
-		shadow = omniShadowProjection(shadowmap_tex, shadowClip, vec3(0.0), bias, commit.farPlane, light.shadowIndex);
+		shadow = omniShadowProjection(shadowmap_tex, sampler_shadow_linear, shadowClip, vec3(0.0), bias, commit.farPlane, light.shadowIndex);
 
 	return shadow;
 }
@@ -196,15 +200,14 @@ vec3 calculatePointLight(in LightCommit light, in VertexAttribute va, in Materia
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		shadow_factor = getOmniShadow(sample_image8, light, va, ms, dither);
-		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
+		shadow_factor = getOmniShadow(texture8, light, va, ms, dither);
 	}
 
 	return light.color * atten * color * light.intencity * shadow_factor;
 }
 
 
-float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in LightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
+float getDirectionalShadow(texture2DArray shadomwap_tex, in LightCommit light, in VertexAttribute va, in MaterialSample ms, in float dither)
 {
 	SpotShadowCommit commit = GetSpotShadowCommit(light.shadowIndex);
 
@@ -218,9 +221,9 @@ float getDirectionalShadow(sampler2DArrayShadow shadomwap_tex, in LightCommit li
 
 	bool enablePCF = true;
 	if (enablePCF)
-		shadow = directionalShadowFilterPCF(shadomwap_tex, shadowClip, bias, light.shadowIndex);
+		shadow = directionalShadowFilterPCF(shadomwap_tex, sampler_shadow_linear, shadowClip, bias, light.shadowIndex);
 	else
-		shadow = directionalShadowProjection(shadomwap_tex, shadowClip, vec2(0.0), bias, light.shadowIndex);
+		shadow = directionalShadowProjection(shadomwap_tex, sampler_shadow_linear, shadowClip, vec2(0.0), bias, light.shadowIndex);
 	return shadow;
 }
 
@@ -243,8 +246,7 @@ vec3 calculateSpotlight(in LightCommit light, in VertexAttribute va, in Material
 	float shadow_factor = 1.0;
 	if(light.castShadows > 0 && light.shadowIndex > -1)
 	{
-		shadow_factor = getDirectionalShadow(sample_image7, light, va, ms, dither);
-		//shadow_factor = ScreenSpaceShadows(va.pos, light.direction, sample_image5, 32, 0.02f, dither);
+		shadow_factor = getDirectionalShadow(texture7, light, va, ms, dither);
 	}
 
 	return light.color * light.intencity * color * angularAttenuation * shadow_factor;
@@ -291,7 +293,7 @@ vec3 debug_visualize_cascades(in float view_depth, float dither)
 
 void main() 
 {
-	uvec2 image_size = imageSize(write_image0);
+	uvec2 image_size = imageSize(image0);
 
 	uvec2 px;
 	vec2 uv;
@@ -321,13 +323,13 @@ void main()
 	VisibilityBuffer visbuffer;
 
 	[[branch]]
-	if(!loadVisBuffer(uv, visbuffer))
+	if(!loadVisBuffer(texture(sampler2D(texture3, sampler_linear), uv), texture(sampler2D(texture4, sampler_linear), uv), visbuffer))
 	{
 		// TODO: will work after adding lights
 		vec4 dir_world_space = vec4(0.0);
 		const vec3 origin = vec3(0, PLANET_RADIUS, 0) + camera_pos;
 		
-		float depth = texture(sample_image5, uv).r;
+		float depth = texture(sampler2D(texture5, sampler_point), uv).r;
 		dir_world_space.xyz = position_from_depth(uv, 1.0f, GetInvViewProjectionMatrix(camera.matrices_offset));
 		
 		uint sun_count = 0;
@@ -349,7 +351,7 @@ void main()
 		pixel_color.rgb /= float(sun_count);
 		pixel_color.rgb = 1.0 - exp(-1.0 * pixel_color.rgb);
 
-		imageStore(write_image0, ivec2(px), pixel_color);
+		imageStore(image0, ivec2(px), pixel_color);
 		return;
 	}
 
@@ -372,9 +374,9 @@ void main()
 	vec3 R = -normalize(reflect(V, ms.normal));
 
 	float NdotV = dot(ms.normal, V);
-	vec2 brdf = texture(sample_image0, vec2(max(NdotV, 0.0f), ms.roughness)).rg;
-	vec3 reflection = prefilteredReflection(R, ms.roughness, sample_image2);
-	vec3 irradiance = texture(sample_image1, ms.normal).rgb;
+	vec2 brdf = texture(sampler2D(texture0, sampler_point), vec2(max(NdotV, 0.0f), ms.roughness)).rg;
+	vec3 reflection = prefilteredReflection(R, ms.roughness, texture2, sampler_linear);
+	vec3 irradiance = texture(samplerCube(texture1, sampler_linear), ms.normal).rgb;
 
 	// Diffuse based on irradiance
 	vec3 diffuse = ms.albedo * irradiance;
@@ -387,16 +389,15 @@ void main()
 	vec3 kD = (1.0 - F) * (1.0 - ms.metallic);
 	vec3 ambient = kD * diffuse + specular;
 
-	ambient = mix(ambient, ambient * ms.ao * texture(sample_image9, uv).r, material.occlusionStrenth);
-	//ambient = ambient * ms.ao * texture(sample_image9, uv).g;
+	ambient = mix(ambient, ambient * ms.ao * texture(sampler2D(texture9, sampler_linear), uv).r, material.occlusionStrenth);
 
 	vec3 res = ambient + ms.emission + Lo;
 	//res *= debug_visualize_cascades(va.linearZ, dither);
 
 	pixel_color = vec4(res, 1.0);
-	//pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, sample_image5, prev_frame_color);
+	//pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, sampler2D(texture5, sampler_point), prev_frame_color);
 	float ssr_weight = 0.f;
-	//pixel_color.rgb += ScreenSpaceReflections(va.pos, ms.normal, V, ms.roughness, sample_image5, prev_frame_color, dither, ssr_weight);
+	//pixel_color.rgb += ScreenSpaceReflections(va.pos, ms.normal, V, ms.roughness, sampler2D(texture5, sampler_point), prev_frame_color, dither, ssr_weight);
 
-	imageStore(write_image0, ivec2(px), pixel_color);
+	imageStore(image0, ivec2(px), pixel_color);
 }

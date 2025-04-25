@@ -4,12 +4,13 @@
 layout (location = 0) in vec2 inUV;
 layout (location = 0) out vec4 outFragcolor;
 
-layout(set = 1, binding = 1) uniform sampler2D sample_image0;
+layout(set = 1, binding = 1) uniform texture2D texture0;
+layout(set = 1, binding = 2) uniform sampler sampler0;
 
 void main() 
 {
-	vec2 texel_size = 1.0 / vec2(textureSize(sample_image0, 0));
-	vec4 color = texture(sample_image0, inUV);
+	vec2 texel_size = 1.0 / vec2(textureSize(sampler2D(texture0, sampler0), 0));
+	vec4 color = texture(sampler2D(texture0, sampler0), inUV);
 
 	// https://www.shadertoy.com/view/dlcfRX
 	//color.rgb = mat3(.842, .0423, .0424, .0784, .878, .0784, .0792, .0792, .879) * color.rgb;

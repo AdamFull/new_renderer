@@ -210,8 +210,12 @@ namespace engine::render {
 			edge::gfx::destroy(texture_object.texture);
 		}
 
-		for (auto& buffer_object : buffers.data()) {
-			edge::gfx::destroy(buffer_object.buffer);
+		for (auto& buffer : buffers.data()) {
+			edge::gfx::destroy(buffer);
+		}
+
+		for (auto& sampler : samplers.data()) {
+			edge::gfx::destroy(sampler);
 		}
 	}
 
@@ -221,20 +225,20 @@ namespace engine::render {
 		return render_resources.size() - 1ull;
 	}
 
-	auto RenderContext::add_resource_sync(std::string_view path, edge::gfx::ISampler* sampler) -> uint32_t {
+	auto RenderContext::add_resource_sync(std::string_view path) -> uint32_t {
 		auto& new_resource = render_resources.emplace_back();
 		new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
 		edge::gfx::ITexture* texture = edge::gfx::ResourceUpdater::load_texture_sync(path.data(), new_resource.current_state);
-		new_resource.resource_id = static_textures.add(TextureObject{ texture, sampler ? sampler : default_sampler });
+		new_resource.resource_id = static_textures.add(TextureObject{ texture });
 
 		return render_resources.size() - 1ull;
 	}
 
-	auto RenderContext::add_resource(std::string_view path, edge::gfx::ISampler* sampler) -> uint32_t {
+	auto RenderContext::add_resource(std::string_view path) -> uint32_t {
 		auto& new_resource = render_resources.emplace_back();
 		new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
-		new_resource.resource_id = static_textures.add(TextureObject{ dummy_texture, sampler ? sampler : default_sampler });
+		new_resource.resource_id = static_textures.add(TextureObject{ dummy_texture });
 		pending_resources.emplace_back(std::make_pair(edge::gfx::ResourceUpdater::load_texture(path.data()), (uint32_t)(render_resources.size() - 1ull)));
 
 		return render_resources.size() - 1ull;
@@ -255,14 +259,14 @@ namespace engine::render {
 
 		edge::gfx::ITexture* texture = edge::gfx::create_texture(texture_create_info);
 		edge::gfx::ResourceUpdater::update_texture(texture, new_resource.current_state, texture_data);
-		new_resource.resource_id = static_textures.add(TextureObject{ texture, default_sampler });
+		new_resource.resource_id = static_textures.add(TextureObject{ texture });
 
 		//new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
 		return render_resources.size() - 1ull;
 	}
 
-	auto RenderContext::add_resource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler) -> uint32_t {
+	auto RenderContext::add_resource(const TextureResourceCreateInfo& create_info) -> uint32_t {
 		auto& new_resource = render_resources.emplace_back();
 
 		// TODO: What if it's storage target and render target at the same time?
@@ -287,7 +291,6 @@ namespace engine::render {
 
 		TextureObject texture_object{};
 		texture_object.texture = edge::gfx::create_texture(texture_create_info);
-		texture_object.sampler = sampler ? sampler : default_sampler;
 		texture_object.usage = create_info.usage;
 		texture_object.resizable = create_info.resizable;
 		texture_object.scale = create_info.scale;
@@ -305,7 +308,7 @@ namespace engine::render {
 
 	auto RenderContext::add_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t {
 		edge::gfx::IBuffer* buffer = edge::gfx::create_buffer(create_info);
-		auto handle = buffers.add(BufferObject{ buffer });
+		auto handle = buffers.add(std::move(buffer));
 		if (create_info.usage != edge::gfx::BufferUsageFlag::eStagingBuffer && create_info.usage != edge::gfx::BufferUsageFlag::eUniformBuffer) {
 			auto& new_resource = render_resources.emplace_back();
 			if (create_info.usage & edge::gfx::BufferUsageFlag::eIndirect) {
@@ -323,6 +326,27 @@ namespace engine::render {
 		return ~0u;
 	}
 
+	auto RenderContext::add_resource(const edge::gfx::SamplerCreateInfo& create_info) -> uint32_t {
+		auto sampler_hash = edge::gfx::hash(create_info);
+		
+		for (int32_t rid = 0; rid < static_cast<int32_t>(render_resources.size()); ++rid) {
+			auto& render_resource = render_resources[rid];
+			if ((render_resource.resource_type & RenderResourceTypeFlag::eSampler) != RenderResourceTypeFlag::eSampler) {
+				continue;
+			}
+
+			auto& sampler = samplers.get(render_resource.resource_id);
+			if (sampler->hash() == sampler_hash) {
+				return static_cast<uint32_t>(rid);
+			}
+		}
+
+		auto& new_resource = render_resources.emplace_back();
+		new_resource.resource_type = RenderResourceTypeFlag::eSampler;
+		new_resource.resource_id = samplers.add(edge::gfx::create_sampler(create_info));
+		return render_resources.size() - 1ull;
+	}
+
 	void RenderContext::set_resource_name(uint32_t resource_index, std::string_view name) {
 		auto& render_resource = render_resources[resource_index];
 
@@ -334,13 +358,15 @@ namespace engine::render {
 			auto& texture_object = static_textures.get(render_resource.resource_id);
 			resource = texture_object.texture;
 		}
+		else if (render_resource.resource_type & RenderResourceTypeFlag::eSampler) {
+			resource = samplers.get(render_resource.resource_id);
+		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage) {
 			auto& texture_object = render_targets.get(render_resource.resource_id);
 			resource = texture_object.texture;
 		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer) {
-			auto& buffer_object = buffers.get(render_resource.resource_id);
-			resource = buffer_object.buffer;
+			resource = buffers.get(render_resource.resource_id);
 		}
 
 		resource->set_resource_name(name);
@@ -527,12 +553,24 @@ namespace engine::render {
 			auto* current_global_binding_layout = current_frame->lookup_and_allocate_binding_layout(global_descriptor);
 			current_global_binding_layout->bind(texture_descriptor);
 
+			++array_index;
+		}
+
+		array_index = 0u;
+		for (auto& resource : render_resources) {
+			if (resource.resource_type != RenderResourceTypeFlag::eSampler) {
+				continue;
+			}
+
+			auto& sampler = samplers.get(resource.resource_id);
+
 			edge::gfx::SamplerDescriptor sampler_descriptor{};
 			sampler_descriptor.binding = shlib::SAMPLER_SLOT;
 
 			sampler_descriptor.array_index = array_index;
-			sampler_descriptor.sampler = texture_obj.sampler;
+			sampler_descriptor.sampler = sampler;
 
+			auto* current_global_binding_layout = current_frame->lookup_and_allocate_binding_layout(global_descriptor);
 			current_global_binding_layout->bind(sampler_descriptor);
 
 			++array_index;
@@ -649,13 +687,8 @@ namespace engine::render {
 		if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer) {
 			return default_sampler;
 		}
-		else if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage) {
-			auto& texture_object = static_textures.get(render_resource.resource_id);
-			return texture_object.sampler;
-		}
-		else if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage) {
-			auto& texture_object = render_targets.get(render_resource.resource_id);
-			return texture_object.sampler;
+		else {
+			return samplers.get(render_resource.resource_id);
 		}
 
 		return default_sampler;
@@ -668,8 +701,7 @@ namespace engine::render {
 
 	auto RenderContext::get_buffer(const RenderResource& render_resource) -> edge::gfx::IBuffer* {
 		if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer) {
-			auto& buffer_object = buffers.get(render_resource.resource_id);
-			return buffer_object.buffer;
+			return buffers.get(render_resource.resource_id);
 		}
 
 		return nullptr;

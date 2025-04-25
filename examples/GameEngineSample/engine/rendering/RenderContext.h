@@ -32,11 +32,12 @@ namespace engine::render {
 		RenderContext& operator=(RenderContext&&) = delete;
 
 		auto add_resource() -> uint32_t override;
-		auto add_resource_sync(std::string_view path, edge::gfx::ISampler* sampler = nullptr) -> uint32_t override;
-		auto add_resource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) -> uint32_t override;
+		auto add_resource_sync(std::string_view path) -> uint32_t override;
+		auto add_resource(std::string_view path) -> uint32_t override;
 		auto add_resource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) -> uint32_t override;
-		auto add_resource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) -> uint32_t override;
+		auto add_resource(const TextureResourceCreateInfo& create_info) -> uint32_t override;
 		auto add_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t override;
+		auto add_resource(const edge::gfx::SamplerCreateInfo& create_info) -> uint32_t override;
 
 		void set_resource_name(uint32_t resource_index, std::string_view name) override;
 
@@ -118,6 +119,7 @@ namespace engine::render {
 
 		ResourceContainer<TextureObject> static_textures{};
 		ResourceContainer<TextureObject> render_targets{};
-		ResourceContainer<BufferObject> buffers{};
+		ResourceContainer<edge::gfx::IBuffer*> buffers{};
+		ResourceContainer<edge::gfx::ISampler*> samplers{};
 	};
 }

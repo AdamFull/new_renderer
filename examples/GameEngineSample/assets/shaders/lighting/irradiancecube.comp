@@ -3,15 +3,16 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 6) in;
 
-layout(binding = 0) uniform writeonly imageCube write_image0;
-layout(binding = 1) uniform samplerCube sample_image0;
+layout(binding = 0) uniform writeonly imageCube image0;
+layout(binding = 1) uniform textureCube texture0;
+layout(binding = 2) uniform sampler sampler0;
 
-const float deltaPhi = (2.0f * PI) / 180.0f;
-const float deltaTheta = (0.5f * PI) / 64.0f;
+const float deltaPhi = (TWO_PI) / 180.0f;
+const float deltaTheta = (HALF_PI) / 64.0f;
 
 void main() 
 {
-	uvec2 image_size = imageSize(write_image0);
+	uvec2 image_size = imageSize(image0);
 
 	uvec3 px = gl_GlobalInvocationID.xyz;
 
@@ -36,10 +37,10 @@ void main()
 		{
 			vec3 tempVec = cos(phi) * right + sin(phi) * up;
 			vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
-			colour += texture(sample_image0, sampleVector).rgb * cos(theta) * sin(theta);
+			colour += texture(samplerCube(texture0, sampler0), sampleVector).rgb * cos(theta) * sin(theta);
 			sampleCount++;
 		}
 	}
 
-	imageStore(write_image0, ivec3(px), vec4(PI * colour / float(sampleCount), 1.0f));
+	imageStore(image0, ivec3(px), vec4(PI * colour / float(sampleCount), 1.0f));
 }

@@ -10,10 +10,11 @@ namespace engine::render {
 		eStorageTarget = 1 << 1,
 		eStaticImage = 1 << 2,
 		eBackbuffer = 1 << 3,
+		eSampler = 1 << 4,
 		eAllImage = eRenderTarget | eStorageTarget | eStaticImage | eBackbuffer,
-		eStorageBuffer = 1 << 4,
-		eIndirectBuffer = 1 << 5,
-		eAllBuffer = eStorageBuffer | eIndirectBuffer
+		eStorageBuffer = 1 << 5,
+		eIndirectBuffer = 1 << 6,
+		eAllBuffer = eStorageBuffer | eIndirectBuffer,
 	};
 	EDGE_REGISTER_ENUM_CLASS_AS_FLAG_TYPE(RenderResourceTypeFlags, RenderResourceTypeFlag);
 
@@ -113,16 +114,12 @@ namespace engine::render {
 
 	struct TextureObject {
 		edge::gfx::ITexture* texture{ nullptr };
-		edge::gfx::ISampler* sampler{ nullptr };
+		uint32_t sampler_id{ ~0u };
 
 		edge::gfx::TextureUsageFlags usage{};
 		bool resizable{ false };
 		float scale{ 1.f };
 		uint32_t scale_parent_resource{ ~0u };
-	};
-
-	struct BufferObject {
-		edge::gfx::IBuffer* buffer{ nullptr };
 	};
 
 	class IExecutionNode {
@@ -137,11 +134,12 @@ namespace engine::render {
 		virtual ~IExecutionContext() = default;
 
 		virtual auto add_resource() -> uint32_t = 0;
-		virtual auto add_resource_sync(std::string_view path, edge::gfx::ISampler* sampler = nullptr) -> uint32_t = 0;
-		virtual auto add_resource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) -> uint32_t = 0;
+		virtual auto add_resource_sync(std::string_view path) -> uint32_t = 0;
+		virtual auto add_resource(std::string_view path) -> uint32_t = 0;
 		virtual auto add_resource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) -> uint32_t = 0;
-		virtual auto add_resource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) -> uint32_t = 0;
+		virtual auto add_resource(const TextureResourceCreateInfo& create_info) -> uint32_t = 0;
 		virtual auto add_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t = 0;
+		virtual auto add_resource(const edge::gfx::SamplerCreateInfo& create_info) -> uint32_t = 0;
 
 		virtual void set_resource_name(uint32_t resource_index, std::string_view name) = 0;
 

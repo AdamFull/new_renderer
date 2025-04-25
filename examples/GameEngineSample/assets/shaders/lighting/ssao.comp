@@ -6,8 +6,9 @@
 
 layout(local_size_x = TILE_SIZE, local_size_y = TILE_SIZE) in;
 
-layout(set = 1, binding = 1) uniform sampler2D sample_image0;
-layout(set = 1, binding = 2) restrict uniform writeonly image2D write_image0;
+layout(set = 1, binding = 1) uniform texture2D texture0;
+layout(set = 1, binding = 2) uniform sampler sampler0;
+layout(set = 1, binding = 3) restrict uniform writeonly image2D image0;
 
 const int AO_SAMPLE_COUNT = 16;
 const float AO_RADIUS = 0.2f;
@@ -18,10 +19,10 @@ void main() {
 	uvec2 write_px;
 	vec2 write_uv;
 
-	const uvec2 write_image_size = imageSize(write_image0);
+	const uvec2 write_image_size = imageSize(image0);
     const vec2 write_texel_size = 1.0 / vec2(write_image_size);
 
-	const uvec2 sample_image_size = textureSize(sample_image0, 0);
+	const uvec2 sample_image_size = textureSize(sampler2D(texture0, sampler0), 0);
     const vec2 sample_texel_size = 1.0 / vec2(sample_image_size);
 
 	const Camera camera = GetCamera(0);
@@ -37,15 +38,15 @@ void main() {
                             write_px.y * (sample_image_size.y / write_image_size.y));
     vec2 sample_uv = vec2(sample_px) / vec2(sample_image_size);
 
-	const float c0 = texelFetch(sample_image0, sample_px + ivec2( 0,  0), 0).r;
-    const float l2 = texelFetch(sample_image0, sample_px + ivec2(-2,  0), 0).r;
-    const float l1 = texelFetch(sample_image0, sample_px + ivec2(-1,  0), 0).r;
-    const float r1 = texelFetch(sample_image0, sample_px + ivec2( 1,  0), 0).r;
-    const float r2 = texelFetch(sample_image0, sample_px + ivec2( 2,  0), 0).r;
-    const float b2 = texelFetch(sample_image0, sample_px + ivec2( 0, -2), 0).r;
-    const float b1 = texelFetch(sample_image0, sample_px + ivec2( 0, -1), 0).r;
-    const float t1 = texelFetch(sample_image0, sample_px + ivec2( 0,  1), 0).r;
-    const float t2 = texelFetch(sample_image0, sample_px + ivec2( 0,  2), 0).r;
+	const float c0 = texelFetch(sampler2D(texture0, sampler0), sample_px + ivec2( 0,  0), 0).r;
+    const float l2 = texelFetch(sampler2D(texture0, sampler0), sample_px + ivec2(-2,  0), 0).r;
+    const float l1 = texelFetch(sampler2D(texture0, sampler0), sample_px + ivec2(-1,  0), 0).r;
+    const float r1 = texelFetch(sampler2D(texture0, sampler0), sample_px + ivec2( 1,  0), 0).r;
+    const float r2 = texelFetch(sampler2D(texture0, sampler0), sample_px + ivec2( 2,  0), 0).r;
+    const float b2 = texelFetch(sampler2D(texture0, sampler0), sample_px + ivec2( 0, -2), 0).r;
+    const float b1 = texelFetch(sampler2D(texture0, sampler0), sample_px + ivec2( 0, -1), 0).r;
+    const float t1 = texelFetch(sampler2D(texture0, sampler0), sample_px + ivec2( 0,  1), 0).r;
+    const float t2 = texelFetch(sampler2D(texture0, sampler0), sample_px + ivec2( 0,  2), 0).r;
 
     // depth slope estimates
     const float dl = abs(l1 * l2 / (2.0 * l2 - l1) - c0);
@@ -92,7 +93,7 @@ void main() {
 		if (new_tex_coord.x < 0.0 || new_tex_coord.x > 1.0 || new_tex_coord.y < 0.0 || new_tex_coord.y > 1.0)
             continue;
 
-		const float sample_depth = textureLod(sample_image0, new_tex_coord.xy, 0).r;
+		const float sample_depth = textureLod(sampler2D(texture0, sampler0), new_tex_coord.xy, 0).r;
 		const float linear_depth = -linearize_depth(sample_depth, camera.z_near, camera.z_far);
 		const float range_check = smoothstep(0.0f, 1.0f, AO_RADIUS / abs(ce.z - linear_depth));
 		occlusion += float(linear_depth >= vpos.z + AO_DEPTH_THRESHOLD) * range_check;
@@ -101,5 +102,5 @@ void main() {
 	occlusion = occlusion / AO_SAMPLE_COUNT;
 	occlusion = pow(clamp(1.0f - occlusion, 0.0, 1.0), AO_POWER);
 
-	imageStore(write_image0, ivec2(write_px), vec4(occlusion));
+	imageStore(image0, ivec2(write_px), vec4(occlusion));
 }

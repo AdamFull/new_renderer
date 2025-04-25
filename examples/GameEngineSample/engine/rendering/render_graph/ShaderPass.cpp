@@ -278,7 +278,7 @@ namespace engine::render {
 				descriptor.binding = refl_resource.binding;
 
 				descriptor.texture = execution_context.get_texture(render_resource);
-				descriptor.sampler = execution_context.get_sampler(render_resource);
+				//descriptor.sampler = execution_context.get_sampler(render_resource);
 				descriptor.subresource_index = subresource_index;
 				descriptor.resource_state = render_resource.GetState();
 
@@ -292,6 +292,13 @@ namespace engine::render {
 
 				descriptor.buffer = execution_context.get_buffer(render_resource);
 				descriptor.size = descriptor.buffer->get_size();
+
+				binding_layouts[refl_resource.set]->bind(descriptor);
+			}
+			else if (render_resource.resource_type & RenderResourceTypeFlag::eSampler) {
+				edge::gfx::SamplerDescriptor descriptor{};
+				descriptor.binding = refl_resource.binding;
+				descriptor.sampler = execution_context.get_sampler(render_resource);
 
 				binding_layouts[refl_resource.set]->bind(descriptor);
 			}

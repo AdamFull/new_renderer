@@ -5,11 +5,11 @@
 
 layout(local_size_x = 13, local_size_y = 13, local_size_z = 6) in;
 
-layout(set = 1, binding = 0) uniform writeonly imageCube write_image0;
+layout(set = 1, binding = 0) uniform writeonly imageCube image0;
 
 void main() 
 {
-	uvec2 image_size = imageSize(write_image0);
+	uvec2 image_size = imageSize(image0);
 
 	uvec3 px = gl_GlobalInvocationID.xyz;
 	vec2 uv = (vec2(px.xy) + vec2(0.5, 0.5)) / vec2(image_size);
@@ -41,5 +41,5 @@ void main()
 	pixel_color /= float(sun_count);
 	pixel_color = 1.0 - exp(-1.0 * pixel_color.rgb);
 
-	imageStore(write_image0, ivec3(px), vec4(pixel_color, 1.0));
+	imageStore(image0, ivec3(px), vec4(pixel_color, 1.0));
 }

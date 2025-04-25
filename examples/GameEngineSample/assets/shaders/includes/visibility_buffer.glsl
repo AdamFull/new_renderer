@@ -3,16 +3,6 @@
 
 #include "shader_inputs.glsl"
 
-// Input buffers
-layout(set = 1, binding = 1) uniform sampler2D sample_image3;
-layout(set = 1, binding = 2) uniform sampler2D sample_image4;
-
-layout(push_constant) uniform UniformCallData
-{
-	uint32_t call_id;
-	uint32_t camera_id;
-} call_data;
-
 // Visbuffer structures
 struct VertexAttribute
 {
@@ -50,9 +40,9 @@ struct VisibilityBuffer
 	uint vboID;
 };
 
-bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
+bool loadVisBuffer(in vec4 vb0, in vec4 vb1, out VisibilityBuffer res)
 {
-	uint geometryData = packUnorm4x8(texture(sample_image3, uv));
+	uint geometryData = packUnorm4x8(vb0);
 
 	res.drawID = (geometryData >> 23) & 0x000000FF;
 	res.triangleID = (geometryData & 0x007FFFFF);
@@ -62,7 +52,7 @@ bool loadVisBuffer(in vec2 uv, out VisibilityBuffer res)
 	if(res.triangleID == 0xFFFFFFFFu)
 		return false;
 
-	uint vboinstData = packUnorm4x8(texture(sample_image4, uv));
+	uint vboinstData = packUnorm4x8(vb1);
 	res.vboID = vboinstData & 0xFFFF;
 	uint instID = vboinstData >> 16;
 
@@ -199,7 +189,7 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 	mat4 model = GetModelMatrix(mesh.matrix_offset);
 	mat3 normal_matrix = mat3(GetNormalMatrix(mesh.matrix_offset));
 
-	Camera camera = GetCamera(call_data.camera_id);
+	Camera camera = GetCamera(0);
 	mat4 view_projection = GetViewProjectionMatrix(camera.matrices_offset);
 
 	vec4 clipPos0;
@@ -322,39 +312,5 @@ VertexAttribute getVertexData(vec2 uv, in VisibilityBuffer visbuffer)
 
 	return res;
 }
-
-#define SAMPLE_COUNT 8
-
-//void resolveVisBuffer(in vec2 uv, out VisibilityBuffer vb)
-//{	
-//	ivec2 dim = textureSize(sample_image3);
-//	ivec2 px = ivec2(uv * dim);
-//
-//	[[unroll]]
-//	for(int i = 0; i < NUM_SAMPLES; i++)
-//	{
-//		vec4 vgeom = texelFetch(sample_image3, px, i); 
-//
-//		vb.drawID = (geometryData >> 23) & 0x000000FF;
-//		vb.triangleID = (geometryData & 0x007FFFFF);
-//		vb.transparent = (geometryData >> 31);
-//		vb.triangleID -= 1u;
-//
-//		if(vb.triangleID == 0xFFFFFFFFu)
-//			continue;
-//
-//		uint vboinstData = packUnorm4x8(texelFetch(sample_image4, px, i));
-//		vb.vboID = vboinstData & 0xFFFF;
-//		uint instID = vboinstData >> 16;
-//
-//		uint32_t draw_index = vb.drawID + instID;
-//		FDrawMeshinfo draw_info = GetDrawInfo(draw_index);
-//		Mesh mesh = GetMesh(draw_info.mesh_index);
-//		
-//		vb.matID = mesh.material;
-//
-//		VertexAttribute va = getVertexData(uv, vb);
-//	}
-//}
 
 #endif // VISIBILITY_BUFFER_GLSL

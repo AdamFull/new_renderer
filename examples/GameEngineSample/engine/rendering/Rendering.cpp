@@ -43,27 +43,39 @@
 namespace render_label {
 	using namespace edge;
 
-	constexpr const uint32_t write_image0 = "write_image0"_hash32;
-	constexpr const uint32_t write_image1 = "write_image1"_hash32;
-	constexpr const uint32_t write_image2 = "write_image2"_hash32;
-	constexpr const uint32_t write_image3 = "write_image3"_hash32;
-	constexpr const uint32_t write_image4 = "write_image4"_hash32;
-	constexpr const uint32_t write_image5 = "write_image5"_hash32;
-	constexpr const uint32_t write_image6 = "write_image6"_hash32;
-	constexpr const uint32_t write_image7 = "write_image7"_hash32;
+	constexpr const uint32_t image0 = "image0"_hash32;
+	constexpr const uint32_t image1 = "image1"_hash32;
+	constexpr const uint32_t image2 = "image2"_hash32;
+	constexpr const uint32_t image3 = "image3"_hash32;
+	constexpr const uint32_t image4 = "image4"_hash32;
+	constexpr const uint32_t image5 = "image5"_hash32;
+	constexpr const uint32_t image6 = "image6"_hash32;
+	constexpr const uint32_t image7 = "image7"_hash32;
 
-	constexpr const uint32_t sample_image0 = "sample_image0"_hash32;
-	constexpr const uint32_t sample_image1 = "sample_image1"_hash32;
-	constexpr const uint32_t sample_image2 = "sample_image2"_hash32;
-	constexpr const uint32_t sample_image3 = "sample_image3"_hash32;
-	constexpr const uint32_t sample_image4 = "sample_image4"_hash32;
-	constexpr const uint32_t sample_image5 = "sample_image5"_hash32;
-	constexpr const uint32_t sample_image6 = "sample_image6"_hash32;
-	constexpr const uint32_t sample_image7 = "sample_image7"_hash32;
-	constexpr const uint32_t sample_image8 = "sample_image8"_hash32;
-	constexpr const uint32_t sample_image9 = "sample_image9"_hash32;
-	constexpr const uint32_t sample_image10 = "sample_image10"_hash32;
-	constexpr const uint32_t sample_image11 = "sample_image11"_hash32;
+	constexpr const uint32_t texture0 = "texture0"_hash32;
+	constexpr const uint32_t texture1 = "texture1"_hash32;
+	constexpr const uint32_t texture2 = "texture2"_hash32;
+	constexpr const uint32_t texture3 = "texture3"_hash32;
+	constexpr const uint32_t texture4 = "texture4"_hash32;
+	constexpr const uint32_t texture5 = "texture5"_hash32;
+	constexpr const uint32_t texture6 = "texture6"_hash32;
+	constexpr const uint32_t texture7 = "texture7"_hash32;
+	constexpr const uint32_t texture8 = "texture8"_hash32;
+	constexpr const uint32_t texture9 = "texture9"_hash32;
+	constexpr const uint32_t texture10 = "texture10"_hash32;
+	constexpr const uint32_t texture11 = "texture11"_hash32;
+
+	constexpr const uint32_t sampler0 = "sampler0"_hash32;
+	constexpr const uint32_t sampler1 = "sampler1"_hash32;
+	constexpr const uint32_t sampler2 = "sampler2"_hash32;
+	constexpr const uint32_t sampler3 = "sampler3"_hash32;
+	constexpr const uint32_t sampler4 = "sampler4"_hash32;
+	constexpr const uint32_t sampler5 = "sampler5"_hash32;
+	constexpr const uint32_t sampler6 = "sampler6"_hash32;
+
+	constexpr const uint32_t sampler_point = "sampler_point"_hash32;
+	constexpr const uint32_t sampler_linear = "sampler_linear"_hash32;
+	constexpr const uint32_t sampler_shadow_linear = "sampler_shadow_linear"_hash32;
 
 	constexpr const uint32_t roughness = "roughness"_hash32;
 
@@ -150,12 +162,16 @@ namespace engine::render
 		edge::gfx::shutdown_context();
 	}
 
-	auto Renderer::add_render_resource(std::string_view path, edge::gfx::ISampler* sampler) -> uint32_t {
-		return render_context->add_resource(path, sampler);
+	auto Renderer::add_render_resource(std::string_view path) -> uint32_t {
+		return render_context->add_resource(path);
 	}
 
-	auto Renderer::add_render_resource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler) -> uint32_t {
-		return render_context->add_resource(create_info, sampler);
+	auto Renderer::add_render_resource(const TextureResourceCreateInfo& create_info) -> uint32_t {
+		return render_context->add_resource(create_info);
+	}
+
+	auto Renderer::add_render_resource(const edge::gfx::SamplerCreateInfo& create_info) -> uint32_t {
+		return render_context->add_resource(create_info);
 	}
 
 	auto Renderer::add_render_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t {
@@ -279,29 +295,54 @@ namespace engine::render
 
 		// Create default samplers
 
-		edge::gfx::ISampler* nearest_sampler{ nullptr };
+		uint32_t nearest_mirror_sampler{ ~0u };
+		uint32_t nearest_repeat_sampler{ ~0u };
+		uint32_t nearest_clamp_to_edge_sampler{ ~0u };
+		uint32_t nearest_clamp_to_border_sampler{ ~0u };
 		{
 			edge::gfx::SamplerCreateInfo create_info{};
 			create_info.min_filter = edge::gfx::Filter::eNearest;
 			create_info.mag_filter = edge::gfx::Filter::eNearest;
 			create_info.mip_map_mode = edge::gfx::Filter::eNearest;
 
-			// TODO: need to cache samplers
-			nearest_sampler = edge::gfx::create_sampler(create_info);
+			create_info.address_u = create_info.address_v = edge::gfx::SamplerAddressMode::eMirror;
+			nearest_mirror_sampler = render_context->add_resource(create_info);
+
+			create_info.address_u = create_info.address_v = edge::gfx::SamplerAddressMode::eRepeat;
+			nearest_repeat_sampler = render_context->add_resource(create_info);
+
+			create_info.address_u = create_info.address_v = edge::gfx::SamplerAddressMode::eClampToEdge;
+			nearest_clamp_to_edge_sampler = render_context->add_resource(create_info);
+
+			create_info.address_u = create_info.address_v = edge::gfx::SamplerAddressMode::eClampToBorder;
+			nearest_clamp_to_border_sampler = render_context->add_resource(create_info);
 		}
 
-		edge::gfx::ISampler* linear_sampler{ nullptr };
+		uint32_t linear_mirror_sampler{ ~0u };
+		uint32_t linear_repeat_sampler{ ~0u };
+		uint32_t linear_clamp_to_edge_sampler{ ~0u };
+		uint32_t linear_clamp_to_border_sampler{ ~0u };
 		{
 			edge::gfx::SamplerCreateInfo create_info{};
 			create_info.min_filter = edge::gfx::Filter::eLinear;
 			create_info.mag_filter = edge::gfx::Filter::eLinear;
 			create_info.mip_map_mode = edge::gfx::Filter::eLinear;
 
-			// TODO: need to cache samplers
-			linear_sampler = edge::gfx::create_sampler(create_info);
+			create_info.address_u = create_info.address_v = edge::gfx::SamplerAddressMode::eMirror;
+			linear_mirror_sampler = render_context->add_resource(create_info);
+
+			create_info.address_u = create_info.address_v = edge::gfx::SamplerAddressMode::eRepeat;
+			linear_repeat_sampler = render_context->add_resource(create_info);
+
+			create_info.address_u = create_info.address_v = edge::gfx::SamplerAddressMode::eClampToEdge;
+			linear_clamp_to_edge_sampler = render_context->add_resource(create_info);
+
+			create_info.address_u = create_info.address_v = edge::gfx::SamplerAddressMode::eClampToBorder;
+			linear_clamp_to_border_sampler = render_context->add_resource(create_info);
 		}
 
-		edge::gfx::ISampler* shadow_sampler{ nullptr };
+		// Shadow samplers
+		uint32_t default_shadow_sampler{ ~0u };
 		{
 			edge::gfx::SamplerCreateInfo create_info{};
 			create_info.min_filter = edge::gfx::Filter::eLinear;
@@ -309,8 +350,7 @@ namespace engine::render
 			create_info.mip_map_mode = edge::gfx::Filter::eLinear;
 			create_info.depth_compare = edge::gfx::CompareOp::eLess;
 
-			// TODO: need to cache samplers
-			shadow_sampler = edge::gfx::create_sampler(create_info);
+			default_shadow_sampler = render_context->add_resource(create_info);
 		}
 
 		// Load some static textures
@@ -327,7 +367,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 			create_info.resizable = false;
 
-			brdf_lut_target = render_context->add_resource(create_info, nearest_sampler);
+			brdf_lut_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(brdf_lut_target, "brdf_lut_target");
 		}
 
@@ -339,7 +379,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 			create_info.resizable = false;
 
-			density_lut_target = render_context->add_resource(create_info, nearest_sampler);
+			density_lut_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(density_lut_target, "density_lut_target");
 		}
 
@@ -351,7 +391,7 @@ namespace engine::render
 		//	create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
 		//	create_info.resizable = false;
 		//
-		//	environment_cube_target = render_context->add_resource(create_info, linear_sampler);
+		//	environment_cube_target = render_context->add_resource(create_info);
 		//	render_context->set_resource_name(environment_cube_target, "environment_cube_target");
 		//}
 
@@ -363,7 +403,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage | edge::gfx::TextureUsageFlag::eCubemap;
 			create_info.resizable = false;
 
-			irradiance_cube_target = render_context->add_resource(create_info, linear_sampler);
+			irradiance_cube_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(irradiance_cube_target, "irradiance_cube_target");
 		}
 
@@ -389,7 +429,7 @@ namespace engine::render
 				special_sampler = edge::gfx::create_sampler(create_info_s);
 			}
 
-			prefiltered_cube_target = render_context->add_resource(create_info, special_sampler);
+			prefiltered_cube_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(prefiltered_cube_target, "prefiltered_cube_target");
 		}
 
@@ -403,7 +443,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 			create_info.resizable = false;
 
-			cascaded_shadows_target = render_context->add_resource(create_info, shadow_sampler);
+			cascaded_shadows_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(cascaded_shadows_target, "cascaded_shadows_target");
 		}
 
@@ -416,7 +456,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 			create_info.resizable = false;
 
-			directional_shadows_target = render_context->add_resource(create_info, shadow_sampler);
+			directional_shadows_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(directional_shadows_target, "directional_shadows_target");
 		}
 
@@ -429,7 +469,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget | edge::gfx::TextureUsageFlag::eCubemap;
 			create_info.resizable = false;
 
-			omni_shadows_target = render_context->add_resource(create_info, shadow_sampler);
+			omni_shadows_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(omni_shadows_target, "omni_shadows_target");
 		}
 
@@ -445,7 +485,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 			create_info.resizable = true;
 
-			visbuffer_geometry_target = render_context->add_resource(create_info, nearest_sampler);
+			visbuffer_geometry_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(visbuffer_geometry_target, "visbuffer_geometry_target");
 		}
 
@@ -458,7 +498,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 			create_info.resizable = true;
 
-			visbuffer_vboinst_target = render_context->add_resource(create_info, nearest_sampler);
+			visbuffer_vboinst_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(visbuffer_vboinst_target, "visbuffer_vboinst_target");
 		}
 
@@ -471,7 +511,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 			create_info.resizable = true;
 
-			zbuffer_depth_target = render_context->add_resource(create_info, nearest_sampler);
+			zbuffer_depth_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(zbuffer_depth_target, "zbuffer_depth_target");
 		}
 
@@ -486,10 +526,10 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 			create_info.resizable = true;
 
-			ssao_target = render_context->add_resource(create_info, linear_sampler);
+			ssao_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(ssao_target, "ssao_target");
 
-			ssao_target_temp = render_context->add_resource(create_info, linear_sampler);
+			ssao_target_temp = render_context->add_resource(create_info);
 			render_context->set_resource_name(ssao_target, "ssao_target_temp");
 		}
 
@@ -502,7 +542,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 			create_info.resizable = true;
 
-			motion_vectors_target = render_context->add_resource(create_info, nearest_sampler);
+			motion_vectors_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(motion_vectors_target, "motion_vectors_target");
 		}
 
@@ -517,13 +557,13 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 			create_info.resizable = true;
 
-			hdr0 = render_context->add_resource(create_info, nearest_sampler);
+			hdr0 = render_context->add_resource(create_info);
 			render_context->set_resource_name(hdr0, "hdr0");
 
-			hdr1 = render_context->add_resource(create_info, nearest_sampler);
+			hdr1 = render_context->add_resource(create_info);
 			render_context->set_resource_name(hdr1, "hdr1");
 
-			hdr0_history = render_context->add_resource(create_info, nearest_sampler);
+			hdr0_history = render_context->add_resource(create_info);
 			render_context->set_resource_name(hdr0_history, "hdr0_history");
 		}
 
@@ -538,7 +578,7 @@ namespace engine::render
 			create_info.resizable = true;
 			create_info.scale = 0.5f;
 
-			hdr0_div2 = render_context->add_resource(create_info, nearest_sampler);
+			hdr0_div2 = render_context->add_resource(create_info);
 			render_context->set_resource_name(hdr0_div2, "hdr0_div2");
 		}
 
@@ -554,7 +594,7 @@ namespace engine::render
 			create_info.resizable = true;
 			create_info.scale = 0.5f;
 
-			bloom_target = render_context->add_resource(create_info, nearest_sampler);
+			bloom_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(bloom_target, "bloom_target");
 		}
 
@@ -568,7 +608,7 @@ namespace engine::render
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
 			create_info.resizable = false;
 
-			avg_brightness_target = render_context->add_resource(create_info, nearest_sampler);
+			avg_brightness_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(avg_brightness_target, "avg_brightness_target");
 		}
 
@@ -669,13 +709,13 @@ namespace engine::render
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					self.bind_write_resource(render_label::write_image0, brdf_lut_target, ~0u);
+					self.bind_write_resource(render_label::image0, brdf_lut_target, ~0u);
 
 					self.resolve_dependencies(command_list);
 					self.bind_resources(command_list);
 
 					self.dispatch_for_target(command_list, brdf_lut_target, true);
-					self.finalize_target(command_list, render_label::write_image0, brdf_lut_target);
+					self.finalize_target(command_list, render_label::image0, brdf_lut_target);
 				};
 
 			render_context->add_node(render_context->create_node(create_info));
@@ -693,13 +733,13 @@ namespace engine::render
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					self.bind_write_resource(render_label::write_image0, density_lut_target, ~0u);
+					self.bind_write_resource(render_label::image0, density_lut_target, ~0u);
 
 					self.resolve_dependencies(command_list);
 					self.bind_resources(command_list);
 
 					self.dispatch_for_target(command_list, density_lut_target, true);
-					self.finalize_target(command_list, render_label::write_image0, density_lut_target);
+					self.finalize_target(command_list, render_label::image0, density_lut_target);
 				};
 
 			render_context->add_node(render_context->create_node(create_info));
@@ -717,8 +757,8 @@ namespace engine::render
 		//		{
 		//			EDGE_PROFILE_ZONE_SCOPED;
 		//
-		//			self.bind_write_resource(render_label::write_image0, environment_cube_target, ~0u);
-		//			self.bind_read_resource(render_label::sample_image0, density_lut_target, ~0u);
+		//			self.bind_write_resource(render_label::image0, environment_cube_target, ~0u);
+		//			self.bind_read_resource(render_label::texture0, density_lut_target, ~0u);
 		//
 		//			self.resolve_dependencies(command_list);
 		//			self.bind_resources(command_list);
@@ -737,21 +777,23 @@ namespace engine::render
 
 			create_info.draw_callback = [this,
 				irradiance_cube_target,
-				casual_day_4k_cube
+				casual_day_4k_cube,
+				linear_clamp_to_edge_sampler
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
 				{
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					self.bind_write_resource(render_label::write_image0, irradiance_cube_target, ~0u);
+					self.bind_write_resource(render_label::image0, irradiance_cube_target, ~0u);
 
-					self.bind_resource(render_label::sample_image0, casual_day_4k_cube, ~0u);
+					self.bind_resource(render_label::texture0, casual_day_4k_cube, ~0u);
+					self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
 
 					self.resolve_dependencies(command_list);
 					self.bind_resources(command_list);
 
 					self.dispatch_for_target(command_list, irradiance_cube_target, true);
 
-					self.finalize_target(command_list, render_label::write_image0, irradiance_cube_target);
+					self.finalize_target(command_list, render_label::image0, irradiance_cube_target);
 				};
 
 			render_context->add_node(render_context->create_node(create_info));
@@ -767,22 +809,25 @@ namespace engine::render
 
 			create_info.draw_callback = [this,
 				prefiltered_cube_target,
-				casual_day_4k_cube
+				casual_day_4k_cube,
+				linear_clamp_to_edge_sampler
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					self.write_resource(render_label::write_image0, prefiltered_cube_target, ~0u);
+					self.write_resource(render_label::image0, prefiltered_cube_target, ~0u);
 
 					auto target = render_context->get_texture(prefiltered_cube_target);
 					for (int32_t mip = 0; mip < target->get_mip_level_count(); ++mip) {
 						if (mip == 0) {
-							self.bind_resource(render_label::sample_image0, casual_day_4k_cube, ~0u);
+							self.bind_resource(render_label::texture0, casual_day_4k_cube, ~0u);
 						}
 						else {
-							self.bind_read_resource(render_label::sample_image0, prefiltered_cube_target, mip - 1);
+							self.bind_read_resource(render_label::texture0, prefiltered_cube_target, mip - 1);
 						}
 
-						self.bind_write_resource(render_label::write_image0, prefiltered_cube_target, mip);
+						self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+
+						self.bind_write_resource(render_label::image0, prefiltered_cube_target, mip);
 
 						self.resolve_dependencies(command_list);
 						self.bind_resources(command_list);
@@ -802,7 +847,7 @@ namespace engine::render
 						command_list.dispatch(group_x, group_y, group_z);
 					}
 
-					self.finalize_target(command_list, render_label::sample_image0, prefiltered_cube_target);
+					self.finalize_target(command_list, render_label::texture0, prefiltered_cube_target);
 				};
 
 			static_cast<GroupNode*>(group_node.get())->add_node(std::move(render_context->create_node(create_info)));
@@ -1373,12 +1418,13 @@ namespace engine::render
 
 				create_info.draw_callback = [this,
 					zbuffer_depth_target,
-					ssao_target
+					ssao_target,
+					nearest_clamp_to_edge_sampler
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 
-					self.bind_read_resource(render_label::sample_image0, zbuffer_depth_target, ~0u);
-					self.bind_write_resource(render_label::write_image0, ssao_target, ~0u);
-
+					self.bind_read_resource(render_label::texture0, zbuffer_depth_target, ~0u);
+					self.bind_write_resource(render_label::image0, ssao_target, ~0u);
+					self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
 					self.resolve_dependencies(command_list);
 
 					self.bind_resources(command_list);
@@ -1397,11 +1443,15 @@ namespace engine::render
 				create_info.draw_callback = [this,
 					ssao_target,
 					ssao_target_temp,
-					zbuffer_depth_target
+					zbuffer_depth_target,
+					linear_clamp_to_edge_sampler,
+					nearest_clamp_to_edge_sampler
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-					self.bind_read_resource(render_label::sample_image0, ssao_target, ~0u);
-					self.bind_read_resource(render_label::sample_image1, zbuffer_depth_target, ~0u);
-					self.bind_write_resource(render_label::write_image0, ssao_target_temp, ~0u);
+					self.bind_read_resource(render_label::texture0, ssao_target, ~0u);
+					self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+					self.bind_read_resource(render_label::texture1, zbuffer_depth_target, ~0u);
+					self.bind_resource(render_label::sampler1, nearest_clamp_to_edge_sampler, ~0u);
+					self.bind_write_resource(render_label::image0, ssao_target_temp, ~0u);
 
 					self.resolve_dependencies(command_list);
 
@@ -1421,11 +1471,17 @@ namespace engine::render
 				create_info.draw_callback = [this,
 					ssao_target,
 					ssao_target_temp,
-					zbuffer_depth_target
+					zbuffer_depth_target,
+					linear_clamp_to_edge_sampler,
+					nearest_clamp_to_edge_sampler
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-					self.bind_read_resource(render_label::sample_image0, ssao_target_temp, ~0u);
-					self.bind_read_resource(render_label::sample_image1, zbuffer_depth_target, ~0u);
-					self.bind_write_resource(render_label::write_image0, ssao_target, ~0u);
+					self.bind_read_resource(render_label::texture0, ssao_target_temp, ~0u);
+					self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+
+					self.bind_read_resource(render_label::texture1, zbuffer_depth_target, ~0u);
+					self.bind_resource(render_label::sampler1, nearest_clamp_to_edge_sampler, ~0u);
+
+					self.bind_write_resource(render_label::image0, ssao_target, ~0u);
 
 					self.resolve_dependencies(command_list);
 
@@ -1513,7 +1569,11 @@ namespace engine::render
 				cascaded_shadows_target,
 				directional_shadows_target,
 				omni_shadows_target,
-				ssao_target
+				ssao_target,
+
+				nearest_clamp_to_edge_sampler,
+				linear_clamp_to_edge_sampler,
+				default_shadow_sampler
 #ifdef TILE_MATERIAL_CLASSIFICATION
 				, indirect_material_technique_buffer,
 				material_tiles_buffer
@@ -1532,20 +1592,24 @@ namespace engine::render
 				self.read_resource(alive_commands_buffer, ~0u);
 				self.read_resource(indirect_draw_commands, ~0u);
 
-				self.bind_write_resource(render_label::write_image0, hdr0, ~0u);
-				self.bind_resource(render_label::sample_image0, brdf_lut_target, ~0u); // binding 1
-				self.bind_resource(render_label::sample_image1, irradiance_cube_target, ~0u); // binding 2
-				self.bind_resource(render_label::sample_image2, prefiltered_cube_target, ~0u); // binding 3
+				self.bind_write_resource(render_label::image0, hdr0, ~0u);
+				self.bind_resource(render_label::texture0, brdf_lut_target, ~0u); // binding 1
+				self.bind_resource(render_label::texture1, irradiance_cube_target, ~0u); // binding 2
+				self.bind_resource(render_label::texture2, prefiltered_cube_target, ~0u); // binding 3
 
-				self.bind_read_resource(render_label::sample_image3, visbuffer_geometry_target, ~0u);
-				self.bind_read_resource(render_label::sample_image4, visbuffer_vboinst_target, ~0u);
-				self.bind_read_resource(render_label::sample_image5, zbuffer_depth_target, ~0u);
+				self.bind_read_resource(render_label::texture3, visbuffer_geometry_target, ~0u);
+				self.bind_read_resource(render_label::texture4, visbuffer_vboinst_target, ~0u);
+				self.bind_read_resource(render_label::texture5, zbuffer_depth_target, ~0u);
 
-				self.bind_read_resource(render_label::sample_image6, cascaded_shadows_target, ~0u);
-				self.bind_read_resource(render_label::sample_image7, directional_shadows_target, ~0u);
-				self.bind_read_resource(render_label::sample_image8, omni_shadows_target, ~0u);
+				self.bind_read_resource(render_label::texture6, cascaded_shadows_target, ~0u);
+				self.bind_read_resource(render_label::texture7, directional_shadows_target, ~0u);
+				self.bind_read_resource(render_label::texture8, omni_shadows_target, ~0u);
 
-				self.bind_read_resource(render_label::sample_image9, ssao_target, ~0u);
+				self.bind_read_resource(render_label::texture9, ssao_target, ~0u);
+
+				self.bind_resource(render_label::sampler_point, nearest_clamp_to_edge_sampler, ~0u);
+				self.bind_resource(render_label::sampler_linear, linear_clamp_to_edge_sampler, ~0u);
+				self.bind_resource(render_label::sampler_shadow_linear, default_shadow_sampler, ~0u);
 
 #ifdef TILE_MATERIAL_CLASSIFICATION
 				self.read_resource(indirect_material_technique_buffer, ~0u);
@@ -1572,12 +1636,6 @@ namespace engine::render
 				draw_data_block.set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->get_address());
 				draw_data_block.set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->get_address());
 
-				auto& constants = self.get_constant_block();
-				constants.set(render_label::call_id, 0u);
-				constants.set(render_label::camera_id, 0u);
-
-				self.push_constant_ranges(command_list);
-
 				self.bind_resources(command_list);
 
 #ifdef TILE_MATERIAL_CLASSIFICATION
@@ -1596,12 +1654,16 @@ namespace engine::render
 			create_info.technique_name = use_low_precision_velocity ? "generate_motion_vectors_low_precision" : "generate_motion_vectors";
 			create_info.draw_callback = [this,
 				motion_vectors_target,
-				zbuffer_depth_target
+				zbuffer_depth_target,
+				nearest_clamp_to_edge_sampler
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					self.bind_write_resource(render_label::write_image0, motion_vectors_target, ~0u);
-					self.bind_read_resource(render_label::sample_image0, zbuffer_depth_target, ~0u);
+					self.bind_write_resource(render_label::image0, motion_vectors_target, ~0u);
+
+					self.bind_read_resource(render_label::texture0, zbuffer_depth_target, ~0u);
+					self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
+
 					self.resolve_dependencies(command_list);
 					self.bind_resources(command_list);
 
@@ -1620,12 +1682,15 @@ namespace engine::render
 			create_info.technique_name = "copy_image";
 
 			create_info.draw_callback = [this,
-				hdr0_history
+				hdr0_history,
+				nearest_clamp_to_edge_sampler
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
-					self.bind_read_resource(render_label::sample_image0, input_target_id, ~0u);
-					self.bind_write_resource(render_label::write_image0, hdr0_history, ~0u);
+					self.bind_read_resource(render_label::texture0, input_target_id, ~0u);
+					self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
+
+					self.bind_write_resource(render_label::image0, hdr0_history, ~0u);
 					self.resolve_dependencies(command_list);
 					self.bind_resources(command_list);
 
@@ -1660,13 +1725,15 @@ namespace engine::render
 				create_info.technique_name = "apply_fxaa_effect";
 
 				create_info.enabled_callback = []() -> bool { return postprocess.fxaa.enable; };
-				create_info.draw_callback = [this
+				create_info.draw_callback = [this,
+					linear_clamp_to_edge_sampler
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 						EDGE_PROFILE_ZONE_SCOPED;
 
 						if (postprocess.fxaa.enable) {
-							self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
-							self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+							self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+							self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+							self.bind_write_resource(render_label::image0, current_output_target_id, ~0u);
 							self.resolve_dependencies(command_list);
 							self.bind_resources(command_list);
 
@@ -1693,14 +1760,18 @@ namespace engine::render
 
 				create_info.enabled_callback = []() -> bool { return postprocess.motionblur.enable; };
 				create_info.draw_callback = [this,
-					motion_vectors_target
+					motion_vectors_target,
+					linear_clamp_to_border_sampler,
+					nearest_clamp_to_border_sampler
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 						EDGE_PROFILE_ZONE_SCOPED;
 
 						if (postprocess.fxaa.enable) {
-							self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
-							self.bind_read_resource(render_label::sample_image1, motion_vectors_target, ~0u);
-							self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+							self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+							self.bind_resource(render_label::sampler0, linear_clamp_to_border_sampler, ~0u);
+							self.bind_read_resource(render_label::texture1, motion_vectors_target, ~0u);
+							self.bind_resource(render_label::sampler1, nearest_clamp_to_border_sampler, ~0u);
+							self.bind_write_resource(render_label::image0, current_output_target_id, ~0u);
 							self.resolve_dependencies(command_list);
 							self.bind_resources(command_list);
 
@@ -1731,12 +1802,14 @@ namespace engine::render
 					create_info.technique_name = "bokeh_filter";
 
 					create_info.draw_callback = [this,
-						hdr0_div2
+						hdr0_div2,
+						linear_clamp_to_edge_sampler
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 							if (postprocess.dof.enable) {
-								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
-								self.bind_write_resource(render_label::write_image0, hdr0_div2, ~0u);
+								self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+								self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+								self.bind_write_resource(render_label::image0, hdr0_div2, ~0u);
 								self.resolve_dependencies(command_list);
 								self.bind_resources(command_list);
 
@@ -1760,15 +1833,23 @@ namespace engine::render
 
 					create_info.draw_callback = [this,
 						hdr0_div2,
-						zbuffer_depth_target
+						zbuffer_depth_target,
+						linear_clamp_to_edge_sampler,
+						nearest_clamp_to_edge_sampler
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
 							if (postprocess.dof.enable) {
-								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
-								self.bind_read_resource(render_label::sample_image1, hdr0_div2, ~0u);
-								self.bind_read_resource(render_label::sample_image2, zbuffer_depth_target, ~0u);
-								self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
+								self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+								self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+
+								self.bind_read_resource(render_label::texture1, hdr0_div2, ~0u);
+								self.bind_resource(render_label::sampler1, linear_clamp_to_edge_sampler, ~0u);
+
+								self.bind_read_resource(render_label::texture2, zbuffer_depth_target, ~0u);
+								self.bind_resource(render_label::sampler2, nearest_clamp_to_edge_sampler, ~0u);
+
+								self.bind_write_resource(render_label::image0, current_output_target_id, ~0u);
 								self.resolve_dependencies(command_list);
 								self.bind_resources(command_list);
 
@@ -1804,13 +1885,16 @@ namespace engine::render
 					create_info.technique_name = bloom_use_brightness ? "brightdetect" : "copy_image";
 
 					create_info.draw_callback = [this,
-						hdr0_div2
+						hdr0_div2,
+						nearest_clamp_to_edge_sampler
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
 							if (postprocess.bloom.enable) {
-								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
-								self.bind_write_resource(render_label::write_image0, hdr0_div2, ~0u);
+								self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+								self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
+
+								self.bind_write_resource(render_label::image0, hdr0_div2, ~0u);
 								self.resolve_dependencies(command_list);
 								self.bind_resources(command_list);
 
@@ -1833,14 +1917,18 @@ namespace engine::render
 
 						create_info.draw_callback = [this,
 							hdr0_div2,
-							bloom_target
+							bloom_target,
+							linear_clamp_to_edge_sampler
 						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 								EDGE_PROFILE_ZONE_SCOPED;
 
 								if (postprocess.bloom.enable) {
-									self.write_resource(render_label::write_image0, bloom_target, ~0u);
-									self.bind_read_resource(render_label::sample_image0, hdr0_div2, ~0u);
-									self.bind_resource(render_label::write_image0, bloom_target, ~0u);
+									self.write_resource(render_label::image0, bloom_target, ~0u);
+
+									self.bind_read_resource(render_label::texture0, hdr0_div2, ~0u);
+									self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+
+									self.bind_resource(render_label::image0, bloom_target, ~0u);
 									self.resolve_dependencies(command_list);
 									self.bind_resources(command_list);
 
@@ -1856,7 +1944,8 @@ namespace engine::render
 						create_info.technique_name = "downsample";
 
 						create_info.draw_callback = [this,
-							bloom_target
+							bloom_target,
+							linear_clamp_to_edge_sampler
 						](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 								EDGE_PROFILE_ZONE_SCOPED;
 
@@ -1864,8 +1953,10 @@ namespace engine::render
 									auto target = render_context->get_texture(bloom_target);
 
 									for (int32_t mip = 1; mip < bloom_blur_depth; ++mip) {
-										self.bind_read_resource(render_label::sample_image0, bloom_target, mip - 1);
-										self.bind_write_resource(render_label::write_image0, bloom_target, mip);
+										self.bind_read_resource(render_label::texture0, bloom_target, mip - 1);
+										self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+
+										self.bind_write_resource(render_label::image0, bloom_target, mip);
 										self.resolve_dependencies(command_list);
 										self.bind_resources(command_list);
 
@@ -1890,15 +1981,18 @@ namespace engine::render
 					create_info.technique_name = "upsample";
 
 					create_info.draw_callback = [this,
-						bloom_target
+						bloom_target,
+						linear_clamp_to_edge_sampler
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 							if (postprocess.bloom.enable) {
 								auto target = render_context->get_texture(bloom_target);
 
 								for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip) {
-									self.bind_read_resource(render_label::sample_image0, bloom_target, mip);
-									self.bind_write_resource(render_label::write_image0, bloom_target, mip - 1);
+									self.bind_read_resource(render_label::texture0, bloom_target, mip);
+									self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+
+									self.bind_write_resource(render_label::image0, bloom_target, mip - 1);
 									self.resolve_dependencies(command_list);
 									self.bind_resources(command_list);
 
@@ -1927,15 +2021,23 @@ namespace engine::render
 
 					create_info.draw_callback = [this,
 						bloom_target,
-						dirt_mask_texture
+						dirt_mask_texture,
+						linear_clamp_to_edge_sampler
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
 							if (postprocess.bloom.enable) {
-								self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
-								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
-								self.bind_read_resource(render_label::sample_image1, bloom_target, ~0u);
-								self.bind_resource(render_label::sample_image2, dirt_mask_texture, ~0u);
+								self.bind_write_resource(render_label::image0, current_output_target_id, ~0u);
+
+								self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+								self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+
+								self.bind_read_resource(render_label::texture1, bloom_target, ~0u);
+								self.bind_resource(render_label::sampler1, linear_clamp_to_edge_sampler, ~0u);
+
+								self.bind_resource(render_label::texture2, dirt_mask_texture, ~0u);
+								self.bind_resource(render_label::sampler2, linear_clamp_to_edge_sampler, ~0u);
+
 								self.resolve_dependencies(command_list);
 								self.bind_resources(command_list);
 
@@ -1966,12 +2068,15 @@ namespace engine::render
 					create_info.technique_name = "compute_histogram";
 
 					create_info.draw_callback = [this,
-						histogram_buffer
+						histogram_buffer,
+						nearest_clamp_to_edge_sampler
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
 							if (postprocess.tonemap.enable) {
-								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+								self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+								self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
+
 								self.bind_write_resource(render_label::histogram_buffer, histogram_buffer, ~0u);
 								self.resolve_dependencies(command_list);
 								self.bind_resources(command_list);
@@ -1997,13 +2102,16 @@ namespace engine::render
 
 					create_info.draw_callback = [this,
 						avg_brightness_target,
-						histogram_buffer
+						histogram_buffer,
+						nearest_clamp_to_edge_sampler
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
 							if (postprocess.tonemap.enable) {
 								self.bind_read_resource(render_label::histogram_buffer, histogram_buffer, ~0u);
-								self.bind_write_resource(render_label::write_image0, avg_brightness_target, ~0u);
+
+								self.bind_write_resource(render_label::image0, avg_brightness_target, ~0u);
+
 								self.resolve_dependencies(command_list);
 
 								float log_lum_range = postprocess.tonemap.lum_max - postprocess.tonemap.lum_min;
@@ -2034,14 +2142,18 @@ namespace engine::render
 					create_info.technique_name = "apply_tonemap_effect";
 
 					create_info.draw_callback = [this,
-						avg_brightness_target
+						avg_brightness_target,
+						nearest_clamp_to_edge_sampler
 					](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 							EDGE_PROFILE_ZONE_SCOPED;
 
 							if (postprocess.tonemap.enable) {
-								self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
-								self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
-								self.bind_read_resource(render_label::sample_image1, avg_brightness_target, ~0u);
+								self.bind_write_resource(render_label::image0, current_output_target_id, ~0u);
+								self.bind_read_resource(render_label::image1, avg_brightness_target, ~0u);
+
+								self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+								self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
+
 								self.resolve_dependencies(command_list);
 								self.bind_resources(command_list);
 
@@ -2065,18 +2177,56 @@ namespace engine::render
 				pp_node->add_node(std::move(group_node));
 			}
 
+			// Chromatic aberration barrel
+			{
+				ComputeShaderPassCreateInfo create_info{};
+				create_info.technique_name = "apply_chromatic_aberration_barrel_effect";
+
+				create_info.draw_callback = [this,
+					linear_clamp_to_edge_sampler
+				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+					EDGE_PROFILE_ZONE_SCOPED;
+
+					if (postprocess.aberration.enable) {
+						self.bind_write_resource(render_label::image0, current_output_target_id, ~0u);
+
+						self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+						self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
+
+						self.resolve_dependencies(command_list);
+						self.bind_resources(command_list);
+
+						auto& pc = self.get_constant_block();
+						pc.set(render_label::enabled, static_cast<int32_t>(postprocess.aberration.enable));
+						pc.set(render_label::distortion, postprocess.aberration.distortion);
+						pc.set(render_label::iterations, postprocess.aberration.iterations);
+						self.push_constant_ranges(command_list);
+
+						self.dispatch_for_target(command_list, current_input_target_id, true);
+
+						std::swap(current_input_target_id, current_output_target_id);
+					}
+					};
+
+				pp_node->add_node(render_context->create_node(create_info));
+			}
+
 			// Film grain
 			{
 				ComputeShaderPassCreateInfo create_info{};
 				create_info.technique_name = "apply_film_grain_effect";
 
-				create_info.draw_callback = [this
+				create_info.draw_callback = [this,
+					nearest_clamp_to_edge_sampler
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
 					if (postprocess.filmgrain.enable) {
-						self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
-						self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+						self.bind_write_resource(render_label::image0, current_output_target_id, ~0u);
+
+						self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+						self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
+
 						self.resolve_dependencies(command_list);
 						self.bind_resources(command_list);
 
@@ -2094,18 +2244,22 @@ namespace engine::render
 				pp_node->add_node(render_context->create_node(create_info));
 			}
 
-			// 
+			// Vignette
 			{
 				ComputeShaderPassCreateInfo create_info{};
 				create_info.technique_name = "apply_vignette_effect";
 
-				create_info.draw_callback = [this
+				create_info.draw_callback = [this,
+					nearest_clamp_to_edge_sampler
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
 					if (postprocess.vignette.enable) {
-						self.bind_write_resource(render_label::write_image0, current_output_target_id, ~0u);
-						self.bind_read_resource(render_label::sample_image0, current_input_target_id, ~0u);
+						self.bind_write_resource(render_label::image0, current_output_target_id, ~0u);
+
+						self.bind_read_resource(render_label::texture0, current_input_target_id, ~0u);
+						self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
+
 						self.resolve_dependencies(command_list);
 						self.bind_resources(command_list);
 
@@ -2134,7 +2288,8 @@ namespace engine::render
 			create_info.technique_name = "screenspace";
 			create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 
-			create_info.draw_callback = [this
+			create_info.draw_callback = [this,
+				nearest_clamp_to_edge_sampler
 				//final_target = ssao_target
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
@@ -2148,7 +2303,8 @@ namespace engine::render
 					command_list.set_viewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 					command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 
-					self.bind_read_resource(render_label::sample_image0, last_output_target_id, ~0u);
+					self.bind_read_resource(render_label::texture0, last_output_target_id, ~0u);
+					self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
 
 					self.resolve_dependencies(command_list);
 					self.bind_resources(command_list);
@@ -2311,7 +2467,8 @@ namespace engine::render
 
 				create_info.draw_callback = [this,
 					&geometry_buffer,
-					imgui_font_texture
+					imgui_font_texture,
+					linear_clamp_to_edge_sampler
 				](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 						EDGE_PROFILE_ZONE_SCOPED;
 
@@ -2388,7 +2545,8 @@ namespace engine::render
 										resource_binding = imgui_font_texture;
 									}
 
-									self.read_resource(render_label::sample_image0, resource_binding, ~0u);
+									self.read_resource(render_label::texture0, resource_binding, ~0u);
+									self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
 								}
 							}
 
@@ -2444,7 +2602,8 @@ namespace engine::render
 										}
 
 										if (resource_binding != last_bound_resource) {
-											self.bind_resource(render_label::sample_image0, resource_binding, ~0u);
+											self.bind_resource(render_label::texture0, resource_binding, ~0u);
+											self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
 											self.bind_resources(command_list);
 											last_bound_resource = resource_binding;
 										}

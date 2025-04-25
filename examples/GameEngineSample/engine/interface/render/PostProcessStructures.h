@@ -122,8 +122,8 @@ REFL_END
 REFL_TYPE(engine::render::PostProcessBloom, engine::attr::Name("Bloom"))
 REFL_FIELD(enable, engine::attr::Name("Enable"))
 REFL_FIELD(threshold, engine::attr::Range(0.1f, 1.0f), engine::attr::Name("Threshold"))
-REFL_FIELD(filter_radius, engine::attr::Range(0.01f, 10.0f), engine::attr::Name("Filter Radius"))
-REFL_FIELD(strength, engine::attr::Range(0.1f, 2.0f), engine::attr::Name("Strength"))
+REFL_FIELD(filter_radius, engine::attr::Range(0.001f, 0.1f), engine::attr::Name("Filter Radius"))
+REFL_FIELD(strength, engine::attr::Range(0.01f, 1.0f), engine::attr::Name("Strength"))
 REFL_END
 
 REFL_TYPE(engine::render::PostProcessCA, engine::attr::Name("Barell Chromatic Aberration"))

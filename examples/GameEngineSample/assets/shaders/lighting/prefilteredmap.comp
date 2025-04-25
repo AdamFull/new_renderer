@@ -3,8 +3,9 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 6) in;
 
-layout(binding = 0) uniform writeonly imageCube write_image0;
-layout(binding = 1) uniform samplerCube sample_image0;
+layout(binding = 0) uniform writeonly imageCube image0;
+layout(binding = 1) uniform textureCube texture0;
+layout(binding = 2) uniform sampler sampler0;
 
 layout(push_constant) uniform ComputeCubemapData
 {
@@ -13,13 +14,13 @@ layout(push_constant) uniform ComputeCubemapData
 
 const uint samples = 32u;
 
-vec3 prefilterEnvMap(samplerCube envmap, vec3 R, float roughness) 
+vec3 prefilterEnvMap(vec3 R, float roughness) 
 {
 	vec3 N = R;
 	vec3 V = R;
 	vec3 colour = vec3(0.0f);
 	float totalWeight = 0.0f;
-	float envMapDim = float(textureSize(envmap, 0).s);
+	float envMapDim = float(textureSize(samplerCube(texture0, sampler0), 0).s);
 
 	for (uint i = 0u; i < samples; i++) 
     {
@@ -43,7 +44,7 @@ vec3 prefilterEnvMap(samplerCube envmap, vec3 R, float roughness)
 			float omegaP = 4.0f * PI / (6.0f * envMapDim * envMapDim);
 			// Biased (+1.0) mip level for better result
 			float mipLevel = roughness == 0.0f ? 0.0f : max(0.5f * log2(omegaS / omegaP) + 1.0f, 0.0f);
-			colour += textureLod(envmap, L, mipLevel).rgb * dotNL;
+			colour += textureLod(samplerCube(texture0, sampler0), L, mipLevel).rgb * dotNL;
 			totalWeight += dotNL;
 
 		}
@@ -54,7 +55,7 @@ vec3 prefilterEnvMap(samplerCube envmap, vec3 R, float roughness)
 
 void main() 
 {
-	uvec2 image_size = imageSize(write_image0);
+	uvec2 image_size = imageSize(image0);
 
 	uvec3 px = gl_GlobalInvocationID.xyz;
 
@@ -66,5 +67,5 @@ void main()
 	px.xy = px_swizzled;
 
 	vec3 R = normalize(get_cube_side_direction(uv, px.z));
-	imageStore(write_image0, ivec3(px), vec4(prefilterEnvMap(sample_image0, R, data.roughness), 1.0f));
+	imageStore(image0, ivec3(px), vec4(prefilterEnvMap(R, data.roughness), 1.0f));
 }

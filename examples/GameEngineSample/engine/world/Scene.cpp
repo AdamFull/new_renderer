@@ -360,14 +360,14 @@ namespace engine::world
 
 			// TODO: Use sampler cache
 			auto sampler_create_info = GetSamplerCreateInfo(sampler);
-			edge::gfx::ISampler* texture_sampler = edge::gfx::create_sampler(sampler_create_info);
+			auto texture_sampler = renderer.add_render_resource(sampler_create_info);
 
 			// TODO: add ability to override format and sampler params
 			// TODO: find format from materials
 
 			std::array<char, 1024ull> buffer{};
 			auto image_path = edge::fs::path_append(scene_root_directory, url_decode(image.uri), std::span(buffer));
-			resources.textures.push_back(renderer.add_render_resource(image_path, texture_sampler));
+			resources.textures.push_back(renderer.add_render_resource(image_path));
 		}
 
 		for (uint64_t idx = 0ull; idx < root.materials.size(); ++idx) {

@@ -33,26 +33,28 @@ const vec2 direction = vec2(0, 1);
 layout(local_size_y = THREAD_GROUP_SIZE) in;
 #endif
 
-layout(set = 1, binding = 1) uniform sampler2D sample_image0; // ao
-layout(set = 1, binding = 2) uniform sampler2D sample_image1; // depth
-layout(set = 1, binding = 3) restrict uniform writeonly image2D write_image0;
+layout(set = 1, binding = 1) uniform texture2D texture0; // ao
+layout(set = 1, binding = 2) uniform sampler sampler0; // ao sampler
+layout(set = 1, binding = 3) uniform texture2D texture1; // depth
+layout(set = 1, binding = 4) uniform sampler sampler1; // depth sampler
+layout(set = 1, binding = 5) restrict uniform writeonly image2D image0;
 
 void main() {
     uvec2 group_id = gl_WorkGroupID.xy;
     uint group_idx = gl_LocalInvocationIndex;
     
-    const uvec2 image_size = imageSize(write_image0);
+    const uvec2 image_size = imageSize(image0);
     const vec2 texel_size = 1.0 / vec2(image_size);
     
     const Camera camera = GetCamera(0);
     
     const uvec2 multiplier = uvec2(direction) * uint(THREAD_GROUP_SIZE) + (uvec2(1) - uvec2(direction));
 	const uvec2 group_begin = group_id * multiplier;
-    
+
 	for (uint i = group_idx; i < GS_CACHE_SIZE; i += THREAD_GROUP_SIZE) {
 		vec2 uv = (vec2(group_begin) + 0.5 + direction * float(int(i) - KERNEL_LENGTH)) * texel_size;
-		gsm_ao_cache[i] = textureLod(sample_image0, uv, 0.0).r;
-		gsm_depth_cache[i] = linearize_depth(textureLod(sample_image1, uv, 0.0).r, camera.z_near, camera.z_far);
+		gsm_ao_cache[i] = textureLod(sampler2D(texture0, sampler0), uv, 0.0).r;
+		gsm_depth_cache[i] = linearize_depth(textureLod(sampler2D(texture1, sampler1), uv, 0.0).r, camera.z_near, camera.z_far);
 	}
     
     memoryBarrierShared();
@@ -71,5 +73,5 @@ void main() {
 	}
     
     ivec2 pixel = ivec2(group_begin) + ivec2(direction) * int(group_idx);
-    imageStore(write_image0, pixel, vec4(result));
+    imageStore(image0, pixel, vec4(result));
 }

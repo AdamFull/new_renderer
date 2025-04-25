@@ -401,6 +401,7 @@ namespace engine::render {
 
 		{
 			shlib::GlobalUniformData frame_data{};
+			frame_data.dt = delta_time;
 			frame_data.lightCount = light_count;
 			frame_data.camera_count = camera_offset;
 			frame_data.defaultCameraID = 0;

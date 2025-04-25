@@ -215,6 +215,16 @@
     ]
   },
   {
+    "name": "apply_chromatic_aberration_barrel_effect",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp",
+        "def": [ "CHROMATIC_ABERRATION" ]
+      }
+    ]
+  },
+  {
     "name": "apply_film_grain_effect",
     "type": "compute",
     "stages": [

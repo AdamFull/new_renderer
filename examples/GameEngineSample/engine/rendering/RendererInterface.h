@@ -13,9 +13,9 @@ namespace engine::render {
 
 		virtual void render(float delta_time) = 0;
 
-		virtual auto add_render_resource(std::string_view path, edge::gfx::ISampler* sampler = nullptr) -> uint32_t = 0;
-		virtual auto add_render_resource(const TextureResourceCreateInfo& create_info, edge::gfx::ISampler* sampler = nullptr) -> uint32_t = 0;
-
+		virtual auto add_render_resource(std::string_view path) -> uint32_t = 0;
+		virtual auto add_render_resource(const TextureResourceCreateInfo& create_info) -> uint32_t = 0;
+		virtual auto add_render_resource(const edge::gfx::SamplerCreateInfo& create_info) -> uint32_t = 0;
 		virtual auto add_render_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t = 0;
 
 		virtual void add_material(const shlib::Material& material) = 0;
