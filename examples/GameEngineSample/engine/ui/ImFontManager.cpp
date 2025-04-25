@@ -20,7 +20,7 @@ void ImFontManager::AddFont(std::string_view name, const std::vector<uint8_t>& b
 	ImGuiIO& io = ImGui::GetIO();
 
 	auto hash = edge::murmur_hash(name);
-	m_fonts[hash] = io.Fonts->AddFontFromMemoryTTF((void*)bytes.data(), bytes.size(), size, config, glyph_range);
+	m_fonts[hash] = io.Fonts->AddFontFromMemoryTTF((void*)bytes.data(), static_cast<int32_t>(bytes.size()), size, config, glyph_range);
 }
 
 ImFont* ImFontManager::GetFont(std::string_view name)

@@ -115,7 +115,7 @@ namespace edge::gfx::vulkan
 
 		for (int32_t i = 0; i < layouts.size(); ++i) {
 			auto* vk_binding_layout = layouts[i]->as<DescriptorBindingLayout*>();
-			vk_binding_layout->set_descriptor_set(allocated_descriptor_sets[i], pool_idx);
+			vk_binding_layout->set_descriptor_set(allocated_descriptor_sets[i], static_cast<int32_t>(pool_idx));
 		}
 
 		allocated_layouts.insert(allocated_layouts.end(), layouts.begin(), layouts.end());

@@ -194,11 +194,11 @@ namespace engine::render {
 
 	VertexRange InterleavedGeometryBuffer::add_mesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices) {
 		VertexRange vertex_range{};
-		vertex_range.first_index = index_data.count;
-		vertex_range.index_count = indices.count;
+		vertex_range.first_index = static_cast<uint32_t>(index_data.count);
+		vertex_range.index_count = static_cast<uint32_t>(indices.count);
 
-		vertex_range.first_vertex = vertex_data.count;
-		vertex_range.vertex_count = attributes[0].count;
+		vertex_range.first_vertex = static_cast<uint32_t>(vertex_data.count);
+		vertex_range.vertex_count = static_cast<uint32_t>(attributes[0].count);
 
 		// TODO: implement vertex merging
 
@@ -307,11 +307,11 @@ namespace engine::render {
 
 	auto DeinterleavedGeometryBuffer::add_mesh(const std::array<AttributeStream, k_max_attribure_description>& attributes, const IndexStream& indices) -> VertexRange {
 		VertexRange vertex_range{};
-		vertex_range.first_index = index_data.count;
-		vertex_range.index_count = indices.count;
+		vertex_range.first_index = static_cast<uint32_t>(index_data.count);
+		vertex_range.index_count = static_cast<uint32_t>(indices.count);
 
-		vertex_range.first_vertex = vertex_datas[0].count;
-		vertex_range.vertex_count = attributes[0].count;
+		vertex_range.first_vertex = static_cast<uint32_t>(vertex_datas[0].count);
+		vertex_range.vertex_count = static_cast<uint32_t>(attributes[0].count);
 
 		for (auto& attribute : attributes) {
 			if (attribute.byte_range.empty()) {

@@ -99,7 +99,7 @@ namespace edge::gfx::vulkan
 
 		const auto& refl_type = compiler->get_type(res.type_id);
 		auto& decoration = compiler->get_decoration_bitset(refl_type.self);
-		uint32_t member_count = refl_type.member_types.size();
+		uint32_t member_count = static_cast<uint32_t>(refl_type.member_types.size());
 
 		ShaderResource& uniform_block = reflection.add_shader_resource();
 
@@ -109,19 +109,19 @@ namespace edge::gfx::vulkan
 		uniform_block.binding = compiler->get_decoration(res.id, spv::DecorationBinding);
 		uniform_block.stages |= stage;
 		uniform_block.type = type;
-		uniform_block.size = compiler->get_declared_struct_size(refl_type);
+		uniform_block.size = static_cast<uint32_t>(compiler->get_declared_struct_size(refl_type));
 
 		// Add internal variables if have them
 		if (member_count > 0) {
 			uniform_block.range_begin = reflection.shader_variables.count;
 
-			for (int32_t i = 0; i < member_count; ++i) {
+			for (int32_t i = 0; i < static_cast<int32_t>(member_count); ++i) {
 				uint64_t array_stride{ 0ull }, matrix_stride{ 0ull };
 
 				auto& member_type = compiler->get_type(refl_type.member_types[i]);
 				ShaderVariable& variable = reflection.add_shader_variable();
-				variable.size = compiler->get_declared_struct_member_size(refl_type, i);
-				variable.offset = compiler->type_struct_member_offset(refl_type, i);
+				variable.size = static_cast<uint32_t>(compiler->get_declared_struct_member_size(refl_type, i));
+				variable.offset = static_cast<uint32_t>(compiler->type_struct_member_offset(refl_type, i));
 
 				auto& variable_name = compiler->get_member_name(refl_type.self, i);
 				std::strcpy(variable.name, variable_name.c_str());
@@ -159,7 +159,7 @@ namespace edge::gfx::vulkan
 
 	void collect_constants_reflection(ShaderReflection& reflection, spirv_cross::CompilerGLSL* compiler, const spirv_cross::Resource& res, ShaderStageFlag stage) {
 		const auto& type = compiler->get_type(res.type_id);
-		unsigned member_count = type.member_types.size();
+		unsigned member_count = static_cast<uint32_t>(type.member_types.size());
 
 		auto& constants = reflection.constants;
 
@@ -174,13 +174,13 @@ namespace edge::gfx::vulkan
 		if (member_count > 0) {
 			constants.range_begin = reflection.shader_variables.count;
 
-			for (int32_t i = 0; i < member_count; ++i) {
+			for (int32_t i = 0; i < static_cast<int32_t>(member_count); ++i) {
 				uint64_t array_stride{ 0ull }, matrix_stride{ 0ull };
 
 				auto& member_type = compiler->get_type(type.member_types[i]);
 				ShaderVariable& variable = reflection.add_shader_variable();
-				variable.size = compiler->get_declared_struct_member_size(type, i);
-				variable.offset = compiler->type_struct_member_offset(type, i);
+				variable.size = static_cast<uint32_t>(compiler->get_declared_struct_member_size(type, i));
+				variable.offset = static_cast<uint32_t>(compiler->type_struct_member_offset(type, i));
 
 				auto& variable_name = compiler->get_member_name(type.self, i);
 				std::strcpy(variable.name, variable_name.c_str());

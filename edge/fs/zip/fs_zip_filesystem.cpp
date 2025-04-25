@@ -14,10 +14,10 @@ namespace edge::fs
 		zip_handle = zip_open(root.data(), ZIP_RDONLY, &error_code);
 
 		if (!zip_handle) {
-			char error_message[256];
-			zip_error_to_str(error_message, sizeof(error_message), error_code, errno);
+			zip_error_t err{};
+			zip_error_strerror(&err);
 
-			EDGE_LOGE("[ZipFilesystem] Failed to open archive: {}.", error_message);
+			EDGE_LOGE("[ZipFilesystem] Failed to open archive: {}.", err.str);
 			return;
 		}
 

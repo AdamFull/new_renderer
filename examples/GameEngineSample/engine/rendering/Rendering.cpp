@@ -252,7 +252,7 @@ namespace engine::render
 		}
 
 		auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<InterleavedGeometryBuffer>(create_info));
-		return interleaved_geometry_buffers[h] = geometry_buffers.size() - 1ull;
+		return interleaved_geometry_buffers[h] = static_cast<uint32_t>(geometry_buffers.size() - 1ull);
 	}
 
 	auto Renderer::request_deinterleaved_geometry_buffer(const GeometryBufferCreateInfo& create_info) -> uint32_t {
@@ -262,7 +262,7 @@ namespace engine::render
 		}
 
 		auto& new_geometry_buffer = geometry_buffers.emplace_back(std::make_unique<DeinterleavedGeometryBuffer>(create_info));
-		return deinterleaved_geometry_buffers[h] = geometry_buffers.size() - 1ull;
+		return deinterleaved_geometry_buffers[h] = static_cast<uint32_t>(geometry_buffers.size() - 1ull);
 	}
 
 	auto Renderer::lookup_geometry_buffer(uint32_t geometry_buffer_id) -> GeometryBuffer& {
@@ -827,7 +827,7 @@ namespace engine::render
 					self.write_resource(render_label::image0, prefiltered_cube_target, ~0u);
 
 					auto target = render_context->get_texture(prefiltered_cube_target);
-					for (int32_t mip = 0; mip < target->get_mip_level_count(); ++mip) {
+					for (int32_t mip = 0; mip < static_cast<int32_t>(target->get_mip_level_count()); ++mip) {
 						if (mip == 0) {
 							self.bind_resource(render_label::texture0, casual_day_4k_cube, ~0u);
 						}
@@ -1363,7 +1363,7 @@ namespace engine::render
 					auto viewport_width = backbuffer->get_width();
 					auto viewport_height = backbuffer->get_height();
 
-					command_list.set_viewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+					command_list.set_viewport(0.f, 0.f, static_cast<float>(viewport_width), static_cast<float>(viewport_height), 0.f, 1.f);
 					command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 
 					self.read_resource(alive_commands_buffer, ~0u);
@@ -1962,7 +1962,7 @@ namespace engine::render
 								if (postprocess.bloom.enable) {
 									auto target = render_context->get_texture(bloom_target);
 
-									for (int32_t mip = 1; mip < bloom_blur_depth; ++mip) {
+									for (int32_t mip = 1; mip < static_cast<int32_t>(bloom_blur_depth); ++mip) {
 										self.bind_read_resource(render_label::texture0, bloom_target, mip - 1);
 										self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler, ~0u);
 
@@ -2386,7 +2386,7 @@ namespace engine::render
 
 
 			auto debug_text_maker = [](const glm::u16vec2& pos, const char* text, std::vector<shlib::DebugTextData>& out) {
-					int32_t text_len = strlen(text);
+					int32_t text_len = static_cast<int32_t>(strlen(text));
 					int32_t word_count = (text_len + 4) / 4;
 
 					for (int32_t word_idx = 0; word_idx < word_count; ++word_idx) {
@@ -2421,7 +2421,7 @@ namespace engine::render
 					auto* backbuffer = render_context->get_texture(backbuffer_resource);
 					glm::vec2 viewport_resolution{ backbuffer->get_width(), backbuffer->get_height() };
 
-					command_list.set_scissor(0, 0, viewport_resolution.x, viewport_resolution.y);
+					command_list.set_scissor(0, 0, static_cast<uint32_t>(viewport_resolution.x), static_cast<uint32_t>(viewport_resolution.y));
 					command_list.set_viewport(0.f, 0.f, viewport_resolution.x, viewport_resolution.y, 0.f, 1.f);
 
 					// Bind vertex and index buffers
@@ -2436,7 +2436,7 @@ namespace engine::render
 					self.resolve_dependencies(command_list);
 
 					self.begin(command_list);
-					command_list.draw_indexed(6, 0, text_data.size(), 0, 0);
+					command_list.draw_indexed(6u, 0u, static_cast<uint32_t>(text_data.size()), 0u, 0u);
 					self.end(command_list);
 				};
 
@@ -2512,7 +2512,7 @@ namespace engine::render
 							auto viewport_width = backbuffer->get_width();
 							auto viewport_height = backbuffer->get_height();
 
-							command_list.set_viewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
+							command_list.set_viewport(0.f, 0.f, static_cast<float>(viewport_width), static_cast<float>(viewport_height), 0.f, 1.f);
 
 							// Setup scale and translation:
 							// Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
@@ -2591,8 +2591,8 @@ namespace engine::render
 										// Clamp to viewport as vkCmdSetScissor() won't accept values that are off bounds
 										if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
 										if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
-										if (clip_max.x > viewport_width) { clip_max.x = viewport_width; }
-										if (clip_max.y > viewport_height) { clip_max.y = viewport_height; }
+										if (clip_max.x > static_cast<float>(viewport_width)) { clip_max.x = static_cast<float>(viewport_width); }
+										if (clip_max.y > static_cast<float>(viewport_height)) { clip_max.y = static_cast<float>(viewport_height); }
 										if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
 											continue;
 

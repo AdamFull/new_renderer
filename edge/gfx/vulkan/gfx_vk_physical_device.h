@@ -53,15 +53,6 @@ namespace edge::gfx::vulkan
 			return memory_properties;
 		}
 
-		/**
-		 * @brief Checks that a given memory type is supported by the GPU
-		 * @param bits The memory requirement type bits
-		 * @param properties The memory property to search for
-		 * @param memory_type_found True if found, false if not found
-		 * @returns The memory type index of the found memory type
-		 */
-		auto get_memory_type(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memory_type_found = nullptr) const noexcept -> uint32_t;
-
 		const vk::PhysicalDeviceProperties& get_properties() const {
 			return properties;
 		}

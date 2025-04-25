@@ -67,7 +67,7 @@ namespace edge::gfx::vulkan
 		case vk::QueryType::eOcclusion:
 		case vk::QueryType::eTimestamp: {
 			vk::Result result = device.get_handle()
-				.getQueryPoolResults(handle_, first_query, query_count, sizeof(uint64_t) * query_count, data, sizeof(uint64_t), 
+				.getQueryPoolResults(handle_, first_query, query_count, static_cast<uint32_t>(sizeof(uint64_t) * query_count), data, sizeof(uint64_t),
 					vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
 		} break;
 		case vk::QueryType::ePipelineStatistics: {

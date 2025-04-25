@@ -111,6 +111,8 @@ namespace edge::gfx::vulkan
 			EDGE_LOGW("[VkSwapchain] Composite alpha '{}' not supported. Selecting '{}.", vk::to_string(request_composite_alpha), vk::to_string(*chosen_composite_alpha_it));
 			return *chosen_composite_alpha_it;
 		}
+
+		return {};
 	}
 
 	bool validate_format_feature(vk::ImageUsageFlagBits image_usage, vk::FormatFeatureFlags supported_features) {

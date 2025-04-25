@@ -88,7 +88,7 @@ public:
 		queue->wait_idle();
 
 		auto image_count = swapchain->get_image_count();
-		for (int32_t i = 0; i < image_count; ++i)
+		for (int32_t i = 0; i < static_cast<int32_t>(image_count); ++i)
 		{
 			render_frames[i] = nullptr;
 		}
@@ -125,7 +125,7 @@ public:
 
 		auto image_count = swapchain->get_image_count();
 
-		for (int32_t i = 0; i < image_count; ++i)
+		for (int32_t i = 0; i < static_cast<int32_t>(image_count); ++i)
 		{
 			render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
 		}
@@ -365,7 +365,7 @@ private:
 		
 		auto image_count = swapchain->get_image_count();
 		auto frame_it = render_frames.begin();
-		for (int32_t i = 0; i < image_count; ++i)
+		for (int32_t i = 0; i < static_cast<int32_t>(image_count); ++i)
 		{
 			if (frame_it != render_frames.end())
 			{

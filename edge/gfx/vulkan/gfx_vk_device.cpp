@@ -194,7 +194,7 @@ namespace edge::gfx::vulkan
 
 		uint32_t queue_count{ 0u };
 		for (auto& family : family_group) {
-			queue_count += family.queues.size();
+			queue_count += static_cast<uint32_t>(family.queues.size());
 		}
 
 		return queue_count;
@@ -255,6 +255,7 @@ namespace edge::gfx::vulkan
 		}
 
 		EDGE_LOGE("[VkDevice] Could not find a matching queue family index");
+		return ~0u;
 	}
 
 	void Device::set_debug_utils(DebugUtils* debug_utils) noexcept {

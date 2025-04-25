@@ -49,7 +49,7 @@ namespace edge::gfx::vulkan
 		auto& vkdevice = device.get_handle();
 
 		if (!free_command_buffer_list.empty()) {
-			vkdevice.freeCommandBuffers(handle_, free_command_buffer_list.size(), free_command_buffer_list.data());
+			vkdevice.freeCommandBuffers(handle_, static_cast<int32_t>(free_command_buffer_list.size()), free_command_buffer_list.data());
 			free_command_buffer_list.clear();
 		}
 
@@ -124,7 +124,7 @@ namespace edge::gfx::vulkan
 
 	void CommandPool::free_command_buffers() {
 		if (!free_command_buffer_list.empty()) {
-			device.get_handle().freeCommandBuffers(handle_, free_command_buffer_list.size(), free_command_buffer_list.data());
+			device.get_handle().freeCommandBuffers(handle_, static_cast<int32_t>(free_command_buffer_list.size()), free_command_buffer_list.data());
 			free_command_buffer_list.clear();
 		}
 	}

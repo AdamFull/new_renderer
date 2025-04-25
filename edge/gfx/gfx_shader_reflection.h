@@ -116,6 +116,6 @@ namespace edge::gfx
 		uint32_t output_vertex_count{};
 
 		// Thread group sizes
-		std::array<float, 3ull> local_sizes{};
+		std::array<uint32_t, 3ull> local_sizes{};
 	};
 }

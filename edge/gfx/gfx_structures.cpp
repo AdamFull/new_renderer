@@ -255,11 +255,11 @@ namespace edge::gfx
 	}
 
 	uint32_t hash(const VertexLayout& layout, uint32_t h) {
-		for (int32_t i = 0; i < layout.attribute_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(layout.attribute_count); ++i) {
 			h = hash(layout.attributes[i], h);
 		}
 
-		for (int32_t i = 0; i < layout.binding_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(layout.binding_count); ++i) {
 			h = hash(layout.bindings[i], h);
 		}
 
@@ -329,7 +329,7 @@ namespace edge::gfx
 	}
 
 	uint32_t hash(const ColorBlendingState& state, uint32_t h) {
-		for (int32_t i = 0; i < state.attachment_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(state.attachment_count); ++i) {
 			h = hash(state.attachments[i], h);
 		}
 

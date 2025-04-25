@@ -149,7 +149,7 @@ namespace edge::gfx
 			active_node_index = (active_node_index + 1) % nodes.size();
 		}
 
-		[[nodiscard]] virtual auto acquire_cmd_list() -> ICommandList* {
+		virtual auto acquire_cmd_list() -> ICommandList* {
 			EDGE_PROFILE_ZONE_SCOPED;
 
 			auto& node = get_active_node();
@@ -224,7 +224,7 @@ namespace edge::gfx
 			// Create descriptor allocator for allocate descriptors in mip passes
 			descriptor_allocator = create_descriptor_allocator();
 
-			for (int32_t i = 0; i < generator_count; ++i) {
+			for (int32_t i = 0; i < static_cast<int32_t>(generator_count); ++i) {
 				auto debug_name = std::format("MIP_GENERAOTR_{}", i);
 				nodes.emplace_back(std::make_unique<CommandNode>(queue, debug_name));
 			}
@@ -265,7 +265,7 @@ namespace edge::gfx
 			resource_barrier.texture_barriers = { &texture_barrier, 1u };
 
 			uint32_t total_mip_count = texture->get_mip_level_count();
-			for (int32_t mip = 1; mip < total_mip_count;) {
+			for (int32_t mip = 1; mip < static_cast<int32_t>(total_mip_count);) {
 				uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 
 				group_x = texture->get_width() >> mip;
@@ -308,7 +308,7 @@ namespace edge::gfx
 				bind_resource.type = DescriptorType::eStorageImage;
 				bind_resource.resource_state = resource_state;
 
-				for (int32_t i = 0; i < mip_count; ++i) {
+				for (int32_t i = 0; i < static_cast<int32_t>(mip_count); ++i) {
 					bind_resource.binding = i + 1;
 					bind_resource.subresource_index = mip + i;
 					//binding_layout->bind(bind_resource);
@@ -449,7 +449,7 @@ namespace edge::gfx
 	public:
 		ResourceLoader(const IQueue* queue, uint32_t node_count, uint64_t buffer_size, std::string_view name = {}) :
 			CommandExecutor{ queue, StageFlag::eTransfer, name } {
-			for (int32_t i = 0; i < node_count; ++i) {
+			for (int32_t i = 0; i < static_cast<int32_t>(node_count); ++i) {
 				auto debug_name = std::format("{}_{}", name, i);
 				nodes.emplace_back(std::make_unique<UploaderNode>(queue, buffer_size, debug_name));
 			}

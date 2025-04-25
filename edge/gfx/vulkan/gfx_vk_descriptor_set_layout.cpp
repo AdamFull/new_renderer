@@ -36,7 +36,7 @@ namespace edge::gfx::vulkan
 			layout_hash = gfx::hash(layout_binding, layout_hash);
 		}
 
-		binding_count = layout_ci.bindings.size();
+		binding_count = static_cast<uint32_t>(layout_ci.bindings.size());
 
 		ext_create_info.pBindingFlags = binding_flags.data();
 		ext_create_info.bindingCount = static_cast<uint32_t>(binding_flags.size());

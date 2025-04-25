@@ -90,7 +90,7 @@ namespace edge::gfx
 
 		queue->set_resource_name("UPLOAD");
 
-		for (int32_t i = 0; i < uploader_count; ++i)
+		for (int32_t i = 0; i < static_cast<int32_t>(uploader_count); ++i)
 			upload_contexts.emplace_back(std::make_unique<UploadContext>());
 		
 		dispatcher_thread = std::thread([this]() { loop(); });

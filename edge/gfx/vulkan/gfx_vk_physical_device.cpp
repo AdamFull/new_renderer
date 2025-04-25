@@ -70,27 +70,4 @@ namespace edge::gfx::vulkan
 		return std::find_if(device_extensions.begin(), device_extensions.end(),
 			[requested_extension](auto& device_extension) { return std::strcmp(device_extension.extensionName, requested_extension) == 0; }) != device_extensions.end();
 	}
-
-	auto PhysicalDevice::get_memory_type(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memory_type_found) const noexcept -> uint32_t {
-
-		for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
-			if ((bits & 1) == 1) {
-				if ((memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
-					if (memory_type_found) {
-						*memory_type_found = true;
-					}
-					return i;
-				}
-			}
-			bits >>= 1;
-		}
-
-		if (memory_type_found) {
-			*memory_type_found = false;
-			return ~0;
-		}
-		else {
-			EDGE_LOGE("[VkPhysicalDevice] Could not find a matching memory type");
-		}
-	}
 }

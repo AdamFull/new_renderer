@@ -120,7 +120,7 @@ namespace edge::gfx::vulkan
 			}
 		}
 
-		handle_.presentKHR(vk_present_info);
+		auto result = handle_.presentKHR(vk_present_info);
 	}
 
 	void Queue::wait_idle() const {

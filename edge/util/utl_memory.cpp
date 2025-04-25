@@ -41,7 +41,7 @@ namespace edge
 			return error_code::ok;
 		}
 
-		return error_code::bad_alloc;
+		return static_cast<uint16_t>(error_code::bad_alloc);
 	}
 
 	std::size_t buffer::size() const

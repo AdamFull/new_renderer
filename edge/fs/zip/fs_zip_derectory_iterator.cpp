@@ -14,7 +14,7 @@ namespace edge::fs
 		if (!root.empty() && root.back() != '/')
 			root += '/';
 
-		entry_count = zip_get_num_entries(zip_handle, 0);
+		entry_count = static_cast<int32_t>(zip_get_num_entries(zip_handle, 0));
 
 		while (current_index < entry_count) {
 			zip_stat_t st;

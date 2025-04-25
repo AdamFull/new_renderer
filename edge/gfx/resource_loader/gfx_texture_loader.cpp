@@ -136,8 +136,8 @@ namespace edge::gfx
 
 			// Collect image copy regions
 			auto num_layers = ktxtexture->isCubemap ? ktxtexture->numFaces : ktxtexture->numLayers;
-			for (int32_t layer = 0; layer < num_layers; layer++) {
-				for (int32_t level = 0; level < ktxtexture->numLevels; level++) {
+			for (int32_t layer = 0; layer < static_cast<int32_t>(num_layers); layer++) {
+				for (int32_t level = 0; level < static_cast<int32_t>(ktxtexture->numLevels); level++) {
 					auto& region = copy_regions.emplace_back(src_offset, 0, 0, 0,
 						(ktxtexture->baseWidth >> level),
 						(ktxtexture->baseHeight >> level), 1,
@@ -167,7 +167,7 @@ namespace edge::gfx
 		fs::read_file(path, data);
 
 		auto ext = fs::get_ext(path);
-		auto ext_hash = murmur_hash(ext.data(), ext.size(), 0);
+		auto ext_hash = murmur_hash(ext.data(), static_cast<uint32_t>(ext.size()), 0u);
 		switch (ext_hash)
 		{
 		case fs::format::ktx:

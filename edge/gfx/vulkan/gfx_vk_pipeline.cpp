@@ -80,7 +80,7 @@ namespace edge::gfx::vulkan
 		vertex_input_state.pVertexBindingDescriptions = vertex_input_bindings.data();
 		vertex_input_state.pVertexAttributeDescriptions = vertex_input_attributes.data();
 
-		for (int32_t i = 0; i < create_info.pipeline_state.vertex_layout.binding_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(create_info.pipeline_state.vertex_layout.binding_count); ++i) {
 			auto& binding = create_info.pipeline_state.vertex_layout.bindings[i];
 			auto& vk_binding = vertex_input_bindings[vertex_input_state.vertexBindingDescriptionCount++];
 
@@ -89,7 +89,7 @@ namespace edge::gfx::vulkan
 			vk_binding.inputRate = vk::VertexInputRate::eVertex;
 		}
 
-		for (int32_t i = 0; i < create_info.pipeline_state.vertex_layout.attribute_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(create_info.pipeline_state.vertex_layout.attribute_count); ++i) {
 			auto& attribute = create_info.pipeline_state.vertex_layout.attributes[i];
 			auto& vk_attribute = vertex_input_attributes[vertex_input_state.vertexAttributeDescriptionCount++];
 
@@ -156,7 +156,7 @@ namespace edge::gfx::vulkan
 		pipeline_create_info.pColorBlendState = &color_blending_state;
 		color_blending_state.pAttachments = blend_state_attachments.data();
 
-		for (int32_t i = 0; i < create_info.pipeline_state.color_blending_state.attachment_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(create_info.pipeline_state.color_blending_state.attachment_count); ++i) {
 			auto& attachment = create_info.pipeline_state.color_blending_state.attachments[i];
 			auto& vk_attachment = blend_state_attachments[color_blending_state.attachmentCount++];
 
@@ -182,7 +182,7 @@ namespace edge::gfx::vulkan
 		pipeline_create_info.pNext = &dynamic_rendering;
 		dynamic_rendering.pColorAttachmentFormats = color_formats.data();
 
-		for (int32_t i = 0; i < create_info.color_format_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(create_info.color_format_count); ++i) {
 			color_formats[dynamic_rendering.colorAttachmentCount++] = static_cast<vk::Format>(format_to_vk(create_info.color_formats[i]));
 		}
 

@@ -425,7 +425,7 @@ namespace edge::gfx
 
 		auto& reflection = shader->get_reflection();
 		if (reflection.constants.range_begin != ~0u) {
-			for (int32_t i = reflection.constants.range_begin; i < reflection.constants.variable_count; ++i) {
+			for (int32_t i = reflection.constants.range_begin; i < static_cast<int32_t>(reflection.constants.variable_count); ++i) {
 				auto& variable = reflection.shader_variables.data[i];
 				root_sign_hash = murmur_hash(static_cast<int32_t>(reflection.constants.stages), root_sign_hash);
 				root_sign_hash = murmur_hash(variable.size, root_sign_hash);

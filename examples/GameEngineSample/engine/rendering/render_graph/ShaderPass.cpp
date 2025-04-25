@@ -99,8 +99,8 @@ namespace engine::render {
 			descriptor.binding = resource.binding;
 
 			descriptor.buffer = &uniform_block.get_buffer();
-			descriptor.size = uniform_block.get_size();
-			descriptor.offset = uniform_block.get_offset();
+			descriptor.size = static_cast<uint32_t>(uniform_block.get_size());
+			descriptor.offset = static_cast<uint32_t>(uniform_block.get_offset());
 
 			binding_layouts[resource.set]->bind(descriptor);
 		}
@@ -291,7 +291,7 @@ namespace engine::render {
 				descriptor.binding = refl_resource.binding;
 
 				descriptor.buffer = execution_context.get_buffer(render_resource);
-				descriptor.size = descriptor.buffer->get_size();
+				descriptor.size = static_cast<uint32_t>(descriptor.buffer->get_size());
 
 				binding_layouts[refl_resource.set]->bind(descriptor);
 			}
@@ -323,7 +323,7 @@ namespace engine::render {
 
 		auto buffer = execution_context.get_buffer(buffer_id);
 
-		group_x = buffer->get_size();
+		group_x = static_cast<uint32_t>(buffer->get_size());
 
 		if (divide_by_locals) {
 			divide_workgroup_by_local_sizes(group_x, group_y, group_z);

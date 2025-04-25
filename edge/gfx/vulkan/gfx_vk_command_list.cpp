@@ -122,7 +122,7 @@ namespace edge::gfx::vulkan
 		auto& pipeline_layout = vk_root_signature->get_pipeline_layout();
 
 		auto& reflection = shader->get_reflection();
-		handle_.pushConstants(pipeline_layout.get_handle(), shader_stage_flags_to_vk(reflection.constants.stages), 0u, constant_data.size(), constant_data.data());
+		handle_.pushConstants(pipeline_layout.get_handle(), shader_stage_flags_to_vk(reflection.constants.stages), 0u, static_cast<uint32_t>(constant_data.size()), constant_data.data());
 	}
 
 	void CommandList::bind_index_buffer(IBuffer* index_buffer, IndexType index_type, uint64_t offset) const {
@@ -147,7 +147,7 @@ namespace edge::gfx::vulkan
 			vk_vertex_buffers[i] = buffer->get_handle();
 		}
 
-		handle_.bindVertexBuffers(0u, vertex_buffers.size(), vk_vertex_buffers.data(), offsets.data());
+		handle_.bindVertexBuffers(0u, static_cast<uint32_t>(vertex_buffers.size()), vk_vertex_buffers.data(), offsets.data());
 	}
 
 	void CommandList::draw(uint32_t vertex_count, uint32_t first_vertex, uint32_t first_instance, uint32_t instance_count) const {
@@ -382,7 +382,7 @@ namespace edge::gfx::vulkan
 		std::array<vk::RenderingAttachmentInfo, 8ull> color_attachments{};
 		begin_rendering_info.pColorAttachments = color_attachments.data();
 
-		for (int32_t i = 0; i < rendering_info.attachment_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(rendering_info.attachment_count); ++i) {
 			auto& attachment = rendering_info.attachments[i];
 			auto& vk_attachment = color_attachments[begin_rendering_info.colorAttachmentCount++];
 

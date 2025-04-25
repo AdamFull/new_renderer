@@ -124,7 +124,7 @@ namespace engine::render {
 
 		auto image_count = swapchain->get_image_count();
 
-		for (int32_t i = 0; i < image_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(image_count); ++i) {
 			render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
 		}
 
@@ -193,7 +193,7 @@ namespace engine::render {
 		queue->wait_idle();
 
 		auto image_count = swapchain->get_image_count();
-		for (int32_t i = 0; i < image_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(image_count); ++i) {
 			render_frames[i] = nullptr;
 		}
 
@@ -222,7 +222,7 @@ namespace engine::render {
 	auto RenderContext::add_resource() -> uint32_t {
 		// Just creates empty resource)
 		auto& new_resource = render_resources.emplace_back();
-		return render_resources.size() - 1ull;
+		return static_cast<uint32_t>(render_resources.size() - 1ull);
 	}
 
 	auto RenderContext::add_resource_sync(std::string_view path) -> uint32_t {
@@ -232,7 +232,7 @@ namespace engine::render {
 		edge::gfx::ITexture* texture = edge::gfx::ResourceUpdater::load_texture_sync(path.data(), new_resource.current_state);
 		new_resource.resource_id = static_textures.add(TextureObject{ texture });
 
-		return render_resources.size() - 1ull;
+		return static_cast<uint32_t>(render_resources.size() - 1ull);
 	}
 
 	auto RenderContext::add_resource(std::string_view path) -> uint32_t {
@@ -241,7 +241,7 @@ namespace engine::render {
 		new_resource.resource_id = static_textures.add(TextureObject{ dummy_texture });
 		pending_resources.emplace_back(std::make_pair(edge::gfx::ResourceUpdater::load_texture(path.data()), (uint32_t)(render_resources.size() - 1ull)));
 
-		return render_resources.size() - 1ull;
+		return static_cast<uint32_t>(render_resources.size() - 1ull);
 	}
 
 	auto RenderContext::add_resource(const TextureResourceCreateInfo& create_info, std::span<uint8_t> texture_data) -> uint32_t {
@@ -263,7 +263,7 @@ namespace engine::render {
 
 		//new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
 
-		return render_resources.size() - 1ull;
+		return static_cast<uint32_t>(render_resources.size() - 1ull);
 	}
 
 	auto RenderContext::add_resource(const TextureResourceCreateInfo& create_info) -> uint32_t {
@@ -282,9 +282,9 @@ namespace engine::render {
 
 		edge::gfx::TextureCreateInfo texture_create_info{};
 		texture_create_info.usage = create_info.usage;
-		texture_create_info.width = create_info.width * create_info.scale;
-		texture_create_info.height = create_info.height * create_info.scale;
-		texture_create_info.depth = create_info.depth;
+		texture_create_info.width = static_cast<uint32_t>(create_info.width * create_info.scale);
+		texture_create_info.height = static_cast<uint32_t>(create_info.height * create_info.scale);
+		texture_create_info.depth = static_cast<uint32_t>(create_info.depth);
 		texture_create_info.layers = create_info.layers;
 		texture_create_info.levels = create_info.levels;
 		texture_create_info.format = create_info.format;
@@ -303,7 +303,7 @@ namespace engine::render {
 			new_resource.resource_id = static_textures.add(std::move(texture_object));
 		}
 
-		return render_resources.size() - 1ull;
+		return static_cast<uint32_t>(render_resources.size() - 1ull);
 	}
 
 	auto RenderContext::add_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t {
@@ -320,7 +320,7 @@ namespace engine::render {
 
 			new_resource.resource_id = handle;
 
-			return render_resources.size() - 1ull;
+			return static_cast<uint32_t>(render_resources.size() - 1ull);
 		}
 
 		return ~0u;
@@ -344,7 +344,7 @@ namespace engine::render {
 		auto& new_resource = render_resources.emplace_back();
 		new_resource.resource_type = RenderResourceTypeFlag::eSampler;
 		new_resource.resource_id = samplers.add(edge::gfx::create_sampler(create_info));
-		return render_resources.size() - 1ull;
+		return static_cast<uint32_t>(render_resources.size() - 1ull);
 	}
 
 	void RenderContext::set_resource_name(uint32_t resource_index, std::string_view name) {
@@ -505,7 +505,7 @@ namespace engine::render {
 			elapsed_time = 0ull;
 		}
 
-		gpu_delta_time = static_cast<double>(elapsed_time) * timestamp_frequency / 1000000000.0;
+		gpu_delta_time = static_cast<double>(elapsed_time) * timestamp_frequency / 1000000.0;
 
 		// Reset performance query
 		current_command_list->reset_query(timestamp_query, 0u, 2u);
@@ -741,8 +741,8 @@ namespace engine::render {
 		buffer_descriptor.type = edge::gfx::DescriptorType::eUniformBuffer;
 		buffer_descriptor.binding = binding;
 		buffer_descriptor.buffer = &buffer_block.get_buffer();
-		buffer_descriptor.offset = buffer_block.get_offset();
-		buffer_descriptor.size = buffer_block.get_size();
+		buffer_descriptor.offset = static_cast<uint32_t>(buffer_block.get_offset());
+		buffer_descriptor.size = static_cast<uint32_t>(buffer_block.get_size());
 
 		auto* current_global_binding_layout = current_frame->lookup_and_allocate_binding_layout(global_descriptor);
 		current_global_binding_layout->bind(buffer_descriptor);
@@ -834,12 +834,12 @@ namespace engine::render {
 			if (target.scale_parent_resource != ~0u) {
 				edge::gfx::ITexture* parent = get_texture(target.scale_parent_resource);
 
-				create_info.width = parent->get_width() * target.scale;
-				create_info.height = parent->get_height() * target.scale;
+				create_info.width = static_cast<uint32_t>(parent->get_width() * target.scale);
+				create_info.height = static_cast<uint32_t>(parent->get_height() * target.scale);
 			}
 			else {
-				create_info.width = width * target.scale;
-				create_info.height = height * target.scale;
+				create_info.width = static_cast<uint32_t>(width * target.scale);
+				create_info.height = static_cast<uint32_t>(height * target.scale);
 			}
 
 			edge::gfx::destroy(target.texture);
@@ -853,7 +853,7 @@ namespace engine::render {
 		auto image_count = swapchain->get_image_count();
 
 		auto frame_it = render_frames.begin();
-		for (int32_t i = 0; i < image_count; ++i) {
+		for (int32_t i = 0; i < static_cast<int32_t>(image_count); ++i) {
 			if (frame_it != render_frames.end()) {
 				(*frame_it)->update_backbuffer(swapchain, i);
 			}

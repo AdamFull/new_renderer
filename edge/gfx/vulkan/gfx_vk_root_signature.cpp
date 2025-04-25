@@ -50,7 +50,7 @@ namespace edge::gfx::vulkan
 		// TODO: Now i can have only one constant range, but in future i think i can have more then one.
 		if (reflection.constants.range_begin != ~0u) {
 			auto& range = layout_ci.add_constant_range();
-			for (int32_t i = reflection.constants.range_begin; i < reflection.constants.variable_count; ++i) {
+			for (int32_t i = reflection.constants.range_begin; i < static_cast<int32_t>(reflection.constants.variable_count); ++i) {
 				auto& variable = reflection.shader_variables.data[i];
 				range.stageFlags = shader_stage_flags_to_vk(reflection.constants.stages);
 				range.size += variable.size;

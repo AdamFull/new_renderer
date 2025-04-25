@@ -218,7 +218,7 @@ namespace engine::render {
 			submesh_count = mesh.submesh_count;
 		}
 
-		for (int32_t idx = 0; idx < submesh_count; ++idx) {
+		for (int32_t idx = 0; idx < static_cast<int32_t>(submesh_count); ++idx) {
 			auto& batch_command = draw_descriptions->get(draw_count + idx);
 			batch_command.camera_index = camera_index;
 			batch_command.mesh_index = mesh_index;
@@ -286,7 +286,7 @@ namespace engine::render {
 		auto& mesh = world_meshes->get(world_resource.resource_id);
 
 		auto* matrices = world_matrices->data(mesh.skin_offset);
-		world_matrices->mark_dirty(mesh.skin_offset, joints.size());
+		world_matrices->mark_dirty(mesh.skin_offset, static_cast<uint32_t>(joints.size()));
 
 		std::memcpy(static_cast<void*>(matrices), joints.data(), joints.size() * sizeof(glm::mat4));
 	}

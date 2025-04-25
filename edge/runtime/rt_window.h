@@ -107,7 +107,7 @@ namespace edge {
 		 * @param extent The preferred window extent
 		 * @return Extent The new window extent
 		 */
-		[[nodiscard]] auto resize(const Extent& extent) noexcept -> Extent;
+		auto resize(const Extent& extent) noexcept -> Extent;
 
 		[[nodiscard]] virtual auto get_required_surface_extensions() const ->std::vector<const char*> = 0;
 
