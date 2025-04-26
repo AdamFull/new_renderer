@@ -1,70 +1,70 @@
-[submodule "libraries/edge_framework/external/tinygltf"]
-	path = libraries/edge_framework/external/tinygltf
+[submodule "external/tinygltf"]
+	path = external/tinygltf
 	url = https://github.com/syoyo/tinygltf
-[submodule "libraries/edge_framework/external/glm"]
-	path = libraries/edge_framework/external/glm
+[submodule "external/glm"]
+	path = external/glm
 	url = https://github.com/g-truc/glm.git
 	branch = release-1.0.2
-[submodule "libraries/edge_framework/external/vulkan"]
-	path = libraries/edge_framework/external/vulkan
+[submodule "external/vulkan"]
+	path = external/vulkan
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
 	branch = vulkan-sdk-1.4.309
-[submodule "libraries/edge_framework/external/vma"]
-	path = libraries/edge_framework/external/vma
+[submodule "external/vma"]
+	path = external/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-[submodule "libraries/edge_framework/external/ktx"]
-	path = libraries/edge_framework/external/ktx
+[submodule "external/ktx"]
+	path = external/ktx
 	url = https://github.com/KhronosGroup/KTX-Software.git
-[submodule "libraries/edge_framework/external/volk"]
-	path = libraries/edge_framework/external/volk
+[submodule "external/volk"]
+	path = external/volk
 	url = https://github.com/zeux/volk.git
 	branch = vulkan-sdk-1.4.309
-[submodule "libraries/edge_framework/external/imgui"]
-	path = libraries/edge_framework/external/imgui
+[submodule "external/imgui"]
+	path = external/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
-[submodule "libraries/edge_framework/external/glslang"]
-	path = libraries/edge_framework/external/glslang
+[submodule "external/glslang"]
+	path = external/glslang
 	url = https://github.com/KhronosGroup/glslang.git
 	branch = vulkan-sdk-1.4.309
-[submodule "libraries/edge_framework/external/spirv-cross"]
-	path = libraries/edge_framework/external/spirv-cross
+[submodule "external/spirv-cross"]
+	path = external/spirv-cross
 	url = https://github.com/KhronosGroup/SPIRV-Cross.git
 	branch = vulkan-sdk-1.4.309
-[submodule "libraries/edge_framework/external/stb"]
-	path = libraries/edge_framework/external/stb
+[submodule "external/stb"]
+	path = external/stb
 	url = https://github.com/nothings/stb.git
-[submodule "libraries/edge_framework/external/glfw"]
-	path = libraries/edge_framework/external/glfw
+[submodule "external/glfw"]
+	path = external/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "libraries/edge_framework/external/refl-cpp"]
-	path = libraries/edge_framework/external/refl-cpp
+[submodule "external/refl-cpp"]
+	path = external/refl-cpp
 	url = https://github.com/veselink1/refl-cpp.git
-[submodule "libraries/edge_framework/external/spdlog"]
-	path = libraries/edge_framework/external/spdlog
+[submodule "external/spdlog"]
+	path = external/spdlog
 	url = https://github.com/gabime/spdlog.git
-[submodule "libraries/edge_framework/external/entt"]
-	path = libraries/edge_framework/external/entt
+[submodule "external/entt"]
+	path = external/entt
 	url = https://github.com/skypjack/entt.git
 	branch = v3.13.x
-[submodule "libraries/edge_framework/external/json"]
-	path = libraries/edge_framework/external/json
+[submodule "external/json"]
+	path = external/json
 	url = https://github.com/nlohmann/json.git
-[submodule "libraries/edge_framework/external/taskflow"]
-	path = libraries/edge_framework/external/taskflow
+[submodule "external/taskflow"]
+	path = external/taskflow
 	url = https://github.com/taskflow/taskflow.git
-[submodule "libraries/edge_framework/external/libzip"]
-	path = libraries/edge_framework/external/libzip
+[submodule "external/libzip"]
+	path = external/libzip
 	url = https://github.com/nih-at/libzip.git
-[submodule "libraries/edge_framework/external/zlib"]
-	path = libraries/edge_framework/external/zlib
+[submodule "external/zlib"]
+	path = external/zlib
 	url = https://github.com/madler/zlib.git
-[submodule "libraries/edge_framework/external/argparse"]
-	path = libraries/edge_framework/external/argparse
+[submodule "external/argparse"]
+	path = external/argparse
 	url = https://github.com/p-ranav/argparse.git
-[submodule "libraries/edge_framework/external/freetype"]
-	path = libraries/edge_framework/external/freetype
+[submodule "external/freetype"]
+	path = external/freetype
 	url = https://github.com/freetype/freetype.git
-[submodule "libraries/edge_framework/external/tracy"]
-	path = libraries/edge_framework/external/tracy
+[submodule "external/tracy"]
+	path = external/tracy
 	url = https://github.com/wolfpld/tracy.git
