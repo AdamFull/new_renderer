@@ -396,6 +396,9 @@ add_library(EnTT::EnTT ALIAS entt)
 # tracy
 add_subdirectory(tracy)
 
+# slang
+find_package(Slang REQUIRED)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
@@ -408,6 +411,7 @@ target_link_libraries(${PROJECT_NAME}
     glslang::glslang
     glslang-default-resource-limits
 	glslang::SPIRV
+    Slang::slang
 
     spirv-cross-core
 	spirv-cross-glsl
