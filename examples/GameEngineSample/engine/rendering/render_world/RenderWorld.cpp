@@ -274,7 +274,7 @@ namespace engine::render {
 		world_matrices->mark_dirty(mesh.matrix_offset, 3ull);
 
 		matrices[shlib::old_model_matrix_offset] = matrices[shlib::model_matrix_offset];
-		matrices[shlib::model_matrix_offset] = matrix * shlib::MakeDecodePositionMatrix(mesh.bb_enc);
+		matrices[shlib::model_matrix_offset] = matrix * shlib::make_decode_position_matrix(mesh.bb_enc);
 		// TODO: can be calculated in shader: (https://github.com/graphitemaster/normals_revisited)
 		matrices[shlib::normal_matrix_offset] = glm::inverse(glm::transpose(matrices[shlib::model_matrix_offset]));
 	}

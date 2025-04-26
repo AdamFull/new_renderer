@@ -44,13 +44,13 @@ DrawIndexedIndirectData GetDrawIndexedCommand(uint32_t index)
 
 vec3 GetVertexPosition(uint32_t vertex_index)
 {
-	return DecodePosition(geometry_buffers.position[vertex_index].data);
+	return decode_position(geometry_buffers.position[vertex_index].data);
 }
 
 vec4 GetVertexColor(uint32_t vertex_index)
 {
 #ifdef HAS_COLOR
-	return DecodeColor(geometry_buffers.color[vertex_index].data);
+	return encode_color(geometry_buffers.color[vertex_index].data);
 #else
 	return vec4(0.f);
 #endif
@@ -59,7 +59,7 @@ vec4 GetVertexColor(uint32_t vertex_index)
 vec2 GetVertexTexcoord(uint32_t vertex_index, TexcoordBounds bounds)
 {
 #ifdef HAS_TEXCOORD
-	return DecodeTexcoord(geometry_buffers.texcoord[vertex_index].data, bounds);
+	return decode_texcoord(geometry_buffers.texcoord[vertex_index].data, bounds);
 	return geometry_buffers.texcoord[vertex_index].data;
 #else
 	return vec2(0.f, 0.f);
@@ -69,7 +69,7 @@ vec2 GetVertexTexcoord(uint32_t vertex_index, TexcoordBounds bounds)
 vec3 GetVertexNormal(uint32_t vertex_index)
 {
 #ifdef HAS_NORMAL
-	return DecodeNormal(geometry_buffers.normal[vertex_index].data);
+	return decode_normal(geometry_buffers.normal[vertex_index].data);
 #else
 	return vec3(0.f);
 #endif
@@ -78,7 +78,7 @@ vec3 GetVertexNormal(uint32_t vertex_index)
 vec4 GetVertexTangent(uint32_t vertex_index)
 {
 #ifdef HAS_TANGENT
-	return DecodeTangent(geometry_buffers.tangent[vertex_index].data);
+	return decode_tangent(geometry_buffers.tangent[vertex_index].data);
 #else
 	return vec4(0.f);
 #endif
@@ -96,7 +96,7 @@ joints_t GetVertexJoints(uint32_t vertex_index)
 vec4 GetVertexWeights(uint32_t vertex_index)
 {
 #ifdef HAS_SKIN
-	return DecodeWeights(geometry_buffers.weights[vertex_index].data);
+	return decode_weights(geometry_buffers.weights[vertex_index].data);
 #else
 	return vec4(0.f);
 #endif

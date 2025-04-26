@@ -604,7 +604,7 @@ namespace engine::world
 		mesh_component.skin = gltf_node.skin;
 
 		// Create encode matrices for mesh
-		glm::mat3 position_encode_mat = shlib::MakeEncodePositionMatrix(mesh.bb_enc);
+		glm::mat3 position_encode_mat = shlib::make_encode_position_matrix(mesh.bb_enc);
 		glm::mat3 normal_encode_mat = glm::transpose(glm::inverse(position_encode_mat));
 
 		// Load mesh primitives
@@ -637,7 +637,7 @@ namespace engine::world
 				if (attribute_type & render::VertexAttributeFlag::ePosition) {
 					attrib_stream.byte_range = Transform<glm::vec3, glm::i16vec3>(root, accessor, vertex_data.positions,
 						[&mesh](const glm::vec3& in)
-						{  return shlib::EncodePosition(in, mesh.bb_enc); });
+						{  return shlib::encode_position(in, mesh.bb_enc); });
 
 					// Calculate bounding box for this mesh primitive
 					auto stream = get_buffer_stream(root, accessor);
@@ -652,28 +652,28 @@ namespace engine::world
 				}
 				else if (attribute_type & render::VertexAttributeFlag::eColor) {
 					attrib_stream.byte_range = Transform<glm::vec4, glm::u8vec4>(root, accessor, vertex_data.colors,
-						[](const glm::vec4& in) { return shlib::EncodeColor(in); });
+						[](const glm::vec4& in) { return shlib::encode_color(in); });
 				}
 				else if (attribute_type & render::VertexAttributeFlag::eTexCoord) {
 					attrib_stream.byte_range = Transform<glm::vec2, glm::u16vec2>(root, accessor, vertex_data.texcoords,
-						[&mesh](const glm::vec2& in) { return shlib::EncodeTexcoord(in, mesh.uv_enc); });
+						[&mesh](const glm::vec2& in) { return shlib::encode_texcoord(in, mesh.uv_enc); });
 				}
 				else if (attribute_type & render::VertexAttributeFlag::eNormal) {
 					attrib_stream.byte_range = Transform<glm::vec3, glm::u16vec2>(root, accessor, vertex_data.normals,
 						[&normal_encode_mat](const glm::vec3& in)
-						{ return shlib::EncodeNormal(glm::normalize(normal_encode_mat * in)); });
+						{ return shlib::encode_normal(glm::normalize(normal_encode_mat * in)); });
 				}
 				else if (attribute_type & render::VertexAttributeFlag::eTangent) {
 					attrib_stream.byte_range = Transform<glm::vec4, glm::u16vec2>(root, accessor, vertex_data.tangents,
 						[&position_encode_mat](const glm::vec4& in)
 						{
-							return shlib::EncodeTangent(glm::vec4(glm::normalize(position_encode_mat * in), in.w));
+							return shlib::encode_tangent(glm::vec4(glm::normalize(position_encode_mat * in), in.w));
 						});
 				}
 				// TODO: can be compressed with using u16vec3
 				else if (attribute_type & render::VertexAttributeFlag::eWeight) {
 					attrib_stream.byte_range = Transform<glm::vec4, glm::u16vec3>(root, accessor, vertex_data.weights,
-						[](const glm::vec4& in) { return shlib::EncodeWeights(in); });
+						[](const glm::vec4& in) { return shlib::encode_weights(in); });
 				}
 				else {
 					// Just copy, transcoding not supported yet

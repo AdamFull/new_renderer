@@ -25,8 +25,8 @@ struct BoundingBoxEnc
 SHLIB_INLINE BoundingBoxEnc EncodeBoundingBox(BoundingBox bb, vec3 enc)
 {
 	BoundingBoxEnc ebb;
-	ebb.min = EncodePosition(bb.min, enc);
-	ebb.max = EncodePosition(bb.max, enc);
+	ebb.min = encode_position(bb.min, enc);
+	ebb.max = encode_position(bb.max, enc);
 	return ebb;
 }
 
@@ -34,9 +34,9 @@ SHLIB_INLINE BoundingBox DecodeBoundingBox(BoundingBoxEnc bb, mat4 dec)
 {
 	BoundingBox dbb;
 
-	vec4 mn = dec * vec4(DecodePosition(bb.min), 1.0f);
+	vec4 mn = dec * vec4(decode_position(bb.min), 1.0f);
 	dbb.min = vec3(mn) / mn.w;
-	vec4 mx = dec * vec4(DecodePosition(bb.max), 1.0f);
+	vec4 mx = dec * vec4(decode_position(bb.max), 1.0f);
 	dbb.max = vec3(mx) / mx.w;
 
 	return dbb;
