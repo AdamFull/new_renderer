@@ -1,0 +1,84 @@
+[
+  {
+    "name": "screenspace",
+    "type": "graphics",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/common/screenspace.vert.slang" },
+      { "path": "/internal_res/assets/shaders/testing/screenspace.frag.slang" }
+    ],
+    "attachments": [
+      { "format": "backbuffer" }
+    ],
+    "primitive_topology": "triangle_list"
+  },
+  {
+    "name": "debug_text",
+    "type": "graphics",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/testing/debug_text.vert.slang" },
+      { "path": "/internal_res/assets/shaders/testing/debug_text.frag.slang" }
+    ],
+    "vertex_layout": {
+      "attributes": [
+        {
+          "location": 0,
+          "format": "r32g32_sfloat"
+        }
+      ],
+      "bindings": [
+        { "stride": 8 }
+      ]
+    },
+    "attachments": [
+      {
+        "format": "{backbuffer}",
+        "blending": true,
+        "src_color": "src_alpha",
+        "dst_color": "one_minus_src_alpha",
+        "src_alpha": "one_minus_src_alpha",
+        "dst_alpha": "zero"
+      }
+    ],
+    "primitive_topology": "triangle_list"
+  },
+  {
+    "name": "imgui",
+    "type": "graphics",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/testing/imgui.vert.slang" },
+      { "path": "/internal_res/assets/shaders/testing/imgui.frag.slang" }
+    ],
+    "vertex_layout": {
+      "attributes": [
+        {
+          "location": 0,
+          "format": "r32g32_sfloat"
+        },
+        {
+          "location": 1,
+          "format": "r32g32_sfloat",
+          "offset": 8
+        },
+        {
+          "location": 2,
+          "format": "r8g8b8a8_unorm",
+          "offset": 16
+        }
+      ],
+      "bindings": [
+        { "stride": 20 }
+      ]
+    },
+    "attachments": [
+      {
+        "format": "{backbuffer}",
+        "blending": true,
+        "src_color": "src_alpha",
+        "dst_color": "one_minus_src_alpha",
+        "src_alpha": "one_minus_src_alpha",
+        "dst_alpha": "zero"
+      }
+    ],
+    "primitive_topology": "triangle_list"
+  }
+]
