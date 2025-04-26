@@ -112,6 +112,68 @@ namespace edge::fs
 		return (separator_pos == std::string_view::npos) ? std::string_view{} : path.substr(0, separator_pos);
 	}
 
+	inline constexpr std::string_view normalize_path(std::string_view path) {
+		if (path.empty()) {
+			return path;
+		}
+
+		// We'll use two pointers: one for reading and one for writing
+		size_t write_pos = 0;
+		size_t read_pos = 0;
+		const size_t len = path.size();
+
+		// Since we can't modify the string_view's data directly, we'll need to work with a mutable copy
+		// But since the requirement is to not allocate, we'll assume the input is actually a mutable buffer
+		// represented as string_view. This is a bit of a hack since string_view is typically read-only.
+		char* buffer = const_cast<char*>(path.data());
+
+		while (read_pos < len) {
+			// Skip multiple consecutive slashes
+			if (buffer[read_pos] == '/' && write_pos > 0 && buffer[write_pos - 1] == '/') {
+				read_pos++;
+				continue;
+			}
+
+			// Handle ./
+			if (buffer[read_pos] == '.' && (read_pos + 1 >= len || buffer[read_pos + 1] == '/')) {
+				read_pos += 2;
+				continue;
+			}
+
+			// Handle ../
+			if (buffer[read_pos] == '.' && read_pos + 1 < len && buffer[read_pos + 1] == '.' &&
+				(read_pos + 2 >= len || buffer[read_pos + 2] == '/')) {
+				// Backtrack to previous /
+				if (write_pos > 0) {
+					write_pos--; // skip the trailing slash
+					while (write_pos > 0 && buffer[write_pos - 1] != '/') {
+						write_pos--;
+					}
+				}
+				read_pos += 3;
+				continue;
+			}
+
+			// Copy the character
+			if (read_pos < len) {
+				buffer[write_pos++] = buffer[read_pos++];
+			}
+		}
+
+		// Remove trailing slash if it's not the only character
+		if (write_pos > 1 && buffer[write_pos - 1] == '/') {
+			write_pos--;
+		}
+
+		// Handle case when we backtracked everything
+		if (write_pos == 0) {
+			buffer[write_pos++] = '/';
+		}
+
+		// Update the string_view to reflect the normalized length
+		return std::string_view(path.data(), write_pos);
+	}
+
 	template<size_t _Size>
 	inline constexpr std::string_view normalize(std::string_view path, std::span<char, _Size> buffer) {
 		size_t index = 0;
