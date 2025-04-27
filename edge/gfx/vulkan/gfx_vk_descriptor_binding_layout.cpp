@@ -64,15 +64,16 @@ namespace edge::gfx::vulkan {
 		auto& descriptor = image_descriptors.emplace_back();
 
 		auto* vk_texture = texture_desc.texture->as<Texture*>();
-		auto& subresource = vk_texture->get_subresource(texture_desc.subresource_index);
-		descriptor.imageView = subresource.get_handle();
-		descriptor.imageLayout = resource_state_to_vk_image_layout(texture_desc.resource_state);
-
-		if (texture_desc.type != DescriptorType::eStorageImage &&
-			texture_desc.type != DescriptorType::eSampledImage) {
-			auto* vk_sampelr = texture_desc.sampler->as<Sampler*>();
-			descriptor.sampler = vk_sampelr->get_handle();
+		if (texture_desc.type == DescriptorType::eStorageImage) {
+			auto& subresource = vk_texture->get_uav_view(texture_desc.subresource_index);
+			descriptor.imageView = subresource.get_handle();
 		}
+		else {
+			auto& subresource = vk_texture->get_srv_view();
+			descriptor.imageView = subresource.get_handle();
+		}
+		
+		descriptor.imageLayout = resource_state_to_vk_image_layout(texture_desc.resource_state);
 
 		auto& vk_descriptor_write = write_descriptor_sets.emplace_back();
 		vk_descriptor_write.descriptorType = descriptor_type_to_vk(texture_desc.type);

@@ -20,8 +20,11 @@ namespace edge::gfx::vulkan
 		[[nodiscard]] auto get_image() noexcept -> Image&;
 		[[nodiscard]] auto get_image() const noexcept -> Image const&;
 
-		[[nodiscard]] auto get_subresource(uint32_t subresource = ~0u) -> ImageView&;
-		[[nodiscard]] auto get_subresource(uint32_t subresource = ~0u) const->ImageView const&;
+		[[nodiscard]] auto get_srv_view() -> ImageView&;
+		[[nodiscard]] auto get_uav_view(uint32_t view_index = ~0u) -> ImageView&;
+
+		[[nodiscard]] auto get_srv_view() const -> ImageView const&;
+		[[nodiscard]] auto get_uav_view(uint32_t view_index = ~0u) const -> ImageView const&;
 
 		void set_resource_name(std::string_view name) const noexcept override;
 
@@ -50,8 +53,8 @@ namespace edge::gfx::vulkan
 		Device& device;
 
 		std::unique_ptr<Image> image{};
-		std::unique_ptr<ImageView> srv;
 
-		std::vector<std::unique_ptr<ImageView>> subresources{};
+		std::unique_ptr<ImageView> srv_view{};
+		std::vector<std::unique_ptr<ImageView>> uav_views{};
 	};
 }

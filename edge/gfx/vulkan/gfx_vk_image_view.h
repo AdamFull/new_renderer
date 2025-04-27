@@ -3,11 +3,12 @@
 #include "gfx_vk_image.h"
 #include "../gfx_structures.h"
 
-namespace edge::gfx::vulkan
-{
+namespace edge::gfx::vulkan {
+	class Device;
+
 	class ImageView : public Resource<vk::ImageView> {
 	public:
-		ImageView(Image& image, const TextureCreateInfo& texture_create_info, uint32_t base_array_layer, uint32_t base_mip_level, uint32_t mip_count);
+		ImageView(Device& device, vk::ImageViewCreateInfo create_info);
 
 		ImageView(ImageView&) = delete;
 		ImageView(ImageView&& other) noexcept;
@@ -43,5 +44,7 @@ namespace edge::gfx::vulkan
 		Device& device;
 
 		vk::ImageViewCreateInfo create_info{};
+
+		ImageViewFlags view_flags{};
 	};
 }

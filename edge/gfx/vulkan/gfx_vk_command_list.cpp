@@ -226,7 +226,7 @@ namespace edge::gfx::vulkan
 
 		auto* dst_texture = utl::cast<Texture*>(copy_info.dst_texture);
 		auto& dst_image = dst_texture->get_image();
-		auto& subresource = dst_texture->get_subresource();
+		auto& subresource = dst_texture->get_srv_view();
 		vk_copy_info.dstImage = dst_image.get_handle();
 
 		// TODO: As i think it will be transfer dst in any case
@@ -315,7 +315,7 @@ namespace edge::gfx::vulkan
 			auto& image = texture->get_image();
 			vk_image_barrier.image = image.get_handle();
 
-			auto& subresource = texture->get_subresource(texture_barrier.subresource_index);
+			auto& subresource = texture->get_srv_view();
 			vk_image_barrier.subresourceRange = subresource.get_subresource_range();
 
 			vk_image_barrier.oldLayout = resource_state_to_vk_image_layout(texture_barrier.src_state);
@@ -388,7 +388,7 @@ namespace edge::gfx::vulkan
 
 			assert(attachment.texture);
 			auto* texture = utl::cast<Texture*>(attachment.texture);
-			auto& subresource = texture->get_subresource();
+			auto& subresource = texture->get_srv_view();
 
 			vk_attachment.imageView = subresource.get_handle();
 			vk_attachment.imageLayout = resource_state_to_vk_image_layout(attachment.texture_state);
@@ -401,7 +401,7 @@ namespace edge::gfx::vulkan
 		vk::RenderingAttachmentInfo depth_attachment{};
 		if (rendering_info.depth_attachment.texture) {
 			auto* texture = utl::cast<Texture*>(rendering_info.depth_attachment.texture);
-			auto& subresource = texture->get_subresource();
+			auto& subresource = texture->get_srv_view();
 
 			depth_attachment.imageView = subresource.get_handle();
 			depth_attachment.imageLayout = resource_state_to_vk_image_layout(rendering_info.depth_attachment.texture_state);
@@ -417,7 +417,7 @@ namespace edge::gfx::vulkan
 		vk::RenderingAttachmentInfo stencil_attachment{};
 		if (rendering_info.stencil_attachment.texture) {
 			auto* texture = utl::cast<Texture*>(rendering_info.stencil_attachment.texture);
-			auto& subresource = texture->get_subresource();
+			auto& subresource = texture->get_srv_view();
 
 			stencil_attachment.imageView = subresource.get_handle();
 			stencil_attachment.imageLayout = resource_state_to_vk_image_layout(rendering_info.stencil_attachment.texture_state);
