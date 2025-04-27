@@ -381,18 +381,6 @@ namespace engine::render
 			render_context->set_resource_name(brdf_lut_target, "brdf_lut_target");
 		}
 
-		uint32_t density_lut_target{ ~0u };
-		{
-			TextureResourceCreateInfo create_info{};
-			create_info.width = 256u;
-			create_info.format = edge::gfx::Format::eR32G32B32A32Sfloat;
-			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
-			create_info.resizable = false;
-
-			density_lut_target = render_context->add_resource(create_info);
-			render_context->set_resource_name(density_lut_target, "density_lut_target");
-		}
-
 		//uint32_t environment_cube_target{ ~0u };
 		//{
 		//	TextureResourceCreateInfo create_info{};
@@ -731,54 +719,6 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
-		// Generate density lut for scattering
-		{
-			ComputeShaderPassCreateInfo create_info{};
-			create_info.technique_name = "generate_density_lut";
-			create_info.one_time = true;
-
-			create_info.draw_callback = [this,
-				density_lut_target
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
-				{
-					EDGE_PROFILE_ZONE_SCOPED;
-
-					self.bind_write_resource(render_label::image0, density_lut_target, ~0u);
-
-					self.resolve_dependencies(command_list);
-					self.bind_resources(command_list);
-
-					self.dispatch_for_target(command_list, density_lut_target, true);
-					self.finalize_target(command_list, render_label::image0, density_lut_target);
-				};
-
-			render_context->add_node(render_context->create_node(create_info));
-		}
-
-		// Generate environment map
-		//{
-		//	ComputeShaderPassCreateInfo create_info{};
-		//	create_info.technique_name = "generate_environment";
-		//
-		//	create_info.draw_callback = [this,
-		//		environment_cube_target,
-		//		density_lut_target
-		//	](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time)
-		//		{
-		//			EDGE_PROFILE_ZONE_SCOPED;
-		//
-		//			self.bind_write_resource(render_label::image0, environment_cube_target, ~0u);
-		//			self.bind_read_resource(render_label::texture0, density_lut_target, ~0u);
-		//
-		//			self.resolve_dependencies(command_list);
-		//			self.bind_resources(command_list);
-		//
-		//			self.dispatch_for_target(command_list, environment_cube_target, true);
-		//		};
-		//
-		//	render_context->add_node(render_context->create_node(create_info));
-		//}
-
 		// Generate irradiance cubemap
 		{
 			ComputeShaderPassCreateInfo create_info{};
@@ -864,7 +804,7 @@ namespace engine::render
 
 			render_context->add_node(std::move(group_node));
 		}
-
+#if 0
 		// Crear cull counters
 		{
 			ComputeShaderPassCreateInfo create_info{};
@@ -2291,7 +2231,7 @@ namespace engine::render
 
 			render_context->add_node(std::move(post_proc_node));
 		}
-
+#endif
 		// Test output shader
 		{
 			RenderShaderPassCreateInfo create_info{};
@@ -2299,7 +2239,8 @@ namespace engine::render
 			create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 
 			create_info.draw_callback = [this,
-				nearest_clamp_to_edge_sampler
+				nearest_clamp_to_edge_sampler,
+				hdr0
 				//final_target = ssao_target
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
@@ -2313,7 +2254,7 @@ namespace engine::render
 					command_list.set_viewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 					command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 
-					self.bind_read_resource(render_label::texture0, last_output_target_id, ~0u);
+					self.bind_read_resource(render_label::texture0, hdr0, ~0u);
 					self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler, ~0u);
 
 					self.resolve_dependencies(command_list);
