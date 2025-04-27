@@ -44,7 +44,5 @@ namespace edge::gfx::vulkan {
 		Device& device;
 
 		vk::ImageViewCreateInfo create_info{};
-
-		ImageViewFlags view_flags{};
 	};
 }
