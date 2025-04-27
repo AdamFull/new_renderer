@@ -421,7 +421,6 @@ namespace edge
 			DescriptorType type{};
 
 			ITexture* texture{ nullptr };
-			ISampler* sampler{ nullptr };
 			uint32_t subresource_index{ ~0u };
 			ResourceStateFlags resource_state{};
 
