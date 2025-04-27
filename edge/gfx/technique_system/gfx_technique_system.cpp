@@ -1,6 +1,7 @@
 #include "gfx_technique_system.h"
 
 #include "gfx_glsl_shader_compiler.h"
+#include "gfx_slang_shader_compiler.h"
 
 #include "../gfx_context.h"
 
@@ -28,7 +29,8 @@ namespace edge::gfx
 		compiler_ci.base_path = "/internal_res/assets/shaders";
 		compiler_ci.additional_include_dirs = { "includes" };
 
-		shader_compiler = std::make_unique<GLSLShaderCompiler>(compiler_ci);
+		//shader_compiler = std::make_unique<GLSLShaderCompiler>(compiler_ci);
+		shader_compiler = std::make_unique<SlangShaderCompiler>(compiler_ci);
 
 		std::vector<uint8_t> pipeline_cache_data{};
 		if (fs::exists(k_frame_graph_cache_path) && fs::read_file(k_frame_graph_cache_path, pipeline_cache_data)) {
@@ -266,6 +268,10 @@ namespace edge::gfx
 		descriptor_layouts.push_back(layout);
 	}
 
+	inline bool has_substr(std::string_view hay, std::string_view needle) {
+		return hay.find(needle) != std::string_view::npos;
+	}
+
 	void TechniqueDatabase::add_technique(const std::string& name, const TechniqueDesc& technique_desc) {
 		std::vector<ShaderStageInfo> shader_stages{};
 
@@ -277,23 +283,23 @@ namespace edge::gfx
 		for (auto& stage : technique_desc.stages) {
 			ShaderStageFlag stage_flag{};
 
-			auto ext = fs::get_ext(stage.path);
-			if (ext.compare(".vert") == 0) {
+			// TODO: This is bad solution. I need to find another way to detect stage
+			if (has_substr(stage.path, ".vert")) {
 				stage_flag = ShaderStageFlag::eVertex;
 			}
-			else if (ext.compare(".tesc") == 0) {
+			else if (has_substr(stage.path, ".tesc")) {
 				stage_flag = ShaderStageFlag::eTessellationControl;
 			}
-			else if (ext.compare(".tese") == 0) {
+			else if (has_substr(stage.path, ".tese")) {
 				stage_flag = ShaderStageFlag::eTessellationEvaluation;
 			}
-			else if (ext.compare(".geom") == 0) {
+			else if (has_substr(stage.path, ".geom")) {
 				stage_flag = ShaderStageFlag::eGeometry;
 			}
-			else if (ext.compare(".frag") == 0) {
+			else if (has_substr(stage.path, ".frag")) {
 				stage_flag = ShaderStageFlag::eFragment;
 			}
-			else if (ext.compare(".comp") == 0) {
+			else if (has_substr(stage.path, ".comp")) {
 				stage_flag = ShaderStageFlag::eCompute;
 			}
 
