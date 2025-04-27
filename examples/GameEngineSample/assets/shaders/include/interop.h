@@ -65,7 +65,29 @@ namespace interop {
 	inline _Ty select(bool cond, _Ty l, _Ty r) {
 		return cond ? l : r;
 	}
+
+	template<typename _Ty>
+	struct GPUPointer {
+		GPUPointer(uint64_t addr) : address{ addr } {}
+
+		const _Ty& operator[](size_t idx) const {
+			static _Ty t{};
+			return t;
+		};
+
+		operator bool() const {
+			return address != ~0ull;
+		}
+
+		uint64_t address{ ~0ull };
+	};
 }
+
+#define TYPE_PTR(type) interop::GPUPointer<type>
+#define CONSTRUCTOR(type, ...) type(__VA_ARGS__)
+#elif __SLANG__
+#define TYPE_PTR(type) type*
+#define CONSTRUCTOR(type, ...) __init(__VA_ARGS__)
 #endif
 
 #if defined(JOINTS_16BIT)
@@ -130,7 +152,7 @@ namespace interop {
 
 	// Based on https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
 	inline float2 oct_wrap(float2 v) {
-		return (1.0 - abs(v.yx)) * (select(v.xy >= 0.0, 1.0, -1.0));
+		return (float2(1.0f) - abs(v)) * (select(v.x >= 0.0f && v.y >= 0.0f, 1.0f, -1.0f));
 	}
 
 	inline uint16_t2 encode_normal(float3 n) {
@@ -138,7 +160,7 @@ namespace interop {
 		float2 xy = float2(n.x, n.y);
 		xy = select(n.z >= 0.0f, xy, oct_wrap(xy));
 		xy = xy * 0.5f + 0.5f;
-		return uint16_t2(min(round(uint32_t2(xy * float(1 << 16))), uint32_t2((1u << 16) - 1)));
+		return uint16_t2(min(uint32_t2(round(xy * float(1 << 16))), uint32_t2((1u << 16) - 1)));
 	}
 
 	inline float3 decode_normal(uint16_t2 n) {
@@ -221,7 +243,7 @@ namespace interop {
 		jounts_t joints;
 		float4 weights;
 
-		__init(EncodedVertex enc_vert, TexcoordBounds uv_bb) {
+		CONSTRUCTOR(DecodedVertex, EncodedVertex enc_vert, TexcoordBounds uv_bb) {
 			position = decode_position(enc_vert.position);
 			normal = decode_normal(enc_vert.normal);
 			tangent = decode_tangent(enc_vert.tangent);
@@ -233,16 +255,16 @@ namespace interop {
 	};
 
 	struct EncodedGeometryData {
-		int16_t3* position;
-		uint8_t4* color;
-		uint16_t2* texcoord;
-		uint16_t2* normal;
-		uint16_t2* tangent;
+		TYPE_PTR(int16_t3) position;
+		TYPE_PTR(uint8_t4) color;
+		TYPE_PTR(uint16_t2) texcoord;
+		TYPE_PTR(uint16_t2) normal;
+		TYPE_PTR(uint16_t2) tangent;
 
-		jounts_t* joints;
-		uint16_t3* weights;
+		TYPE_PTR(jounts_t) joints;
+		TYPE_PTR(uint16_t3) weights;
 
-		sindex_t* indices;
+		TYPE_PTR(sindex_t) indices;
 
 		inline EncodedVertex get_enc_vertex(uint32_t vertex_index) {
 			EncodedVertex enc_vert;

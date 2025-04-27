@@ -11,7 +11,7 @@ namespace debug_text {
     };
 
     struct PushConstants {
-        DebugTextData* word_data;
+        TYPE_PTR(DebugTextData) word_data;
         float2 inv_viewport_resolution;
     };
 }

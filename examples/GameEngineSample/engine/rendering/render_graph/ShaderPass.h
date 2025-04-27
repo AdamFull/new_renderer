@@ -159,8 +159,8 @@ namespace engine::render {
 
 		void resolve_dependencies(edge::gfx::ICommandList& command_list);
 
-		void bind_resource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
-		void bind_read_resource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
+		void bind_resource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index = 0u);
+		void bind_read_resource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index = 0u);
 		void bind_write_resource(uint32_t binding_point, uint32_t resource_index, uint32_t subresource_index);
 
 		void dispatch_for_buffer(edge::gfx::ICommandList& command_list, uint32_t buffer_id, bool divide_by_locals);
