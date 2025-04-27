@@ -85,13 +85,6 @@
     ]
   },
   {
-    "name": "generate_density_lut",
-    "type": "compute",
-    "stages": [
-      { "path": "/internal_res/assets/shaders/lighting/generate_density_lut.comp" }
-    ]
-  },
-  {
     "name": "generate_irradiancecube",
     "type": "compute",
     "stages": [
@@ -103,13 +96,6 @@
     "type": "compute",
     "stages": [
       { "path": "/internal_res/assets/shaders/lighting/prefilteredmap.comp" }
-    ]
-  },
-  {
-    "name": "generate_environment",
-    "type": "compute",
-    "stages": [
-      { "path": "/internal_res/assets/shaders/lighting/generate_environment.comp" }
     ]
   },
   {
