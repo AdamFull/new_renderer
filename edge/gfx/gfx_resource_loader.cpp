@@ -292,7 +292,6 @@ namespace edge::gfx
 				bind_resource.binding = 5;
 
 				bind_resource.texture = texture;
-				bind_resource.sampler = linear_sampler;
 				bind_resource.subresource_index = mip - 1;
 				bind_resource.resource_state = resource_state;
 

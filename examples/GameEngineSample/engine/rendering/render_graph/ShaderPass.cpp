@@ -278,7 +278,6 @@ namespace engine::render {
 				descriptor.binding = refl_resource.binding;
 
 				descriptor.texture = execution_context.get_texture(render_resource);
-				//descriptor.sampler = execution_context.get_sampler(render_resource);
 				descriptor.subresource_index = subresource_index;
 				descriptor.resource_state = render_resource.GetState();
 
