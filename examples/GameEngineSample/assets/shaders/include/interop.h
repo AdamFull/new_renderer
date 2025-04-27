@@ -136,7 +136,7 @@ namespace interop {
 	inline uint16_t2 encode_normal(float3 n) {
 		n /= abs(n.x) + abs(n.y) + abs(n.z);
 		float2 xy = float2(n.x, n.y);
-		xy = select(n.z >= 0.0f, x, oct_wrap(xy));
+		xy = select(n.z >= 0.0f, xy, oct_wrap(xy));
 		xy = xy * 0.5f + 0.5f;
 		return uint16_t2(min(round(uint32_t2(xy * float(1 << 16))), uint32_t2((1u << 16) - 1)));
 	}
@@ -157,7 +157,7 @@ namespace interop {
 
 	inline float4 decode_tangent(uint16_t2 t) {
 		float3 tangent = decode_normal(t);
-		float sign = select(t.y & 1u, 1.0f, -1.0f);
+		float sign = select(bool(t.y & 1u), 1.0f, -1.0f);
 		return float4(tangent, sign);
 	}
 
