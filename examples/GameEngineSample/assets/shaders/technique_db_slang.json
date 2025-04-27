@@ -1,5 +1,29 @@
 [
   {
+    "name": "generate_brdflut",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/lighting/brdflut.comp.slang" }
+    ]
+  },
+  {
+    "name": "generate_irradiancecube",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/lighting/irradiancecube.comp.slang" }
+    ]
+  },
+  {
+    "name": "generate_prefilteredmap",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/lighting/prefilteredmap.comp.slang" }
+    ]
+  },
+
+
+
+  {
     "name": "screenspace",
     "type": "graphics",
     "stages": [
