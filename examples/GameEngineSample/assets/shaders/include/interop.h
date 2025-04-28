@@ -1,5 +1,7 @@
 #pragma once
 
+#include "constants.h"
+
 #ifdef __cplusplus
 
 #include <glm/glm.hpp>
@@ -66,8 +68,14 @@ namespace interop {
 		return cond ? l : r;
 	}
 
+	template<typename _Ty, typename _Tty>
+	inline auto mul(const _Ty& a, const _Tty& b) -> decltype(a * b) {
+		return b * a;
+	}
+
 	template<typename _Ty>
 	struct GPUPointer {
+		GPUPointer() = default;
 		GPUPointer(uint64_t addr) : address{ addr } {}
 
 		const _Ty& operator[](size_t idx) const {
@@ -103,25 +111,19 @@ typedef uint32_t sindex_t;
 #endif
 
 namespace interop {
-	struct DrawIndexedIndirectData {
-		uint32_t index_count;
-		uint32_t instance_count;
-		uint32_t first_index;
-		int32_t  vertex_offset;
-		uint32_t first_instance;
-	};
-
-	struct DrawDescription {
-		uint32_t camera_index;
-		uint32_t mesh_index;
-		uint32_t submesh_index;
-		uint32_t sorting_order;
-	};
-
 	struct TexcoordBounds {
 		float2 min;
 		float2 max;
 	};
+
+	inline int16_t3 encode_position(float3 p, float3 bb) {
+		float3 scale = float(1 << 15) / bb;
+		return int16_t3(min(int32_t3(round(p * scale)), (1 << 15) - 1));
+	}
+
+	inline float3 decode_position(int16_t3 p) {
+		return float3(p);
+	}
 
 	inline float4x4 make_encode_position_matrix(float3 bb) {
 		float3 scale = float(1 << 15) / bb;
@@ -139,15 +141,6 @@ namespace interop {
 		m[1][1] = scale.y;
 		m[2][2] = scale.z;
 		return m;
-	}
-
-	inline int16_t3 encode_position(float3 p, float3 bb) {
-		float3 scale = float(1 << 15) / bb;
-		return int16_t3(min(int32_t3(round(p * scale)), (1 << 15) - 1));
-	}
-
-	inline float3 decode_position(int16_t3 p) {
-		return float3(p);
 	}
 
 	// Based on https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
@@ -222,6 +215,357 @@ namespace interop {
 		return weights;
 	}
 
+	struct BoundingBox {
+		CONSTRUCTOR(BoundingBox) {
+			min = float3(constants::flt_max);
+			_pad0 = 0.0f;
+			max = float3(-constants::flt_max);
+			_pad1 = 0.0f;
+		}
+
+		CONSTRUCTOR(BoundingBox, float3 min_, float3 max_) {
+			min = min_;
+			_pad0 = 0.0f;
+			max = max_;
+			_pad1 = 0.0f;
+		}
+
+		float3 min;
+		float _pad0;
+		float3 max;
+		float _pad1;
+	};
+
+	struct BoundingBoxEnc {
+		CONSTRUCTOR(BoundingBoxEnc) {
+			min = int16_t3(constants::flt_max);
+			_pad0 = 0;
+			max = int16_t3(-constants::flt_max);
+			_pad1 = 0;
+		}
+
+		CONSTRUCTOR(BoundingBoxEnc, BoundingBox bb, float3 enc) {
+			min = encode_position(bb.min, enc);
+			_pad0 = 0;
+			max = encode_position(bb.max, enc);
+			_pad1 = 0;
+		}
+
+		BoundingBox decode(float4x4 dec) {
+			float4 mn = mul(float4(decode_position(min), 1.0f), dec);
+			float4 mx = mul(float4(decode_position(max), 1.0f), dec);
+			return BoundingBox(float3(mn.x, mn.y, mn.z) / mn.w, float3(mx.x, mx.y, mx.z) / mx.w);
+		}
+
+		int16_t3 min;
+		uint16_t _pad0;
+		int16_t3 max;
+		uint16_t _pad1;
+	};
+
+	inline BoundingBoxEnc encode_bounding_box(BoundingBox bb, float3 enc) {
+		return BoundingBoxEnc(bb, enc);
+	}
+
+	struct MeshLod {
+		uint32_t firstIndex;
+		uint32_t indexCount;
+		uint32_t firstVertex;
+		uint32_t vertexCount;
+	};
+
+	struct SubMesh {
+		uint32_t material;
+
+		uint32_t first_index;
+		uint32_t index_count;
+		int32_t first_vertex;
+		uint32_t vertex_count;
+		uint32_t _pad0;
+
+		BoundingBoxEnc ebb;
+	};
+
+	struct Mesh {
+		uint32_t matrix_offset;
+		uint32_t submesh_offset;
+		uint32_t submesh_count;
+		uint32_t skin_offset;
+
+		TexcoordBounds uv_enc;
+		float3 bb_enc;
+		float _pad0;
+		BoundingBoxEnc ebb;
+	};
+
+	enum class AlphaMode {
+		eBlend,
+		eMask, 
+		eOpaque
+	};
+
+	struct Texture {
+		CONSTRUCTOR(Texture) {
+			texture = constants::invalid_index;
+			sampler = constants::invalid_index;
+		}
+
+		bool valid() {
+			return texture != constants::invalid_index;
+		}
+
+		uint16_t texture;
+		uint16_t sampler;
+	};
+
+	struct Material {
+		CONSTRUCTOR(Material) {
+			alpha_mode = AlphaMode::eOpaque;
+			alpha_cutoff = 0.5f;
+
+			base_color = Texture();
+			base_color_factor = float4(1.0f);
+
+			metallic_roughness = Texture();
+			metallic_factor = 1.f;
+			roughness_factor = 1.f;
+
+			normal = Texture();
+			normal_scale = 1.f;
+
+			occlusion = Texture();
+			occlusion_strenth = 1.0f;
+
+			emissive = Texture();
+			emissive_factor = float3(0.0f);
+			_pad0 = 0.0f;
+
+			double_sided = 0u;
+
+			// KHR_materials_clearcoat
+			clearcoat_factor = 0.0f;
+			clearcoat_roughness_factor = 0.0f;
+
+			// KHR_materials_emissive_strength
+			emissive_strength = 1.0f;
+
+			// KHR_materials_ior
+			ior = 1.5f;
+				
+			// KHR_materials_iridescence
+			iridescence_factor = 0.0f;
+			iridescence_ior = 1.3f; 
+			iridescence_thickness_minimum = 100.f;
+			iridescence_thickness_maximum = 400.f;
+
+			// KHR_materials_sheen
+			float3 _pad_sheen_align;
+			sheen_color_factor = float3(0.0f);
+			sheen_roughness_factor = 0.0f;
+
+			// KHR_materials_specular
+			specular_factor = 1.0f;
+			specular_color_factor = float3(1.0f);
+
+			// KHR_materials_transmission
+			transmission_factor = 0.0f;
+
+			// KHR_materials_volume
+			thickness_factor = 0.0f;
+			attenuation_distance = constants::flt_inf;
+			attenuation_color = float3(1.0f);
+		}
+
+		float4 base_color_factor;
+
+		AlphaMode alpha_mode;
+		float alpha_cutoff;
+
+		Texture base_color;
+
+		Texture metallic_roughness;
+		float metallic_factor;
+		float roughness_factor;
+
+		Texture normal;
+		float normal_scale;
+
+		Texture occlusion;
+		float occlusion_strenth;
+
+		Texture emissive;
+		float emissive_strength; // KHR_materials_emissive_strength
+		float3 emissive_factor;
+
+		uint32_t double_sided;
+
+		// KHR_materials_clearcoat
+		float clearcoat_factor;
+		float clearcoat_roughness_factor;
+
+		// KHR_materials_ior
+		float ior;
+
+		// KHR_materials_iridescence
+		float iridescence_factor;
+		float iridescence_ior;
+		float iridescence_thickness_minimum;
+		float iridescence_thickness_maximum;
+
+		// KHR_materials_sheen
+		float sheen_roughness_factor;
+		float3 sheen_color_factor;
+
+		// KHR_materials_transmission
+		float transmission_factor;
+
+		// KHR_materials_volume
+		float thickness_factor;
+		float attenuation_distance;
+
+		// KHR_materials_specular
+		float specular_factor;
+		float _pad0;
+		float3 specular_color_factor;
+		float _pad1;
+	
+		float3 attenuation_color;
+		float _pad2;
+	};
+
+	enum class LightType {
+		eInvalid,
+		eDirectional,
+		ePoint,
+		eSpot
+	};
+
+	struct LightCommit {
+		float3 position;
+		float intencity;
+		float3 direction;
+		float light_angle_scale;
+		float3 color;
+		float light_angle_offset;
+		int to_target;
+		float radius;
+		int shadow_index;
+		int cast_shadows;
+		LightType type;
+		int _pad0;
+	};
+
+	struct CascadedShadowCommit {
+		float split_depths[constants::cascade_shadow_map_cascade_count];
+		uint32_t matrix_offsets[constants::cascade_shadow_map_cascade_count];
+		float far_clip;
+		int index;
+		uint32_t pad;
+	};
+
+	struct OmniShadowCommit {
+		uint32_t matrix_offsets[6];
+		float far_plane;
+		int index;
+	};
+
+	struct SpotShadowCommit {
+		uint32_t matrix_offset;
+		int index;
+	};
+
+	struct Camera {
+		uint32_t type;
+		uint32_t matrices_offset;
+		uint32_t frustum_offset;
+		uint32_t last_hash;
+
+		float fov;
+		float z_near;
+		float z_far;
+		float aspect;
+
+		float2 size;
+		float2 inv_size;
+	};
+
+	struct FrameData {
+		TYPE_PTR(float4x4) matrix_ptr;
+		TYPE_PTR(float4) frustum_sides_ptr;
+		TYPE_PTR(Mesh) mesh_ptr;
+		TYPE_PTR(SubMesh) submesh_ptr;
+		TYPE_PTR(Camera) camera_ptr;
+		TYPE_PTR(Material) material_ptr;
+		TYPE_PTR(LightCommit) lights_ptr;
+		TYPE_PTR(CascadedShadowCommit) cascaded_shadow_ptr;
+		TYPE_PTR(OmniShadowCommit) omni_shadow_ptr;
+		TYPE_PTR(SpotShadowCommit) spot_shadow_ptr;
+
+		float dt;
+		uint32_t directional_light_count;
+		uint32_t point_light_count;
+		uint32_t spot_light_count;
+		uint32_t light_count;
+		uint32_t camera_count;
+		uint32_t draw_count;
+		uint32_t mesh_count;
+		uint32_t default_camera_id;
+		uint32_t frame_number;
+
+		inline float4x4 get_model_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::model_matrix_offset];
+		}
+		inline float4x4 get_old_model_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::old_model_matrix_offset];
+		}
+		inline float4x4 get_normal_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::normal_matrix_offset];
+		}
+
+		inline float4x4 get_view_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::view_matrix_offset];
+		}
+		inline float4x4 get_inv_view_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::inv_view_matrix_offset];
+		}
+		inline float4x4 get_projection_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::projection_matrix_offset];
+		}
+		inline float4x4 get_inv_projection_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::inv_projection_matrix_offset];
+		}
+		inline float4x4 get_view_projection_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::view_projection_matrix_offset];
+		}
+		inline float4x4 get_prev_view_projection_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::prev_view_projection_matrix_offset];
+		}
+		inline float4x4 get_inv_view_projection_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::inv_view_projection_matrix_offset];
+		}
+		inline float4x4 get_reprojection_matrix(uint global_offset) { 
+			return matrix_ptr[global_offset + constants::reprojection_matrix_offset];
+		}
+
+	};
+
+	struct DrawIndexedIndirectData {
+		uint32_t index_count;
+		uint32_t instance_count;
+		uint32_t first_index;
+		int32_t  vertex_offset;
+		uint32_t first_instance;
+	};
+
+	struct DrawDescription {
+		uint32_t camera_index;
+		uint32_t mesh_index;
+		uint32_t submesh_index;
+		uint32_t sorting_order;
+	};
+
+	
+
 	struct EncodedVertex {
 		int16_t3 position;
 		uint8_t4 color;
@@ -265,6 +609,9 @@ namespace interop {
 		TYPE_PTR(uint16_t3) weights;
 
 		TYPE_PTR(sindex_t) indices;
+
+		TYPE_PTR(DrawDescription) draw_descriptions_ptr;
+		TYPE_PTR(DrawIndexedIndirectData) draw_data_ptr;
 
 		inline EncodedVertex get_enc_vertex(uint32_t vertex_index) {
 			EncodedVertex enc_vert;

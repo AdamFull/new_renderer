@@ -18,7 +18,7 @@ namespace engine::render {
 		virtual auto add_render_resource(const edge::gfx::SamplerCreateInfo& create_info) -> uint32_t = 0;
 		virtual auto add_render_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t = 0;
 
-		virtual void add_material(const shlib::Material& material) = 0;
+		virtual void add_material(const interop::Material& material) = 0;
 
 		virtual auto request_interleaved_geometry_buffer(const GeometryBufferCreateInfo& create_info) -> uint32_t = 0;
 		virtual auto request_deinterleaved_geometry_buffer(const GeometryBufferCreateInfo& create_info) -> uint32_t = 0;

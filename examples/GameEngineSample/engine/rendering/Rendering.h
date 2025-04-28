@@ -21,7 +21,7 @@ namespace engine::render {
 		auto add_render_resource(const edge::gfx::SamplerCreateInfo& create_info) -> uint32_t override;
 		auto add_render_resource(const edge::gfx::BufferCreateInfo& create_info) -> uint32_t override;
 
-		void add_material(const shlib::Material& material) override;
+		void add_material(const interop::Material& material) override;
 
 		void render(float delta_time) override;
 

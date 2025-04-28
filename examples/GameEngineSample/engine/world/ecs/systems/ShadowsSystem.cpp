@@ -58,24 +58,24 @@ namespace engine::world::ecs {
 				light.shadowIndex = -1;
 
 				// Calculate shadows
-				std::array<float, shlib::cascade_shadow_map_cascade_count> cascadeSplits;
-				if (light.castShadows && base.enabled && dir_light_count < shlib::max_directional_light_shadow_count) {
-					shlib::CascadedShadowCommit shadow_commit{};
+				float cascade_splits[constants::cascade_shadow_map_cascade_count] = {};
+				if (light.castShadows && base.enabled && dir_light_count < constants::max_directional_light_shadow_count) {
+					interop::CascadedShadowCommit shadow_commit{};
 
 					// Calculate split depths based on view camera frustum
 					// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
-					for (int32_t i = 0; i < shlib::cascade_shadow_map_cascade_count; i++) {
-						float p = static_cast<float>(i + 1) / static_cast<float>(shlib::cascade_shadow_map_cascade_count);
+					for (int32_t i = 0; i < constants::cascade_shadow_map_cascade_count; i++) {
+						float p = static_cast<float>(i + 1) / static_cast<float>(constants::cascade_shadow_map_cascade_count);
 						float log = min_z * glm::pow(ratio, p);
 						float uniform = min_z + range * p;
 						float d = cascade_split_lambda * (log - uniform) + uniform;
-						cascadeSplits[i] = (d - near_clip) / clip_range;
+						cascade_splits[i] = (d - near_clip) / clip_range;
 					}
 
 					// Calculate orthographic projection matrix for each cascade
 					float lastSplitDist = 0.0;
-					for (int32_t i = 0; i < shlib::cascade_shadow_map_cascade_count; i++) {
-						auto& splitDist = cascadeSplits[i];
+					for (int32_t i = 0; i < constants::cascade_shadow_map_cascade_count; i++) {
+						auto& splitDist = cascade_splits[i];
 
 						std::array<glm::vec4, 8> frustumCorners = {
 							// Near face
@@ -93,7 +93,7 @@ namespace engine::world::ecs {
 
 						// Project frustum corners into world space
 						for (auto& corner : frustumCorners) {
-							glm::vec4 invCorner = render_world.get_camera_matrix(render::main_camera_index, shlib::inv_view_projection_matrix_offset) * corner;
+							glm::vec4 invCorner = render_world.get_camera_matrix(render::main_camera_index, constants::inv_view_projection_matrix_offset) * corner;
 							corner = invCorner / invCorner.w;
 						}
 
@@ -127,22 +127,22 @@ namespace engine::world::ecs {
 						glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 						shadowOrigin = shadowMatrix * shadowOrigin;
 						float storedW = shadowOrigin.w;
-						shadowOrigin = shadowOrigin * static_cast<float>(shlib::cascade_shadow_map_resolution) / 2.0f;
+						shadowOrigin = shadowOrigin * static_cast<float>(constants::cascade_shadow_map_resolution) / 2.0f;
 						glm::vec4 roundedOrigin = glm::round(shadowOrigin);
 						glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
-						roundOffset = roundOffset * 2.0f / static_cast<float>(shlib::cascade_shadow_map_resolution);
+						roundOffset = roundOffset * 2.0f / static_cast<float>(constants::cascade_shadow_map_resolution);
 						roundOffset.z = 0.0f;
 						roundOffset.w = 0.0f;
 						glm::mat4 lightProjectionMatrix = lightOrthoMatrix;
 						lightProjectionMatrix[3] += roundOffset;
 
 						// Store split distance and matrix in cascade
-						shadow_commit.farClip = far_clip;
-						shadow_commit.splitDepths[i] = (near_clip + splitDist * clip_range);
+						shadow_commit.far_clip = far_clip;
+						shadow_commit.split_depths[i] = (near_clip + splitDist * clip_range);
 
-						lastSplitDist = cascadeSplits[i];
+						lastSplitDist = cascade_splits[i];
 
-						render_world.update_render_camera(light.shadow_casters[i], lightViewMatrix, lightProjectionMatrix, false, shlib::cascade_shadow_map_resolution, shlib::cascade_shadow_map_resolution);
+						render_world.update_render_camera(light.shadow_casters[i], lightViewMatrix, lightProjectionMatrix, false, constants::cascade_shadow_map_resolution, constants::cascade_shadow_map_resolution);
 
 						auto& camera = render_world.get_render_camera(light.shadow_casters[i]);
 						shadow_commit.matrix_offsets[i] = camera.matrices_offset;
@@ -181,8 +181,8 @@ namespace engine::world::ecs {
 				light.shadowIndex = -1;
 
 				//light.castShadows = light_count % 2;
-				if (light.castShadows && base.enabled && point_light_count < shlib::max_point_light_shadow_count) {
-					shlib::OmniShadowCommit shadow_commit{};
+				if (light.castShadows && base.enabled && point_light_count < constants::max_point_light_shadow_count) {
+					interop::OmniShadowCommit shadow_commit{};
 
 					glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, light.radius);
 
@@ -193,14 +193,14 @@ namespace engine::world::ecs {
 					matrices[4] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));	// POSITIVE_Z
 					matrices[5] = glm::lookAt(ltransform.gposition, ltransform.gposition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));	// NEGATIVE_Z
 
-					shadow_commit.farPlane = light.radius;
+					shadow_commit.far_plane = light.radius;
 					shadow_commit.index = light_count;
 
 					light.shadowIndex = point_light_count++;
 
 					for (uint64_t idx = 0ull; idx < matrices.size(); ++idx) {
 						auto& view = matrices[idx];
-						render_world.update_render_camera(light.shadow_casters[idx], view, shadowProj, true, shlib::point_light_shadow_map_resolution, shlib::point_light_shadow_map_resolution);
+						render_world.update_render_camera(light.shadow_casters[idx], view, shadowProj, true, constants::point_light_shadow_map_resolution, constants::point_light_shadow_map_resolution);
 
 						auto& camera = render_world.get_render_camera(light.shadow_casters[idx]);
 						shadow_commit.matrix_offsets[idx] = camera.matrices_offset;
@@ -233,8 +233,8 @@ namespace engine::world::ecs {
 			for (auto [entity, ltransform, base, light] : view.each()) {
 				light.shadowIndex = -1;
 
-				if (light.castShadows && base.enabled && spot_light_count < shlib::max_spot_light_count) {
-					shlib::SpotShadowCommit shadow_commit{};
+				if (light.castShadows && base.enabled && spot_light_count < constants::max_spot_light_count) {
+					interop::SpotShadowCommit shadow_commit{};
 
 					auto& camera = render_world.get_render_camera(light.shadow_caster);
 					shadow_commit.matrix_offset = camera.matrices_offset;
@@ -247,7 +247,7 @@ namespace engine::world::ecs {
 					light.shadowIndex = spot_light_count++;
 					render_world.add_shadow(shadow_commit);
 
-					render_world.update_render_camera(light.shadow_caster, shadowView, shadowProj, true, shlib::spot_light_shadow_map_resolution, shlib::spot_light_shadow_map_resolution);
+					render_world.update_render_camera(light.shadow_caster, shadowView, shadowProj, true, constants::spot_light_shadow_map_resolution, constants::spot_light_shadow_map_resolution);
 
 					// Update meshes
 					auto mview = EntityManager::view<TransformComponent, BaseComponent, MeshComponent>();

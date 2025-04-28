@@ -147,10 +147,10 @@ namespace engine::render {
 		edge::gfx::request_timestamp_frequency(&timestamp_frequency);
 
 		std::vector<edge::gfx::DescrptorLayoutBindingDesc> binding_descriptions{};
-		binding_descriptions.emplace_back(0u, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
-		binding_descriptions.emplace_back(1u, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
-		binding_descriptions.emplace_back(2u, shlib::MAX_SAMPLED_TEXTURES, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampledImage);
-		binding_descriptions.emplace_back(3u, shlib::MAX_SAMPLED_TEXTURES, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampler);
+		binding_descriptions.emplace_back(FRAME_DATA_SLOT, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
+		binding_descriptions.emplace_back(SAMPLER_SLOT, MAX_SAMPLER_SLOTS, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampler);
+		binding_descriptions.emplace_back(SRV_TEXTURE_SLOT, MAX_SRV_TEXTURE_SLOTS, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampledImage);
+		binding_descriptions.emplace_back(UAV_TEXTURE_SLOT, MAX_UAV_TEXTURE_SLOTS, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eStorageImage);
 
 		edge::gfx::DescriptorLayoutCreateInfo descriptor_layout_ci{};
 		descriptor_layout_ci.bindings = binding_descriptions;
@@ -181,7 +181,8 @@ namespace engine::render {
 		technique_db->add_descriptor_layout(global_descriptor);
 		technique_db->load("/internal/tdbcache");
 		technique_db->load_config({
-			"/internal_res/assets/shaders/technique_db.json",
+			//"/internal_res/assets/shaders/technique_db.json",
+			"/internal_res/assets/shaders/technique_db_slang.json",
 			current_frame->backbuffer->get_format()
 			});
 
@@ -544,7 +545,7 @@ namespace engine::render {
 
 			edge::gfx::TextureDescriptor texture_descriptor{};
 			texture_descriptor.type = edge::gfx::DescriptorType::eSampledImage;
-			texture_descriptor.binding = shlib::SRV_TEXTURE_SLOT;
+			texture_descriptor.binding = SRV_TEXTURE_SLOT;
 
 			texture_descriptor.array_index = array_index;
 			texture_descriptor.texture = texture_obj.texture;
@@ -565,7 +566,7 @@ namespace engine::render {
 			auto& sampler = samplers.get(resource.resource_id);
 
 			edge::gfx::SamplerDescriptor sampler_descriptor{};
-			sampler_descriptor.binding = shlib::SAMPLER_SLOT;
+			sampler_descriptor.binding = SAMPLER_SLOT;
 
 			sampler_descriptor.array_index = array_index;
 			sampler_descriptor.sampler = sampler;

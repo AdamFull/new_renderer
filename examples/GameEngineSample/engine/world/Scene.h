@@ -16,7 +16,8 @@ namespace engine
 		{
 			std::unordered_map<uint32_t, std::vector<uint32_t>> vertexHandlers{};
 
-			std::vector<uint32_t> textures{};
+			std::vector<uint16_t> images{};
+			std::vector<uint16_t> samplers{};
 			std::vector<uint32_t> materials{};
 		};
 

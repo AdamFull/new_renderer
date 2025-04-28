@@ -46,16 +46,16 @@ namespace engine::world::ecs {
 				if (!base.enabled)
 					continue;
 
-				if (directional_light_count > shlib::max_directional_light_count)
+				if (directional_light_count > constants::max_directional_light_count)
 					break;
 
-				shlib::LightCommit commit;
-				commit.type = shlib::light_type_directional;
+				interop::LightCommit commit;
+				commit.type = interop::LightType::eDirectional;
 				commit.direction = glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));
 				commit.color = light.color;
 				commit.intencity = light.intencity;
-				commit.shadowIndex = light.shadowIndex;
-				commit.castShadows = static_cast<int>(light.castShadows);
+				commit.shadow_index = light.shadowIndex;
+				commit.cast_shadows = static_cast<int>(light.castShadows);
 
 				render_world.add_light(commit);
 				directional_light_count++;
@@ -71,18 +71,18 @@ namespace engine::world::ecs {
 				if (!base.enabled)
 					continue;
 
-				if (point_light_count > shlib::max_point_light_count)
+				if (point_light_count > constants::max_point_light_count)
 					break;
 
 				// Calculate light data
-				shlib::LightCommit commit;
-				commit.type = shlib::light_type_point;
+				interop::LightCommit commit;
+				commit.type = interop::LightType::ePoint;
 				commit.position = transform.gposition;
 				commit.color = light.color;
 				commit.intencity = light.intencity;
 				commit.radius = light.radius;
-				commit.shadowIndex = light.shadowIndex;
-				commit.castShadows = static_cast<int>(light.castShadows);
+				commit.shadow_index = light.shadowIndex;
+				commit.cast_shadows = static_cast<int>(light.castShadows);
 
 				render_world.add_light(commit);
 				point_light_count++;
@@ -96,20 +96,20 @@ namespace engine::world::ecs {
 			// TODO: direction as dot product of rotation and some vec
 			auto view = EntityManager::view<TransformComponent, SpotLightComponent>();
 			for (auto [entity, transform, light] : view.each()) {
-				if (spot_light_count > shlib::max_spot_light_count)
+				if (spot_light_count > constants::max_spot_light_count)
 					break;
 
-				shlib::LightCommit commit;
-				commit.type = shlib::light_type_spot;
+				interop::LightCommit commit;
+				commit.type = interop::LightType::eSpot;
 				commit.position = transform.gposition;
 				commit.direction = light.toTarget ? light.target : glm::normalize(transform.grotation * glm::vec3(0.f, 0.f, -1.f));
 				commit.color = light.color;
 				commit.intencity = light.intencity;
-				commit.lightAngleScale = 1.f / (glm::max)(0.001f, glm::cos(light.innerAngle) - glm::cos(light.outerAngle));
-				commit.lightAngleOffset = -glm::cos(light.outerAngle) * commit.lightAngleScale;
-				commit.toTarget = static_cast<int>(light.toTarget);
-				commit.shadowIndex = light.shadowIndex;
-				commit.castShadows = static_cast<int>(light.castShadows);
+				commit.light_angle_scale = 1.f / (glm::max)(0.001f, glm::cos(light.innerAngle) - glm::cos(light.outerAngle));
+				commit.light_angle_offset = -glm::cos(light.outerAngle) * commit.light_angle_scale;
+				commit.to_target = static_cast<int>(light.toTarget);
+				commit.shadow_index = light.shadowIndex;
+				commit.cast_shadows = static_cast<int>(light.castShadows);
 
 				render_world.add_light(commit);
 				spot_light_count++;
@@ -120,7 +120,7 @@ namespace engine::world::ecs {
 	void LightingSystem::on_construct_directional_light(entt::registry& registry, entt::entity entity) {
 		auto& light = registry.get<DirectionalLightComponent>(entity);
 
-		for (int32_t i = 0; i < shlib::cascade_shadow_map_cascade_count; ++i) {
+		for (int32_t i = 0; i < constants::cascade_shadow_map_cascade_count; ++i) {
 			auto [camera_id, render_camera] = render_world.create_camera();
 			light.shadow_casters.emplace_back(camera_id);
 		}

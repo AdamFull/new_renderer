@@ -21,6 +21,8 @@
 
 #include "../rendering/Globals.h"
 
+#include "../../assets/shaders/include/interop.h"
+
 namespace engine::world
 {
 	struct BufferStream {
@@ -348,26 +350,10 @@ namespace engine::world
 
 	void Scene::LoadGLTF(tinygltf::Model& root) {
 
-		resources.textures.resize(root.images.size(), ~0u);
-		// Load textures
-		for (const auto& texture : root.textures) {
-			int32_t texture_source{ texture.source };
-			if (texture.source < 0) {
-				EDGE_LOGE("[Scene] Loading basisu textures is currently unavaliable.");
-				continue;
-			}
+		resources.images.resize(root.images.size(), constants::invalid_index);
+		resources.samplers.resize(root.samplers.size(), constants::invalid_index);
 
-			auto& image = root.images[texture_source];
-
-			// TODO: add ability to override format and sampler params
-			// TODO: find format from materials
-
-			std::array<char, 1024ull> buffer{};
-			auto image_path = edge::fs::path_append(scene_root_directory, url_decode(image.uri), std::span(buffer));
-			resources.textures.push_back(renderer.add_render_resource(image_path));
-		}
-
-		auto load_texture = [this, &root](int32_t texture_index, uint32_t& out_tex, uint32_t& out_sampler) -> void {
+		auto load_texture = [this, &root](int32_t texture_index, interop::Texture& out_tex) -> void {
 			if (texture_index >= 0) {
 				auto& texture = root.textures[texture_index];
 				if (texture.source < 0) {
@@ -375,59 +361,68 @@ namespace engine::world
 					return;
 				}
 
-				auto& img_handle = resources.textures[texture.source];
-				if (img_handle != ~0u) {
-					out_tex = img_handle;
+				auto& image_handle = resources.images[texture.source];
+				if (image_handle != constants::invalid_index) {
+					out_tex.texture = image_handle;
 				}
 				else {
 					auto& image = root.images[texture.source];
 
 					std::array<char, 1024ull> buffer{};
 					auto image_path = edge::fs::path_append(scene_root_directory, url_decode(image.uri), std::span(buffer));
-					img_handle = out_tex = renderer.add_render_resource(image_path);
+					image_handle = out_tex.texture = renderer.add_render_resource(image_path);
 				}
 
-				auto sampler_create_info = GetSamplerCreateInfo(root.samplers[texture.sampler]);
-				out_sampler = renderer.add_render_resource(sampler_create_info);
+				auto& sampler_handle = resources.samplers[texture.sampler];
+				if (sampler_handle != constants::invalid_index) {
+					out_tex.sampler = sampler_handle;
+				}
+				else {
+					auto sampler_create_info = GetSamplerCreateInfo(root.samplers[texture.sampler]);
+					sampler_handle = out_tex.sampler = renderer.add_render_resource(sampler_create_info);
+				}
 			}};
 
 		for (uint64_t idx = 0ull; idx < root.materials.size(); ++idx) {
 			auto& material = root.materials[idx];
-			shlib::Material mat{};
+			interop::Material mat{};
 
 			// TODO: add my own ext that will contain shader EXT_material_shader or something. But in my case it will contain name in format {library}:{shader_name} and other helpfull data
 
 			// Attach base color (aka albedo)
-			load_texture(material.pbrMetallicRoughness.baseColorTexture.index, mat.base_color_texture, mat.base_color_sampler);
+			load_texture(material.pbrMetallicRoughness.baseColorTexture.index, mat.base_color);
 
 			// Attach metallic roughness texture (metallic = green, roughness = blue)
-			load_texture(material.pbrMetallicRoughness.metallicRoughnessTexture.index, mat.metallic_roughness_texture, mat.metallic_roughness_sampler);
+			load_texture(material.pbrMetallicRoughness.metallicRoughnessTexture.index, mat.metallic_roughness);
 
 			// Attach normal map texture
-			load_texture(material.normalTexture.index, mat.normal_texture, mat.normal_sampler);
-			mat.normalScale = static_cast<float>(material.normalTexture.scale);
+			load_texture(material.normalTexture.index, mat.normal);
+			mat.normal_scale = static_cast<float>(material.normalTexture.scale);
 
 			// Attach baked ambient occlusion texture
-			load_texture(material.occlusionTexture.index, mat.occlusion_texture, mat.occlusion_sampler);
-			mat.occlusionStrenth = static_cast<float>(material.occlusionTexture.strength);
+			load_texture(material.occlusionTexture.index, mat.occlusion);
+			mat.occlusion_strenth = static_cast<float>(material.occlusionTexture.strength);
 
 			// Attach emissive texture
-			load_texture(material.emissiveTexture.index, mat.emissive_texture, mat.emissive_sampler);
+			load_texture(material.emissiveTexture.index, mat.emissive);
 
-			mat.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-			mat.roughnessFactor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
-			mat.metallicFactor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
-			mat.baseColorFactor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
+			mat.emissive_factor = glm::make_vec3(material.emissiveFactor.data());
+			mat.roughness_factor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
+			mat.metallic_factor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
+			mat.base_color_factor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
 
-			if (material.alphaMode.compare("BLEND") == 0)
-				mat.alphaMode = 0;
-			else if (material.alphaMode.compare("MASK") == 0)
-				mat.alphaMode = 1;
-			else
-				mat.alphaMode = 2;
+			if (material.alphaMode.compare("BLEND") == 0) {
+				mat.alpha_mode = interop::AlphaMode::eBlend;
+			}	
+			else if (material.alphaMode.compare("MASK") == 0) {
+				mat.alpha_mode = interop::AlphaMode::eMask;
+			}
+			else {
+				mat.alpha_mode = interop::AlphaMode::eOpaque;
+			}
 
-			mat.alphaCutoff = static_cast<float>(material.alphaCutoff);
-			mat.doubleSided = material.doubleSided;
+			mat.alpha_cutoff = static_cast<float>(material.alphaCutoff);
+			mat.double_sided = material.doubleSided;
 
 			renderer.add_material(mat);
 		}
@@ -488,8 +483,8 @@ namespace engine::world
 	}
 
 	// Calculate whole mesh bounds and encoders
-	void ComputeMeshBounds(const tinygltf::Model& root, const tinygltf::Mesh& gltf_mesh, shlib::Mesh& mesh) {
-		shlib::BoundingBox bb{};
+	void ComputeMeshBounds(const tinygltf::Model& root, const tinygltf::Mesh& gltf_mesh, interop::Mesh& mesh) {
+		interop::BoundingBox bb{};
 		mesh.bb_enc = glm::vec3(1.0f);
 
 		for (const auto& gltf_primitive : gltf_mesh.primitives) {
@@ -541,7 +536,7 @@ namespace engine::world
 			mesh.uv_enc.max = glm::mix(glm::vec2(0.0f), bs, glm::notEqual(mesh.uv_enc.max, glm::vec2(0.0f)));
 		}
 
-		mesh.ebb = shlib::EncodeBoundingBox(bb, mesh.bb_enc);
+		mesh.ebb = interop::encode_bounding_box(bb, mesh.bb_enc);
 	}
 
 	// Maximum vertex size
@@ -604,7 +599,7 @@ namespace engine::world
 		mesh_component.skin = gltf_node.skin;
 
 		// Create encode matrices for mesh
-		glm::mat3 position_encode_mat = shlib::make_encode_position_matrix(mesh.bb_enc);
+		glm::mat3 position_encode_mat = interop::make_encode_position_matrix(mesh.bb_enc);
 		glm::mat3 normal_encode_mat = glm::transpose(glm::inverse(position_encode_mat));
 
 		// Load mesh primitives
@@ -616,7 +611,7 @@ namespace engine::world
 			auto geometry_buffer_id = renderer.request_deinterleaved_geometry_buffer(geometry_ci);
 			auto& geometry_buffer = renderer.lookup_geometry_buffer(geometry_buffer_id);
 
-			shlib::BoundingBox bb{};
+			interop::BoundingBox bb{};
 			VertexData vertex_data{};
 
 			uint32_t stream_count{ 0u };
@@ -637,7 +632,7 @@ namespace engine::world
 				if (attribute_type & render::VertexAttributeFlag::ePosition) {
 					attrib_stream.byte_range = Transform<glm::vec3, glm::i16vec3>(root, accessor, vertex_data.positions,
 						[&mesh](const glm::vec3& in)
-						{  return shlib::encode_position(in, mesh.bb_enc); });
+						{  return interop::encode_position(in, mesh.bb_enc); });
 
 					// Calculate bounding box for this mesh primitive
 					auto stream = get_buffer_stream(root, accessor);
@@ -652,28 +647,28 @@ namespace engine::world
 				}
 				else if (attribute_type & render::VertexAttributeFlag::eColor) {
 					attrib_stream.byte_range = Transform<glm::vec4, glm::u8vec4>(root, accessor, vertex_data.colors,
-						[](const glm::vec4& in) { return shlib::encode_color(in); });
+						[](const glm::vec4& in) { return interop::encode_color(in); });
 				}
 				else if (attribute_type & render::VertexAttributeFlag::eTexCoord) {
 					attrib_stream.byte_range = Transform<glm::vec2, glm::u16vec2>(root, accessor, vertex_data.texcoords,
-						[&mesh](const glm::vec2& in) { return shlib::encode_texcoord(in, mesh.uv_enc); });
+						[&mesh](const glm::vec2& in) { return interop::encode_texcoord(in, mesh.uv_enc); });
 				}
 				else if (attribute_type & render::VertexAttributeFlag::eNormal) {
 					attrib_stream.byte_range = Transform<glm::vec3, glm::u16vec2>(root, accessor, vertex_data.normals,
 						[&normal_encode_mat](const glm::vec3& in)
-						{ return shlib::encode_normal(glm::normalize(normal_encode_mat * in)); });
+						{ return interop::encode_normal(glm::normalize(normal_encode_mat * in)); });
 				}
 				else if (attribute_type & render::VertexAttributeFlag::eTangent) {
 					attrib_stream.byte_range = Transform<glm::vec4, glm::u16vec2>(root, accessor, vertex_data.tangents,
 						[&position_encode_mat](const glm::vec4& in)
 						{
-							return shlib::encode_tangent(glm::vec4(glm::normalize(position_encode_mat * in), in.w));
+							return interop::encode_tangent(glm::vec4(glm::normalize(position_encode_mat * in), in.w));
 						});
 				}
 				// TODO: can be compressed with using u16vec3
 				else if (attribute_type & render::VertexAttributeFlag::eWeight) {
 					attrib_stream.byte_range = Transform<glm::vec4, glm::u16vec3>(root, accessor, vertex_data.weights,
-						[](const glm::vec4& in) { return shlib::encode_weights(in); });
+						[](const glm::vec4& in) { return interop::encode_weights(in); });
 				}
 				else {
 					// Just copy, transcoding not supported yet
@@ -694,13 +689,13 @@ namespace engine::world
 
 			auto vertex_range = geometry_buffer.add_mesh(attribute_streams, index_stream);
 
-			shlib::SubMesh submesh{};
+			interop::SubMesh submesh;
 			submesh.first_index = vertex_range.first_index;
 			submesh.index_count = vertex_range.index_count;
 			submesh.first_vertex = vertex_range.first_vertex;
 			submesh.vertex_count = vertex_range.vertex_count;
 			submesh.material = primitive.material;
-			submesh.ebb = shlib::EncodeBoundingBox(bb, mesh.bb_enc);
+			submesh.ebb =  interop::encode_bounding_box(bb, mesh.bb_enc);
 
 			render_world.attach_submesh(mesh_id, submesh);
 		}

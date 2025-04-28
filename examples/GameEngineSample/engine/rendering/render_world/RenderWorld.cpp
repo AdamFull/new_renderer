@@ -4,37 +4,38 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include <edge/util/utl_profiler.h>
+#include <edge/util/utl_hash.hpp>
 
 #include "../Globals.h"
 
 namespace engine::render {
 	RenderWorld::RenderWorld(IRenderer& renderer) :
 		renderer{ renderer } {
-		draw_descriptions = std::make_unique<DynamicBuffer<shlib::DrawDescription>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-		world_meshes = std::make_unique<DynamicBuffer<shlib::Mesh>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-		world_submeshes = std::make_unique<DynamicBuffer<shlib::SubMesh>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		draw_descriptions = std::make_unique<DynamicBuffer<interop::DrawDescription>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		world_meshes = std::make_unique<DynamicBuffer<interop::Mesh>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		world_submeshes = std::make_unique<DynamicBuffer<interop::SubMesh>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
-		scene_lights = std::make_unique<DynamicBuffer<shlib::LightCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		scene_lights = std::make_unique<DynamicBuffer<interop::LightCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
-		scene_cascaded_shadows = std::make_unique<DynamicBuffer<shlib::CascadedShadowCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-		omni_shadows = std::make_unique<DynamicBuffer<shlib::OmniShadowCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-		spot_shadows = std::make_unique<DynamicBuffer<shlib::SpotShadowCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		scene_cascaded_shadows = std::make_unique<DynamicBuffer<interop::CascadedShadowCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		omni_shadows = std::make_unique<DynamicBuffer<interop::OmniShadowCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		spot_shadows = std::make_unique<DynamicBuffer<interop::SpotShadowCommit>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
-		draw_materials = std::make_unique<DynamicBuffer<shlib::Material>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		draw_materials = std::make_unique<DynamicBuffer<interop::Material>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
-		world_cameras = std::make_unique<DynamicBuffer<shlib::Camera>>(8ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		world_cameras = std::make_unique<DynamicBuffer<interop::Camera>>(8ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 		world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 		world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 	}
 
-	std::tuple<uint32_t, shlib::Camera&> RenderWorld::create_camera() {
+	std::tuple<uint32_t, interop::Camera&> RenderWorld::create_camera() {
 		auto& world_resource = world_resources.emplace_back();
 		world_resource.type = WorldResourceType::eCamera;
 		world_resource.resource_id = camera_offset++;
 
 		auto& camera = world_cameras->get(world_resource.resource_id);
 		camera.matrices_offset = matrices_offset;
-		matrices_offset += shlib::matrix_offset_count;
+		matrices_offset += constants::matrix_offset_count;
 
 		camera.frustum_offset = frustum_offset;
 		frustum_offset += 6ull; // Because 6 frustum sides
@@ -47,7 +48,7 @@ namespace engine::render {
 		return world_resource.resource_id;
 	}
 
-	shlib::Camera& RenderWorld::get_render_camera(uint32_t camera_id) {
+	interop::Camera& RenderWorld::get_render_camera(uint32_t camera_id) {
 		auto& world_resource = world_resources[camera_id];
 		assert(world_resource.type == WorldResourceType::eCamera);
 		return world_cameras->get(world_resource.resource_id);
@@ -91,29 +92,29 @@ namespace engine::render {
 			camera.aspect = screen_size_x / screen_size_y;
 
 			camera.size = { screen_size_x, screen_size_y };
-			camera.invSize = 1.f / camera.size;
+			camera.inv_size = 1.f / camera.size;
 
 			auto forward = glm::normalize(glm::rotate(rotation, glm::vec3(0.f, 0.f, -1.f)));
 			auto right = glm::normalize(glm::cross(forward, glm::vec3{ 0.f, 1.f, 0.f }));
 			auto up = glm::normalize(glm::cross(right, forward));
 
 			auto* matrices = world_matrices->data(camera.matrices_offset);
-			world_matrices->mark_dirty(camera.matrices_offset, shlib::matrix_offset_count);
+			world_matrices->mark_dirty(camera.matrices_offset, constants::matrix_offset_count);
 
-			matrices[shlib::view_matrix_offset] = glm::lookAt(translation, translation + forward, up);
-			matrices[shlib::inv_view_matrix_offset] = glm::inverse(matrices[shlib::view_matrix_offset]);
-			matrices[shlib::projection_matrix_offset] = glm::perspective(camera.fov, camera.aspect, camera.z_near, camera.z_far);
-			matrices[shlib::inv_projection_matrix_offset] = glm::inverse(matrices[shlib::projection_matrix_offset]);
-			matrices[shlib::prev_view_projection_matrix_offset] = matrices[shlib::view_projection_matrix_offset];
-			matrices[shlib::view_projection_matrix_offset] = matrices[shlib::projection_matrix_offset] * matrices[shlib::view_matrix_offset];
-			matrices[shlib::inv_view_projection_matrix_offset] = glm::inverse(matrices[shlib::view_projection_matrix_offset]);
+			matrices[constants::view_matrix_offset] = glm::lookAt(translation, translation + forward, up);
+			matrices[constants::inv_view_matrix_offset] = glm::inverse(matrices[constants::view_matrix_offset]);
+			matrices[constants::projection_matrix_offset] = glm::perspective(camera.fov, camera.aspect, camera.z_near, camera.z_far);
+			matrices[constants::inv_projection_matrix_offset] = glm::inverse(matrices[constants::projection_matrix_offset]);
+			matrices[constants::prev_view_projection_matrix_offset] = matrices[constants::view_projection_matrix_offset];
+			matrices[constants::view_projection_matrix_offset] = matrices[constants::projection_matrix_offset] * matrices[constants::view_matrix_offset];
+			matrices[constants::inv_view_projection_matrix_offset] = glm::inverse(matrices[constants::view_projection_matrix_offset]);
 
 			// Calculate frustum
 			update_camera_frustum(camera_id);
 
 			// Update reprojection
-			auto& camera_reprojection = matrices[shlib::reprojection_matrix_offset];
-			camera_reprojection = matrices[shlib::prev_view_projection_matrix_offset] * matrices[shlib::inv_view_projection_matrix_offset];
+			auto& camera_reprojection = matrices[constants::reprojection_matrix_offset];
+			camera_reprojection = matrices[constants::prev_view_projection_matrix_offset] * matrices[constants::inv_view_projection_matrix_offset];
 
 			float rcp_half_dimx = 2.0f / screen_size_x;
 			float rcp_half_dimy = 2.0f / screen_size_y;
@@ -164,7 +165,7 @@ namespace engine::render {
 
 		if (dirty) {
 			camera.size = { static_cast<float>(width), static_cast<float>(height) };
-			camera.invSize = 1.f / camera.size;
+			camera.inv_size = 1.f / camera.size;
 
 			camera.aspect = camera.size.x / camera.size.y;
 
@@ -181,11 +182,11 @@ namespace engine::render {
 			}
 
 			auto* matrices = world_matrices->data(camera.matrices_offset);
-			world_matrices->mark_dirty(camera.matrices_offset, shlib::matrix_offset_count);
+			world_matrices->mark_dirty(camera.matrices_offset, constants::matrix_offset_count);
 
-			matrices[shlib::view_matrix_offset] = view;
-			matrices[shlib::projection_matrix_offset] = projection;
-			matrices[shlib::view_projection_matrix_offset] = projection * view;
+			matrices[constants::view_matrix_offset] = view;
+			matrices[constants::projection_matrix_offset] = projection;
+			matrices[constants::view_projection_matrix_offset] = projection * view;
 
 			update_camera_frustum(camera_id);
 		}
@@ -229,7 +230,7 @@ namespace engine::render {
 		draw_count += submesh_count;
 	}
 
-	uint32_t RenderWorld::add_material(const shlib::Material& material) {
+	uint32_t RenderWorld::add_material(const interop::Material& material) {
 		auto material_index = material_count++;
 		auto& new_material = draw_materials->get(material_index);
 		draw_materials->mark_dirty(material_index);
@@ -238,16 +239,16 @@ namespace engine::render {
 		return material_index;
 	}
 
-	const shlib::Material& RenderWorld::get_material(uint32_t index) const {
+	const interop::Material& RenderWorld::get_material(uint32_t index) const {
 		return draw_materials->get(index);
 	}
 
-	std::tuple<uint32_t, shlib::Mesh&> RenderWorld::create_mesh(uint32_t joint_count) {
+	std::tuple<uint32_t, interop::Mesh&> RenderWorld::create_mesh(uint32_t joint_count) {
 		auto& world_resource = world_resources.emplace_back();
 		world_resource.type = WorldResourceType::eMesh;
 		world_resource.resource_id = mesh_count++;
 
-		shlib::Mesh& mesh = world_meshes->get(world_resource.resource_id);
+		interop::Mesh& mesh = world_meshes->get(world_resource.resource_id);
 		world_meshes->mark_dirty(world_resource.resource_id);
 
 		// Register slots for model matrix, old model matrix and normal matrix
@@ -273,10 +274,10 @@ namespace engine::render {
 		auto* matrices = world_matrices->data(mesh.matrix_offset);
 		world_matrices->mark_dirty(mesh.matrix_offset, 3ull);
 
-		matrices[shlib::old_model_matrix_offset] = matrices[shlib::model_matrix_offset];
-		matrices[shlib::model_matrix_offset] = matrix * shlib::make_decode_position_matrix(mesh.bb_enc);
+		matrices[constants::old_model_matrix_offset] = matrices[constants::model_matrix_offset];
+		matrices[constants::model_matrix_offset] = matrix * interop::make_decode_position_matrix(mesh.bb_enc);
 		// TODO: can be calculated in shader: (https://github.com/graphitemaster/normals_revisited)
-		matrices[shlib::normal_matrix_offset] = glm::inverse(glm::transpose(matrices[shlib::model_matrix_offset]));
+		matrices[constants::normal_matrix_offset] = glm::inverse(glm::transpose(matrices[constants::model_matrix_offset]));
 	}
 
 	void RenderWorld::update_joint_matrices(uint32_t mesh_id, std::span<const glm::mat4> joints) {
@@ -291,7 +292,7 @@ namespace engine::render {
 		std::memcpy(static_cast<void*>(matrices), joints.data(), joints.size() * sizeof(glm::mat4));
 	}
 
-	void RenderWorld::attach_submesh(uint32_t mesh_id, const shlib::SubMesh& submesh) {
+	void RenderWorld::attach_submesh(uint32_t mesh_id, const interop::SubMesh& submesh) {
 		auto& world_resource = world_resources[mesh_id];
 		assert(world_resource.type == WorldResourceType::eMesh);
 
@@ -303,14 +304,14 @@ namespace engine::render {
 		world_submeshes->mark_dirty(submesh_index);
 	}
 
-	const shlib::Mesh& RenderWorld::get_mesh(uint32_t index) {
+	const interop::Mesh& RenderWorld::get_mesh(uint32_t index) {
 		auto& world_resource = world_resources[index];
 		assert(world_resource.type == WorldResourceType::eMesh);
 
 		return world_meshes->get(world_resource.resource_id);
 	}
 
-	void RenderWorld::add_light(const shlib::LightCommit& light_data) {
+	void RenderWorld::add_light(const interop::LightCommit& light_data) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto light_index = light_count++;
@@ -319,7 +320,7 @@ namespace engine::render {
 		new_light = light_data;
 	}
 
-	void RenderWorld::add_shadow(const shlib::CascadedShadowCommit& shadow_data) {
+	void RenderWorld::add_shadow(const interop::CascadedShadowCommit& shadow_data) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto shadow_index = cascaded_shadow_count++;
@@ -328,7 +329,7 @@ namespace engine::render {
 		new_shadow = shadow_data;
 	}
 
-	void RenderWorld::add_shadow(const shlib::OmniShadowCommit& shadow_data) {
+	void RenderWorld::add_shadow(const interop::OmniShadowCommit& shadow_data) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto shadow_index = omni_shadow_count++;
@@ -337,7 +338,7 @@ namespace engine::render {
 		new_shadow = shadow_data;
 	}
 
-	void RenderWorld::add_shadow(const shlib::SpotShadowCommit& shadow_data) {
+	void RenderWorld::add_shadow(const interop::SpotShadowCommit& shadow_data) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto shadow_index = spot_shadow_count++;
@@ -351,66 +352,51 @@ namespace engine::render {
 
 		auto& render_context = renderer.get_render_context();
 
-		// Bind global buffers
 		{
-			shlib::GlobalBufferReference buffers{};
+			interop::FrameData fd{};
 
-			// Update world matrices buffer
-			buffers.matrixBuffer = world_matrices->get_buffer()->get_address();
+			fd.matrix_ptr = world_matrices->get_buffer()->get_address();
 			world_matrices->flush();
 
-			// Update frustum sides buffer
-			buffers.frustumSidesBuffer = world_frustum->get_buffer()->get_address();
+			fd.frustum_sides_ptr = world_frustum->get_buffer()->get_address();
 			world_frustum->flush();
 
-			// Update buffer with cameras
-			buffers.cameraBuffer = world_cameras->get_buffer()->get_address();
+			fd.camera_ptr = world_cameras->get_buffer()->get_address();
 			world_cameras->flush();
 
-			// Update mesh infos
-			buffers.meshBuffer = world_meshes->get_buffer()->get_address();
+			fd.mesh_ptr = world_meshes->get_buffer()->get_address();
 			world_meshes->flush();
 
-			buffers.submeshBuffer = world_submeshes->get_buffer()->get_address();
+			fd.submesh_ptr = world_submeshes->get_buffer()->get_address();
 			world_submeshes->flush();
 
-			// Update materials
-			buffers.materialBuffer = draw_materials->get_buffer()->get_address();
+			fd.material_ptr = draw_materials->get_buffer()->get_address();
 			draw_materials->flush();
 
-			// Update lights
-			buffers.lightsBuffer = scene_lights->get_buffer()->get_address();
+			fd.lights_ptr = scene_lights->get_buffer()->get_address();
 			scene_lights->flush();
 
-			buffers.cascadedShadowBuffer = scene_cascaded_shadows->get_buffer()->get_address();
+			fd.cascaded_shadow_ptr = scene_cascaded_shadows->get_buffer()->get_address();
 			scene_cascaded_shadows->flush();
 
-			buffers.omniShadowBuffer = omni_shadows->get_buffer()->get_address();
+			fd.omni_shadow_ptr = omni_shadows->get_buffer()->get_address();
 			omni_shadows->flush();
 
-			buffers.spotShadowBuffer = spot_shadows->get_buffer()->get_address();
+			fd.spot_shadow_ptr = spot_shadows->get_buffer()->get_address();
 			spot_shadows->flush();
 
 			draw_descriptions->flush();
 
-			const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&buffers);
-			uint64_t uniform_size = sizeof(shlib::GlobalBufferReference);
+			fd.dt = delta_time;
+			fd.light_count = light_count;
+			fd.camera_count = camera_offset;
+			fd.default_camera_id = 0;
+			fd.draw_count = draw_count;
+			fd.mesh_count = submesh_count;
+			fd.frame_number = frame_counter;
 
-			render_context.update_global_binding(1, std::span(uniform_data, uniform_size));
-		}
-
-		{
-			shlib::GlobalUniformData frame_data{};
-			frame_data.dt = delta_time;
-			frame_data.lightCount = light_count;
-			frame_data.camera_count = camera_offset;
-			frame_data.defaultCameraID = 0;
-			frame_data.draw_count = draw_count;
-			frame_data.mesh_count = submesh_count;
-			frame_data.frameNumber = frame_counter;
-
-			const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&frame_data);
-			uint64_t uniform_size = sizeof(shlib::GlobalUniformData);
+			const uint8_t* uniform_data = reinterpret_cast<const uint8_t*>(&fd);
+			uint64_t uniform_size = sizeof(interop::FrameData);
 
 			render_context.update_global_binding(0, std::span(uniform_data, uniform_size));
 		}
@@ -447,7 +433,7 @@ namespace engine::render {
 
 		auto* matrices = world_matrices->data(camera.matrices_offset);
 
-		auto& clip_matrix = matrices[shlib::view_projection_matrix_offset];
+		auto& clip_matrix = matrices[constants::view_projection_matrix_offset];
 
 		// Lesft
 		auto frustum_left = glm::vec4(

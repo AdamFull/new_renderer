@@ -14,9 +14,6 @@
 
 #include "GeometryBuffer.h"
 
-#include "../../assets/shaders/includes/shlib.h"
-#include "../../assets/shaders/includes/debug_text.h"
-
 #include <edge/util/Logger.h>
 
 #include "Globals.h"
@@ -181,44 +178,44 @@ namespace engine::render
 		return render_context->add_resource(create_info);
 	}
 
-	void Renderer::add_material(const shlib::Material& material) {
+	void Renderer::add_material(const interop::Material& material) {
 		// "Patch" material before add
 
-		shlib::Material new_material{ material };
+		interop::Material new_material{ material };
 
-		if (new_material.base_color_texture != ~0u) {
-			auto& tex = render_context->get_resource(new_material.base_color_texture);
-			new_material.base_color_texture = tex.resource_id;
-			auto& sam = render_context->get_resource(new_material.base_color_sampler);
-			new_material.base_color_sampler = sam.resource_id;
+		if (new_material.base_color.valid()) {
+			auto& tex = render_context->get_resource(new_material.base_color.texture);
+			new_material.base_color.texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.base_color.sampler);
+			new_material.base_color.sampler = sam.resource_id;
 		}
 
-		if (new_material.metallic_roughness_texture != ~0u) {
-			auto& tex = render_context->get_resource(new_material.metallic_roughness_texture);
-			new_material.metallic_roughness_texture = tex.resource_id;
-			auto& sam = render_context->get_resource(new_material.metallic_roughness_sampler);
-			new_material.metallic_roughness_sampler = sam.resource_id;
+		if (new_material.metallic_roughness.valid()) {
+			auto& tex = render_context->get_resource(new_material.metallic_roughness.texture);
+			new_material.metallic_roughness.texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.metallic_roughness.sampler);
+			new_material.metallic_roughness.sampler = sam.resource_id;
 		}
 
-		if (new_material.normal_texture != ~0u) {
-			auto& tex = render_context->get_resource(new_material.normal_texture);
-			new_material.normal_texture = tex.resource_id;
-			auto& sam = render_context->get_resource(new_material.normal_sampler);
-			new_material.normal_sampler = sam.resource_id;
+		if (new_material.normal.valid()) {
+			auto& tex = render_context->get_resource(new_material.normal.texture);
+			new_material.normal.texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.normal.sampler);
+			new_material.normal.sampler = sam.resource_id;
 		}
 
-		if (new_material.occlusion_texture != ~0u) {
-			auto& tex = render_context->get_resource(new_material.occlusion_texture);
-			new_material.occlusion_texture = tex.resource_id;
-			auto& sam = render_context->get_resource(new_material.occlusion_sampler);
-			new_material.occlusion_sampler = sam.resource_id;
+		if (new_material.occlusion.valid()) {
+			auto& tex = render_context->get_resource(new_material.occlusion.texture);
+			new_material.occlusion.texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.occlusion.sampler);
+			new_material.occlusion.sampler = sam.resource_id;
 		}
 
-		if (new_material.emissive_texture != ~0u) {
-			auto& tex = render_context->get_resource(new_material.emissive_texture);
-			new_material.emissive_texture = tex.resource_id;
-			auto& sam = render_context->get_resource(new_material.occlusion_sampler);
-			new_material.occlusion_sampler = sam.resource_id;
+		if (new_material.emissive.valid()) {
+			auto& tex = render_context->get_resource(new_material.emissive.texture);
+			new_material.emissive.texture = tex.resource_id;
+			auto& sam = render_context->get_resource(new_material.occlusion.sampler);
+			new_material.occlusion.sampler = sam.resource_id;
 		}
 
 		render_world->add_material(new_material);
@@ -438,8 +435,8 @@ namespace engine::render
 		uint32_t cascaded_shadows_target{ ~0u };
 		{
 			TextureResourceCreateInfo create_info{};
-			create_info.width = create_info.height = shlib::cascade_shadow_map_resolution;
-			create_info.layers = shlib::cascade_shadow_map_cascade_count * shlib::max_directional_light_shadow_count;
+			create_info.width = create_info.height = constants::cascade_shadow_map_resolution;
+			create_info.layers = constants::cascade_shadow_map_cascade_count * constants::max_directional_light_shadow_count;
 			create_info.format = edge::gfx::Format::eD32Sfloat;
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 			create_info.resizable = false;
@@ -451,8 +448,8 @@ namespace engine::render
 		uint32_t directional_shadows_target{ ~0u };
 		{
 			TextureResourceCreateInfo create_info{};
-			create_info.width = create_info.height = shlib::spot_light_shadow_map_resolution;
-			create_info.layers = shlib::max_spot_light_shadow_count;
+			create_info.width = create_info.height = constants::spot_light_shadow_map_resolution;
+			create_info.layers = constants::max_spot_light_shadow_count;
 			create_info.format = edge::gfx::Format::eD16Unorm;
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget;
 			create_info.resizable = false;
@@ -464,8 +461,8 @@ namespace engine::render
 		uint32_t omni_shadows_target{ ~0u };
 		{
 			TextureResourceCreateInfo create_info{};
-			create_info.width = create_info.height = shlib::point_light_shadow_map_resolution;
-			create_info.layers = shlib::max_point_light_shadow_count;
+			create_info.width = create_info.height = constants::point_light_shadow_map_resolution;
+			create_info.layers = constants::max_point_light_shadow_count;
 			create_info.format = edge::gfx::Format::eD16Unorm;
 			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eRenderTarget | edge::gfx::TextureUsageFlag::eCubemap;
 			create_info.resizable = false;
@@ -627,7 +624,7 @@ namespace engine::render
 		uint32_t alive_commands_buffer{ ~0u };
 		{
 			edge::gfx::BufferCreateInfo create_info{};
-			create_info.size = sizeof(shlib::DrawDescription) * shlib::MAX_DRAW_COMMAND_COUNT;
+			create_info.size = sizeof(interop::DrawDescription) * constants::max_draw_command_count;
 			create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 			alive_commands_buffer = render_context->add_resource(create_info);
@@ -638,7 +635,7 @@ namespace engine::render
 		uint32_t indirect_draw_commands{ ~0u };
 		{
 			edge::gfx::BufferCreateInfo create_info{};
-			create_info.size = sizeof(shlib::DrawIndexedIndirectData) * shlib::MAX_DRAW_COMMAND_COUNT;
+			create_info.size = sizeof(interop::DrawIndexedIndirectData) * constants::max_draw_command_count;
 			create_info.usage = edge::gfx::BufferUsageFlag::eIndirectBuffer;
 
 			indirect_draw_commands = render_context->add_resource(create_info);
@@ -648,7 +645,7 @@ namespace engine::render
 		uint32_t indirect_count_buffer{ ~0u };
 		{
 			edge::gfx::BufferCreateInfo create_info{};
-			create_info.size = sizeof(uint32_t) * shlib::MAX_CAMERAS;
+			create_info.size = sizeof(uint32_t) * constants::max_cameras;
 			create_info.usage = edge::gfx::BufferUsageFlag::eIndirectBuffer;
 
 			indirect_count_buffer = render_context->add_resource(create_info);
@@ -658,7 +655,7 @@ namespace engine::render
 		uint32_t alive_bitset_buffer{ ~0u };
 		{
 			edge::gfx::BufferCreateInfo create_info{};
-			create_info.size = sizeof(uint32_t) * shlib::MAX_DRAW_COMMAND_COUNT / 32;
+			create_info.size = sizeof(uint32_t) * constants::max_draw_command_count / 32;
 			create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 			alive_bitset_buffer = render_context->add_resource(create_info);
@@ -668,7 +665,7 @@ namespace engine::render
 		uint32_t alive_offsets_buffer{ ~0u };
 		{
 			edge::gfx::BufferCreateInfo create_info{};
-			create_info.size = sizeof(uint32_t) * shlib::MAX_DRAW_COMMAND_COUNT;
+			create_info.size = sizeof(uint32_t) * constants::max_draw_command_count;
 			create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
 
 			alive_offsets_buffer = render_context->add_resource(create_info);
@@ -2321,7 +2318,7 @@ namespace engine::render
 			uint32_t debug_text_buffer{ ~0u };
 			{
 				edge::gfx::BufferCreateInfo create_info{};
-				create_info.size = sizeof(shlib::DebugTextData) * 512;
+				create_info.size = sizeof(debug_text::DebugTextData) * 512;
 				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBufferCPU;
 
 				debug_text_buffer = render_context->add_resource(create_info);
@@ -2330,7 +2327,7 @@ namespace engine::render
 
 
 
-			auto debug_text_maker = [](const glm::u16vec2& pos, const char* text, std::vector<shlib::DebugTextData>& out) {
+			auto debug_text_maker = [](const glm::u16vec2& pos, const char* text, std::vector<debug_text::DebugTextData>& out) {
 					int32_t text_len = static_cast<int32_t>(strlen(text));
 					int32_t word_count = (text_len + 4) / 4;
 
@@ -2351,11 +2348,11 @@ namespace engine::render
 					}
 				};
 
-			static std::vector<shlib::DebugTextData> text_data{};
+			static std::vector<debug_text::DebugTextData> text_data{};
 			debug_text_maker({ 100, 100 }, "Hello World!", text_data);
 
 			auto* text_buffer = render_context->get_buffer(debug_text_buffer);
-			text_buffer->update(text_data.data(), text_data.size() * sizeof(shlib::DebugTextData));
+			text_buffer->update(text_data.data(), text_data.size() * sizeof(debug_text::DebugTextData));
 
 			create_info.draw_callback = [this,
 				&geometry_buffer,

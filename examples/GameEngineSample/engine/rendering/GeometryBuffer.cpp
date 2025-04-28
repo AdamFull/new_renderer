@@ -5,8 +5,6 @@
 #include <edge/util/utl_hash.hpp>
 #include <edge/util/utl_profiler.h>
 
-#include "../../assets/shaders/includes/geometry.h"
-
 namespace engine::render {
 	inline auto get_vertex_format_size_bytes(edge::gfx::Format format) -> uint32_t {
 		switch (format) {

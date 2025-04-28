@@ -1,5 +1,34 @@
 [
   {
+    "name": "visibilitybuffer_write",
+    "type": "graphics",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/deferred/visbufferwrite.vert.slang",
+        "def": [ "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
+      },
+      {
+        "path": "/internal_res/assets/shaders/deferred/visbufferwrite.frag.slang",
+        "def": [ "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
+      }
+    ],
+    "attachments": [
+      { "format": "r8g8b8a8_unorm" },
+      { "format": "r8g8b8a8_unorm" }
+    ],
+    "depth_stencil": {
+      "depth_format": "d32_sfloat",
+      "depth_test": true,
+      "depth_write": true,
+      "depth_compare_op": "less"
+    },
+    "primitive_topology": "triangle_list",
+    "rasterization": {
+      "cull_mode": "front"
+    }
+  },
+
+  {
     "name": "generate_brdflut",
     "type": "compute",
     "stages": [

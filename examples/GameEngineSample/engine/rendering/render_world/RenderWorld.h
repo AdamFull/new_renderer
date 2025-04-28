@@ -16,8 +16,8 @@ namespace engine::render {
 
 		uint32_t get_resource_id(uint32_t resource_index) const;
 
-		std::tuple<uint32_t, shlib::Camera&> create_camera() override;
-		shlib::Camera& get_render_camera(uint32_t camera_id) override;
+		std::tuple<uint32_t, interop::Camera&> create_camera() override;
+		interop::Camera& get_render_camera(uint32_t camera_id) override;
 		glm::mat4 const& get_camera_matrix(uint32_t camera_id, uint32_t matrix_index) override;
 		uint32_t get_camera_count() const override;
 
@@ -28,22 +28,22 @@ namespace engine::render {
 
 		void add_geometry_draw(uint32_t camera_id, uint32_t mesh_id) override;
 
-		uint32_t add_material(const shlib::Material& material) override;
-		const shlib::Material& get_material(uint32_t index) const override;
+		uint32_t add_material(const interop::Material& material) override;
+		const interop::Material& get_material(uint32_t index) const override;
 
-		//shlib::Mesh& BeginUpdateMesh(uint32_t index);
+		//interop::Mesh& BeginUpdateMesh(uint32_t index);
 		//void EndUpdateMesh(uint32_t index);
-		std::tuple<uint32_t, shlib::Mesh&> create_mesh(uint32_t joint_count) override;
+		std::tuple<uint32_t, interop::Mesh&> create_mesh(uint32_t joint_count) override;
 		void update_mesh_matrices(uint32_t mesh_id, const glm::mat4& matrix) override;
 		void update_joint_matrices(uint32_t mesh_id, std::span<const glm::mat4> joints) override;
-		void attach_submesh(uint32_t mesh_id, const shlib::SubMesh& submesh) override;
-		const shlib::Mesh& get_mesh(uint32_t index) override;
+		void attach_submesh(uint32_t mesh_id, const interop::SubMesh& submesh) override;
+		const interop::Mesh& get_mesh(uint32_t index) override;
 
-		void add_light(const shlib::LightCommit& light_data) override;
+		void add_light(const interop::LightCommit& light_data) override;
 
-		void add_shadow(const shlib::CascadedShadowCommit& shadow_data) override;
-		void add_shadow(const shlib::OmniShadowCommit& shadow_data) override;
-		void add_shadow(const shlib::SpotShadowCommit& shadow_data) override;
+		void add_shadow(const interop::CascadedShadowCommit& shadow_data) override;
+		void add_shadow(const interop::OmniShadowCommit& shadow_data) override;
+		void add_shadow(const interop::SpotShadowCommit& shadow_data) override;
 
 		void begin_frame(float delta_time) override;
 		void end_frame() override;
@@ -61,7 +61,7 @@ namespace engine::render {
 
 		std::vector<WorldResource> world_resources{};
 
-		std::unique_ptr<DynamicBuffer<shlib::Camera>> world_cameras{};
+		std::unique_ptr<DynamicBuffer<interop::Camera>> world_cameras{};
 		uint32_t camera_offset{ 0u };
 
 		std::unique_ptr<DynamicBuffer<glm::mat4>> world_matrices{};
@@ -72,27 +72,27 @@ namespace engine::render {
 
 		uint32_t draw_count{ 0u };
 
-		std::unique_ptr<DynamicBuffer<shlib::DrawDescription>> draw_descriptions{};
+		std::unique_ptr<DynamicBuffer<interop::DrawDescription>> draw_descriptions{};
 
-		std::unique_ptr<DynamicBuffer<shlib::Mesh>> world_meshes{};
+		std::unique_ptr<DynamicBuffer<interop::Mesh>> world_meshes{};
 		uint32_t mesh_count{ 0u };
 
-		std::unique_ptr<DynamicBuffer<shlib::SubMesh>> world_submeshes{};
+		std::unique_ptr<DynamicBuffer<interop::SubMesh>> world_submeshes{};
 		uint32_t submesh_count{ 0u };
 
-		std::unique_ptr<DynamicBuffer<shlib::Material>> draw_materials{};
+		std::unique_ptr<DynamicBuffer<interop::Material>> draw_materials{};
 		uint32_t material_count{ 0u };
 
-		std::unique_ptr<DynamicBuffer<shlib::LightCommit>> scene_lights{};
+		std::unique_ptr<DynamicBuffer<interop::LightCommit>> scene_lights{};
 		uint32_t light_count{ 0u };
 
-		std::unique_ptr<DynamicBuffer<shlib::CascadedShadowCommit>> scene_cascaded_shadows{};
+		std::unique_ptr<DynamicBuffer<interop::CascadedShadowCommit>> scene_cascaded_shadows{};
 		uint32_t cascaded_shadow_count{ 0u };
 
-		std::unique_ptr<DynamicBuffer<shlib::OmniShadowCommit>> omni_shadows{};
+		std::unique_ptr<DynamicBuffer<interop::OmniShadowCommit>> omni_shadows{};
 		uint32_t omni_shadow_count{ 0u };
 
-		std::unique_ptr<DynamicBuffer<shlib::SpotShadowCommit>> spot_shadows{};
+		std::unique_ptr<DynamicBuffer<interop::SpotShadowCommit>> spot_shadows{};
 		uint32_t spot_shadow_count{ 0u };
 	};
 }

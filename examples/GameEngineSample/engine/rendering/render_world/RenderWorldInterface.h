@@ -1,7 +1,7 @@
 #pragma once
 
 #include <edge/gfx/gfx_structures.h>
-#include "../../../assets/shaders/includes/shlib.h"
+#include "../../../assets/shaders/include/interop.h"
 
 namespace engine::render {
 	enum class WorldResourceType {
@@ -34,8 +34,8 @@ namespace engine::render {
 
 		virtual uint32_t get_resource_id(uint32_t resource_index) const = 0;
 
-		virtual std::tuple<uint32_t, shlib::Camera&> create_camera() = 0;
-		virtual shlib::Camera& get_render_camera(uint32_t camera_id) = 0;
+		virtual std::tuple<uint32_t, interop::Camera&> create_camera() = 0;
+		virtual interop::Camera& get_render_camera(uint32_t camera_id) = 0;
 		virtual glm::mat4 const& get_camera_matrix(uint32_t camera_id, uint32_t matrix_index) = 0;
 		virtual uint32_t get_camera_count() const = 0;
 
@@ -46,20 +46,20 @@ namespace engine::render {
 
 		virtual void add_geometry_draw(uint32_t camera_id, uint32_t mesh_id) = 0;
 
-		virtual uint32_t add_material(const shlib::Material& material) = 0;
-		virtual const shlib::Material& get_material(uint32_t index) const = 0;
+		virtual uint32_t add_material(const interop::Material& material) = 0;
+		virtual const interop::Material& get_material(uint32_t index) const = 0;
 
-		virtual std::tuple<uint32_t, shlib::Mesh&> create_mesh(uint32_t joint_count = 0u) = 0;
+		virtual std::tuple<uint32_t, interop::Mesh&> create_mesh(uint32_t joint_count = 0u) = 0;
 		virtual void update_mesh_matrices(uint32_t mesh_id, const glm::mat4& matrix) = 0;
 		virtual void update_joint_matrices(uint32_t mesh_id, std::span<const glm::mat4> joints) = 0;
-		virtual void attach_submesh(uint32_t mesh_id, const shlib::SubMesh& submesh) = 0;
-		virtual const shlib::Mesh& get_mesh(uint32_t index) = 0;
+		virtual void attach_submesh(uint32_t mesh_id, const interop::SubMesh& submesh) = 0;
+		virtual const interop::Mesh& get_mesh(uint32_t index) = 0;
 
-		virtual void add_light(const shlib::LightCommit& light_data) = 0;
+		virtual void add_light(const interop::LightCommit& light_data) = 0;
 
-		virtual void add_shadow(const shlib::CascadedShadowCommit& shadow_data) = 0;
-		virtual void add_shadow(const shlib::OmniShadowCommit& shadow_data) = 0;
-		virtual void add_shadow(const shlib::SpotShadowCommit& shadow_data) = 0;
+		virtual void add_shadow(const interop::CascadedShadowCommit& shadow_data) = 0;
+		virtual void add_shadow(const interop::OmniShadowCommit& shadow_data) = 0;
+		virtual void add_shadow(const interop::SpotShadowCommit& shadow_data) = 0;
 
 		virtual void begin_frame(float delta_time) = 0;
 		virtual void end_frame() = 0;
