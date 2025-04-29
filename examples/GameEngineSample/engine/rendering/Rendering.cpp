@@ -32,10 +32,15 @@
 #include <edge/gfx/gfx_nsight_aftermath.h>
 #endif
 
+// Pass data includes
+#include "../../assets/shaders/culling/cull_and_batch.h"
+
 #include "../../assets/shaders/lighting/prefilteredmap.h"
 
 #include "../../assets/shaders/testing/debug_text.h"
 #include "../../assets/shaders/testing/imgui.h"
+
+#include "../../assets/shaders/utility/clear_buffer.h"
 
 #define DISABLE_SHADOWS 1
 //#define SKINNING_TEST 1
@@ -181,6 +186,7 @@ namespace engine::render
 	void Renderer::add_material(const interop::Material& material) {
 		// "Patch" material before add
 
+		// TODO: write resource index on material creation
 		interop::Material new_material{ material };
 
 		if (new_material.base_color.valid()) {
@@ -805,11 +811,11 @@ namespace engine::render
 
 			render_context->add_node(std::move(group_node));
 		}
-#if 0
+
 		// Crear cull counters
 		{
 			ComputeShaderPassCreateInfo create_info{};
-			create_info.technique_name = "clear_counters";
+			create_info.technique_name = "clear_buffer";
 
 			create_info.draw_callback = [this,
 				indirect_count_buffer
@@ -822,7 +828,9 @@ namespace engine::render
 					self.resolve_dependencies(command_list);
 
 					auto& pc = self.get_constant_block();
-					pc.set(edge::murmur_hash("draw_counts"), count_buffer->get_address());
+					auto& pc_data = pc.as<clear_buffer::PushConstants>();
+					pc_data.word_ptr = count_buffer->get_address();
+					pc_data.size_in_words = count_buffer->get_size() / sizeof(uint32_t);
 					self.push_constant_ranges(command_list);
 
 					self.bind_resources(command_list);
@@ -854,8 +862,9 @@ namespace engine::render
 					self.resolve_dependencies(command_list);
 
 					auto& pc = self.get_constant_block();
-					pc.set(edge::murmur_hash("source_descriptions"), draw_commands->get_address());
-					pc.set(edge::murmur_hash("alive_bits"), alive_bits->get_address());
+					auto& pc_data = pc.as<cull_and_batch::PushConstants>();
+					pc_data.draw_desc_ptr = draw_commands->get_address();
+					pc_data.alive_meshes_bit_array_ptr = alive_bits->get_address();
 					self.push_constant_ranges(command_list);
 
 					self.bind_resources(command_list);
@@ -870,6 +879,7 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
+#if 0
 		// Calculate command offsets
 		{
 			ComputeShaderPassCreateInfo create_info{};

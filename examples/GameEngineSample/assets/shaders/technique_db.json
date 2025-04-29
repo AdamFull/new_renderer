@@ -1,12 +1,5 @@
 [
   {
-    "name": "clear_counters",
-    "type": "compute",
-    "stages": [
-      { "path": "/internal_res/assets/shaders/culling/clear_counters.comp" }
-    ]
-  },
-  {
     "name": "cull_and_batch",
     "type": "compute",
     "stages": [

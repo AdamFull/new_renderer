@@ -1,5 +1,13 @@
 [
   {
+    "name": "cull_and_batch",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/culling/cull_and_batch.comp.slang" }
+    ]
+  },
+
+  {
     "name": "visibilitybuffer_write",
     "type": "graphics",
     "stages": [
@@ -133,5 +141,13 @@
       }
     ],
     "primitive_topology": "triangle_list"
+  },
+
+  {
+    "name": "clear_buffer",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/utility/clear_buffer.comp.slang" }
+    ]
   }
 ]
