@@ -220,12 +220,14 @@ namespace edge::gfx {
 	slang::IGlobalSession* g_session{ nullptr };
 
 	SlangShaderCompiler::SlangShaderCompiler(const ShaderCompilerCreateInfo& create_info) {
+		std::array<slang::CompilerOptionEntry, 3> compiler_options{};
+
 		static slang::IGlobalSession* g_slang_session{ nullptr };
 		if (!g_slang_session) {
 			// Create a global Slang session (load Slang core module). 
 			// Using default options: enable HLSL/Slang by default.
 			Slang::ComPtr<slang::IGlobalSession> new_session;
-			SlangGlobalSessionDesc session_desc = {};  // default (GLSL not enabled unless needed)
+			SlangGlobalSessionDesc session_desc = {};
 			if (SLANG_SUCCEEDED(slang::createGlobalSession(&session_desc, new_session.writeRef()))) {
 				g_slang_session = new_session.detach();  // keep it alive for reuse
 			}
@@ -233,7 +235,6 @@ namespace edge::gfx {
 				g_slang_session = nullptr;
 			}
 		}
-
 		g_session = g_slang_session;
 		filesystem = new EdgeVfsSlangFileSystem();
 	}
@@ -255,31 +256,51 @@ namespace edge::gfx {
 
 		filesystem->reset(false);
 
-		slang::ICompileRequest* compile_request{ nullptr };
-		if (SLANG_FAILED(g_session->createCompileRequest(&compile_request))) {
-			EDGE_LOGE("Failed to create Slang compile request.");
+		std::vector<slang::PreprocessorMacroDesc> preprocessor_input{};
+		for (auto& definition : compile_info.definitions) {
+			preprocessor_input.emplace_back(definition.c_str(), "");
+		}
+
+		slang::CompilerOptionEntry compiler_options[] = {
+			{ slang::CompilerOptionName::Optimization, { .intValue0 = SLANG_OPTIMIZATION_LEVEL_NONE } },
+			{ slang::CompilerOptionName::DebugInformation, { .intValue0 = SLANG_DEBUG_INFO_LEVEL_MAXIMAL } },
+			{ slang::CompilerOptionName::PreserveParameters, {.intValue0 = 1 } },
+		};
+
+		slang::TargetDesc target_desc{};
+		target_desc.format = SLANG_SPIRV;
+		target_desc.profile = g_session->findProfile("spirv_1_4");
+		target_desc.flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
+		target_desc.floatingPointMode = SLANG_FLOATING_POINT_MODE_DEFAULT;
+		//target_desc.forceGLSLScalarBufferLayout = true;
+		target_desc.compilerOptionEntries = compiler_options;
+		target_desc.compilerOptionEntryCount = static_cast<SlangInt>(std::size(compiler_options));
+
+		slang::SessionDesc session_desc{};
+		session_desc.targets = &target_desc;
+		session_desc.targetCount = 1;
+		session_desc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
+		// TODO: Add additional search paths
+		session_desc.preprocessorMacros = preprocessor_input.data();
+		session_desc.preprocessorMacroCount = static_cast<SlangInt>(preprocessor_input.size());
+		session_desc.fileSystem = filesystem;
+		session_desc.compilerOptionEntries = compiler_options;
+		session_desc.compilerOptionEntryCount = static_cast<SlangInt>(std::size(compiler_options));
+
+		Slang::ComPtr<slang::ISession> session{};
+		if (!SLANG_SUCCEEDED(g_session->createSession(session_desc, session.writeRef()))) {
+			EDGE_LOGE("[Slang Shader Compiled] Failed to create compile session.");
 			return false;
 		}
 
-		compile_request->setFileSystem(filesystem);
+		slang::ICompileRequest* compile_request{ nullptr };
+		if (SLANG_FAILED(session->createCompileRequest(&compile_request))) {
+			EDGE_LOGE("[Slang Shader Compiled] Failed to create Slang compile request.");
+			return false;
+		}
 
-		int target_index = compile_request->addCodeGenTarget(SLANG_SPIRV);
-		compile_request->setTargetProfile(target_index, g_session->findProfile("spirv_1_4"));
-
-		// TODO: setup optimization and debug
-		compile_request->setOptimizationLevel(SLANG_OPTIMIZATION_LEVEL_DEFAULT);
-		compile_request->setDebugInfoLevel(SLANG_DEBUG_INFO_LEVEL_STANDARD);
-
-		// TODO: need to setup additional include paths
-		//compile_request->addSearchPath();
-
-		SlangSourceLanguage source_lang = SLANG_SOURCE_LANGUAGE_SLANG;
-		int translation_unit_index = compile_request->addTranslationUnit(source_lang, nullptr);
+		int translation_unit_index = compile_request->addTranslationUnit(SLANG_SOURCE_LANGUAGE_SLANG, compile_info.path.data());
 		compile_request->addTranslationUnitSourceString(translation_unit_index, compile_info.path.data(), compile_info.source.data());
-		//compile_request->addTranslationUnitSourceFile(translation_unit_index, sourcePath.c_str());
-
-		//compile_request->getEntryPoint(translation_unit_index, 0);
-		//compile_request->addEntryPoint(translation_unit_index, entry_point, stage);
 
 		SlangResult compile_result = compile_request->compile();
 		bool success = SLANG_SUCCEEDED(compile_result);
@@ -295,7 +316,7 @@ namespace edge::gfx {
 		if (success) {
 			// Retrieve compiled SPIR-V code (as a blob or raw bytes)
 			Slang::ComPtr<ISlangBlob> spirv_blob;
-			if (SLANG_SUCCEEDED(compile_request->getEntryPointCodeBlob(0, target_index, spirv_blob.writeRef()))) {
+			if (SLANG_SUCCEEDED(compile_request->getEntryPointCodeBlob(0, 0, spirv_blob.writeRef()))) {
 				output.resize(spirv_blob->getBufferSize());
 				memcpy(output.data(), spirv_blob->getBufferPointer(), spirv_blob->getBufferSize());
 			}
@@ -306,6 +327,7 @@ namespace edge::gfx {
 		}
 
 		compile_request->release();
+		session->release();
 
 		return true;
 	}
