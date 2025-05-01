@@ -129,10 +129,6 @@ namespace edge::gfx::vulkan {
 
 		auto is_bindless() const noexcept -> bool;
 
-		auto hash() const noexcept -> uint32_t override {
-			return layout_hash;
-		}
-
 		auto get_binding_count() const noexcept -> uint32_t {
 			return binding_count;
 		}
@@ -145,7 +141,6 @@ namespace edge::gfx::vulkan {
 
 		PoolSizes pool_sizes{};
 		uint32_t binding_count{ 0u };
-		uint32_t layout_hash{ 0u };
 		bool have_bindless_descriptor{ false };
 	};
 }

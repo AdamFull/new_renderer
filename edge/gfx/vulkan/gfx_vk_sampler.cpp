@@ -11,7 +11,7 @@ namespace edge::gfx::vulkan
 		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
 
-		self_hash = gfx::hash(create_info);
+		resource_hash = gfx::hash(create_info);
 
 		vk::SamplerCreateInfo vk_create_info{};
 		vk_create_info.minFilter = filter_to_vk(create_info.min_filter);

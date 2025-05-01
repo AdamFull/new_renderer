@@ -269,9 +269,9 @@ namespace edge::gfx::vulkan
 		return new Texture(*allocator, swapchain, image_index);
 	}
 
-	auto GFXContext::create_shader(std::span<const ShaderStageInfo> shader_stages) const -> IShader*
+	auto GFXContext::create_shader(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl) const -> IShader*
 	{
-		return new Shader(*device, shader_stages);
+		return new Shader(*device, shader_stages, refl);
 	}
 
 	auto GFXContext::create_root_signature(const RootSignatureCreateInfo& create_info) const -> IRootSignature*

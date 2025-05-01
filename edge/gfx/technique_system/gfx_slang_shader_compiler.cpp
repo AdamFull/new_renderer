@@ -1,14 +1,15 @@
 #include "gfx_slang_shader_compiler.h"
 
-#include <slang.h>
-#include <slang-com-ptr.h>
-
 #include "../../util/utl_hash.hpp"
 #include "../../util/Logger.h"
 #include "../../fs/fs_helper.h"
 #include "../../fs/fs_virtual_filesystem.h"
 
+#include "../gfx_structures.h"
+
 #include <atomic>
+
+#include <slang.h>
 
 namespace edge::gfx {
 	class StringBlob : public ISlangBlob {
@@ -51,7 +52,7 @@ namespace edge::gfx {
 		std::string data;
 	};
 
-    class EdgeVfsSlangFileSystem final : public ISlangFileSystemExt {
+	class EdgeVfsSlangFileSystem final : public ISlangFileSystemExt {
 	public:
 		EdgeVfsSlangFileSystem() : ref_cnt{ 1 } {
 		}
@@ -215,7 +216,205 @@ namespace edge::gfx {
 
 		uint32_t hash{ 0u };
 		bool collect_hash{ false };
-    };
+	};
+
+	auto get_descriptor_type(slang::BindingType binding_type) -> DescriptorType {
+		switch (binding_type)
+		{
+		case slang::BindingType::Sampler:
+			return DescriptorType::eSampler;
+		case slang::BindingType::Texture:
+			return DescriptorType::eSampledImage;
+		case slang::BindingType::ConstantBuffer:
+		case slang::BindingType::ParameterBlock:
+		case slang::BindingType::InlineUniformData:
+			return DescriptorType::eUniformBuffer;
+		case slang::BindingType::TypedBuffer:
+		case slang::BindingType::RawBuffer:
+		case slang::BindingType::MutableTypedBuffer:
+		case slang::BindingType::MutableRawBuffer:
+			return DescriptorType::eStorageBuffer;
+		case slang::BindingType::CombinedTextureSampler:
+			return DescriptorType::eCombinedImageSampler;
+		case slang::BindingType::MutableTexture:
+			return DescriptorType::eStorageImage;
+		default:
+			return DescriptorType::eUnknown;
+		}
+	}
+
+	auto get_shader_stage(SlangStage stage) -> ShaderStageFlag {
+		switch (stage)
+		{
+		case SLANG_STAGE_VERTEX: return ShaderStageFlag::eVertex;
+		case SLANG_STAGE_HULL: return ShaderStageFlag::eTessellationControl;
+		case SLANG_STAGE_DOMAIN: return ShaderStageFlag::eTessellationEvaluation;
+		case SLANG_STAGE_GEOMETRY: return ShaderStageFlag::eGeometry;
+		case SLANG_STAGE_FRAGMENT: return ShaderStageFlag::eFragment;
+		case SLANG_STAGE_COMPUTE: return ShaderStageFlag::eCompute;
+		default: return (ShaderStageFlag)0;
+		}
+	}
+
+	auto get_size_from_slang_type(slang::TypeLayoutReflection* type_layout) -> uint32_t {
+		if (!type_layout) {
+			return 0;
+		}
+
+		auto type_layout_kind = type_layout->getKind();
+		switch (type_layout_kind) {
+		case slang::TypeReflection::Kind::Array: {
+			auto element_type = type_layout->getElementTypeLayout();
+			auto element_count = type_layout->getElementCount();
+			return element_type->getSize() * element_count;
+		}
+
+		case slang::TypeReflection::Kind::Struct: {
+			return type_layout->getSize();
+		}
+
+		default:
+			return type_layout->getSize(type_layout->getParameterCategory());
+		}
+	}
+
+	SlangCompilationResult::SlangCompilationResult(Slang::ComPtr<slang::ISession> session, Slang::ComPtr<slang::IComponentType> program) :
+		session{session},
+		linked_program{ program } {
+		session->addRef();
+		linked_program->addRef();
+	}
+
+	SlangCompilationResult::~SlangCompilationResult() {
+		linked_program->release();
+	}
+
+	auto SlangCompilationResult::collect_result(std::vector<uint8_t>& output) -> bool {
+		Slang::ComPtr<slang::IBlob> diagnostics;
+		Slang::ComPtr<slang::IBlob> spirv_blob;
+		if (SLANG_FAILED(linked_program->getEntryPointCode(0, 0, spirv_blob.writeRef(), diagnostics.writeRef()))) {
+			EDGE_LOGE("[Slang Shader Compiled] Failed to get compiled code.");
+			if (diagnostics) {
+				EDGE_LOGI("[Slang Shader Compiled] Diagnostics:\n{}", (const char*)diagnostics->getBufferPointer());
+			}
+			return false;
+		}
+
+		// Dump compiled spirv code
+		output.resize(spirv_blob->getBufferSize());
+		memcpy(output.data(), spirv_blob->getBufferPointer(), spirv_blob->getBufferSize());
+
+		return true;
+	}
+
+	auto SlangCompilationResult::collect_reflection(ShaderReflection& refl) -> bool {
+		slang::ProgramLayout* program_layout = linked_program->getLayout();
+		for (int32_t i = 0; i < program_layout->getParameterCount(); i++) {
+			auto* param = program_layout->getParameterByIndex(i);
+
+			if (!param) {
+				continue;
+			}
+
+			auto* param_type = param->getTypeLayout();
+			if (!param_type) {
+				continue;
+			}
+
+			ShaderStageFlag stage{};
+			if (program_layout->getEntryPointCount()) {
+				auto* entry_point = program_layout->getEntryPointByIndex(0);
+				stage = get_shader_stage(entry_point->getStage());
+
+				if (stage == ShaderStageFlag::eCompute) {
+					SlangUInt group_sizes[3]{};
+					entry_point->getComputeThreadGroupSize(3, group_sizes);
+
+					for (int32_t i = 0; i < 3; ++i) {
+						refl.local_sizes[i] = static_cast<uint32_t>(group_sizes[i]);
+					}
+				}
+			}
+
+			auto kind = param_type->getKind();
+			auto category = param->getCategory();
+			const char* name = param->getName();
+
+			auto binding_index = param->getBindingIndex();
+			auto binding_space = param->getBindingSpace();
+
+			if (category == slang::ParameterCategory::PushConstantBuffer) {
+				auto& resource = refl.constants;
+				resource.stages |= stage;
+
+				resource.set_name(name);
+
+				if (kind == slang::TypeReflection::Kind::Struct ||
+					kind == slang::TypeReflection::Kind::ConstantBuffer) {
+
+					auto* content_type = param_type->getElementTypeLayout();
+					resource.size = get_size_from_slang_type(content_type);
+					resource.range_begin = refl.shader_variables.count;
+
+					for (int32_t f_idx = 0; f_idx < content_type->getFieldCount(); ++f_idx) {
+						auto* field = content_type->getFieldByIndex(f_idx);
+						if (!field) {
+							continue;
+						}
+
+						ShaderVariable& variable = refl.add_shader_variable(field->getName());
+						variable.offset = field->getOffset();
+						variable.size = get_size_from_slang_type(field->getTypeLayout());
+					}
+					resource.variable_count = refl.shader_variables.count - resource.range_begin;
+				}
+			}
+			else {
+				auto [found, resource] = refl.lookup_shader_resource(name);
+				if (found) {
+					resource.stages |= stage;
+					continue;
+				}
+
+				resource.stages |= stage;
+
+				resource.binding = binding_index;
+				resource.set = binding_space;
+
+				if (param_type->isArray()) {
+					resource.count = param_type->getElementCount();
+				}
+
+				if (param_type->getBindingRangeCount()) {
+					auto binding_type = param_type->getBindingRangeType(0);
+					resource.type = get_descriptor_type(binding_type);
+				}
+
+				if (kind == slang::TypeReflection::Kind::Struct ||
+					kind == slang::TypeReflection::Kind::ConstantBuffer ||
+					kind == slang::TypeReflection::Kind::ShaderStorageBuffer) {
+
+					auto* content_type = param_type->getElementTypeLayout();
+					resource.size = get_size_from_slang_type(content_type);
+					resource.range_begin = refl.shader_variables.count;
+
+					for (int32_t f_idx = 0; f_idx < content_type->getFieldCount(); ++f_idx) {
+						auto* field = content_type->getFieldByIndex(f_idx);
+						if (!field) {
+							continue;
+						}
+
+						ShaderVariable& variable = refl.add_shader_variable(field->getName());
+						variable.offset = field->getOffset();
+						variable.size = get_size_from_slang_type(field->getTypeLayout());
+					}
+					resource.variable_count = refl.shader_variables.count - resource.range_begin;
+				}
+			}
+		}
+
+		return true;
+	}
 
 	slang::IGlobalSession* g_session{ nullptr };
 
@@ -240,7 +439,8 @@ namespace edge::gfx {
 	}
 
 	SlangShaderCompiler::~SlangShaderCompiler() {
-
+		delete filesystem;
+		filesystem = nullptr;
 	}
 
 	auto SlangShaderCompiler::collect_dependency_hash(const ShaderCompileInfo& compile_info) -> uint32_t {
@@ -251,7 +451,7 @@ namespace edge::gfx {
 		return 0;
 	}
 
-	auto SlangShaderCompiler::compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool {
+	auto SlangShaderCompiler::compile(const ShaderCompileInfo& compile_info) -> ICompilationResult* {
 		assert(g_session && "Slang global session not initialized");
 
 		filesystem->reset(false);
@@ -262,15 +462,14 @@ namespace edge::gfx {
 		}
 
 		slang::CompilerOptionEntry compiler_options[] = {
-			{ slang::CompilerOptionName::Optimization, { .intValue0 = SLANG_OPTIMIZATION_LEVEL_NONE } },
-			{ slang::CompilerOptionName::DebugInformation, { .intValue0 = SLANG_DEBUG_INFO_LEVEL_MAXIMAL } },
-			{ slang::CompilerOptionName::PreserveParameters, {.intValue0 = 1 } },
+			{ slang::CompilerOptionName::Optimization, {.intValue0 = SLANG_OPTIMIZATION_LEVEL_NONE } },
+			{ slang::CompilerOptionName::DebugInformation, {.intValue0 = SLANG_DEBUG_INFO_LEVEL_MINIMAL } },
+			{ slang::CompilerOptionName::EmitSpirvMethod, {.intValue0 = SLANG_EMIT_SPIRV_DIRECTLY } }
 		};
 
 		slang::TargetDesc target_desc{};
 		target_desc.format = SLANG_SPIRV;
 		target_desc.profile = g_session->findProfile("spirv_1_4");
-		target_desc.flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
 		target_desc.floatingPointMode = SLANG_FLOATING_POINT_MODE_DEFAULT;
 		//target_desc.forceGLSLScalarBufferLayout = true;
 		target_desc.compilerOptionEntries = compiler_options;
@@ -288,47 +487,40 @@ namespace edge::gfx {
 		session_desc.compilerOptionEntryCount = static_cast<SlangInt>(std::size(compiler_options));
 
 		Slang::ComPtr<slang::ISession> session{};
-		if (!SLANG_SUCCEEDED(g_session->createSession(session_desc, session.writeRef()))) {
+		if (SLANG_FAILED(g_session->createSession(session_desc, session.writeRef()))) {
 			EDGE_LOGE("[Slang Shader Compiled] Failed to create compile session.");
-			return false;
+			return nullptr;
 		}
 
-		slang::ICompileRequest* compile_request{ nullptr };
-		if (SLANG_FAILED(session->createCompileRequest(&compile_request))) {
-			EDGE_LOGE("[Slang Shader Compiled] Failed to create Slang compile request.");
-			return false;
-		}
+		auto module_name = fs::get_stem(compile_info.path);
 
-		int translation_unit_index = compile_request->addTranslationUnit(SLANG_SOURCE_LANGUAGE_SLANG, compile_info.path.data());
-		compile_request->addTranslationUnitSourceString(translation_unit_index, compile_info.path.data(), compile_info.source.data());
+		Slang::ComPtr<slang::IBlob> diagnostics;
+		slang::IModule* slang_module = session->loadModuleFromSourceString(module_name.data(),
+			compile_info.path.data(), compile_info.source.data(), diagnostics.writeRef());
 
-		SlangResult compile_result = compile_request->compile();
-		bool success = SLANG_SUCCEEDED(compile_result);
-
-		const char* diag_str = compile_request->getDiagnosticOutput();
-		if (!success && diag_str && diag_str[0] != '\0') {
-			EDGE_LOGE("[Slang Shader Compiler] {}", diag_str);
-		}
-		else if (diag_str && diag_str[0] != '\0') {
-			EDGE_LOGW("[Slang Shader Compiler] {}", diag_str);
-		}
-
-		if (success) {
-			// Retrieve compiled SPIR-V code (as a blob or raw bytes)
-			Slang::ComPtr<ISlangBlob> spirv_blob;
-			if (SLANG_SUCCEEDED(compile_request->getEntryPointCodeBlob(0, 0, spirv_blob.writeRef()))) {
-				output.resize(spirv_blob->getBufferSize());
-				memcpy(output.data(), spirv_blob->getBufferPointer(), spirv_blob->getBufferSize());
+		if (!slang_module) {
+			EDGE_LOGE("[Slang Shader Compiled] Failed to open slang module.");
+			if (diagnostics) {
+				EDGE_LOGI("[Slang Shader Compiled] Diagnostics:\n{}", (const char*)diagnostics->getBufferPointer());
 			}
-			else {
-				success = false;
-				EDGE_LOGE("[Slang Shader Compiler] Failed to retrieve SPIR-V code.");
-			}
+			return nullptr;
 		}
 
-		compile_request->release();
-		session->release();
+		Slang::ComPtr<slang::IEntryPoint> entry_point;
+		if (SLANG_FAILED(slang_module->getDefinedEntryPoint(0, entry_point.writeRef()))) {
+			EDGE_LOGE("[Slang Shader Compiled] Failed to get shader entry point.");
+			return nullptr;
+		}
 
-		return true;
+		Slang::ComPtr<slang::IComponentType> linked_program;
+		if (SLANG_FAILED(entry_point->link(linked_program.writeRef(), diagnostics.writeRef()))) {
+			EDGE_LOGE("[Slang Shader Compiled] Failed to link slang module.");
+			if (diagnostics) {
+				EDGE_LOGI("[Slang Shader Compiled] Diagnostics:\n{}", (const char*)diagnostics->getBufferPointer());
+			}
+			return nullptr;
+		}
+
+		return new SlangCompilationResult(session, linked_program);
 	}
 }

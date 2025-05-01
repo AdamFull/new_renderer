@@ -11,7 +11,6 @@ namespace edge::gfx::vulkan
 	DescriptorSetLayout::DescriptorSetLayout(Device& device, const DescriptorLayoutCreateInfo& layout_ci) :
 		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device } {
-
 		vk::DescriptorSetLayoutBindingFlagsCreateInfoEXT ext_create_info{};
 		vk::DescriptorSetLayoutCreateInfo create_info{};
 		create_info.pNext = &ext_create_info;
@@ -20,6 +19,8 @@ namespace edge::gfx::vulkan
 		std::vector<vk::DescriptorSetLayoutBinding> bindings{};
 
 		for (const auto& layout_binding : layout_ci.bindings) {
+			hash_combine(layout_binding.name_hash, resource_hash);
+
 			auto& new_binding = bindings.emplace_back();
 			new_binding.descriptorType = descriptor_type_to_vk(layout_binding.type);
 			new_binding.binding = layout_binding.binding;
@@ -32,8 +33,6 @@ namespace edge::gfx::vulkan
 			}
 
 			pool_sizes.sizes[utl::cast(new_binding.descriptorType)] += new_binding.descriptorCount;
-
-			layout_hash = gfx::hash(layout_binding, layout_hash);
 		}
 
 		binding_count = static_cast<uint32_t>(layout_ci.bindings.size());

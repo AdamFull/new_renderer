@@ -58,7 +58,7 @@ namespace edge::gfx::d3d12
 		return nullptr;
 	}
 
-	auto D3D12Context::create_shader(std::span<const ShaderStageInfo> shader_stages) const -> IShader* {
+	auto D3D12Context::create_shader(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl) const -> IShader* {
 		assert(false && "NOT IMPLEMENTED");
 		return nullptr;
 	}

@@ -215,6 +215,7 @@ namespace edge::gfx
 				binding.count = 1;
 				binding.type = it->type;
 				binding.stages = it->stages;
+				binding.name_hash = it->name_hash;
 			}
 
 			DescriptorLayoutCreateInfo layout_ci{};

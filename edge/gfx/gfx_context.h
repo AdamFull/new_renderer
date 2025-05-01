@@ -25,7 +25,7 @@ namespace edge::gfx
 	[[nodiscard]] auto create_texture(const TextureCreateInfo& create_info) -> ITexture*;
 	[[nodiscard]] auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) -> ITexture*;
 
-	[[nodiscard]] auto create_shader(std::span<const ShaderStageInfo> shader_stages) -> IShader*;
+	[[nodiscard]] auto create_shader(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl = nullptr) -> IShader*;
 
 	[[nodiscard]] auto create_root_signature(const RootSignatureCreateInfo& create_info) -> IRootSignature*;
 
@@ -71,7 +71,7 @@ namespace edge::gfx
 		virtual auto create_texture(const TextureCreateInfo& create_info) const->ITexture* = 0;
 		virtual auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const->ITexture* = 0;
 
-		virtual auto create_shader(std::span<const ShaderStageInfo> shader_stages) const->IShader* = 0;
+		virtual auto create_shader(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl = nullptr) const->IShader* = 0;
 
 		virtual auto create_root_signature(const RootSignatureCreateInfo& create_info) const->IRootSignature* = 0;
 

@@ -433,6 +433,7 @@ namespace edge
 			uint32_t count;
 			ShaderStageFlags stages;
 			DescriptorType type;
+			uint32_t name_hash;
 		};
 
 		struct DescriptorLayoutCreateInfo {

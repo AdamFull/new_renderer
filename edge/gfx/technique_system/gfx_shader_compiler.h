@@ -4,6 +4,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include "../gfx_shader_reflection.h"
+
 namespace edge::gfx {
 	struct ShaderCompilerCreateInfo {
 		std::string_view base_path;
@@ -16,11 +18,19 @@ namespace edge::gfx {
 		std::vector<std::string> definitions;
 	};
 
+	class ICompilationResult {
+	public:
+		virtual ~ICompilationResult() = default;
+
+		virtual auto collect_result(std::vector<uint8_t>& output) -> bool = 0;
+		virtual auto collect_reflection(ShaderReflection& refl) -> bool = 0;
+	};
+
 	class IShaderCompiler {
 	public:
 		virtual ~IShaderCompiler() = default;
 
 		virtual auto collect_dependency_hash(const ShaderCompileInfo& compile_info) -> uint32_t = 0;
-		virtual auto compile(const ShaderCompileInfo& compile_info, std::vector<uint8_t>& output) -> bool = 0;
+		virtual auto compile(const ShaderCompileInfo& compile_info) -> ICompilationResult* = 0;
 	};
 }

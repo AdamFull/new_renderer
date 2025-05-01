@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gfx_enum.h"
+#include "../util/utl_hash.hpp"
 
 namespace edge::gfx
 {
@@ -33,13 +34,21 @@ namespace edge::gfx
 		}
 	};
 
+	struct ReflectionBase {
+		static constexpr size_t k_max_name_len{ 128 };
+
+		void set_name(const char* n) {
+			strncpy(name, n, strnlen(n, k_max_name_len));
+			name_hash = murmur_hash(n);
+		}
+
+		char name[k_max_name_len];
+		uint32_t name_hash{};
+	};
+
 
 	// Shader structures
-	struct VertexInput {
-		char name[255];
-
-		uint32_t name_hash{};
-
+	struct VertexInput : ReflectionBase {
 		uint32_t location{};
 
 		uint32_t vec_size{};
@@ -47,7 +56,7 @@ namespace edge::gfx
 		uint32_t size{};
 	};
 
-	struct ShaderResource {
+	struct ShaderResource : ReflectionBase {
 		// Resource descriptor type
 		DescriptorType type{};
 
@@ -65,30 +74,35 @@ namespace edge::gfx
 
 		uint32_t count{ 1u };
 
-		// Name string
-		char name[255];
-
-		// Name hash
-		uint32_t name_hash{};
-
 		// Range of variable infos
 		uint32_t range_begin{ ~0u };
 		uint32_t variable_count{};
 	};
 
-	struct ShaderVariable {
-		// Variable name
-		char name[255];
-
-		// Variable name hash
-		uint32_t name_hash{};
-
+	struct ShaderVariable : ReflectionBase {
 		uint32_t offset{};
-
 		uint32_t size{};
 	};
 
 	struct ShaderReflection {
+		auto lookup_shader_resource(const char* n) -> std::tuple<bool, ShaderResource&> {
+			uint32_t name_hash = murmur_hash(n);
+			auto found =  std::find_if(shader_resources.begin(), shader_resources.end(),
+				[&name_hash](const ShaderResource& resource) {
+					return resource.name_hash == name_hash;
+				});
+
+			if (found != shader_resources.end()) {
+				return { true, *found };
+			}
+
+			auto& new_resource = add_shader_resource();
+			strncpy(new_resource.name, n, strnlen(n, ShaderResource::k_max_name_len));
+			new_resource.name_hash = name_hash;
+
+			return { false, new_resource };
+		}
+
 		StaticArray<VertexInput, 16ull> vertex_inputs{};
 
 		VertexInput& add_vertex_input() {
@@ -96,17 +110,22 @@ namespace edge::gfx
 		}
 
 		// Uniforms/storage blocks/textures/samplers etc.
-		StaticArray<ShaderResource, 64ull> shader_resources{};
+		StaticArray<ShaderResource, 32ull> shader_resources{};
 
 		ShaderResource& add_shader_resource() {
 			return shader_resources.new_element();
 		}
 
 		// Variables inside uniforms/push constants
-		StaticArray<ShaderVariable, 128ull> shader_variables{};
+		StaticArray<ShaderVariable, 64ull> shader_variables{};
 
-		ShaderVariable& add_shader_variable() {
-			return shader_variables.new_element();
+		ShaderVariable& add_shader_variable(const char* n = nullptr) {
+			auto& new_var = shader_variables.new_element();
+			if (n) {
+				new_var.set_name(n);
+			}
+
+			return new_var;
 		}
 
 		ShaderResource constants{};

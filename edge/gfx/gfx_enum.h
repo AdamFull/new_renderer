@@ -303,6 +303,7 @@ namespace edge::gfx
 	};
 
 	enum class DescriptorType {
+		eUnknown,
 		eSampler,
 		eCombinedImageSampler,
 		eSampledImage,

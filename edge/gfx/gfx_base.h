@@ -13,12 +13,16 @@ namespace edge::gfx {
 
 		[[nodiscard]] virtual auto get_resource_type() const noexcept -> ResourceType = 0;
 
-		virtual auto hash() const noexcept -> uint32_t { return 0; };
+		auto get_hash() const noexcept -> uint32_t { 
+			return resource_hash;
+		};
 
 		template<typename _Ty>
 		[[nodiscard]] auto as() -> _Ty {
 			return utl::cast<_Ty>(this);
 		}
+	protected:
+		uint32_t resource_hash{ 0u };
 	};
 
 	class IFence : public IGFXResource {

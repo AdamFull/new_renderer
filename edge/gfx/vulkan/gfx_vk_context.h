@@ -40,7 +40,7 @@ namespace edge::gfx::vulkan
 		auto create_texture(const TextureCreateInfo& create_info) const->ITexture* override;
 		auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const->ITexture* override;
 
-		auto create_shader(std::span<const ShaderStageInfo> shader_stages) const->IShader* override;
+		auto create_shader(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl = nullptr) const->IShader* override;
 
 		auto create_root_signature(const RootSignatureCreateInfo& create_info) const->IRootSignature* override;
 

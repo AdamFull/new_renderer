@@ -9,6 +9,9 @@
 #include "../../util/Logger.h"
 #include "../../fs/fs_virtual_filesystem.h"
 
+#include <unordered_set>
+#include <algorithm>
+
 // TODO: define it from specific config
 #define DEVELOPMENT
 
@@ -257,7 +260,7 @@ namespace edge::gfx
 	void TechniqueDatabase::add_descriptor_layout(IDescriptorLayout* layout) {
 		auto found = std::find_if(descriptor_layouts.begin(), descriptor_layouts.end(), 
 			[layout](const IDescriptorLayout* l) {
-			return layout->hash() == l->hash();
+			return layout->get_hash() == l->get_hash();
 			});
 
 		if (found != descriptor_layouts.end()) {
@@ -279,6 +282,8 @@ namespace edge::gfx
 			EDGE_LOGE("Incorrect technique type for technique named: {}.", name);
 			return;
 		}
+
+		ShaderReflection refl{};
 
 		for (auto& stage : technique_desc.stages) {
 			ShaderStageFlag stage_flag{};
@@ -306,13 +311,13 @@ namespace edge::gfx
 			shader_stages.push_back({
 				.stage = stage_flag,
 				.entry_point = "main",
-				.code = get_or_compile_shader(stage)
+				.code = get_or_compile_shader(stage, refl)
 				});
 		}
 
 		Technique new_technique{name, nullptr, nullptr, nullptr };
 
-		new_technique.shader = create_shader(shader_stages);
+		new_technique.shader = create_shader(shader_stages, &refl);
 		new_technique.shader->set_resource_name(name);
 
 		create_descriptor_table(new_technique.shader, new_technique.descriptor_layouts);
@@ -379,10 +384,11 @@ namespace edge::gfx
 	auto TechniqueDatabase::create_descriptor_table(IShader* shader, std::vector<IDescriptorLayout*>& table_layouts) -> void {
 		struct DescriptorSpaceDesc {
 			std::vector<DescrptorLayoutBindingDesc> bindings;
-			uint32_t hash{ 0u };
+			uint32_t space_hash{};
 		};
 
 		std::array<DescriptorSpaceDesc, 32ull> descriptor_spaces{};
+		std::unordered_set<uint32_t> unique_descriptor_spaces{};
 
 		auto& reflection = shader->get_reflection();
 		for (auto it = reflection.shader_resources.begin(); it != reflection.shader_resources.end(); ++it) {
@@ -393,20 +399,23 @@ namespace edge::gfx
 			binding.count = it->count;
 			binding.stages = ShaderStageFlag::eAll;//it->stages; TODO
 			binding.type = it->type;
+			binding.name_hash = it->name_hash;
 
-			space.hash = gfx::hash(binding, space.hash);
+			unique_descriptor_spaces.emplace(it->set);
+
+			hash_combine(it->name_hash, space.space_hash);
 		}
 
 		// Update layout table
-		for (int32_t space_idx = 0; space_idx < descriptor_spaces.size(); ++space_idx) {
+		for (int32_t space_idx = 0; space_idx < unique_descriptor_spaces.size(); ++space_idx) {
 			auto& space_desc = descriptor_spaces[space_idx];
 			if (space_desc.bindings.empty()) {
 				continue;
 			}
 
-			auto found = std::find_if(descriptor_layouts.begin(), descriptor_layouts.end(),
-				[&space_desc](IDescriptorLayout* layout) {
-					return layout->hash() == space_desc.hash;
+			auto found = std::ranges::find_if(descriptor_layouts,
+				[&space_desc](IDescriptorLayout* layout) -> bool {
+					return space_desc.space_hash == layout->get_hash();
 				});
 
 			if (found != descriptor_layouts.end()) {
@@ -433,21 +442,23 @@ namespace edge::gfx
 		if (reflection.constants.range_begin != ~0u) {
 			for (int32_t i = reflection.constants.range_begin; i < static_cast<int32_t>(reflection.constants.variable_count); ++i) {
 				auto& variable = reflection.shader_variables.data[i];
-				root_sign_hash = murmur_hash(static_cast<int32_t>(reflection.constants.stages), root_sign_hash);
-				root_sign_hash = murmur_hash(variable.size, root_sign_hash);
+				hash_combine(variable.name_hash, root_sign_hash);
 			}
 		}
 
 		for (auto& layout : table_layouts) {
-			root_sign_hash += layout->hash();
+			hash_combine(layout->get_hash(), root_sign_hash);
 		}
 
+		// FIXME: need to improve caching system
+#if 0
 		auto found = std::find_if(root_signatures.begin(), root_signatures.end(),
-			[&root_sign_hash](IRootSignature* root_sign) { return root_sign_hash == root_sign->hash(); });
+			[&root_sign_hash](IRootSignature* root_sign) { return root_sign_hash == root_sign->get_hash(); });
 
 		if (found != root_signatures.end()) {
 			return *found;
 		}
+#endif
 
 		RootSignatureCreateInfo root_sign_ci{};
 		root_sign_ci.shader = shader;
@@ -455,7 +466,7 @@ namespace edge::gfx
 		return root_signatures.emplace_back(create_root_signature(root_sign_ci));
 	}
 
-	std::span<const uint8_t> TechniqueDatabase::get_or_compile_shader(const TechniqueDesc::ShaderStage& stage) {
+	std::span<const uint8_t> TechniqueDatabase::get_or_compile_shader(const TechniqueDesc::ShaderStage& stage, ShaderReflection& refl) {
 		// This hash key needed to keep some cache for compiled shaders
 		uint32_t unique_shader_key{ 0u };
 		unique_shader_key ^= murmur_hash(stage.path);
@@ -469,7 +480,7 @@ namespace edge::gfx
 
 		ShaderCompileInfo shader_compile_info{};
 		shader_compile_info.path = stage.path;
-		shader_compile_info.definitions = std::move(stage.definitions);
+		shader_compile_info.definitions = stage.definitions;
 		shader_compile_info.source = shader_source;
 
 		uint32_t shader_hash = shader_hash = murmur_hash(shader_source, 0);
@@ -477,6 +488,8 @@ namespace edge::gfx
 #endif
 
 		// Return found shader code
+		// TODO: cannot use cache now
+#if 0
 		auto found = shaders.find(unique_shader_key);
 		if (found != shaders.end() &&
 			found->second.shader_hash == shader_hash &&
@@ -484,17 +497,31 @@ namespace edge::gfx
 			EDGE_LOGD("Loaded shader: {}.", stage.path);
 			return found->second.code;
 		}
+#endif // Disable cachce
 
 		auto& new_shader = shaders[unique_shader_key];
 		new_shader.shader_hash = shader_hash;
 		new_shader.dependency_hash = dependency_hash;
-		if (shader_compiler->compile(shader_compile_info, new_shader.code)) {
-			EDGE_LOGD("Compiled shader: {}.", stage.path);
-			return new_shader.code;
+		auto* compilation_result = shader_compiler->compile(shader_compile_info);
+		if (!compilation_result) {
+			EDGE_LOGE("Failed to compile shader: {}.", stage.path);
+			return {};
 		}
 
-		EDGE_LOGE("Failed to compile shader: {}.", stage.path);
+		EDGE_LOGD("Compiled shader: {}.", stage.path);
 
-		return {};
+		if (!compilation_result->collect_result(new_shader.code)) {
+			EDGE_LOGE("Failed to collect compilation result: {}.", stage.path);
+			delete compilation_result;
+			return {};
+		}
+
+		if (!compilation_result->collect_reflection(refl)) {
+			EDGE_LOGE("Failed to collect reflection for shader: {}.", stage.path);
+		}
+
+		delete compilation_result;
+
+		return new_shader.code;
 	}
 }

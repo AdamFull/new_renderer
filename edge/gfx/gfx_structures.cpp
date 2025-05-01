@@ -378,6 +378,7 @@ namespace edge::gfx
 		h = murmur_hash(desc.count, h);
 		h = murmur_hash(static_cast<int>(desc.stages), h);
 		h = murmur_hash(utl::cast(desc.type), h);
+		h = murmur_hash(desc.name_hash, h);
 		return h;
 	}
 }

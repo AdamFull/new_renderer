@@ -20,6 +20,8 @@
 
 #include <edge/fs/fs_virtual_filesystem.h>
 
+#include <edge/util/utl_hash.hpp>
+
 namespace engine::render {
 	class RenderContext::RenderFrame {
 	public:
@@ -77,7 +79,7 @@ namespace engine::render {
 		}
 
 		auto lookup_and_allocate_binding_layout(edge::gfx::IDescriptorLayout* descriptor_layout) -> edge::gfx::IBindingLayout* {
-			auto found_layout_binding = binding_layout_table.find(descriptor_layout->hash());
+			auto found_layout_binding = binding_layout_table.find(descriptor_layout->get_hash());
 			if (found_layout_binding != binding_layout_table.end()) {
 				
 				auto& binding_layouts = found_layout_binding->second;
@@ -91,7 +93,7 @@ namespace engine::render {
 			}
 
 			// Binding layout is not found, create new one
-			auto& binding_layouts = binding_layout_table[descriptor_layout->hash()];
+			auto& binding_layouts = binding_layout_table[descriptor_layout->get_hash()];
 			auto& new_binding_layout = binding_layouts.emplace_back();
 			new_binding_layout = edge::gfx::create_binding_layout(descriptor_layout);
 			descriptor_allocator->allocate({ &new_binding_layout , 1 });
@@ -146,11 +148,12 @@ namespace engine::render {
 
 		edge::gfx::request_timestamp_frequency(&timestamp_frequency);
 
+		// TODO: Load this layout from bindles_layout.slang
 		std::vector<edge::gfx::DescrptorLayoutBindingDesc> binding_descriptions{};
-		binding_descriptions.emplace_back(FRAME_DATA_SLOT, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer);
-		binding_descriptions.emplace_back(SAMPLER_SLOT, MAX_SAMPLER_SLOTS, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampler);
-		binding_descriptions.emplace_back(SRV_TEXTURE_SLOT, MAX_SRV_TEXTURE_SLOTS, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampledImage);
-		binding_descriptions.emplace_back(UAV_TEXTURE_SLOT, MAX_UAV_TEXTURE_SLOTS, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eStorageImage);
+		binding_descriptions.emplace_back(FRAME_DATA_SLOT, 1u, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eUniformBuffer, edge::murmur_hash("g_fd"));
+		binding_descriptions.emplace_back(SAMPLER_SLOT, MAX_SAMPLER_SLOTS, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampler, edge::murmur_hash("g_samplers"));
+		binding_descriptions.emplace_back(SRV_TEXTURE_SLOT, MAX_SRV_TEXTURE_SLOTS, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eSampledImage, edge::murmur_hash("g_srv_textures"));
+		binding_descriptions.emplace_back(UAV_TEXTURE_SLOT, MAX_UAV_TEXTURE_SLOTS, edge::gfx::ShaderStageFlag::eAll, edge::gfx::DescriptorType::eStorageImage, edge::murmur_hash("g_uav_textures"));
 
 		edge::gfx::DescriptorLayoutCreateInfo descriptor_layout_ci{};
 		descriptor_layout_ci.bindings = binding_descriptions;
@@ -337,7 +340,7 @@ namespace engine::render {
 			}
 
 			auto& sampler = samplers.get(render_resource.resource_id);
-			if (sampler->hash() == sampler_hash) {
+			if (sampler->get_hash() == sampler_hash) {
 				return static_cast<uint32_t>(rid);
 			}
 		}

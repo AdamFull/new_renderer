@@ -19,13 +19,7 @@ namespace edge::gfx::vulkan
 		Sampler& operator=(Sampler&&) = delete;
 
 		void set_resource_name(std::string_view name) const noexcept override;
-
-		auto hash() const noexcept -> uint32_t override {
-			return self_hash;
-		}
 	private:
 		Device& device;
-
-		uint32_t self_hash{ 0u };
 	};
 }

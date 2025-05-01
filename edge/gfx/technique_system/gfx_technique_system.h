@@ -87,7 +87,7 @@ namespace edge::gfx
 		auto create_descriptor_table(IShader* shader, std::vector<IDescriptorLayout*>& table_layouts) -> void;
 		auto lookup_root_signature(IShader* shader, std::span<IDescriptorLayout*> table_layouts) -> IRootSignature*;
 
-		std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage);
+		std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage, ShaderReflection& refl);
 
 		IPipelineCache* pipeline_cache{ nullptr };
 

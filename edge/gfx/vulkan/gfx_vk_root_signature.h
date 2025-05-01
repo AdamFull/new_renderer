@@ -51,8 +51,6 @@ namespace edge::gfx::vulkan
 
 		void set_resource_name(std::string_view name) const noexcept override;
 
-		auto hash() const noexcept -> uint32_t override;
-
 		[[nodiscard]] auto get_pipeline_layout() noexcept -> PipelineLayout& {
 			return *pipeline_layout;
 		}
@@ -63,8 +61,6 @@ namespace edge::gfx::vulkan
 		}
 	private:
 		Device& device;
-
-		uint32_t self_hash_{ 0u };
 
 		std::unique_ptr<PipelineLayout> pipeline_layout{};
 		std::array<std::unique_ptr<DescriptorSetLayout>, k_max_descriptor_count> descriptor_set_layouts{};

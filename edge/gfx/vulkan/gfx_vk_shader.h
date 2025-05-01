@@ -27,7 +27,7 @@ namespace edge::gfx::vulkan
 
 	class Shader final : public IShader {
 	public:
-		Shader(Device& device, std::span<const ShaderStageInfo> shader_stages);
+		Shader(Device& device, std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl);
 		Shader(Shader&& other);
 		~Shader() = default;
 
@@ -40,8 +40,6 @@ namespace edge::gfx::vulkan
 		auto get_modules() const noexcept -> StaticArray<std::unique_ptr<ShaderModule>, 6ull> const& {
 			return shader_modules;
 		}
-	private:
-		void add_reflection_stage(const ShaderStageInfo& create_info);
 	private:
 		Device& device;
 		StaticArray<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};
