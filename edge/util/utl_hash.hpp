@@ -12,8 +12,16 @@ namespace edge {
 		return len;
 	}
 
+	inline constexpr void hash_combine(uint16_t hash, uint16_t& seed) {
+		seed ^= hash + (uint16_t)0x9e37U + (seed << 3) + (seed >> 1);
+	}
+
 	inline constexpr void hash_combine(uint32_t hash, uint32_t& seed) {
-		seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= hash + (uint32_t)0x9e3779b9U + (seed << 6) + (seed >> 2);
+	}
+
+	inline constexpr void hash_combine(uint64_t hash, uint64_t& seed) {
+		seed ^= hash + 0x9e3779b97f4a7c15LLU + (seed << 12) + (seed >> 4);
 	}
 
 	namespace murmur32 {
