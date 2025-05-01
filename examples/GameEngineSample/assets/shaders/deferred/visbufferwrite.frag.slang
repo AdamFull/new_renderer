@@ -1,6 +1,6 @@
 #include "../include/bindles_layout.slang"
 
-[[vk::binding(1, 0)]] ConstantBuffer<interop::EncodedGeometryData> egd : register(c0, space0);
+[[vk::binding(0, 1)]] ConstantBuffer<interop::EncodedGeometryData> egd : register(c0, space1);
 
 struct FSInput {
     uint32_t draw_id : TEXCOORD0;

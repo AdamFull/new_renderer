@@ -3,7 +3,7 @@
 
 [[vk::push_constant]] ConstantBuffer<visbufferwrite::PushConstants> pc;
 
-[[vk::binding(1, 0)]] ConstantBuffer<interop::EncodedGeometryData> egd : register(c0, space0);
+[[vk::binding(0, 1)]] ConstantBuffer<interop::EncodedGeometryData> egd : register(c0, space1);
 
 struct VSOutput {
     uint32_t draw_id : TEXCOORD0;
