@@ -23,7 +23,7 @@ namespace constants {
 	static const float four_pi = 2.0 * two_pi;
 	static const float flt_max = 3.402823466e+38F;
 	static const float flt_epsilon = 1.192092896e-07F;
-	static const float flt_inf = 1e+300 * 1e+300;
+	static const float flt_inf = ((float)(1e+300 * 1e+300));
 	static const uint32_t uint_max = 4294967295u;
 
 	// Directional light

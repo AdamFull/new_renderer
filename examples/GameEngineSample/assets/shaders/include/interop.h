@@ -70,7 +70,7 @@ namespace interop {
 
 	template<typename _Ty, typename _Tty>
 	inline auto mul(const _Ty& a, const _Tty& b) -> decltype(a * b) {
-		return b * a;
+		return a * b;
 	}
 
 	template<typename _Ty>
@@ -252,8 +252,8 @@ namespace interop {
 		}
 
 		BoundingBox decode(float4x4 dec) {
-			float4 mn = mul(float4(decode_position(min), 1.0f), dec);
-			float4 mx = mul(float4(decode_position(max), 1.0f), dec);
+			float4 mn = mul(dec, float4(decode_position(min), 1.0f));
+			float4 mx = mul(dec, float4(decode_position(max), 1.0f));
 			return BoundingBox(float3(mn.x, mn.y, mn.z) / mn.w, float3(mx.x, mx.y, mx.z) / mx.w);
 		}
 
@@ -282,6 +282,8 @@ namespace interop {
 		int32_t first_vertex;
 		uint32_t vertex_count;
 		uint32_t _pad0;
+		uint32_t _pad1;
+		uint32_t _pad2;
 
 		BoundingBoxEnc ebb;
 	};
@@ -512,6 +514,10 @@ namespace interop {
 		uint32_t default_camera_id;
 		uint32_t frame_number;
 
+		inline Camera get_default_camera() {
+			return camera_ptr[default_camera_id];
+		}
+
 		inline float4x4 get_model_matrix(uint global_offset) { 
 			return matrix_ptr[global_offset + constants::model_matrix_offset];
 		}
@@ -587,6 +593,10 @@ namespace interop {
 		jounts_t joints;
 		float4 weights;
 
+		CONSTRUCTOR(DecodedVertex) {
+
+		}
+
 		CONSTRUCTOR(DecodedVertex, EncodedVertex enc_vert, TexcoordBounds uv_bb) {
 			position = decode_position(enc_vert.position);
 			normal = decode_normal(enc_vert.normal);
@@ -596,6 +606,10 @@ namespace interop {
 			joints = enc_vert.joints;
 			weights = decode_weights(enc_vert.weights);
 		}
+	};
+
+	struct DecodedTriangle {
+		DecodedVertex verts[3];
 	};
 
 	struct EncodedGeometryData {
@@ -638,6 +652,31 @@ namespace interop {
 		inline DecodedVertex get_dec_vertex(uint32_t vertex_index, TexcoordBounds uv_bb) {
 			EncodedVertex enc_vert = get_enc_vertex(vertex_index);
 			return DecodedVertex(enc_vert, uv_bb);
+		}
+
+		inline DecodedTriangle get_dec_triangle(uint32_t draw_id, uint32_t prim_id, TexcoordBounds uv_bb) {
+			DecodedTriangle triangle;
+
+			DrawIndexedIndirectData draw_command = draw_data_ptr[draw_id];
+
+			// Index of the first vertex of this Draw call's geometry
+			uint32_t start_index = draw_command.first_index;
+
+			// Get position in the Index Buffer of each vertex in this triangle (eg 31, 32, 33)
+			uint32_t tri_vert1_index_buffer_position = (prim_id * 3 + 0) + start_index;
+			uint32_t tri_vert2_index_buffer_position = (prim_id * 3 + 1) + start_index;
+			uint32_t tri_vert3_index_buffer_position = (prim_id * 3 + 2) + start_index;
+
+			// Now get vertex index from index buffer (eg, 17, 41, 32)
+			sindex_t tri_vert0_index = indices[tri_vert1_index_buffer_position];
+			sindex_t tri_vert1_index = indices[tri_vert2_index_buffer_position];
+			sindex_t tri_vert2_index = indices[tri_vert3_index_buffer_position];
+
+			triangle.verts[0] = get_dec_vertex(tri_vert0_index + draw_command.vertex_offset, uv_bb);
+			triangle.verts[1] = get_dec_vertex(tri_vert1_index + draw_command.vertex_offset, uv_bb);
+			triangle.verts[2] = get_dec_vertex(tri_vert2_index + draw_command.vertex_offset, uv_bb);
+
+			return triangle;
 		}
 	};
 }

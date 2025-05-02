@@ -33,9 +33,19 @@
 #endif
 
 // Pass data includes
+#include "../../assets/shaders/culling/assemble_commands.h"
 #include "../../assets/shaders/culling/cull_and_batch.h"
+#include "../../assets/shaders/culling/scan.h"
+
+#include "../../assets/shaders/deferred/visbufferwrite.h"
 
 #include "../../assets/shaders/lighting/prefilteredmap.h"
+
+#include "../../assets/shaders/postprocess/apply_effect.h"
+#include "../../assets/shaders/postprocess/bokeh.h"
+#include "../../assets/shaders/postprocess/brightdetect.h"
+#include "../../assets/shaders/postprocess/comp_histogram.h"
+#include "../../assets/shaders/postprocess/downsampler.h"
 
 #include "../../assets/shaders/testing/debug_text.h"
 #include "../../assets/shaders/testing/imgui.h"
@@ -99,42 +109,6 @@ namespace render_label {
 	constexpr const uint32_t layer = "layer"_hash32;
 
 	constexpr const uint32_t camera_id = "camera_id"_hash32;
-
-	constexpr const uint32_t geometry_buffers = "GeometryBuffers"_hash32;
-
-
-	constexpr const uint32_t histogram_buffer = "Histogram"_hash32;
-	constexpr const uint32_t min_log_lum = "minLogLum"_hash32;
-	constexpr const uint32_t log_lum_range = "logLumRange"_hash32;
-	constexpr const uint32_t time_coeff = "timeCoeff"_hash32;
-	constexpr const uint32_t num_pixels_x = "numPixelsX"_hash32;
-	constexpr const uint32_t num_pixels_y = "numPixelsY"_hash32;
-
-	constexpr const uint32_t enabled = "enabled"_hash32;
-	constexpr const uint32_t quality = "quality"_hash32;
-	constexpr const uint32_t threshold = "threshold"_hash32;
-	constexpr const uint32_t threshold_min = "threshold_min"_hash32;
-	constexpr const uint32_t scale = "scale"_hash32;
-	constexpr const uint32_t max_samples = "max_samples"_hash32;
-	constexpr const uint32_t strength = "strength"_hash32;
-	constexpr const uint32_t sample_count = "sample_count"_hash32;
-	constexpr const uint32_t polygon_count = "polygon_count"_hash32;
-	constexpr const uint32_t near_field = "near_field"_hash32;
-	constexpr const uint32_t near_transition = "near_transition"_hash32;
-	constexpr const uint32_t far_field = "far_field"_hash32;
-	constexpr const uint32_t far_transition = "far_transition"_hash32;
-	constexpr const uint32_t focus_point = "focus_point"_hash32;
-	constexpr const uint32_t iterations = "iterations"_hash32;
-	constexpr const uint32_t distortion = "distortion"_hash32;
-	constexpr const uint32_t adaptive = "adaptive"_hash32;
-	constexpr const uint32_t white_point = "white_point"_hash32;
-	constexpr const uint32_t exposure = "exposure"_hash32;
-	constexpr const uint32_t gamma = "gamma"_hash32;
-	constexpr const uint32_t filter_radius = "filter_radius"_hash32;
-	constexpr const uint32_t amount = "amount"_hash32;
-	constexpr const uint32_t opacity = "opacity"_hash32;
-	constexpr const uint32_t inner_radius = "inner_radius"_hash32;
-	constexpr const uint32_t outer_radius = "outer_radius"_hash32;
 }
 
 namespace engine::render
@@ -774,11 +748,13 @@ namespace engine::render
 
 					auto target = render_context->get_texture(prefiltered_cube_target);
 					for (int32_t mip = 0; mip < static_cast<int32_t>(target->get_mip_level_count()); ++mip) {
+						uint32_t current_mip{ 0 };
 						if (mip == 0) {
 							self.bind_resource(render_label::texture0, casual_day_4k_cube);
 						}
 						else {
-							self.bind_read_resource(render_label::texture0, prefiltered_cube_target, mip - 1);
+							current_mip = mip - 1;
+							self.bind_read_resource(render_label::texture0, prefiltered_cube_target);
 						}
 
 						self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler);
@@ -795,6 +771,7 @@ namespace engine::render
 						auto& pc = self.get_constant_block();
 						auto& pc_data = pc.as<prefilteredmap::PushConstants>();
 						pc_data.roughness = layer_roughness;
+						pc_data.current_mip = current_mip;
 						self.push_constant_ranges(command_list);
 
 						group_x = target->get_width() >> mip;
@@ -879,7 +856,6 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
-#if 0
 		// Calculate command offsets
 		{
 			ComputeShaderPassCreateInfo create_info{};
@@ -901,9 +877,9 @@ namespace engine::render
 					self.resolve_dependencies(command_list);
 
 					auto& pc = self.get_constant_block();
-					pc.set(edge::murmur_hash("input_buffer"), alive_bits->get_address());
-					pc.set(edge::murmur_hash("output_buffer"), alive_offsets->get_address());
-					pc.set(edge::murmur_hash("size"), render_world->get_draw_count());
+					auto& pc_data = pc.as<scan::PushConstants>();
+					pc_data.input_buffer = alive_bits->get_address();
+					pc_data.output_buffer = alive_offsets->get_address();
 					self.push_constant_ranges(command_list);
 
 					self.bind_resources(command_list);
@@ -948,12 +924,13 @@ namespace engine::render
 					self.resolve_dependencies(command_list);
 
 					auto& pc = self.get_constant_block();
-					pc.set(edge::murmur_hash("source_descriptions"), draw_commands->get_address());
-					pc.set(edge::murmur_hash("alive_descriptions"), alive_meshes->get_address());
-					pc.set(edge::murmur_hash("alive_draw_commands"), argument_buffer->get_address());
-					pc.set(edge::murmur_hash("alive_bits"), alive_bits->get_address());
-					pc.set(edge::murmur_hash("alive_offsets"), alive_offsets->get_address());
-					pc.set(edge::murmur_hash("draw_counts"), count_buffer->get_address());
+					auto& pc_data = pc.as<assemble_commands::PushConstants>();
+					pc_data.source_descriptions = draw_commands->get_address();
+					pc_data.alive_descriptions = alive_meshes->get_address();
+					pc_data.alive_draw_commands = argument_buffer->get_address();
+					pc_data.alive_bits = alive_bits->get_address();
+					pc_data.alive_offsets = alive_offsets->get_address();
+					pc_data.draw_counts = count_buffer->get_address();
 					self.push_constant_ranges(command_list);
 
 					self.bind_resources(command_list);
@@ -1326,36 +1303,36 @@ namespace engine::render
 					auto& geometry_buffer = *geometry_buffers.back();
 					geometry_buffer.bind_index_buffer(command_list);
 
-					auto& buffers = self.get_uniform_block(render_label::geometry_buffers);
-					buffers.set(render_label::position, geometry_buffer.get_buffer_address(VertexAttributeFlag::ePosition));
-					buffers.set(render_label::texcoord, geometry_buffer.get_buffer_address(VertexAttributeFlag::eTexCoord));
-#if SKINNING_TEST
-					buffers.set(render_label::joints, geometry_buffer.get_buffer_address(VertexAttributeFlag::eJoint));
-					buffers.set(render_label::weights, geometry_buffer.get_buffer_address(VertexAttributeFlag::eWeight));
-#endif
-
 					// Bind buffers that uses in draw
-					auto& draw_data_block = self.get_uniform_block(edge::murmur_hash("DrawDescriptionBuffers"));
-					draw_data_block.set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->get_address());
-					draw_data_block.set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->get_address());
+					auto& draw_data_block = self.get_uniform_block(edge::murmur_hash("egd"));
+					auto& draw_data_block_data = draw_data_block.as<interop::EncodedGeometryData>();
+					draw_data_block_data.position = geometry_buffer.get_buffer_address(VertexAttributeFlag::ePosition);
+					draw_data_block_data.texcoord = geometry_buffer.get_buffer_address(VertexAttributeFlag::eTexCoord);
+					draw_data_block_data.draw_descriptions_ptr = alive_meshes->get_address();
+					draw_data_block_data.draw_data_ptr = argument_buffer->get_address();
+
+#if SKINNING_TEST
+					draw_data_block_data.joints = geometry_buffer.get_buffer_address(VertexAttributeFlag::eJoint);
+					draw_data_block_data.weights = geometry_buffer.get_buffer_address(VertexAttributeFlag::eWeight);
+#endif
+					self.bind_resources(command_list);
 
 					auto camera_id = render_world->get_resource_id(main_camera_index);
 					auto draw_call_id = camera_id * render_world->get_mesh_count();
 
-					auto& constants = self.get_constant_block();
-					constants.set(render_label::call_id, draw_call_id);
-					constants.set(render_label::camera_id, camera_id);
+					auto& pc = self.get_constant_block();
+					auto& pc_data = pc.as<visbufferwrite::PushConstants>();
+					pc_data.call_id = draw_call_id;
+					pc_data.camera_id = camera_id;
 
 					self.push_constant_ranges(command_list);
-
-					self.bind_resources(command_list);
 
 					// TODO: USE CURRENT CAMERA HERE FOR CALCULATE OFFSET!!!!
 					edge::gfx::IndirectDrawCommand draw_command{};
 					draw_command.indexed_draw = true;
 					draw_command.draw_count = render_world->get_mesh_count();
 					draw_command.argument_buffer = argument_buffer;
-					draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
+					draw_command.command_stride = sizeof(interop::DrawIndexedIndirectData);
 					draw_command.argument_offset = draw_call_id * draw_command.command_stride;
 					draw_command.count_buffer = render_context->get_buffer(indirect_count_buffer);
 					draw_command.count_offset = draw_call_id * sizeof(uint32_t);
@@ -1582,20 +1559,19 @@ namespace engine::render
 				auto& geometry_buffer = *geometry_buffers.back();
 				geometry_buffer.bind_index_buffer(command_list);
 
-				auto& buffers = self.get_uniform_block(render_label::geometry_buffers);
-				buffers.set(render_label::position, geometry_buffer.get_buffer_address(VertexAttributeFlag::ePosition));
-				buffers.set(render_label::texcoord, geometry_buffer.get_buffer_address(VertexAttributeFlag::eTexCoord));
-				buffers.set(render_label::normal, geometry_buffer.get_buffer_address(VertexAttributeFlag::eNormal));
-				buffers.set(render_label::tangent, geometry_buffer.get_buffer_address(VertexAttributeFlag::eTangent));
+				auto& egd = self.get_uniform_block(edge::murmur_hash("egd"));
+				auto& egd_data = egd.as<interop::EncodedGeometryData>();
+				egd_data.position = geometry_buffer.get_buffer_address(VertexAttributeFlag::ePosition);
+				egd_data.texcoord = geometry_buffer.get_buffer_address(VertexAttributeFlag::eTexCoord);
+				egd_data.normal = geometry_buffer.get_buffer_address(VertexAttributeFlag::eNormal);
+				egd_data.tangent = geometry_buffer.get_buffer_address(VertexAttributeFlag::eTangent);
 #if SKINNING_TEST		
-				buffers.set(render_label::joints, geometry_buffer.get_buffer_address(VertexAttributeFlag::eJoint));
-				buffers.set(render_label::weights, geometry_buffer.get_buffer_address(VertexAttributeFlag::eWeight));
-#endif					
-				buffers.set(render_label::indices, geometry_buffer.get_index_buffer_address());
-
-				auto& draw_data_block = self.get_uniform_block(edge::murmur_hash("DrawDescriptionBuffers"));
-				draw_data_block.set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->get_address());
-				draw_data_block.set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->get_address());
+				egd_data.joints = geometry_buffer.get_buffer_address(VertexAttributeFlag::eJoint);
+				egd_data.weights = geometry_buffer.get_buffer_address(VertexAttributeFlag::eWeight);
+#endif
+				egd_data.indices = geometry_buffer.get_index_buffer_address();
+				egd_data.draw_descriptions_ptr = alive_meshes->get_address();
+				egd_data.draw_data_ptr = argument_buffer->get_address();
 
 				self.bind_resources(command_list);
 
@@ -1699,10 +1675,11 @@ namespace engine::render
 							self.bind_resources(command_list);
 
 							auto& pc = self.get_constant_block();
-							pc.set(render_label::enabled, static_cast<int32_t>(postprocess.fxaa.enable));
-							pc.set(render_label::quality, postprocess.fxaa.quality);
-							pc.set(render_label::threshold, postprocess.fxaa.threshold);
-							pc.set(render_label::threshold_min, postprocess.fxaa.threshold_min);
+							auto& pc_data = pc.as<apply_effect::PushConstantFXAA>();
+							pc_data.enabled = static_cast<int32_t>(postprocess.fxaa.enable);
+							pc_data.quality = postprocess.fxaa.quality;
+							pc_data.threshold = postprocess.fxaa.threshold;
+							pc_data.threshold_min = postprocess.fxaa.threshold_min;
 							self.push_constant_ranges(command_list);
 
 							self.dispatch_for_target(command_list, current_input_target_id, true);
@@ -1737,10 +1714,11 @@ namespace engine::render
 							self.bind_resources(command_list);
 
 							auto& pc = self.get_constant_block();
-							pc.set(render_label::enabled, static_cast<int32_t>(postprocess.motionblur.enable));
-							pc.set(render_label::scale, postprocess.motionblur.scele);
-							pc.set(render_label::threshold, postprocess.motionblur.threshold);
-							pc.set(render_label::max_samples, postprocess.motionblur.max_samples);
+							auto& pc_data = pc.as<apply_effect::PushConstantMotionBlur>();
+							pc_data.enabled = static_cast<int32_t>(postprocess.motionblur.enable);
+							pc_data.scale = postprocess.motionblur.scele;
+							pc_data.threshold = postprocess.motionblur.threshold;
+							pc_data.max_samples = postprocess.motionblur.max_samples;
 							self.push_constant_ranges(command_list);
 
 							self.dispatch_for_target(command_list, current_input_target_id, true);
@@ -1775,9 +1753,10 @@ namespace engine::render
 								self.bind_resources(command_list);
 
 								auto& pc = self.get_constant_block(); 
-								pc.set(render_label::enabled, static_cast<int32_t>(postprocess.dof.enable));
-								pc.set(render_label::sample_count, postprocess.dof.bokeh_samples);
-								pc.set(render_label::polygon_count, postprocess.dof.bokeh_poly);
+								auto& pc_data = pc.as<bokeh::PushConstant>();
+								pc_data.enabled = static_cast<int32_t>(postprocess.dof.enable);
+								pc_data.sample_count = postprocess.dof.bokeh_samples;
+								pc_data.polygon_count = postprocess.dof.bokeh_poly;
 								self.push_constant_ranges(command_list);
 
 								self.dispatch_for_target(command_list, current_input_target_id, true);
@@ -1815,12 +1794,13 @@ namespace engine::render
 								self.bind_resources(command_list);
 
 								auto& pc = self.get_constant_block();
-								pc.set(render_label::enabled, static_cast<int32_t>(postprocess.dof.enable));
-								pc.set(render_label::near_field, postprocess.dof.near_field);
-								pc.set(render_label::near_transition, postprocess.dof.near_transition);
-								pc.set(render_label::far_field, postprocess.dof.far_field);
-								pc.set(render_label::far_transition, postprocess.dof.far_transition);
-								pc.set(render_label::focus_point, postprocess.dof.focus_point);
+								auto& pc_data = pc.as<apply_effect::PushConstantDoF>();
+								pc_data.enabled = static_cast<int32_t>(postprocess.dof.enable);
+								pc_data.near_field = postprocess.dof.near_field;
+								pc_data.near_transition = postprocess.dof.near_transition;
+								pc_data.far_field = postprocess.dof.far_field;
+								pc_data.far_transition = postprocess.dof.far_transition;
+								pc_data.focus_point = postprocess.dof.focus_point;
 								self.push_constant_ranges(command_list);
 
 								self.dispatch_for_target(command_list, current_input_target_id, true);
@@ -1860,7 +1840,8 @@ namespace engine::render
 								self.bind_resources(command_list);
 
 								auto& pc = self.get_constant_block();
-								pc.set(render_label::threshold, postprocess.bloom.threshold);
+								auto& pc_data = pc.as<brightdetect::PushConstant>();
+								pc_data.threshold = postprocess.bloom.threshold;
 								self.push_constant_ranges(command_list);
 
 								self.dispatch_for_target(command_list, hdr0_div2, true);
@@ -1893,6 +1874,11 @@ namespace engine::render
 									self.resolve_dependencies(command_list);
 									self.bind_resources(command_list);
 
+									auto& pc = self.get_constant_block();
+									auto& pc_data = pc.as<downsampler::PushConstant>();
+									pc_data.current_mip = 0;
+									self.push_constant_ranges(command_list);
+
 									self.dispatch_for_target(command_list, bloom_target, true);
 								}
 							};
@@ -1914,12 +1900,17 @@ namespace engine::render
 									auto target = render_context->get_texture(bloom_target);
 
 									for (int32_t mip = 1; mip < static_cast<int32_t>(bloom_blur_depth); ++mip) {
-										self.bind_read_resource(render_label::texture0, bloom_target, mip - 1);
+										self.bind_read_resource(render_label::texture0, bloom_target);
 										self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler);
 
 										self.bind_write_resource(render_label::image0, bloom_target, mip);
 										self.resolve_dependencies(command_list);
 										self.bind_resources(command_list);
+
+										auto& pc = self.get_constant_block();
+										auto& pc_data = pc.as<downsampler::PushConstant>();
+										pc_data.current_mip = mip - 1;
+										self.push_constant_ranges(command_list);
 
 										uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
 
@@ -1950,7 +1941,7 @@ namespace engine::render
 								auto target = render_context->get_texture(bloom_target);
 
 								for (int32_t mip = bloom_blur_depth - 1; mip > 0; --mip) {
-									self.bind_read_resource(render_label::texture0, bloom_target, mip);
+									self.bind_read_resource(render_label::texture0, bloom_target);
 									self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler);
 
 									self.bind_write_resource(render_label::image0, bloom_target, mip - 1);
@@ -1958,7 +1949,9 @@ namespace engine::render
 									self.bind_resources(command_list);
 
 									auto& pc = self.get_constant_block();
-									pc.set(render_label::filter_radius, postprocess.bloom.filter_radius);
+									auto& pc_data = pc.as<downsampler::PushConstant>();
+									pc_data.filter_radius = postprocess.bloom.filter_radius;
+									pc_data.current_mip = mip;
 									self.push_constant_ranges(command_list);
 
 									uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
@@ -2003,8 +1996,9 @@ namespace engine::render
 								self.bind_resources(command_list);
 
 								auto& pc = self.get_constant_block();
-								pc.set(render_label::enabled, static_cast<int32_t>(postprocess.bloom.enable));
-								pc.set(render_label::strength, postprocess.bloom.strength);
+								auto& pc_data = pc.as<apply_effect::PushConstantBloom>();
+								pc_data.enabled = static_cast<int32_t>(postprocess.bloom.enable);
+								pc_data.strength = postprocess.bloom.strength;
 								self.push_constant_ranges(command_list);
 
 								self.dispatch_for_target(command_list, current_output_target_id, true);
@@ -2035,18 +2029,22 @@ namespace engine::render
 							EDGE_PROFILE_ZONE_SCOPED;
 
 							if (postprocess.tonemap.enable) {
+								auto* hist_buffer = render_context->get_buffer(histogram_buffer);
+
 								self.bind_read_resource(render_label::texture0, current_input_target_id);
 								self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler);
 
-								self.bind_write_resource(render_label::histogram_buffer, histogram_buffer, ~0u);
+								self.write_resource(histogram_buffer, ~0u);
 								self.resolve_dependencies(command_list);
 								self.bind_resources(command_list);
 
 								float log_lum_range = postprocess.tonemap.lum_max - postprocess.tonemap.lum_min;
 
-								auto& uniform = self.get_constant_block();
-								uniform.set(render_label::min_log_lum, postprocess.tonemap.lum_min);
-								uniform.set(render_label::log_lum_range, log_lum_range);
+								auto& pc = self.get_constant_block();
+								auto& pc_data = pc.as<comp_histogram::PushConstant>();
+								pc_data.min_log_lum = postprocess.tonemap.lum_min;
+								pc_data.log_lum_range = log_lum_range;
+								pc_data.histogram = hist_buffer->get_address();
 								self.push_constant_ranges(command_list);
 
 								self.dispatch_for_target(command_list, current_input_target_id, true);
@@ -2069,7 +2067,9 @@ namespace engine::render
 							EDGE_PROFILE_ZONE_SCOPED;
 
 							if (postprocess.tonemap.enable) {
-								self.bind_read_resource(render_label::histogram_buffer, histogram_buffer);
+								auto* hist_buffer = render_context->get_buffer(histogram_buffer);
+
+								self.read_resource(histogram_buffer, ~0u);
 
 								self.bind_write_resource(render_label::image0, avg_brightness_target, ~0u);
 
@@ -2080,12 +2080,14 @@ namespace engine::render
 
 								auto* texture = render_context->get_texture(current_input_target_id);
 
-								auto& uniform = self.get_constant_block();
-								uniform.set(render_label::min_log_lum, postprocess.tonemap.lum_min);
-								uniform.set(render_label::log_lum_range, log_lum_range);
-								uniform.set(render_label::time_coeff, time_coeff);
-								uniform.set(render_label::num_pixels_x, static_cast<float>(texture->get_width()));
-								uniform.set(render_label::num_pixels_y, static_cast<float>(texture->get_height()));
+								auto& pc = self.get_constant_block();
+								auto& pc_data = pc.as<comp_brightness::PushConstant>();
+								pc_data.min_log_lum = postprocess.tonemap.lum_min;
+								pc_data.log_lum_range = log_lum_range;
+								pc_data.time_coeff = time_coeff;
+								pc_data.num_pixels_x = static_cast<float>(texture->get_width());
+								pc_data.num_pixels_y = static_cast<float>(texture->get_height());
+								pc_data.histogram = hist_buffer->get_address();
 
 								self.push_constant_ranges(command_list);
 								self.bind_resources(command_list);
@@ -2119,11 +2121,12 @@ namespace engine::render
 								self.bind_resources(command_list);
 
 								auto& pc = self.get_constant_block();
-								pc.set(render_label::enabled, static_cast<int32_t>(postprocess.tonemap.enable));
-								pc.set(render_label::adaptive, postprocess.tonemap.adaptive);
-								pc.set(render_label::white_point, postprocess.tonemap.white_point);
-								pc.set(render_label::exposure, postprocess.tonemap.exposure);
-								pc.set(render_label::gamma, postprocess.tonemap.gamma);
+								auto& pc_data = pc.as<apply_effect::PushConstantTonemap>();
+								pc_data.enabled = static_cast<int32_t>(postprocess.tonemap.enable);
+								pc_data.adaptive = postprocess.tonemap.adaptive;
+								pc_data.white_point = postprocess.tonemap.white_point;
+								pc_data.exposure = postprocess.tonemap.exposure;
+								pc_data.gamma = postprocess.tonemap.gamma;
 								self.push_constant_ranges(command_list);
 
 								self.dispatch_for_target(command_list, current_input_target_id, true);
@@ -2158,9 +2161,10 @@ namespace engine::render
 						self.bind_resources(command_list);
 
 						auto& pc = self.get_constant_block();
-						pc.set(render_label::enabled, static_cast<int32_t>(postprocess.aberration.enable));
-						pc.set(render_label::distortion, postprocess.aberration.distortion);
-						pc.set(render_label::iterations, postprocess.aberration.iterations);
+						auto& pc_data = pc.as < apply_effect::PushConstantChromaticAberration>();
+						pc_data.enabled = static_cast<int32_t>(postprocess.aberration.enable);
+						pc_data.distortion = postprocess.aberration.distortion;
+						pc_data.iterations = postprocess.aberration.iterations;
 						self.push_constant_ranges(command_list);
 
 						self.dispatch_for_target(command_list, current_input_target_id, true);
@@ -2192,8 +2196,9 @@ namespace engine::render
 						self.bind_resources(command_list);
 
 						auto& pc = self.get_constant_block();
-						pc.set(render_label::enabled, static_cast<int32_t>(postprocess.filmgrain.enable));
-						pc.set(render_label::amount, postprocess.filmgrain.amount);
+						auto& pc_data = pc.as<apply_effect::PushConstantFilmGrain>();
+						pc_data.enabled = static_cast<int32_t>(postprocess.filmgrain.enable);
+						pc_data.amount = postprocess.filmgrain.amount;
 						self.push_constant_ranges(command_list);
 
 						self.dispatch_for_target(command_list, current_input_target_id, true);
@@ -2225,10 +2230,11 @@ namespace engine::render
 						self.bind_resources(command_list);
 
 						auto& pc = self.get_constant_block();
-						pc.set(render_label::enabled, static_cast<int32_t>(postprocess.vignette.enable));
-						pc.set(render_label::opacity, postprocess.vignette.opacity);
-						pc.set(render_label::inner_radius, postprocess.vignette.inner);
-						pc.set(render_label::outer_radius, postprocess.vignette.outer);
+						auto& pc_data = pc.as<apply_effect::PushConstantVignette>();
+						pc_data.enabled = static_cast<int32_t>(postprocess.vignette.enable);
+						pc_data.opacity = postprocess.vignette.opacity;
+						pc_data.inner_radius = postprocess.vignette.inner;
+						pc_data.outer_radius = postprocess.vignette.outer;
 						self.push_constant_ranges(command_list);
 
 						self.dispatch_for_target(command_list, current_input_target_id, true);
@@ -2242,7 +2248,7 @@ namespace engine::render
 
 			render_context->add_node(std::move(post_proc_node));
 		}
-#endif
+
 		// Test output shader
 		{
 			RenderShaderPassCreateInfo create_info{};
@@ -2250,9 +2256,7 @@ namespace engine::render
 			create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
 
 			create_info.draw_callback = [this,
-				nearest_clamp_to_edge_sampler,
-				hdr0
-				//final_target = ssao_target
+				nearest_clamp_to_edge_sampler
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
@@ -2265,7 +2269,7 @@ namespace engine::render
 					command_list.set_viewport(0.f, viewport_height, viewport_width, -viewport_height, 0.f, 1.f);
 					command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 
-					self.bind_read_resource(render_label::texture0, hdr0);
+					self.bind_read_resource(render_label::texture0, last_output_target_id);
 					self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler);
 
 					self.resolve_dependencies(command_list);

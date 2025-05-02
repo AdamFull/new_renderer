@@ -4,7 +4,7 @@
 [[vk::push_constant]] ConstantBuffer<cull_and_batch::PushConstants> pc;
 
 inline bool check_mesh_in_frustum(in interop::BoundingBox bb, in uint32_t frustum_offset) {
-	[unroll]
+    [unroll]
     for (uint32_t i = 0; i < 6; i++) {
         float4 edge = g_fd.frustum_sides_ptr[frustum_offset + i];
         // TODO: add this check to BoundingBox

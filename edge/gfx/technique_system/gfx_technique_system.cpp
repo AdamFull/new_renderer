@@ -522,6 +522,18 @@ namespace edge::gfx
 
 		delete compilation_result;
 
+#if 1
+		if (!fs::exists("/internal/shader_binary/")) {
+			fs::create_directories("/internal/shader_binary/");
+		}
+
+		auto filename = fs::get_stem(stage.path);
+
+		std::array<char, 256> buffer{};
+		auto binary_path = fs::path_append("/internal/shader_binary", filename, buffer);
+		fs::write_file(binary_path, new_shader.code);
+#endif
+
 		return new_shader.code;
 	}
 }

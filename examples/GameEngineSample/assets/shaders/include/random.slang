@@ -81,6 +81,10 @@ namespace random {
             return asfloat(0x3f800000 | xor_shift(rng_state) >> 9) - 1.0;
         }
 
+        inline float sample1d() {
+            return sample();
+        }
+
         inline float2 sample_2d() {
             return float2(sample(), sample());
         }

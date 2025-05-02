@@ -1,5 +1,0 @@
-#include "compute_common.glsl"
-
-void main() {
-	return;
-}

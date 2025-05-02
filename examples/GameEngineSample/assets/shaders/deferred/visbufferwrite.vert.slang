@@ -6,9 +6,9 @@
 [[vk::binding(0, 1)]] ConstantBuffer<interop::EncodedGeometryData> egd : register(c0, space1);
 
 struct VSOutput {
-    uint32_t draw_id : TEXCOORD0;
-    uint32_t instance_id : TEXCOORD1;
-    uint32_t vbo_id : TEXCOORD2;
+    nointerpolation uint32_t draw_id : TEXCOORD0;
+    nointerpolation uint32_t instance_id : TEXCOORD1;
+    nointerpolation uint32_t vbo_id : TEXCOORD2;
     float2 texcoord : TEXCOORD3;
     float4 position : SV_Position;
 };
@@ -17,8 +17,6 @@ struct VSOutput {
 VSOutput main(uint32_t vertex_index: SV_VertexID, 
               uint32_t instance_index: SV_InstanceID,
               uint32_t draw_index: SV_DrawIndex) {
-    VSOutput output;
-
     uint32_t draw_index = pc.call_id + draw_index + instance_index;
     interop::DrawDescription draw_info = egd.draw_descriptions_ptr[draw_index];
 
@@ -49,12 +47,13 @@ VSOutput main(uint32_t vertex_index: SV_VertexID,
     float4x4 view_projection = g_fd.get_view_projection_matrix(camera.matrices_offset);
 
     // Sample vertex position
-    float3 position = egd.position[vertex_index];
-    float4 local_pos = mul(model_matrix, float4(position, 1.0));
+    float4 local_pos = mul(model_matrix, float4(egd.position[vertex_index], 1.0));
     local_pos = float4(local_pos.xyz / local_pos.w, 1.0);
 
+    VSOutput output;
     output.draw_id = draw_id;
     output.instance_id = instance_index;
+    output.vbo_id = 0;
     output.texcoord = interop::decode_texcoord(egd.texcoord[vertex_index], mesh.uv_enc);
     output.position = mul(view_projection, local_pos);
 

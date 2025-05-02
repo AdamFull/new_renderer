@@ -1,9 +1,26 @@
 [
   {
+    "name": "assemble_commands",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/culling/assemble_commands.comp.slang" }
+    ]
+  },
+  {
     "name": "cull_and_batch",
     "type": "compute",
     "stages": [
       { "path": "/internal_res/assets/shaders/culling/cull_and_batch.comp.slang" }
+    ]
+  },
+  {
+    "name": "scan_bit_array",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/culling/scan.comp.slang",
+        "def": [ "INPUT_BIT_ARRAY" ]
+      }
     ]
   },
 
@@ -35,6 +52,16 @@
       "cull_mode": "front"
     }
   },
+  {
+    "name": "visibilitybuffer_shade",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/deferred/material_pass_base.comp.slang",
+        "def": [ "LIGHT_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
+      }
+    ]
+  },
 
   {
     "name": "generate_brdflut",
@@ -57,8 +84,190 @@
       { "path": "/internal_res/assets/shaders/lighting/prefilteredmap.comp.slang" }
     ]
   },
+  {
+    "name": "compute_ssao",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/lighting/ssao.comp.slang" }
+    ]
+  },
+  {
+    "name": "compute_ssao_blur_vert",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/lighting/ssao_blur.comp.slang" }
+    ]
+  },
+  {
+    "name": "compute_ssao_blur_horiz",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/lighting/ssao_blur.comp.slang",
+        "def": [ "HORIZONTAL_PASS" ]
+      }
+    ]
+  },
 
-
+  {
+    "name": "generate_motion_vectors_low_precision",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/generate_motion_vectors.comp.slang",
+        "def": [ "LOW_PRECISION_VELOCITY" ]
+      }
+    ]
+  },
+  {
+    "name": "generate_motion_vectors",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/postprocess/generate_motion_vectors.comp.slang" }
+    ]
+  },
+  {
+    "name": "apply_fxaa_effect",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp.slang",
+        "def": [ "FXAA" ]
+      }
+    ]
+  },
+  {
+    "name": "apply_motion_blur_effect_low",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp.slang",
+        "def": [ "MOTION_BLUR", "LOW_PRECISION_VELOCITY" ]
+      }
+    ]
+  },
+  {
+    "name": "apply_motion_blur_effect",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp.slang",
+        "def": [ "MOTION_BLUR" ]
+      }
+    ]
+  },
+  {
+    "name": "apply_dof_effect",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp.slang",
+        "def": [ "DOF" ]
+      }
+    ]
+  },
+  {
+    "name": "apply_bloom_effect",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp.slang",
+        "def": [ "BLOOM" ]
+      }
+    ]
+  },
+  {
+    "name": "apply_tonemap_effect",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp.slang",
+        "def": [ "TONEMAP" ]
+      }
+    ]
+  },
+  {
+    "name": "apply_chromatic_aberration_barrel_effect",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp.slang",
+        "def": [ "CHROMATIC_ABERRATION" ]
+      }
+    ]
+  },
+  {
+    "name": "apply_film_grain_effect",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp.slang",
+        "def": [ "FILM_GRAIN" ]
+      }
+    ]
+  },
+  {
+    "name": "apply_vignette_effect",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/apply_effect.comp.slang",
+        "def": [ "VIGNETTE" ]
+      }
+    ]
+  },
+  {
+    "name": "bokeh_filter",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/postprocess/bokeh.comp.slang" }
+    ]
+  },
+  {
+    "name": "brightdetect",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/postprocess/brightdetect.comp.slang" }
+    ]
+  },
+  {
+    "name": "compute_histogram",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/postprocess/comp_histogram.comp.slang" }
+    ]
+  },
+  {
+    "name": "compute_brightness",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/postprocess/comp_average_brightness.comp.slang" }
+    ]
+  },
+  {
+    "name": "downsample",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/postprocess/downsample.comp.slang" }
+    ]
+  },
+  {
+    "name": "downsample_first_pass",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/postprocess/downsample.comp.slang",
+        "def": [ "FIRST_PASS" ]
+      }
+    ]
+  },
+  {
+    "name": "upsample",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/postprocess/upsample.comp.slang" }
+    ]
+  },
 
   {
     "name": "screenspace",
@@ -148,6 +357,20 @@
     "type": "compute",
     "stages": [
       { "path": "/internal_res/assets/shaders/utility/clear_buffer.comp.slang" }
+    ]
+  },
+  {
+    "name": "copy_buffer",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/utility/copy_buffer.comp.slang" }
+    ]
+  },
+  {
+    "name": "copy_image",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/utility/copy_image.comp.slang" }
     ]
   }
 ]

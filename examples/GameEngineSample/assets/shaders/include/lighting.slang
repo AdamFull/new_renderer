@@ -50,16 +50,52 @@ inline float g_schlicksmith_ggx(in float dot_nl, in float dot_nv, in float rough
     return GL * GV;
 }
 
+inline float3 prefiltered_reflection(in float3 R, in float roughness, in TextureCube<float4> prefiltered, in SamplerState cube_sampler) {
+    uint width, height, numLevels;
+    prefiltered.GetDimensions(0, width, height, numLevels);
+
+    const float lod = roughness * numLevels;
+    const float lodf = floor(lod);
+    const float lodc = ceil(lod);
+    float3 a = pow(prefiltered.SampleLevel(cube_sampler, R, lodf).rgb, 2.2f);
+    float3 b = pow(prefiltered.SampleLevel(cube_sampler, R, lodc).rgb, 2.2f);
+    return lerp(a, b, lod - lodf);
+}
+
 // Fresnel function ----------------------------------------------------
-float3 f0_from_ior(in float ior) {
+inline float3 f0_from_ior(in float ior) {
     const float a = (1.f - ior) / (1.f + ior);
     return float3(a * a);
 }
 
-float3 f_schlick(in float cosTheta, in float f90, in float3 F0) {
+inline float3 f_schlick(in float cosTheta, in float f90, in float3 F0) {
     return F0 + (f90 - F0) * pow(1.0f - cosTheta, 5.0f);
 }
 
-float3 f_schlick_r(in float cosTheta, float3 F0, in float roughness) {
+inline float3 f_schlick_r(in float cosTheta, float3 F0, in float roughness) {
     return F0 + (max(float3(1.0f - roughness), F0) - F0) * pow(1.0f - cosTheta, 5.0f);
+}
+
+inline float3 specular_contribution(in float3 diffuse, in float3 L, in float3 V, in float3 N, in float3 F0, in float metallic, in float roughness) {
+    // Precalculate vectors and dot products
+    const float3 H = normalize(V + L);
+    const float dotNH = clamp(dot(N, H), 0.0, 1.0);
+    const float dotNV = clamp(dot(N, V), 0.0, 1.0);
+    const float dotNL = clamp(dot(N, L), 0.0, 1.0);
+
+    float3 color = float3(0.0f);
+
+    if (dotNL > 0.0f) {
+        // D = Normal distribution (Distribution of the microfacets)
+        const float D = d_ggx(dotNH, roughness);
+        // G = Geometric shadowing term (Microfacets shadowing)
+        const float G = g_schlicksmith_ggx(dotNL, dotNV, roughness);
+        // F = Fresnel factor (Reflectance depending on angle of incidence)
+        const float3 F = f_schlick(dotNV, 1.0, F0);
+        const float3 spec = D * F * G / (4.0 * dotNL * dotNV + 0.001);
+        const float3 kD = (float3(1.0f) - F) * (1.0f - metallic);
+        color += (kD * diffuse / constants::pi + spec) * dotNL;
+    }
+
+    return color;
 }

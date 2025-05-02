@@ -309,6 +309,22 @@ namespace edge::gfx {
 
 	auto SlangCompilationResult::collect_reflection(ShaderReflection& refl) -> bool {
 		slang::ProgramLayout* program_layout = linked_program->getLayout();
+
+		ShaderStageFlag stage{};
+		if (program_layout->getEntryPointCount()) {
+			auto* entry_point = program_layout->getEntryPointByIndex(0);
+			stage = get_shader_stage(entry_point->getStage());
+
+			if (stage == ShaderStageFlag::eCompute) {
+				SlangUInt group_sizes[3]{};
+				entry_point->getComputeThreadGroupSize(3, group_sizes);
+
+				for (int32_t i = 0; i < 3; ++i) {
+					refl.local_sizes[i] = static_cast<uint32_t>(group_sizes[i]);
+				}
+			}
+		}
+
 		for (int32_t i = 0; i < program_layout->getParameterCount(); i++) {
 			auto* param = program_layout->getParameterByIndex(i);
 
@@ -319,21 +335,6 @@ namespace edge::gfx {
 			auto* param_type = param->getTypeLayout();
 			if (!param_type) {
 				continue;
-			}
-
-			ShaderStageFlag stage{};
-			if (program_layout->getEntryPointCount()) {
-				auto* entry_point = program_layout->getEntryPointByIndex(0);
-				stage = get_shader_stage(entry_point->getStage());
-
-				if (stage == ShaderStageFlag::eCompute) {
-					SlangUInt group_sizes[3]{};
-					entry_point->getComputeThreadGroupSize(3, group_sizes);
-
-					for (int32_t i = 0; i < 3; ++i) {
-						refl.local_sizes[i] = static_cast<uint32_t>(group_sizes[i]);
-					}
-				}
 			}
 
 			auto kind = param_type->getKind();
@@ -470,7 +471,7 @@ namespace edge::gfx {
 		slang::TargetDesc target_desc{};
 		target_desc.format = SLANG_SPIRV;
 		target_desc.profile = g_session->findProfile("spirv_1_4");
-		target_desc.floatingPointMode = SLANG_FLOATING_POINT_MODE_DEFAULT;
+		target_desc.floatingPointMode = SLANG_FLOATING_POINT_MODE_PRECISE;
 		//target_desc.forceGLSLScalarBufferLayout = true;
 		target_desc.compilerOptionEntries = compiler_options;
 		target_desc.compilerOptionEntryCount = static_cast<SlangInt>(std::size(compiler_options));

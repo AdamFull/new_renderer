@@ -1,11 +1,12 @@
 #include "../include/bindles_layout.slang"
+#include "../include/packing.slang"
 
 [[vk::binding(0, 1)]] ConstantBuffer<interop::EncodedGeometryData> egd : register(c0, space1);
 
 struct FSInput {
-    uint32_t draw_id : TEXCOORD0;
-    uint32_t instance_id : TEXCOORD1;
-    uint32_t vbo_id : TEXCOORD2;
+    nointerpolation uint32_t draw_id : TEXCOORD0;
+    nointerpolation uint32_t instance_id : TEXCOORD1;
+    nointerpolation uint32_t vbo_id : TEXCOORD2;
     float2 texcoord : TEXCOORD3;
     uint32_t primitive_id : SV_PrimitiveID;
     // float4 current_pos : CURRENT_POS;
@@ -25,17 +26,6 @@ inline uint32_t pack_vbid(bool opaque, uint32_t draw_id, uint32_t primitive_id) 
 
 inline uint32_t pack_moid(uint32_t mat_id, uint32_t obj_id) {
     return (obj_id << 16) | (mat_id & 0xFFFF);
-}
-
-static inline float4 unpackUnorm4x8(uint packedValue) {
-    const float inv255 = 1.0 / 255.0;
-
-    uint32_t r = packedValue & 0xFF;
-    uint32_t g = (packedValue >> 8) & 0xFF;
-    uint32_t b = (packedValue >> 16) & 0xFF;
-    uint32_t a = (packedValue >> 24) & 0xFF;
-
-    return float4(float(r), float(g), float(b), float(a)) * inv255;
 }
 
 [shader("fragment")]
@@ -58,9 +48,9 @@ FSOutput main(FSInput input) {
     if (material.alpha_mode == interop::AlphaMode::eMask && opacity < material.alpha_cutoff) {
         discard;
     }
-    
-    output.vbid = unpackUnorm4x8(pack_vbid(true, input.draw_id, input.instance_id + 1u));
-    output.vbinst = unpackUnorm4x8(pack_moid(input.vbo_id, input.instance_id));
+
+    output.vbid = rgba8_unorm::unpack(pack_vbid(true, input.draw_id, input.primitive_id + 1u));
+    output.vbinst = rgba8_unorm::unpack(pack_moid(input.vbo_id, input.instance_id));
 
     // Calculate motion vectors
     // output.mv = encode_velocity(input.currentPos.xy - input.oldPos.xy);
