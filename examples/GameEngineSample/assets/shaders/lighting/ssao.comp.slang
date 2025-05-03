@@ -81,7 +81,7 @@ void main(uint32_t3 local_id: SV_GroupThreadID,
     const float3 random_vec = rng.sample_3d() * 2.0f - 1.0f;
 
     const float3 tangent = normalize(random_vec - normal * dot(random_vec, normal));
-    const float3 bitangent = cross(tangent, normal);
+    const float3 bitangent = cross(normal, tangent);
     const float3x3 tbn = float3x3(tangent, bitangent, normal);
 
     const float4x4 projection = g_fd.get_projection_matrix(camera.matrices_offset);
@@ -94,21 +94,20 @@ void main(uint32_t3 local_id: SV_GroupThreadID,
 
         const float ao_range = AO_RADIUS * lerp(0.2, 1.0, rng.sample1d());
         const float3 hemisphere = random::hemispherepoint_uniform(hamm.x, hamm.y);
-        const float3 cone = mul(tbn, hemisphere);
+        const float3 cone = mul(hemisphere, tbn);
         const float3 vpos = ce + cone * ao_range;
     
         float4 new_tex_coord = mul(projection, float4(vpos, 1.0f));
         new_tex_coord.xyz /= new_tex_coord.w;
         new_tex_coord.xy = util::clip_to_uv(new_tex_coord.xy);
 
-        if (any(new_tex_coord.xy < 0.0f) || any(new_tex_coord.xy > 1.0f)) {
-            continue;
+        [branch]
+        if (all(new_tex_coord.xy >= 0) && all(new_tex_coord.xy <= 1)) {
+            float sample_depth = texture0.SampleLevel(sampler0, new_tex_coord.xy, 0.0f).r;
+            float linear_depth = -util::linearize_depth(sample_depth, camera.z_near, camera.z_far);
+            float range_check = smoothstep(0.0f, 1.0f, AO_RADIUS / abs(ce.z - linear_depth));
+            occlusion += (linear_depth >= vpos.z + AO_DEPTH_THRESHOLD) ? range_check : 0.0f;
         }
-    
-        float sample_depth = texture0.SampleLevel(sampler0, new_tex_coord.xy, 0.0f).r;
-        float linear_depth = -util::linearize_depth(sample_depth, camera.z_near, camera.z_far);
-        float range_check = smoothstep(0.0f, 1.0f, AO_RADIUS / abs(ce.z - linear_depth));
-        occlusion += (linear_depth >= vpos.z + AO_DEPTH_THRESHOLD) ? range_check : 0.0f;
     }
     
     occlusion /= AO_SAMPLE_COUNT;
