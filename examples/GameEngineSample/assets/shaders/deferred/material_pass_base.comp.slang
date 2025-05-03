@@ -25,8 +25,6 @@
 [[vk::binding(13, 1)]] SamplerState sampler_linear : register(s1, space1);
 [[vk::binding(14, 1)]] SamplerState sampler_shadow_linear : register(s1, space1);
 
-#define MATERIAL_TILE_SIZE 8
-
 // #define TILE_MATERIAL_CLASSIFICATION
 #define DISABLE_SHADOWS
 
@@ -105,12 +103,11 @@ MaterialSample sample_material(in interop::Material mat, in VertexAttribute va) 
             raw_normal = raw_normal * 2.0 - 1.0;
         }
 
-        float3 ts_normal = normalize(raw_normal);
+        const float3 b = cross(va.normal, va.tangent.xyz) * va.tangent.w;
+        const float3x3 tbn = float3x3(va.tangent.xyz, b, va.normal);
 
-        float3 b = cross(va.normal, va.tangent.xyz) * va.tangent.w;
-        float3x3 tbn = float3x3(va.tangent.xyz, b, va.normal);
-
-        res.normal = normalize(mul(tbn, (ts_normal * float3(mat.normal_scale, mat.normal_scale, 1.0))));
+        const float3 ts_normal = normalize(raw_normal) * float3(mat.normal_scale, mat.normal_scale, 1.0);
+        res.normal = normalize(mul(ts_normal, tbn));
     }
 
     // Sample AO
@@ -228,7 +225,7 @@ BarycentricDeriv compute_barycentrics(float4 vertexCS0, float4 vertexCS1, float4
     float2 ndc1 = vertexCS1.xy * invW.y;
     float2 ndc2 = vertexCS2.xy * invW.z;
 
-    float invDet = 1.0 / determinant(float2x2(ndc2 - ndc1, ndc0 - ndc1));
+    float invDet = rcp(determinant(float2x2(ndc2 - ndc1, ndc0 - ndc1)));
     ret.ddx = float3(ndc1.y - ndc2.y, ndc2.y - ndc0.y, ndc0.y - ndc1.y) * invDet * invW;
     ret.ddy = float3(ndc2.x - ndc1.x, ndc0.x - ndc2.x, ndc1.x - ndc0.x) * invDet * invW;
     float ddxSum = dot(ret.ddx, float3(1.0, 1.0, 1.0));
@@ -272,7 +269,7 @@ inline float4 interpolate(float4 a, float4 b, float4 c, float3 barycentrics) {
     return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
 }
 
-[numthreads(MATERIAL_TILE_SIZE, MATERIAL_TILE_SIZE, 1)]
+[numthreads(WG_TILE_SIZE, WG_TILE_SIZE, 1)]
 [shader("compute")]
 void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID, uint3 group_id: SV_GroupID) {
 
@@ -282,7 +279,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
     uint32_t2 px;
     float2 uv;
-    if (swizzle_workgroups_8x8(global_id.xy, local_id.xy, group_id.xy, image_size, uv, px)) {
+
+    [branch]
+    if (swizzle_reject_workgroups(global_id.xy, local_id.xy, group_id.xy, image_size, uv, px)) {
         return;
     }
 
@@ -290,7 +289,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
     interop::Camera camera = g_fd.get_default_camera();
     float4x4 inv_view = g_fd.get_inv_view_matrix(camera.matrices_offset);
 
-    float3 camera_pos = inv_view[3].xyz;
+    float3 camera_pos = float3(inv_view[0][3], inv_view[1][3], inv_view[2][3]);
 
     // float4 pixel_color = float4(0.35f, 0.55f, 0.7f, 1.0f);
     float4 pixel_color = float4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -359,7 +358,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
         // Load mesh model matrix
 
         float4x4 model = g_fd.get_model_matrix(mesh.matrix_offset);
-        float3x3 normal_matrix = float3x3(g_fd.get_normal_matrix(mesh.matrix_offset));
+        float4x4 normal_matrix = g_fd.get_normal_matrix(mesh.matrix_offset);
 
         interop::Camera camera = g_fd.get_default_camera();
         float4x4 view_projection = g_fd.get_view_projection_matrix(camera.matrices_offset);
@@ -443,9 +442,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
 // INTERPOLATE NORMAL
 #ifdef HAS_NORMAL
-        float3 normal_0 = normalize(mul(normal_matrix, triangle.verts[0].normal));
-        float3 normal_1 = normalize(mul(normal_matrix, triangle.verts[1].normal));
-        float3 normal_2 = normalize(mul(normal_matrix, triangle.verts[2].normal));
+        float3 normal_0 = normalize(mul(normal_matrix, float4(triangle.verts[0].normal, 0.0f)).xyz);
+        float3 normal_1 = normalize(mul(normal_matrix, float4(triangle.verts[1].normal, 0.0f)).xyz);
+        float3 normal_2 = normalize(mul(normal_matrix, float4(triangle.verts[2].normal, 0.0f)).xyz);
 
         va.normal = normalize(interpolate(normal_0, normal_1, normal_2, bary.barycentrics));
 #else
@@ -454,9 +453,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
 // INTERPOLATE TANGENT
 #ifdef HAS_TANGENT
-        float4 tangent0 = float4(normalize(mul(float3x3(model), triangle.verts[0].tangent.xyz)), triangle.verts[0].tangent.w);
-        float4 tangent1 = float4(normalize(mul(float3x3(model), triangle.verts[1].tangent.xyz)), triangle.verts[1].tangent.w);
-        float4 tangent2 = float4(normalize(mul(float3x3(model), triangle.verts[2].tangent.xyz)), triangle.verts[2].tangent.w);
+        float4 tangent0 = float4(normalize(mul(model, float4(triangle.verts[0].tangent.xyz, 0.0f)).xyz), triangle.verts[0].tangent.w);
+        float4 tangent1 = float4(normalize(mul(model, float4(triangle.verts[1].tangent.xyz, 0.0f)).xyz), triangle.verts[1].tangent.w);
+        float4 tangent2 = float4(normalize(mul(model, float4(triangle.verts[2].tangent.xyz, 0.0f)).xyz), triangle.verts[2].tangent.w);
 
         float4 tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
         va.tangent = float4(normalize(tangent.xyz), tangent.w);
