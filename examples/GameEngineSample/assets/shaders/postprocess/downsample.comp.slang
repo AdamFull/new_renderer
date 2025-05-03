@@ -1,5 +1,5 @@
-#include "downsampler.h"
 #include "../include/compute_common.slang"
+#include "downsampler.h"
 
 // This shader performs downsampling on a texture,
 // as taken from Call Of Duty method, presented at ACM Siggraph 2014.
@@ -34,7 +34,7 @@ float KarisAverage(float3 col) {
     return 1.0f / (1.0f + luma);
 }
 
-[numthreads(8, 8, 1)]
+[numthreads(WG_TILE_SIZE, WG_TILE_SIZE, 1)]
 [shader("compute")]
 void main(uint32_t3 global_id: SV_DispatchThreadID,
           uint32_t3 local_id: SV_GroupThreadID,
@@ -45,7 +45,7 @@ void main(uint32_t3 global_id: SV_DispatchThreadID,
 
         uint2 px = uint2(0, 0);
         float2 uv = float2(0.0, 0.0);
-        if (swizzle_workgroups_8x8(global_id.xy, local_id.xy, group_id.xy, image_size, uv, px)) {
+        if (swizzle_reject_workgroups(global_id.xy, local_id.xy, group_id.xy, image_size, uv, px)) {
             return;
         }
 

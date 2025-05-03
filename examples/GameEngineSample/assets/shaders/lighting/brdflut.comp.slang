@@ -1,22 +1,25 @@
+#define WG_TILE_SIZE 16
+
+#include "../include/compute_common.slang"
 #include "../include/lighting.slang"
 #include "../include/random.slang"
-#include "../include/compute_common.slang"
 
 RWTexture2D<float2> image0;
 
 #define NUM_SAMPLES 1024u
 
-#define NUM_THREADS_X 8
-#define NUM_THREADS_Y 8
-[numthreads(NUM_THREADS_X, NUM_THREADS_Y, 1)]
+[numthreads(WG_TILE_SIZE, WG_TILE_SIZE, 1)]
 void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID, uint3 group_id: SV_GroupID) {
     uint2 image_size;
     image0.GetDimensions(image_size.x, image_size.y);
 
     uint2 px = uint2(0, 0);
     float2 uv = float2(0, 0);
-    if (swizzle_workgroups_8x8(global_id.xy, local_id.xy, group_id.xy, image_size, uv, px))
+
+    [branch]
+    if (swizzle_reject_workgroups(global_id.xy, local_id.xy, group_id.xy, image_size, uv, px)) {
         return;
+    }
 
     // Normal always points along z-axis for the 2D lookup
     const float3 N = float3(0.0f, 0.0f, 1.0f);

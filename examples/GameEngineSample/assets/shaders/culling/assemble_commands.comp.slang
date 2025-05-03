@@ -1,5 +1,4 @@
 #include "../include/bindles_layout.slang"
-#include "../include/compute_common.slang"
 #include "assemble_commands.h"
 
 [[vk::push_constant]] ConstantBuffer<assemble_commands::PushConstants> pc;

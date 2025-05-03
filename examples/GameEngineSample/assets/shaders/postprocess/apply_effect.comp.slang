@@ -1,8 +1,8 @@
-#include "apply_effect.h"
 #include "../include/bindles_layout.slang"
 #include "../include/compute_common.slang"
-#include "../include/util.slang"
 #include "../include/random.slang"
+#include "../include/util.slang"
+#include "apply_effect.h"
 
 [[vk::binding(0, 1)]] Texture2D texture0 : register(t0, space1);
 [[vk::binding(1, 1)]] SamplerState sampler0 : register(s0, space1);
@@ -40,7 +40,7 @@
 [[vk::push_constant]] ConstantBuffer<apply_effect::PushConstantVignette> pc;
 #endif
 
-[numthreads(8, 8, 1)]
+[numthreads(WG_TILE_SIZE, WG_TILE_SIZE, 1)]
 [shader("compute")]
 void main(uint32_t3 local_id: SV_GroupThreadID,
           uint32_t3 global_id: SV_DispatchThreadID,
@@ -57,7 +57,8 @@ void main(uint32_t3 local_id: SV_GroupThreadID,
     uint32_t2 px;
     float2 uv;
 
-    if (swizzle_workgroups_8x8(global_id.xy, local_id.xy, group_id.xy, image_size, uv, px)) {
+    [branch]
+    if (swizzle_reject_workgroups(global_id.xy, local_id.xy, group_id.xy, image_size, uv, px)) {
         return;
     }
 

@@ -1,3 +1,5 @@
+#define WG_TILE_SIZE 16
+
 #include "../include/compute_common.slang"
 #include "../include/bindles_layout.slang"
 #include "../include/util.slang"
@@ -12,9 +14,7 @@ static const float AO_RADIUS = 0.2f;
 static const float AO_DEPTH_THRESHOLD = 0.0025f;
 static const float AO_POWER = 1.2f;
 
-#define TILE_SIZE 8
-
-[numthreads(TILE_SIZE, TILE_SIZE, 1)]
+[numthreads(WG_TILE_SIZE, WG_TILE_SIZE, 1)]
 [shader("compute")]
 void main(uint32_t3 local_id: SV_GroupThreadID,
     uint32_t3 global_id: SV_DispatchThreadID,
@@ -37,7 +37,7 @@ void main(uint32_t3 local_id: SV_GroupThreadID,
     uint32_t2 local_id_xy = local_id.xy;
     uint32_t2 global_id_xy = global_id.xy;
 
-    if (swizzle_workgroups_8x8(global_id_xy, local_id_xy, group_id.xy, write_image_size, write_uv, write_px))
+    if (swizzle_reject_workgroups(global_id_xy, local_id_xy, group_id.xy, write_image_size, write_uv, write_px))
         return;
 
     int32_t2 sample_px = int32_t2(

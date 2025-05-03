@@ -1,5 +1,5 @@
-#include "../include/lighting.slang"
 #include "../include/compute_common.slang"
+#include "../include/lighting.slang"
 #include "../include/random.slang"
 #include "prefilteredmap.h"
 
@@ -11,10 +11,8 @@ SamplerState sampler0;
 
 #define NUM_SAMPLES 32
 
-#define NUM_THREADS_X 8
-#define NUM_THREADS_Y 8
 #define NUM_THREADS_Z 6
-[numthreads(NUM_THREADS_X, NUM_THREADS_Y, NUM_THREADS_Z)]
+[numthreads(WG_TILE_SIZE , WG_TILE_SIZE, NUM_THREADS_Z)]
 void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID, uint3 group_id: SV_GroupID) {
     uint3 image_size;
     image0.GetDimensions(image_size.x, image_size.y, image_size.z);
@@ -23,7 +21,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
     uint2 px_swizzled = uint2(0, 0);
     float2 uv = float2(0, 0);
-    if (swizzle_workgroups_8x8(global_id.xy, local_id.xy, group_id.xy, image_size.xy, uv, px_swizzled))
+    if (swizzle_reject_workgroups(global_id.xy, local_id.xy, group_id.xy, image_size.xy, uv, px_swizzled))
         return;
 
     px.xy = px_swizzled;

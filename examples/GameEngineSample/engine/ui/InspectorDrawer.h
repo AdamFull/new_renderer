@@ -237,7 +237,7 @@ namespace engine {
 				return false;
 			}
 
-			return ImGui::Drag<_Ty, _N>(label.data(), ptr, range.min, range.max, range.min);
+			return ImGui::Drag<_Ty, _N>(label.data(), ptr, range.min, range.max, 0.001f);
 		}
 
 		template<typename _Ty, glm::qualifier _Q, typename _Member>
