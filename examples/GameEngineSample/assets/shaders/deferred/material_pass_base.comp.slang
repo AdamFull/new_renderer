@@ -46,12 +46,6 @@ struct VertexAttribute {
     float3 barycentrics;
 };
 
-struct BarycentricDeriv {
-    float3 barycentrics;
-    float3 ddx;
-    float3 ddy;
-};
-
 struct VisibilityBuffer {
     uint draw_id;
     uint triangle_id;
@@ -60,6 +54,51 @@ struct VisibilityBuffer {
     uint mat_id;
     uint vbo_id;
 };
+
+struct BarycentricDeriv {
+    float3 barycentrics;
+    float3 ddx;
+    float3 ddy;
+};
+
+// Computes the partial derivatives of a triangle from the projected screen space vertices
+// Based on: http://filmicworlds.com/blog/visibility-buffer-rendering-with-material-graphs/
+BarycentricDeriv compute_barycentrics(float4 vertex_cs0, float4 vertex_cs1, float4 vertex_cs2, float2 pixel_cs, float2 inv_size) {
+    BarycentricDeriv ret;
+
+    float3 inv_w = rcp(float3(vertex_cs0.w, vertex_cs1.w, vertex_cs2.w));
+
+    float2 ndc0 = vertex_cs0.xy * inv_w.x;
+    float2 ndc1 = vertex_cs1.xy * inv_w.y;
+    float2 ndc2 = vertex_cs2.xy * inv_w.z;
+
+    float inv_det = rcp(determinant(float2x2(ndc2 - ndc1, ndc0 - ndc1)));
+    ret.ddx = float3(ndc1.y - ndc2.y, ndc2.y - ndc0.y, ndc0.y - ndc1.y) * inv_det * inv_w;
+    ret.ddy = float3(ndc2.x - ndc1.x, ndc0.x - ndc2.x, ndc1.x - ndc0.x) * inv_det * inv_w;
+    float ddx_sum = dot(ret.ddx, float3(1.0, 1.0, 1.0));
+    float ddy_sum = dot(ret.ddy, float3(1.0, 1.0, 1.0));
+
+    float2 delta_vec = pixel_cs - ndc0;
+    float interp_inv_w = inv_w.x + delta_vec.x * ddx_sum + delta_vec.y * ddy_sum;
+    float interp_w = rcp(interp_inv_w);
+
+    ret.barycentrics.x = interp_w * (inv_w[0] + delta_vec.x * ret.ddx.x + delta_vec.y * ret.ddy.x);
+    ret.barycentrics.y = interp_w * (0.0f + delta_vec.x * ret.ddx.y + delta_vec.y * ret.ddy.y);
+    ret.barycentrics.z = interp_w * (0.0f + delta_vec.x * ret.ddx.z + delta_vec.y * ret.ddy.z);
+
+    ret.ddx *= (2.0f * inv_size.x);
+    ret.ddy *= (2.0f * inv_size.y);
+    ddx_sum *= (2.0f * inv_size.x);
+    ddy_sum *= (2.0f * inv_size.y);
+
+    float interp_w_ddx = 1.0f / (interp_inv_w + ddx_sum);
+    float interp_w_ddy = 1.0f / (interp_inv_w + ddy_sum);
+
+    ret.ddx = interp_w_ddx * (ret.barycentrics * interp_inv_w + ret.ddx) - ret.barycentrics;
+    ret.ddy = interp_w_ddy * (ret.barycentrics * interp_inv_w + ret.ddy) - ret.barycentrics;
+
+    return ret;
+}
 
 MaterialSample sample_material(in interop::Material mat, in VertexAttribute va) {
     MaterialSample res;
@@ -106,7 +145,7 @@ MaterialSample sample_material(in interop::Material mat, in VertexAttribute va) 
         const float3 b = cross(va.normal, va.tangent.xyz) * va.tangent.w;
         const float3x3 tbn = float3x3(va.tangent.xyz, b, va.normal);
 
-        const float3 ts_normal = normalize(raw_normal) * float3(mat.normal_scale, mat.normal_scale, 1.0);
+        const float3 ts_normal = normalize(raw_normal * float3(mat.normal_scale, mat.normal_scale, 1.0));
         res.normal = normalize(mul(ts_normal, tbn));
     }
 
@@ -214,45 +253,6 @@ inline bool load_vis_buffer(in float4 vb0, in float4 vb1, out VisibilityBuffer r
     return true;
 }
 
-// Computes the partial derivatives of a triangle from the projected screen space vertices
-// Based on: http://filmicworlds.com/blog/visibility-buffer-rendering-with-material-graphs/
-BarycentricDeriv compute_barycentrics(float4 vertexCS0, float4 vertexCS1, float4 vertexCS2, float2 pixelCS, float2 invSize) {
-    BarycentricDeriv ret;
-
-    float3 invW = 1.0f / float3(vertexCS0.w, vertexCS1.w, vertexCS2.w);
-
-    float2 ndc0 = vertexCS0.xy * invW.x;
-    float2 ndc1 = vertexCS1.xy * invW.y;
-    float2 ndc2 = vertexCS2.xy * invW.z;
-
-    float invDet = rcp(determinant(float2x2(ndc2 - ndc1, ndc0 - ndc1)));
-    ret.ddx = float3(ndc1.y - ndc2.y, ndc2.y - ndc0.y, ndc0.y - ndc1.y) * invDet * invW;
-    ret.ddy = float3(ndc2.x - ndc1.x, ndc0.x - ndc2.x, ndc1.x - ndc0.x) * invDet * invW;
-    float ddxSum = dot(ret.ddx, float3(1.0, 1.0, 1.0));
-    float ddySum = dot(ret.ddy, float3(1.0, 1.0, 1.0));
-
-    float2 deltaVec = pixelCS - ndc0;
-    float interpInvW = invW.x + deltaVec.x * ddxSum + deltaVec.y * ddySum;
-    float interpW = 1.0 / interpInvW;
-
-    ret.barycentrics.x = interpW * (invW[0] + deltaVec.x * ret.ddx.x + deltaVec.y * ret.ddy.x);
-    ret.barycentrics.y = interpW * (0.0f + deltaVec.x * ret.ddx.y + deltaVec.y * ret.ddy.y);
-    ret.barycentrics.z = interpW * (0.0f + deltaVec.x * ret.ddx.z + deltaVec.y * ret.ddy.z);
-
-    ret.ddx *= (2.0f * invSize.x);
-    ret.ddy *= (2.0f * invSize.y);
-    ddxSum *= (2.0f * invSize.x);
-    ddySum *= (2.0f * invSize.y);
-
-    float interpW_ddx = 1.0f / (interpInvW + ddxSum);
-    float interpW_ddy = 1.0f / (interpInvW + ddySum);
-
-    ret.ddx = interpW_ddx * (ret.barycentrics * interpInvW + ret.ddx) - ret.barycentrics;
-    ret.ddy = interpW_ddy * (ret.barycentrics * interpInvW + ret.ddy) - ret.barycentrics;
-
-    return ret;
-}
-
 inline float interpolate(float a, float b, float c, float3 barycentrics) {
     return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
 }
@@ -289,7 +289,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
     interop::Camera camera = g_fd.get_default_camera();
     float4x4 inv_view = g_fd.get_inv_view_matrix(camera.matrices_offset);
 
-    float3 camera_pos = float3(inv_view[0][3], inv_view[1][3], inv_view[2][3]);
+    float3 camera_pos = camera.position;
 
     // float4 pixel_color = float4(0.35f, 0.55f, 0.7f, 1.0f);
     float4 pixel_color = float4(0.0f, 0.0f, 0.0f, 1.0f);

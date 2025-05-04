@@ -145,7 +145,12 @@ namespace interop {
 
 	// Based on https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
 	inline float2 oct_wrap(float2 v) {
-		return (float2(1.0f) - abs(v)) * (select(v.x >= 0.0f && v.y >= 0.0f, 1.0f, -1.0f));
+		float2 swapped = float2(v.y, v.x);
+		float2 sign = float2(
+			select(v.x >= 0.0f, 1.0f, -1.0f),
+			select(v.y >= 0.0f, 1.0f, -1.0f)
+		);
+		return (1.0f - abs(swapped)) * sign;
 	}
 
 	inline uint16_t2 encode_normal(float3 n) {
@@ -481,6 +486,9 @@ namespace interop {
 		uint32_t matrices_offset;
 		uint32_t frustum_offset;
 		uint32_t last_hash;
+
+		float3 position;
+		float _pad0;
 
 		float fov;
 		float z_near;

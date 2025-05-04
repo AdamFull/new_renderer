@@ -85,14 +85,16 @@ namespace engine::render {
 		bool dirty = camera_hash != camera.last_hash;
 		camera.last_hash = camera_hash;
 
-		float screen_size_x = 1920.f;
-		float screen_size_y = 1080.f;
+		float screen_size_x = 1280;
+		float screen_size_y = 720;
 
 		if (dirty) {
 			camera.aspect = screen_size_x / screen_size_y;
 
 			camera.size = { screen_size_x, screen_size_y };
 			camera.inv_size = 1.f / camera.size;
+
+			camera.position = translation;
 
 			auto forward = glm::normalize(glm::rotate(rotation, glm::vec3(0.f, 0.f, -1.f)));
 			auto right = glm::normalize(glm::cross(forward, glm::vec3{ 0.f, 1.f, 0.f }));
