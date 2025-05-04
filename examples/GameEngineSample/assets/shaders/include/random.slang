@@ -2,12 +2,25 @@
 
 #include "constants.h"
 
-uint32_t flatten_2d(in uint32_t2 index, in uint32_t dimensions_x) {
+inline uint32_t flatten_2d(in uint32_t2 index, in uint32_t dimensions_x) {
     return index.x + index.y * dimensions_x;
 }
 
-uint32_t2 unflatten_2d(in uint32_t index, in uint32_t dimensions_x) {
+inline uint32_t2 unflatten_2d(in uint32_t index, in uint32_t dimensions_x) {
     return uint32_t2(index % dimensions_x, index / dimensions_x);
+}
+
+inline uint32_t flatten_3d(uint32_t3 index, uint32_t2 dimensions_xy) {
+    return index.x + index.y * dimensions_xy.x + index.z * dimensions_xy.x * dimensions_xy.y;
+}
+
+uint32_t3 unflatten_3d(uint32_t index, uint32_t2 dimensions_xy) {
+    uint32_t3 out_index;
+    out_index.z = index / (dimensions_xy.x * dimensions_xy.y);
+    index -= (out_index.z * dimensions_xy.x * dimensions_xy.y);
+    out_index.y = index / dimensions_xy.x;
+    out_index.x = index % dimensions_xy.x;
+    return out_index;
 }
 
 namespace random {
@@ -74,6 +87,10 @@ namespace random {
         __init(uint32_t2 pixel, uint32_t2 resolution, uint32_t frame_index) {
             rng_state = flatten_2d(pixel, resolution.x) ^ hash(frame_index);
             rng_state = hash(rng_state);
+        }
+
+        __init(uint32_t initial_hash) {
+            rng_state = hash(initial_hash);
         }
 
         [mutating]
