@@ -4,6 +4,14 @@ namespace util {
     inline float2 uv_to_clip(in float2 uv) {
         return uv * 2.0 - 1.0;
     }
+
+    inline float2 texel_2d_to_uv(uint32_t2 texel, float2 texel_size) {
+        return ((float2)texel + 0.5f) * texel_size;
+    }
+
+    inline float3 texel_3d_to_uv(uint32_t3 texel, float3 texel_size) {
+        return ((float3)texel + 0.5f) * texel_size;
+    }
     
     inline float2 clip_to_uv(in float2 clip) {
         return clip * 0.5f + 0.5f;
