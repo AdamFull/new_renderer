@@ -338,6 +338,7 @@ namespace engine::render {
 
 		group_x = texture->get_width();
 		group_y = texture->get_height();
+		group_z = texture->get_depth();
 
 		if (divide_by_locals)
 			divide_workgroup_by_local_sizes(group_x, group_y, group_z);
