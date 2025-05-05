@@ -33,9 +33,7 @@
 #endif
 
 // Pass data includes
-#include "../../assets/shaders/culling/assemble_commands.h"
 #include "../../assets/shaders/culling/cull_and_batch.h"
-#include "../../assets/shaders/culling/scan.h"
 
 #include "../../assets/shaders/deferred/visbufferwrite.h"
 
@@ -600,17 +598,6 @@ namespace engine::render
 			render_context->set_resource_name(histogram_buffer, "histogram_buffer");
 		}
 
-		// Buffer that contains alive comands for draw
-		uint32_t alive_commands_buffer{ ~0u };
-		{
-			edge::gfx::BufferCreateInfo create_info{};
-			create_info.size = sizeof(interop::DrawDescription) * constants::max_draw_command_count;
-			create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
-
-			alive_commands_buffer = render_context->add_resource(create_info);
-			render_context->set_resource_name(alive_commands_buffer, "alive_commands_buffer");
-		}
-
 		// Buffer contains draw indirect commands
 		uint32_t indirect_draw_commands{ ~0u };
 		{
@@ -620,36 +607,6 @@ namespace engine::render
 
 			indirect_draw_commands = render_context->add_resource(create_info);
 			render_context->set_resource_name(indirect_draw_commands, "indirect_draw_commands");
-		}
-
-		uint32_t indirect_count_buffer{ ~0u };
-		{
-			edge::gfx::BufferCreateInfo create_info{};
-			create_info.size = sizeof(uint32_t) * constants::max_cameras;
-			create_info.usage = edge::gfx::BufferUsageFlag::eIndirectBuffer;
-
-			indirect_count_buffer = render_context->add_resource(create_info);
-			render_context->set_resource_name(indirect_count_buffer, "indirect_count_buffer");
-		}
-
-		uint32_t alive_bitset_buffer{ ~0u };
-		{
-			edge::gfx::BufferCreateInfo create_info{};
-			create_info.size = sizeof(uint32_t) * constants::max_draw_command_count / 32;
-			create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
-
-			alive_bitset_buffer = render_context->add_resource(create_info);
-			render_context->set_resource_name(alive_bitset_buffer, "alive_bitset_buffer");
-		}
-
-		uint32_t alive_offsets_buffer{ ~0u };
-		{
-			edge::gfx::BufferCreateInfo create_info{};
-			create_info.size = sizeof(uint32_t) * constants::max_draw_command_count;
-			create_info.usage = edge::gfx::BufferUsageFlag::eStorageBuffer;
-
-			alive_offsets_buffer = render_context->add_resource(create_info);
-			render_context->set_resource_name(alive_offsets_buffer, "alive_offsets_buffer");
 		}
 
 #ifdef TILE_MATERIAL_CLASSIFICATION
@@ -789,148 +746,26 @@ namespace engine::render
 			render_context->add_node(std::move(group_node));
 		}
 
-		// Crear cull counters
-		{
-			ComputeShaderPassCreateInfo create_info{};
-			create_info.technique_name = "clear_buffer";
-
-			create_info.draw_callback = [this,
-				indirect_count_buffer
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-					EDGE_PROFILE_ZONE_SCOPED;
-
-					auto* count_buffer = render_context->get_buffer(indirect_count_buffer);
-
-					self.write_resource(indirect_count_buffer, ~0u);
-					self.resolve_dependencies(command_list);
-
-					auto& pc = self.get_constant_block();
-					auto& pc_data = pc.as<clear_buffer::PushConstants>();
-					pc_data.word_ptr = count_buffer->get_address();
-					pc_data.size_in_words = count_buffer->get_size() / sizeof(uint32_t);
-					self.push_constant_ranges(command_list);
-
-					self.bind_resources(command_list);
-
-					uint32_t group_x{ 512u }, group_y{ 1u }, group_z{ 1u };
-
-					self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
-					command_list.dispatch(group_x, group_y, group_z);
-				};
-
-			render_context->add_node(render_context->create_node(create_info));
-		}
-
 		// Cull meshes
 		{
 			ComputeShaderPassCreateInfo create_info{};
 			create_info.technique_name = "cull_and_batch";
 
 			create_info.draw_callback = [this,
-				alive_bitset_buffer
+				indirect_draw_commands
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
 					auto* draw_commands = render_world->get_draw_buffer();
-					auto* alive_bits = render_context->get_buffer(alive_bitset_buffer);
+					auto* indirect_cmds = render_context->get_buffer(indirect_draw_commands);
 
-					self.write_resource(alive_bitset_buffer, ~0u);
-
+					self.write_resource(indirect_draw_commands, ~0u);
 					self.resolve_dependencies(command_list);
 
 					auto& pc = self.get_constant_block();
 					auto& pc_data = pc.as<cull_and_batch::PushConstants>();
-					pc_data.draw_desc_ptr = draw_commands->get_address();
-					pc_data.alive_meshes_bit_array_ptr = alive_bits->get_address();
-					self.push_constant_ranges(command_list);
-
-					self.bind_resources(command_list);
-
-					uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-					group_x = render_world->get_draw_count();
-
-					self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
-					command_list.dispatch(group_x, group_y, group_z);
-				};
-
-			render_context->add_node(render_context->create_node(create_info));
-		}
-
-		// Calculate command offsets
-		{
-			ComputeShaderPassCreateInfo create_info{};
-			create_info.technique_name = "scan_bit_array";
-
-			create_info.draw_callback = [this,
-				alive_bitset_buffer,
-				alive_offsets_buffer
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-					EDGE_PROFILE_ZONE_SCOPED;
-
-					auto* draw_commands = render_world->get_draw_buffer();
-					auto* alive_bits = render_context->get_buffer(alive_bitset_buffer);
-					auto* alive_offsets = render_context->get_buffer(alive_offsets_buffer);
-
-					self.read_resource(alive_bitset_buffer, ~0u);
-					self.write_resource(alive_offsets_buffer, ~0u);
-
-					self.resolve_dependencies(command_list);
-
-					auto& pc = self.get_constant_block();
-					auto& pc_data = pc.as<scan::PushConstants>();
-					pc_data.input_buffer = alive_bits->get_address();
-					pc_data.output_buffer = alive_offsets->get_address();
-					self.push_constant_ranges(command_list);
-
-					self.bind_resources(command_list);
-
-					uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-					group_x = render_world->get_draw_count();
-
-					self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
-					command_list.dispatch(group_x, group_y, group_z);
-				};
-
-			render_context->add_node(render_context->create_node(create_info));
-		}
-
-		// Assemble draw commands
-		{
-			ComputeShaderPassCreateInfo create_info{};
-			create_info.technique_name = "assemble_commands";
-
-			create_info.draw_callback = [this,
-				alive_commands_buffer,
-				indirect_draw_commands,
-				indirect_count_buffer,
-				alive_bitset_buffer,
-				alive_offsets_buffer
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-					EDGE_PROFILE_ZONE_SCOPED;
-
-					auto* draw_commands = render_world->get_draw_buffer();
-					auto* alive_meshes = render_context->get_buffer(alive_commands_buffer);
-					auto* argument_buffer = render_context->get_buffer(indirect_draw_commands);
-					auto* alive_bits = render_context->get_buffer(alive_bitset_buffer);
-					auto* alive_offsets = render_context->get_buffer(alive_offsets_buffer);
-					auto* count_buffer = render_context->get_buffer(indirect_count_buffer);
-
-					self.write_resource(alive_commands_buffer, ~0u);
-					self.write_resource(indirect_draw_commands, ~0u);
-					self.write_resource(indirect_count_buffer, ~0u);
-					self.read_resource(alive_offsets_buffer, ~0u);
-					self.read_resource(alive_bitset_buffer, ~0u);
-
-					self.resolve_dependencies(command_list);
-
-					auto& pc = self.get_constant_block();
-					auto& pc_data = pc.as<assemble_commands::PushConstants>();
-					pc_data.source_descriptions = draw_commands->get_address();
-					pc_data.alive_descriptions = alive_meshes->get_address();
-					pc_data.alive_draw_commands = argument_buffer->get_address();
-					pc_data.alive_bits = alive_bits->get_address();
-					pc_data.alive_offsets = alive_offsets->get_address();
-					pc_data.draw_counts = count_buffer->get_address();
+					pc_data.input_draw_desc_ptr = draw_commands->get_address();
+					pc_data.output_draw_indirect_ptr = indirect_cmds->get_address();
 					self.push_constant_ranges(command_list);
 
 					self.bind_resources(command_list);
@@ -1278,14 +1113,12 @@ namespace engine::render
 			create_info.add_write_attachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 1.f });
 
 			create_info.draw_callback = [this,
-				alive_commands_buffer,
-				indirect_draw_commands,
-				indirect_count_buffer
+				indirect_draw_commands
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
 					auto* backbuffer = render_context->get_texture(backbuffer_resource);
-					auto* alive_meshes = render_context->get_buffer(alive_commands_buffer);
+					auto* draw_commands = render_world->get_draw_buffer();
 					auto* argument_buffer = render_context->get_buffer(indirect_draw_commands);
 
 					auto viewport_width = backbuffer->get_width();
@@ -1294,10 +1127,7 @@ namespace engine::render
 					command_list.set_viewport(0.f, 0.f, static_cast<float>(viewport_width), static_cast<float>(viewport_height), 0.f, 1.f);
 					command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 
-					self.read_resource(alive_commands_buffer, ~0u);
 					self.read_resource(indirect_draw_commands, ~0u);
-					self.read_resource(indirect_count_buffer, ~0u);
-
 					self.resolve_dependencies(command_list);
 
 					auto& geometry_buffer = *geometry_buffers.back();
@@ -1308,7 +1138,7 @@ namespace engine::render
 					auto& draw_data_block_data = draw_data_block.as<interop::EncodedGeometryData>();
 					draw_data_block_data.position = geometry_buffer.get_buffer_address(VertexAttributeFlag::ePosition);
 					draw_data_block_data.texcoord = geometry_buffer.get_buffer_address(VertexAttributeFlag::eTexCoord);
-					draw_data_block_data.draw_descriptions_ptr = alive_meshes->get_address();
+					draw_data_block_data.draw_descriptions_ptr = draw_commands->get_address();
 					draw_data_block_data.draw_data_ptr = argument_buffer->get_address();
 
 #if SKINNING_TEST
@@ -1334,8 +1164,6 @@ namespace engine::render
 					draw_command.argument_buffer = argument_buffer;
 					draw_command.command_stride = sizeof(interop::DrawIndexedIndirectData);
 					draw_command.argument_offset = draw_call_id * draw_command.command_stride;
-					draw_command.count_buffer = render_context->get_buffer(indirect_count_buffer);
-					draw_command.count_offset = draw_call_id * sizeof(uint32_t);
 
 					self.begin(command_list);
 					command_list.draw_indirect(draw_command);
@@ -1495,7 +1323,6 @@ namespace engine::render
 #endif
 
 			create_info.draw_callback = [this,
-				alive_commands_buffer,
 				indirect_draw_commands,
 				hdr0,
 				brdf_lut_target,
@@ -1519,7 +1346,7 @@ namespace engine::render
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 				EDGE_PROFILE_ZONE_SCOPED;
 
-				auto* alive_meshes = render_context->get_buffer(alive_commands_buffer);
+				auto* draw_commands = render_world->get_draw_buffer();
 				auto* argument_buffer = render_context->get_buffer(indirect_draw_commands);
 
 #ifdef TILE_MATERIAL_CLASSIFICATION
@@ -1527,7 +1354,6 @@ namespace engine::render
 #endif
 
 				// Indirect generated buffers
-				self.read_resource(alive_commands_buffer, ~0u);
 				self.read_resource(indirect_draw_commands, ~0u);
 
 				self.bind_write_resource(render_label::image0, hdr0, ~0u);
@@ -1570,7 +1396,7 @@ namespace engine::render
 				egd_data.weights = geometry_buffer.get_buffer_address(VertexAttributeFlag::eWeight);
 #endif
 				egd_data.indices = geometry_buffer.get_index_buffer_address();
-				egd_data.draw_descriptions_ptr = alive_meshes->get_address();
+				egd_data.draw_descriptions_ptr = draw_commands->get_address();
 				egd_data.draw_data_ptr = argument_buffer->get_address();
 
 				self.bind_resources(command_list);

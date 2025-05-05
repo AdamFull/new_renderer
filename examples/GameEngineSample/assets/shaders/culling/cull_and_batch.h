@@ -4,7 +4,7 @@
 
 namespace cull_and_batch {
     struct PushConstants {
-        TYPE_PTR(interop::DrawDescription) draw_desc_ptr;
-        TYPE_PTR(uint32_t) alive_meshes_bit_array_ptr;
+        TYPE_PTR(interop::DrawDescription) input_draw_desc_ptr;
+        TYPE_PTR(interop::DrawIndexedIndirectData) output_draw_indirect_ptr;
     };
 }
