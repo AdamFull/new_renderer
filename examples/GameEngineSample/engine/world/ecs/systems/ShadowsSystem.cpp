@@ -18,7 +18,7 @@
 using namespace engine::render;
 
 namespace engine::world::ecs {
-	constexpr const float cascade_split_lambda = 0.7f;
+	constexpr const float cascade_split_lambda = 0.85f;
 
 	ShadowsSystem::ShadowsSystem(render::IRenderer& renderer) :
 		render_world{ renderer.get_render_world() } {
@@ -29,8 +29,6 @@ namespace engine::world::ecs {
 
 	void ShadowsSystem::__update(float fDt) {
 		EDGE_PROFILE_ZONE_SCOPED;
-		// TODO: Now i have to disable shadow update because i need to finish rendering
-		return;
 
 		// TODO: get current player camera?
 		auto& camera = render_world.get_render_camera(render::main_camera_index);
@@ -168,7 +166,7 @@ namespace engine::world::ecs {
 			}
 		}
 
-
+#if 0
 
 		// Calculate omni shadows
 		{
@@ -262,5 +260,6 @@ namespace engine::world::ecs {
 				++light_count;
 			}
 		}
+#endif
 	}
 }
