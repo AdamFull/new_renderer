@@ -30,6 +30,8 @@ namespace engine::world::ecs {
 	void ShadowsSystem::__update(float fDt) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
+#if 0
+
 		// TODO: get current player camera?
 		auto& camera = render_world.get_render_camera(render::main_camera_index);
 
@@ -169,8 +171,6 @@ namespace engine::world::ecs {
 				++light_count;
 			}
 		}
-
-#if 0
 
 		// Calculate omni shadows
 		{

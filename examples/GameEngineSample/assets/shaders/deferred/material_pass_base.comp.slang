@@ -214,7 +214,7 @@ float3 calculate_directional_light(in interop::LightCommit light, in VertexAttri
 
     float shadow_factor = 1.0;
     if (light.cast_shadows > 0 && light.shadow_index > -1) {
-        shadow_factor = sample_cascaded_shadow(light, va, ms);
+        //shadow_factor = sample_cascaded_shadow(light, va, ms);
     }
 
     float3 color = specular_contribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
@@ -561,7 +561,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
     ambient = lerp(ambient, ambient * ms.ao * texture9.SampleLevel(sampler_linear, uv, 0.0f).r, material.occlusion_strenth);
 
     float3 res = ambient + ms.emission + Lo;
-    res *= debug_visualize_cascades(va.linearZ);
+    //res *= debug_visualize_cascades(va.linearZ);
 
     pixel_color = float4(res, 1.0);
     // pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, sampler2D(texture5, sampler_point), prev_frame_color);

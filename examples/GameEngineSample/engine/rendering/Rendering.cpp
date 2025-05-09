@@ -777,6 +777,8 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
+#if !DISABLE_SHADOWS
+
 		// Draw cascaded shadows
 		{
 			RenderShaderPassCreateInfo create_info{};
@@ -869,7 +871,6 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
-#if !DISABLE_SHADOWS
 		// Draw omni shadows
 		{
 			RenderShaderPassCreateInfo create_info{};
