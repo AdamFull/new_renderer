@@ -470,7 +470,7 @@ namespace edge::gfx {
 
 		slang::TargetDesc target_desc{};
 		target_desc.format = SLANG_SPIRV;
-		target_desc.profile = g_session->findProfile("spirv_1_4");
+		target_desc.profile = g_session->findProfile("spirv_1_5");
 		target_desc.floatingPointMode = SLANG_FLOATING_POINT_MODE_PRECISE;
 		//target_desc.forceGLSLScalarBufferLayout = true;
 		target_desc.compilerOptionEntries = compiler_options;
