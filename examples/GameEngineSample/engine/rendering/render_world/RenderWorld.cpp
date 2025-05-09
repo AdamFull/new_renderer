@@ -201,6 +201,8 @@ namespace engine::render {
 	void RenderWorld::add_geometry_draw(uint32_t camera_id, uint32_t mesh_id) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
+		
+
 		// Lookup for camera
 		uint32_t camera_index{ ~0u };
 		{
@@ -211,25 +213,25 @@ namespace engine::render {
 
 		// Lookup for mesh
 		uint32_t mesh_index{ ~0u };
-		uint32_t submesh_count{ 0u };
+		uint32_t mesh_submesh_count{ 0u };
 		{
 			auto& world_resource = world_resources[mesh_id];
 			assert(world_resource.type == WorldResourceType::eMesh);
 			mesh_index = world_resource.resource_id;
 
 			auto& mesh = world_meshes->get(mesh_index);
-			submesh_count = mesh.submesh_count;
+			mesh_submesh_count = mesh.submesh_count;
 		}
 
-		for (int32_t idx = 0; idx < static_cast<int32_t>(submesh_count); ++idx) {
+		for (int32_t idx = 0; idx < static_cast<int32_t>(mesh_submesh_count); ++idx) {
 			auto& batch_command = draw_descriptions->get(draw_count + idx);
 			batch_command.camera_index = camera_index;
 			batch_command.mesh_index = mesh_index;
 			batch_command.submesh_index = idx;
 		}
 
-		draw_descriptions->mark_dirty(draw_count, submesh_count);
-		draw_count += submesh_count;
+		draw_descriptions->mark_dirty(draw_count, mesh_submesh_count);
+		draw_count += mesh_submesh_count;
 	}
 
 	uint32_t RenderWorld::add_material(const interop::Material& material) {

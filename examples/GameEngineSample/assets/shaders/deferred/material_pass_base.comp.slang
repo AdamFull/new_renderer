@@ -23,7 +23,7 @@
 
 [[vk::binding(12, 1)]] SamplerState sampler_point : register(s0, space1);
 [[vk::binding(13, 1)]] SamplerState sampler_linear : register(s1, space1);
-[[vk::binding(14, 1)]] SamplerState sampler_shadow_linear : register(s1, space1);
+[[vk::binding(14, 1)]] SamplerComparisonState sampler_shadow_linear : register(s1, space1);
 
 // #define TILE_MATERIAL_CLASSIFICATION
 #define DISABLE_SHADOWS
@@ -160,19 +160,68 @@ MaterialSample sample_material(in interop::Material mat, in VertexAttribute va) 
     return res;
 }
 
-float3 calculate_directional_light(in interop::LightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither) {
+uint32_t get_scadow_cascade_split(in interop::CascadedShadowCommit shadow, in float view_depth) {
+    float cascade = 0.0;
+    for (uint i = 0u; i < constants::cascade_shadow_map_cascade_count; ++i) {
+        float split = shadow.split_depths[i];
+        cascade += float(view_depth > split) * float(split > 0.0);
+    }
+    
+    return uint32_t(min(cascade, float(constants::cascade_shadow_map_cascade_count - 1)));
+}
+
+float3 debug_visualize_cascades(in float view_depth) {
+    interop::CascadedShadowCommit shadow = g_fd.cascaded_shadow_ptr[0];
+    uint32_t cascade_index = get_scadow_cascade_split(shadow, view_depth);
+
+    switch (cascade_index)
+    {
+    case 0: return float3(1.0f, 0.25f, 0.25f); break;
+    case 1: return float3(0.25f, 1.0f, 0.25f); break;
+    case 2: return float3(0.25f, 0.25f, 1.0f); break;
+    case 3: return float3(1.0f, 1.0f, 0.25f); break;
+    case 4: return float3(0.25f, 1.0f, 1.0f); break;
+    case 5: return float3(1.0f, 0.25f, 1.0f); break;
+    case 6: return float3(1.0f, 0.5f, 0.5f); break;
+    case 7: return float3(0.5f, 1.0f, 0.5f); break;
+    }
+
+    return float3(1.0f, 1.0f, 1.0f);
+}
+
+float sample_cascaded_shadow(in interop::LightCommit light, in VertexAttribute va, in MaterialSample ms) {
+    static const float4x4 csm_bias_mat = float4x4(
+    	0.5, 0.0, 0.0, 0.5,
+	    0.0, 0.5, 0.0, 0.5,
+	    0.0, 0.0, 1.0, 0.0,
+	    0.0, 0.0, 0.0, 1.0
+    );
+
+    interop::CascadedShadowCommit commit = g_fd.cascaded_shadow_ptr[light.shadow_index];
+
+    uint32_t cascade_index = get_scadow_cascade_split(commit, va.linearZ);
+
+    float4 shadow_coord = mul(csm_bias_mat, mul(g_fd.get_view_projection_matrix(commit.matrix_offsets[cascade_index]), float4(va.pos, 1.0)));
+    shadow_coord = shadow_coord / shadow_coord.w;
+
+    float shadow_sample = 1.f;
+    shadow_sample = texture6.SampleCmpLevelZero(sampler_shadow_linear, float3(shadow_coord.xy, cascade_index), shadow_coord.z - 0.005f);
+    return shadow_sample;
+}
+
+float3 calculate_directional_light(in interop::LightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0) {
     float3 L = normalize(-light.direction);
 
     float shadow_factor = 1.0;
     if (light.cast_shadows > 0 && light.shadow_index > -1) {
-        // shadow_factor = getCascadeShadow(texture6, light, va, ms, dither);
+        shadow_factor = sample_cascaded_shadow(light, va, ms);
     }
 
     float3 color = specular_contribution(ms.albedo, L, V, ms.normal, F0, ms.metallic, ms.roughness);
     return light.color * light.intencity * color * shadow_factor;
 }
 
-float3 calculate_point_light(in interop::LightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither) {
+float3 calculate_point_light(in interop::LightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0) {
     float3 L = normalize(light.position - va.pos);
     float dist = distance(va.pos, light.position);
 
@@ -181,13 +230,13 @@ float3 calculate_point_light(in interop::LightCommit light, in VertexAttribute v
 
     float shadow_factor = 1.0;
     if (light.cast_shadows > 0 && light.shadow_index > -1) {
-        //shadow_factor = getOmniShadow(texture8, light, va, ms, dither);
+        //shadow_factor = getOmniShadow(texture8, light, va, ms);
     }
 
     return light.color * atten * color * light.intencity * shadow_factor;
 }
 
-float3 calculate_spotlight(in interop::LightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither) {
+float3 calculate_spotlight(in interop::LightCommit light, in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0) {
     float3 L = normalize(light.position - va.pos);
 
     // Direction vector from source to target
@@ -204,24 +253,24 @@ float3 calculate_spotlight(in interop::LightCommit light, in VertexAttribute va,
 
     float shadow_factor = 1.0;
     if (light.cast_shadows > 0 && light.shadow_index > -1) {
-        //shadow_factor = getDirectionalShadow(texture7, light, va, ms, dither);
+        //shadow_factor = getDirectionalShadow(texture7, light, va, ms);
     }
 
     return light.color * light.intencity * color * angularAttenuation * shadow_factor;
 }
 
-float3 calculate_lights(in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0, in float dither) {
+float3 calculate_lights(in VertexAttribute va, in MaterialSample ms, in float3 V, in float3 F0) {
     float3 Lo = float3(0.0);
 
     for (uint i = 0u; i < g_fd.light_count; i++) {
         interop::LightCommit light = g_fd.lights_ptr[i];
 
         if (light.type == interop::LightType::eDirectional)
-            Lo += calculate_directional_light(light, va, ms, V, F0, dither);
+            Lo += calculate_directional_light(light, va, ms, V, F0);
         else if (light.type == interop::LightType::ePoint)
-            Lo += calculate_point_light(light, va, ms, V, F0, dither);
+            Lo += calculate_point_light(light, va, ms, V, F0);
         else if (light.type == interop::LightType::eSpot)
-            Lo += calculate_spotlight(light, va, ms, V, F0, dither);
+            Lo += calculate_spotlight(light, va, ms, V, F0);
     }
 
     return Lo;
@@ -478,9 +527,6 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 #endif // COLOR
     }
 
-    // TODO
-    float dither = 0.f;
-
     interop::Material material = g_fd.material_ptr[vb.mat_id];
     MaterialSample ms = sample_material(material, va);
 
@@ -491,7 +537,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
     F0 = lerp(F0, ms.albedo, ms.metallic);
 
     // TODO: finish light calculation
-    float3 Lo = calculate_lights(va, ms, V, F0, dither);
+    float3 Lo = calculate_lights(va, ms, V, F0);
 
     // Reflection vector
     float3 R = -normalize(reflect(V, ms.normal));
@@ -515,12 +561,12 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
     ambient = lerp(ambient, ambient * ms.ao * texture9.SampleLevel(sampler_linear, uv, 0.0f).r, material.occlusion_strenth);
 
     float3 res = ambient + ms.emission + Lo;
-    // res *= debug_visualize_cascades(va.linearZ, dither);
+    res *= debug_visualize_cascades(va.linearZ);
 
     pixel_color = float4(res, 1.0);
     // pixel_color.rgb += computeSSR(uv, va.pos, va.normal, ms.metallic, ms.roughness, sampler2D(texture5, sampler_point), prev_frame_color);
     float ssr_weight = 0.f;
-    // pixel_color.rgb += ScreenSpaceReflections(va.pos, ms.normal, V, ms.roughness, sampler2D(texture5, sampler_point), prev_frame_color, dither, ssr_weight);
+    // pixel_color.rgb += ScreenSpaceReflections(va.pos, ms.normal, V, ms.roughness, sampler2D(texture5, sampler_point), prev_frame_color, ssr_weight);
 
     image0.Store(px, pixel_color);
 }

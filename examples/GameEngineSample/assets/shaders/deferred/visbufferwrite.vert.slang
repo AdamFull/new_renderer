@@ -47,8 +47,7 @@ VSOutput main(uint32_t vertex_index: SV_VertexID,
     float4x4 view_projection = g_fd.get_view_projection_matrix(camera.matrices_offset);
 
     // Sample vertex position
-    float4 local_pos = mul(model_matrix, float4(egd.position[vertex_index], 1.0));
-    local_pos = float4(local_pos.xyz / local_pos.w, 1.0);
+    float4 local_pos = mul(model_matrix, float4(interop::decode_position(egd.position[vertex_index]), 1.0));
 
     VSOutput output;
     output.draw_id = draw_id;

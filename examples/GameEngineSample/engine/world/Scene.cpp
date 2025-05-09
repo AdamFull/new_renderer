@@ -285,9 +285,9 @@ namespace engine::world
 		EntityManager::register_system<ecs::SkinningSystem>(renderer);
 
 		EntityManager::register_system<ecs::CameraSystem>(renderer);
+		EntityManager::register_system<ecs::MeshSystem>(renderer);
 		EntityManager::register_system<ecs::ShadowsSystem>(renderer);
 		EntityManager::register_system<ecs::LightingSystem>(renderer);
-		EntityManager::register_system<ecs::MeshSystem>(renderer);
 	}
 
 	Scene::~Scene() {

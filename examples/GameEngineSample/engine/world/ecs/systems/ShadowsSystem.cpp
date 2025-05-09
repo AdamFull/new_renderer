@@ -70,89 +70,93 @@ namespace engine::world::ecs {
 						cascade_splits[i] = (d - near_clip) / clip_range;
 					}
 
+					std::array<glm::vec3, 8> frustum_corners_ws{
+						glm::vec3(-1.0f, -1.0f, 0.0f),
+						glm::vec3(-1.0f, 1.0f, 0.0f),
+						glm::vec3(1.0f, 1.0f, 0.0f),
+						glm::vec3(1.0f, -1.0f, 0.0f),
+
+						glm::vec3(-1.0f, -1.0f, 1.0f),
+						glm::vec3(-1.0f, 1.0f, 1.0f),
+						glm::vec3(1.0f, 1.0f, 1.0f),
+						glm::vec3(1.0f, -1.0f, 1.0f)
+					};
+
+					glm::mat4 inverse_vp = render_world.get_camera_matrix(render::main_camera_index, constants::inv_view_projection_matrix_offset);
+
+					// Project frustum corners into world space
+					for (auto& corner : frustum_corners_ws) {
+						glm::vec4 inv_corner = inverse_vp * glm::vec4(corner, 1.0f);
+						corner = glm::vec3(inv_corner) / inv_corner.w;
+					}
+
+					glm::vec3 light_dir = glm::normalize(glm::rotate(ltransform.lrotation, glm::vec3(0.0f, 0.0f, -1.0f)));
+					glm::vec3 up_vector = glm::abs(glm::dot(light_dir, glm::vec3(0, 1, 0))) > 0.99f ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
+					glm::mat4 light_view = glm::lookAt(glm::vec3(0.0f), light_dir, up_vector);
+
 					// Calculate orthographic projection matrix for each cascade
-					float lastSplitDist = 0.0;
+					float last_split_dist = 0.0;
 					for (int32_t i = 0; i < constants::cascade_shadow_map_cascade_count; i++) {
-						auto& splitDist = cascade_splits[i];
+						float current_split = cascade_splits[i];
 
-						std::array<glm::vec4, 8> frustumCorners = {
-							// Near face
-							glm::vec4(-1.0f, -1.0f, 0.0f, 1.0f),
-							glm::vec4(1.0f, -1.0f, 0.0f, 1.0f),
-							glm::vec4(1.0f, 1.0f, 0.0f, 1.0f),
-							glm::vec4(-1.0f, 1.0f, 0.0f, 1.0f),
-
-							// Far face
-							glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),
-							glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),
-							glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-							glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),
-						};
-
-						// Project frustum corners into world space
-						for (auto& corner : frustumCorners) {
-							glm::vec4 invCorner = render_world.get_camera_matrix(render::main_camera_index, constants::inv_view_projection_matrix_offset) * corner;
-							corner = invCorner / invCorner.w;
-						}
-
+						// Compute the frustum corners for the cascade in view space
+						std::array<glm::vec3, 8> frustum_corners_ls{};
 						for (int32_t j = 0; j < 4; ++j) {
-							glm::vec4 dist = frustumCorners[j + 4] - frustumCorners[j];
-							frustumCorners[j + 4] = frustumCorners[j] + (dist * splitDist);
-							frustumCorners[j] = frustumCorners[j] + (dist * lastSplitDist);
+							frustum_corners_ls[j] = light_view * glm::vec4(glm::mix(frustum_corners_ws[j], frustum_corners_ws[j + 4], last_split_dist), 1.0f);
+							frustum_corners_ls[j + 4] = light_view * glm::vec4(glm::mix(frustum_corners_ws[j], frustum_corners_ws[j + 4], current_split), 1.0f);
 						}
 
-						// Get frustum center
-						glm::vec3 frustumCenter = glm::vec3(0.0f);
-						for (auto& corner : frustumCorners)
-							frustumCenter += glm::vec3(corner);
-						frustumCenter /= frustumCorners.size();
+						glm::vec3 center = glm::vec3(0.0f);
+						for (auto& corner : frustum_corners_ls) {
+							center += corner;
+						}
+						center *= 0.125f;
 
-						volatile float radius{ 0.0f };
-						for (auto& corner : frustumCorners) {
-							float distance = glm::length(glm::vec3(corner) - frustumCenter);
-							radius = (glm::max)(radius, distance);
+						//Create a bounding sphere to maintain aspect in projection to avoid flickering when rotating
+						float radius = 0;
+						for (auto& corner : frustum_corners_ls) {
+							radius = glm::max(radius, glm::length(corner - center));
 						}
 						radius = glm::ceil(radius * 16.0f) / 16.0f;
 
-						glm::vec3 maxExtents = glm::vec3(radius);
-						glm::vec3 minExtents = -maxExtents;
+						glm::vec3 min_extents = center - glm::vec3(radius);
+						glm::vec3 max_extents = center + glm::vec3(radius);
 
-						glm::vec3 lightDir = glm::normalize(ltransform.grotation * glm::vec3(0.f, 0.f, -1.f));
-						glm::mat4 lightViewMatrix = glm::lookAt(frustumCenter - lightDir * radius, frustumCenter, glm::vec3(0.f, 1.f, 0.f));
-						glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, minExtents.z - maxExtents.z, maxExtents.z - minExtents.z);
+						glm::vec3 extents = max_extents - min_extents;
+						glm::vec3 texel_size = extents / glm::vec3(constants::cascade_shadow_map_resolution);
+						min_extents = glm::floor(min_extents / texel_size) * texel_size;
+						max_extents = glm::ceil(max_extents / texel_size) * texel_size;
+						center = (min_extents + max_extents) * 0.5f;
 
-						auto shadowMatrix = lightOrthoMatrix * lightViewMatrix;
-						glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-						shadowOrigin = shadowMatrix * shadowOrigin;
-						float storedW = shadowOrigin.w;
-						shadowOrigin = shadowOrigin * static_cast<float>(constants::cascade_shadow_map_resolution) / 2.0f;
-						glm::vec4 roundedOrigin = glm::round(shadowOrigin);
-						glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
-						roundOffset = roundOffset * 2.0f / static_cast<float>(constants::cascade_shadow_map_resolution);
-						roundOffset.z = 0.0f;
-						roundOffset.w = 0.0f;
-						glm::mat4 lightProjectionMatrix = lightOrthoMatrix;
-						lightProjectionMatrix[3] += roundOffset;
+						min_extents.z = std::numeric_limits<float>::max();
+						max_extents.z = std::numeric_limits<float>::lowest();
 
-						// Store split distance and matrix in cascade
-						shadow_commit.far_clip = far_clip;
-						shadow_commit.split_depths[i] = (near_clip + splitDist * clip_range);
+						for (const auto& corner : frustum_corners_ls) {
+							min_extents.z = glm::min(min_extents.z, corner.z);
+							max_extents.z = glm::max(max_extents.z, corner.z);
+						}
 
-						lastSplitDist = cascade_splits[i];
+						float depth_bias = 10.0f;
+						glm::mat4 light_projection = glm::ortho(min_extents.x, max_extents.x, min_extents.y, max_extents.y, min_extents.z - depth_bias, max_extents.z - min_extents.z);
 
-						render_world.update_render_camera(light.shadow_casters[i], lightViewMatrix, lightProjectionMatrix, false, constants::cascade_shadow_map_resolution, constants::cascade_shadow_map_resolution);
+						render_world.update_render_camera(light.shadow_casters[i], light_view, light_projection, false, constants::cascade_shadow_map_resolution, constants::cascade_shadow_map_resolution);
 
 						auto& camera = render_world.get_render_camera(light.shadow_casters[i]);
+						shadow_commit.far_clip = far_clip;
+						shadow_commit.split_depths[i] = (near_clip + current_split * clip_range);
 						shadow_commit.matrix_offsets[i] = camera.matrices_offset;
 
 						// Update meshes
 						auto mview = EntityManager::view<TransformComponent, BaseComponent, MeshComponent>();
 						for (auto [mentity, mtransform, mbase, mesh_component] : mview.each()) {
-							if (!base.visible)
+							if (!base.visible) {
 								continue;
+							}
 
 							render_world.add_geometry_draw(light.shadow_casters[i], mesh_component.mesh);
 						}
+
+						last_split_dist = current_split;
 					}
 
 					shadow_commit.index = light_count;

@@ -38,6 +38,7 @@
 #include "../../assets/shaders/deferred/visbufferwrite.h"
 
 #include "../../assets/shaders/lighting/prefilteredmap.h"
+#include "../../assets/shaders/lighting/unidirectional_shadow.h"
 
 #include "../../assets/shaders/postprocess/apply_effect.h"
 #include "../../assets/shaders/postprocess/bokeh.h"
@@ -101,10 +102,6 @@ namespace render_label {
 	constexpr const uint32_t weights = "weights"_hash32;
 
 	constexpr const uint32_t indices = "indices"_hash32;
-
-	constexpr const uint32_t call_id = "call_id"_hash32;
-	constexpr const uint32_t shadow_index = "shadow_index"_hash32;
-	constexpr const uint32_t layer = "layer"_hash32;
 
 	constexpr const uint32_t camera_id = "camera_id"_hash32;
 }
@@ -780,36 +777,25 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
-#if !DISABLE_SHADOWS
 		// Draw cascaded shadows
 		{
 			RenderShaderPassCreateInfo create_info{};
 #if SKINNING_TEST
-			create_info.technique_name = "directional_shadow_skin";
+			create_info.technique_name = "cascaded_shadow_skin";
 #else
-			create_info.technique_name = "directional_shadow";
+			create_info.technique_name = "cascaded_shadow";
 #endif
-			create_info.pipeline_state.rasterization_state.cull_mode = edge::gfx::CullModeFlag::eFront;
-
-			// Depth state
-			create_info.pipeline_state.depth_stencil_state.depth_test = true;
-			create_info.pipeline_state.depth_stencil_state.depth_write = true;
-			create_info.pipeline_state.depth_stencil_state.depth_compare_op = edge::gfx::CompareOp::eLess;
 
 			create_info.add_write_attachment(cascaded_shadows_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 1.f });
 
-			create_info.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
-
 			create_info.draw_callback = [this,
 				cascaded_shadows_target,
-				alive_commands_buffer,
-				indirect_draw_commands,
-				indirect_count_buffer
+				indirect_draw_commands
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
 					auto* shadow_map = render_context->get_texture(cascaded_shadows_target);
-					auto* alive_meshes = render_context->get_buffer(alive_commands_buffer);
+					auto* draw_commands = render_world->get_draw_buffer();
 					auto* argument_buffer = render_context->get_buffer(indirect_draw_commands);
 
 					auto viewport_width = shadow_map->get_width();
@@ -818,29 +804,26 @@ namespace engine::render
 					command_list.set_viewport(0.f, 0.f, viewport_width, viewport_height, 0.f, 1.f);
 					command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 
-					self.read_resource(alive_commands_buffer, ~0u);
 					self.read_resource(indirect_draw_commands, ~0u);
-					self.read_resource(indirect_count_buffer, ~0u);
 
 					self.resolve_dependencies(command_list);
 
 					auto& geometry_buffer = *geometry_buffers.back();
 					geometry_buffer.bind_index_buffer(command_list);
 
-					auto& buffers = self.get_uniform_block(render_label::geometry_buffers);
-					buffers.set(render_label::position, geometry_buffer.get_buffer_address(VertexAttributeFlag::ePosition));
-					buffers.set(render_label::texcoord, geometry_buffer.get_buffer_address(VertexAttributeFlag::eTexCoord));
-#if SKINNING_TEST
-					buffers.set(render_label::joints, geometry_buffer.get_buffer_address(VertexAttributeFlag::eJoint));
-					buffers.set(render_label::weights, geometry_buffer.get_buffer_address(VertexAttributeFlag::eWeight));
-#endif
-
 					// Bind buffers that uses in draw
-					auto& draw_data_block = self.get_uniform_block(edge::murmur_hash("DrawDescriptionBuffers"));
-					draw_data_block.set(edge::murmur_hash("draw_descriptions_ptr"), alive_meshes->get_address());
-					draw_data_block.set(edge::murmur_hash("draw_commands_ptr"), argument_buffer->get_address());
+					auto& draw_data_block = self.get_uniform_block(edge::murmur_hash("egd"));
+					auto& draw_data_block_data = draw_data_block.as<interop::EncodedGeometryData>();
+					draw_data_block_data.position = geometry_buffer.get_buffer_address(VertexAttributeFlag::ePosition);
+					draw_data_block_data.texcoord = geometry_buffer.get_buffer_address(VertexAttributeFlag::eTexCoord);
+					draw_data_block_data.draw_descriptions_ptr = draw_commands->get_address();
+					draw_data_block_data.draw_data_ptr = argument_buffer->get_address();
 
-					auto& constants = self.get_constant_block();
+#if SKINNING_TEST
+					draw_data_block_data.joints = geometry_buffer.get_buffer_address(VertexAttributeFlag::eJoint);
+					draw_data_block_data.weights = geometry_buffer.get_buffer_address(VertexAttributeFlag::eWeight);
+#endif
+					self.bind_resources(command_list);
 
 					self.bind_resources(command_list);
 
@@ -848,10 +831,9 @@ namespace engine::render
 					draw_command.indexed_draw = true;
 					draw_command.draw_count = render_world->get_mesh_count();
 					draw_command.argument_buffer = argument_buffer;
-					draw_command.command_stride = sizeof(shlib::DrawIndexedIndirectData);
-					draw_command.count_buffer = render_context->get_buffer(indirect_count_buffer);
+					draw_command.command_stride = sizeof(interop::DrawIndexedIndirectData);
 
-					uint32_t draw_call_id{ 0u };
+					uint32_t draw_call_offset{ 0u };
 					self.begin(command_list);
 
 					int32_t shadow_index{ 0 };
@@ -862,18 +844,18 @@ namespace engine::render
 							continue;
 						}
 
-						for (int32_t layer = 0; layer < shlib::cascade_shadow_map_cascade_count; ++layer) {
+						for (int32_t layer = 0; layer < constants::cascade_shadow_map_cascade_count; ++layer) {
 							auto camera_id = render_world->get_resource_id(light.shadow_casters[layer]);
-							draw_call_id = camera_id * render_world->get_mesh_count();
+							draw_call_offset = camera_id * render_world->get_mesh_count();
 
-							constants.set(render_label::call_id, draw_call_id);
-							constants.set(render_label::shadow_index, shadow_index);
-							constants.set(render_label::layer, layer);
-
+							auto& pc = self.get_constant_block();
+							auto& pc_data = pc.as<shadows::PushConstants>();
+							pc_data.call_id = draw_call_offset;
+							pc_data.shadow_index = shadow_index;
+							pc_data.layer = layer;
 							self.push_constant_ranges(command_list);
 
-							draw_command.argument_offset = camera_id * draw_command.command_stride;
-							draw_command.count_offset = camera_id * sizeof(uint32_t);
+							draw_command.argument_offset = draw_call_offset * draw_command.command_stride;
 
 							command_list.draw_indirect(draw_command);
 						}
@@ -887,6 +869,7 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
+#if !DISABLE_SHADOWS
 		// Draw omni shadows
 		{
 			RenderShaderPassCreateInfo create_info{};
@@ -1148,22 +1131,21 @@ namespace engine::render
 					self.bind_resources(command_list);
 
 					auto camera_id = render_world->get_resource_id(main_camera_index);
-					auto draw_call_id = camera_id * render_world->get_mesh_count();
+					auto draw_call_offset = camera_id * render_world->get_mesh_count();
 
 					auto& pc = self.get_constant_block();
 					auto& pc_data = pc.as<visbufferwrite::PushConstants>();
-					pc_data.call_id = draw_call_id;
+					pc_data.call_id = draw_call_offset;
 					pc_data.camera_id = camera_id;
 
 					self.push_constant_ranges(command_list);
 
-					// TODO: USE CURRENT CAMERA HERE FOR CALCULATE OFFSET!!!!
 					edge::gfx::IndirectDrawCommand draw_command{};
 					draw_command.indexed_draw = true;
 					draw_command.draw_count = render_world->get_mesh_count();
 					draw_command.argument_buffer = argument_buffer;
 					draw_command.command_stride = sizeof(interop::DrawIndexedIndirectData);
-					draw_command.argument_offset = draw_call_id * draw_command.command_stride;
+					draw_command.argument_offset = draw_call_offset * draw_command.command_stride;
 
 					self.begin(command_list);
 					command_list.draw_indirect(draw_command);

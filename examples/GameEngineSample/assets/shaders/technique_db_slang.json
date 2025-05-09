@@ -30,11 +30,11 @@
     "stages": [
       {
         "path": "/internal_res/assets/shaders/deferred/visbufferwrite.vert.slang",
-        "def": [ "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
+        "def": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
       },
       {
         "path": "/internal_res/assets/shaders/deferred/visbufferwrite.frag.slang",
-        "def": [ "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
+        "def": [ "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
       }
     ],
     "attachments": [
@@ -58,7 +58,7 @@
     "stages": [
       {
         "path": "/internal_res/assets/shaders/deferred/material_pass_base.comp.slang",
-        "def": [ "LIGHT_DATA", "SHADOW_DATA", "GEOMETRY_BUFFERS", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
+        "def": [ "LIGHT_DATA", "SHADOW_DATA", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
       }
     ]
   },
@@ -107,6 +107,30 @@
         "def": [ "HORIZONTAL_PASS" ]
       }
     ]
+  },
+  {
+    "name": "cascaded_shadow",
+    "type": "graphics",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.vert.slang",
+        "def": [ "CASCADED_SHADOW", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
+      },
+      {
+        "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.frag.slang",
+        "def": [ "CASCADED_SHADOW", "HAS_TEXCOORD", "HAS_NORMAL", "INDEX_16BIT", "HAS_TANGENT" ]
+      }
+    ],
+    "depth_stencil": {
+      "depth_format": "d32_sfloat",
+      "depth_test": true,
+      "depth_write": true,
+      "depth_compare_op": "less"
+    },
+    "primitive_topology": "triangle_list",
+    "rasterization": {
+      "cull_mode": "front"
+    }
   },
 
   {
