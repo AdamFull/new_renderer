@@ -64,7 +64,7 @@ namespace edge::gfx::vulkan
 
 		auto instance_builder = InstanceBuilder();
 		instance_builder.set_headless(headless);
-		instance_builder.set_api_version(VK_API_VERSION_1_1);
+		instance_builder.set_api_version(VK_API_VERSION_1_2);
 		instance_builder.set_application_name("App");
 		instance_builder.set_engine_name("NewEngineApp");
 
@@ -433,6 +433,12 @@ namespace edge::gfx::vulkan
 			}
 			else if (strcmp(extension_name, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME) == 0)
 				auto& ext = device.request_extension_features<vk::PhysicalDeviceDiagnosticsConfigFeaturesNV>();
+			else if (strcmp(extension_name, VK_KHR_RAY_QUERY_EXTENSION_NAME) == 0) {
+				auto& ext = device.request_extension_features<vk::PhysicalDeviceRayQueryFeaturesKHR>();
+				if (!ext.rayQuery) {
+					EDGE_LOGW("[Vulkan Context] Ray query extension is not supported.");
+				}
+			}
 			//else if(strcmp(extension_name, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) == 0)
 			//	device.request_extension_features(vk::PhysicalDeviceIndirect)
 		}
