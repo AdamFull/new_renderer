@@ -95,7 +95,7 @@ public:
 
 		edge::gfx::destroy(swapchain);
 
-		edge::gfx::ResourceUpdater::shutdown();
+		edge::gfx::shutdown_resource_uploader();
 		edge::gfx::shutdown_context();
 	}
 
@@ -112,7 +112,7 @@ public:
 		edge::gfx::make_context(gfx_create_info);
 
 		edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
-		edge::gfx::ResourceUpdater::create(resource_updater_init);
+		edge::gfx::make_resource_uploader(resource_updater_init);
 
 		// Init everything we need for rendering
 		queue = edge::gfx::get_queue(edge::gfx::QueueType::eDirect);
@@ -199,7 +199,7 @@ public:
 
 		// Upload vertex data in to buffer
 		edge::gfx::ResourceStateFlags resource_state{};
-		edge::gfx::ResourceUpdater::update_buffer(vertex_buffer, resource_state, { (const uint8_t*)(&vertices[0]), sizeof(vertices) });
+		edge::gfx::update_buffer(vertex_buffer, resource_state, { (const uint8_t*)(&vertices[0]), sizeof(vertices) });
 
 		return true;
     }
@@ -296,7 +296,7 @@ public:
 		wait_semaphores.emplace_back(acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput);
 
 		// Submit resource uploader queue
-		edge::gfx::ResourceUpdater::flush(wait_semaphores, {});
+		edge::gfx::flush_resource_uploads(wait_semaphores, {});
 
 		// Here is frame finished
 		command_list->end();

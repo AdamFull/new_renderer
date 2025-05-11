@@ -116,11 +116,10 @@ MaterialSample sample_material(in interop::Material mat, in VertexAttribute va) 
     res.emission = mat.emissive_factor;
     if (mat.emissive.valid())
         res.emission *= sample_texture_grad(mat.emissive, va.uv, va.uv_dx, va.uv_dy).rgb;
-    res.emission *= mat.emissive_strength;
 
     // Sample metallic roughness
-    res.metallic = mat.metallic_factor;
-    res.roughness = mat.roughness_factor;
+    res.metallic = mat.metal_rough_factor.x;
+    res.roughness = mat.metal_rough_factor.y;
     if (mat.metallic_roughness.valid()) {
         float4 mr = sample_texture_grad(mat.metallic_roughness, va.uv, va.uv_dx, va.uv_dy);
         res.metallic *= mr.b;
@@ -145,7 +144,8 @@ MaterialSample sample_material(in interop::Material mat, in VertexAttribute va) 
         const float3 b = cross(va.normal, va.tangent.xyz) * va.tangent.w;
         const float3x3 tbn = float3x3(va.tangent.xyz, b, va.normal);
 
-        const float3 ts_normal = normalize(raw_normal * float3(mat.normal_scale, mat.normal_scale, 1.0));
+        //const float3 ts_normal = normalize(raw_normal * float3(mat.normal_scale, mat.normal_scale, 1.0));
+        const float3 ts_normal = normalize(raw_normal);
         res.normal = normalize(mul(ts_normal, tbn));
     }
 
@@ -154,8 +154,6 @@ MaterialSample sample_material(in interop::Material mat, in VertexAttribute va) 
     if (mat.occlusion.valid()) {
         res.ao = sample_texture_grad(mat.occlusion, va.uv, va.uv_dx, va.uv_dy).r;
     }
-
-    res.ior = mat.ior;
 
     return res;
 }
@@ -397,12 +395,12 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
     // ----------------- Load vertex atribure data -----------------
     VertexAttribute va;
     {
-        interop::DecodedTriangle triangle = egd.get_dec_triangle(vb.draw_id, vb.triangle_id, mesh.uv_enc);
+        interop::Triangle triangle = egd.get_triangle(vb.draw_id, vb.triangle_id, mesh.uv_enc);
 
         // Load vertex data of the 3 vertices
-        float3 position_0 = triangle.verts[0].position;
-        float3 position_1 = triangle.verts[1].position;
-        float3 position_2 = triangle.verts[2].position;
+        float3 position_0 = triangle.vertices[0].position;
+        float3 position_1 = triangle.vertices[1].position;
+        float3 position_2 = triangle.vertices[2].position;
 
         // Load mesh model matrix
 
@@ -418,13 +416,13 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
 #ifdef HAS_SKIN
         if (mesh.skin_offset != ~0u) {
-            joints_t joints0 = triangle.verts[0].joints;
-            joints_t joints1 = triangle.verts[1].joints;
-            joints_t joints2 = triangle.verts[2].joints;
+            joints_t joints0 = triangle.vertices[0].joints;
+            joints_t joints1 = triangle.vertices[1].joints;
+            joints_t joints2 = triangle.vertices[2].joints;
 
-            float4 weights0 = triangle.verts[0].weights;
-            float4 weights1 = triangle.verts[1].weights;
-            float4 weights2 = triangle.verts[2].weights;
+            float4 weights0 = triangle.vertices[0].weights;
+            float4 weights1 = triangle.vertices[1].weights;
+            float4 weights2 = triangle.vertices[2].weights;
 
             float4x4 skin_mat0 = 
 			                 weights0.x * g_fd.material_ptr[mesh.skin_offset + joints0.x] +
@@ -480,9 +478,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
         // INTERPOLATE TEXCOORD
 #ifdef HAS_TEXCOORD
-        float2 uv0 = triangle.verts[0].uv;
-        float2 uv1 = triangle.verts[1].uv;
-        float2 uv2 = triangle.verts[2].uv;
+        float2 uv0 = triangle.vertices[0].uv;
+        float2 uv1 = triangle.vertices[1].uv;
+        float2 uv2 = triangle.vertices[2].uv;
 
         va.uv = interpolate(uv0, uv1, uv2, bary.barycentrics);
         va.uv_dx = interpolate(uv0, uv1, uv2, bary.ddx);
@@ -491,9 +489,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
 // INTERPOLATE NORMAL
 #ifdef HAS_NORMAL
-        float3 normal_0 = normalize(mul(normal_matrix, float4(triangle.verts[0].normal, 0.0f)).xyz);
-        float3 normal_1 = normalize(mul(normal_matrix, float4(triangle.verts[1].normal, 0.0f)).xyz);
-        float3 normal_2 = normalize(mul(normal_matrix, float4(triangle.verts[2].normal, 0.0f)).xyz);
+        float3 normal_0 = normalize(mul(normal_matrix, float4(triangle.vertices[0].normal, 0.0f)).xyz);
+        float3 normal_1 = normalize(mul(normal_matrix, float4(triangle.vertices[1].normal, 0.0f)).xyz);
+        float3 normal_2 = normalize(mul(normal_matrix, float4(triangle.vertices[2].normal, 0.0f)).xyz);
 
         va.normal = normalize(interpolate(normal_0, normal_1, normal_2, bary.barycentrics));
 #else
@@ -502,9 +500,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
 // INTERPOLATE TANGENT
 #ifdef HAS_TANGENT
-        float4 tangent0 = float4(normalize(mul(model, float4(triangle.verts[0].tangent.xyz, 0.0f)).xyz), triangle.verts[0].tangent.w);
-        float4 tangent1 = float4(normalize(mul(model, float4(triangle.verts[1].tangent.xyz, 0.0f)).xyz), triangle.verts[1].tangent.w);
-        float4 tangent2 = float4(normalize(mul(model, float4(triangle.verts[2].tangent.xyz, 0.0f)).xyz), triangle.verts[2].tangent.w);
+        float4 tangent0 = float4(normalize(mul(model, float4(triangle.vertices[0].tangent.xyz, 0.0f)).xyz), triangle.vertices[0].tangent.w);
+        float4 tangent1 = float4(normalize(mul(model, float4(triangle.vertices[1].tangent.xyz, 0.0f)).xyz), triangle.vertices[1].tangent.w);
+        float4 tangent2 = float4(normalize(mul(model, float4(triangle.vertices[2].tangent.xyz, 0.0f)).xyz), triangle.vertices[2].tangent.w);
 
         float4 tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
         va.tangent = float4(normalize(tangent.xyz), tangent.w);
@@ -516,9 +514,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
         // INTERPOLATE COLOR
 #ifdef HAS_COLOR
-        float4 color_0 = triangle.verts[0].color;
-        float4 color_1 = triangle.verts[1].color;
-        float4 color_2 = triangle.verts[2].color;
+        float4 color_0 = triangle.vertices[0].color;
+        float4 color_1 = triangle.vertices[1].color;
+        float4 color_2 = triangle.vertices[2].color;
 
         va.color = interpolate(color_0, color_1, color_2, bary.barycentrics);
 
@@ -533,7 +531,8 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
     // Calculate direction from fragment to viewPosition
     float3 V = normalize(camera_pos - va.pos);
 
-    float3 F0 = f0_from_ior(ms.ior);
+    float3 F0 = f0_from_ior(1.3f);
+    //float3 F0 = f0_from_ior(ms.ior);
     F0 = lerp(F0, ms.albedo, ms.metallic);
 
     // TODO: finish light calculation
@@ -558,7 +557,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
     float3 kD = (1.0 - F) * (1.0 - ms.metallic);
     float3 ambient = kD * diffuse + specular;
 
-    ambient = lerp(ambient, ambient * ms.ao * texture9.SampleLevel(sampler_linear, uv, 0.0f).r, material.occlusion_strenth);
+    ambient = lerp(ambient, ambient * ms.ao * texture9.SampleLevel(sampler_linear, uv, 0.0f).r, 1.0f);
 
     float3 res = ambient + ms.emission + Lo;
     //res *= debug_visualize_cascades(va.linearZ);

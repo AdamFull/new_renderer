@@ -14,8 +14,6 @@ struct MaterialSample {
     float3 normal;
 
     float ao;
-
-    float ior;
 };
 
 inline float3 get_cube_side_direction(in float2 uv, in uint32_t side) {

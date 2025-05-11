@@ -120,7 +120,7 @@ namespace engine::render
 		edge::gfx::make_context(gfx_create_info);
 
 		edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
-		edge::gfx::ResourceUpdater::create(resource_updater_init);
+		edge::gfx::make_resource_uploader(resource_updater_init);
 
 		render_context = std::make_unique<RenderContext>(window);
 
@@ -132,7 +132,7 @@ namespace engine::render
 	}
 
 	Renderer::~Renderer() {
-		edge::gfx::ResourceUpdater::shutdown();
+		edge::gfx::shutdown_resource_uploader();
 		edge::gfx::shutdown_context();
 	}
 
@@ -1120,15 +1120,10 @@ namespace engine::render
 					// Bind buffers that uses in draw
 					auto& draw_data_block = self.get_uniform_block(edge::murmur_hash("egd"));
 					auto& draw_data_block_data = draw_data_block.as<interop::EncodedGeometryData>();
-					draw_data_block_data.position = geometry_buffer.get_buffer_address(VertexAttributeFlag::ePosition);
-					draw_data_block_data.texcoord = geometry_buffer.get_buffer_address(VertexAttributeFlag::eTexCoord);
+					draw_data_block_data.vertices = geometry_buffer.get_buffer_address();
 					draw_data_block_data.draw_descriptions_ptr = draw_commands->get_address();
 					draw_data_block_data.draw_data_ptr = argument_buffer->get_address();
-
-#if SKINNING_TEST
-					draw_data_block_data.joints = geometry_buffer.get_buffer_address(VertexAttributeFlag::eJoint);
-					draw_data_block_data.weights = geometry_buffer.get_buffer_address(VertexAttributeFlag::eWeight);
-#endif
+					
 					self.bind_resources(command_list);
 
 					auto camera_id = render_world->get_resource_id(main_camera_index);
@@ -1370,14 +1365,7 @@ namespace engine::render
 
 				auto& egd = self.get_uniform_block(edge::murmur_hash("egd"));
 				auto& egd_data = egd.as<interop::EncodedGeometryData>();
-				egd_data.position = geometry_buffer.get_buffer_address(VertexAttributeFlag::ePosition);
-				egd_data.texcoord = geometry_buffer.get_buffer_address(VertexAttributeFlag::eTexCoord);
-				egd_data.normal = geometry_buffer.get_buffer_address(VertexAttributeFlag::eNormal);
-				egd_data.tangent = geometry_buffer.get_buffer_address(VertexAttributeFlag::eTangent);
-#if SKINNING_TEST		
-				egd_data.joints = geometry_buffer.get_buffer_address(VertexAttributeFlag::eJoint);
-				egd_data.weights = geometry_buffer.get_buffer_address(VertexAttributeFlag::eWeight);
-#endif
+				egd_data.vertices = geometry_buffer.get_buffer_address();
 				egd_data.indices = geometry_buffer.get_index_buffer_address();
 				egd_data.draw_descriptions_ptr = draw_commands->get_address();
 				egd_data.draw_data_ptr = argument_buffer->get_address();

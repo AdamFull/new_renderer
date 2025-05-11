@@ -1,10 +1,7 @@
-#define TINYGLTF_IMPLEMENTATION
 #include "Scene.h"
 
 #include "ecs/components/components.h"
 #include "ecs/systems/systems.h"
-
-//#include <meshoptimizer.h>
 
 #include "../rendering/Rendering.h"
 #include <edge/gfx/gfx_context.h>
@@ -23,256 +20,58 @@
 
 #include "../../assets/shaders/include/interop.h"
 
-namespace engine::world
-{
-	struct BufferStream {
-		const uint8_t* data{ nullptr };
-		size_t stride{ 0ull };
-		size_t count{ 0ull };
-	};
+#include <cgltf.h>
+#include <meshoptimizer.h>
+#include <mikktspace.h>
 
-	std::string url_decode(const std::string& str) {
-		std::string ret;
-		char ch;
-		int i, ii, len = static_cast<int>(str.length());
-
-		for (i = 0; i < len; i++) {
-			if (str[i] != '%') {
-				if (str[i] == '+')
-					ret += ' ';
-				else
-					ret += str[i];
-			}
-			else {
-				sscanf(str.substr(i + 1, 2).c_str(), "%x", &ii);
-				ch = static_cast<char>(ii);
-				ret += ch;
-				i = i + 2;
-			}
-		}
-		return ret;
-	}
-
-	inline size_t get_size_by_component_type(int32_t component_type) {
-		switch (component_type) {
-		case TINYGLTF_COMPONENT_TYPE_BYTE:
-		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: return 1ull; break;
-		case TINYGLTF_COMPONENT_TYPE_SHORT:
-		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: return 2ull; break;
-		case TINYGLTF_COMPONENT_TYPE_INT:
-		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-		case TINYGLTF_COMPONENT_TYPE_FLOAT: return 4ull; break;
-		case TINYGLTF_COMPONENT_TYPE_DOUBLE: return 8ull; break;
-		}
-
-		return 0ull;
-	}
-
-	inline size_t get_element_count_by_accessor_type(int32_t type) {
-		if (type == TINYGLTF_TYPE_SCALAR)
-			return 1ull;
-		else if (type == TINYGLTF_TYPE_VEC2)
-			return 2ull;
-		else if (type == TINYGLTF_TYPE_VEC3)
-			return 3ull;
-		else if (type == TINYGLTF_TYPE_VEC4)
-			return 4ull;
-		else if (type == TINYGLTF_TYPE_MAT2)
-			return 4ull;
-		else if (type == TINYGLTF_TYPE_MAT3)
-			return 9ull;
-		else if (type == TINYGLTF_TYPE_MAT4)
-			return 16ull;
-
-		return 0ull;
-	}
-
-	inline size_t get_accessor_element_size(const tinygltf::Accessor& accessor) {
-		return get_size_by_component_type(accessor.componentType) * 
-			get_element_count_by_accessor_type(accessor.type);
-	}
-
-	BufferStream get_buffer_stream(const tinygltf::Model& root, const tinygltf::Accessor& accessor) {
-		BufferStream stream;
-
-		const auto& buffer_view = root.bufferViews[accessor.bufferView];
-		const auto& buffer = root.buffers[buffer_view.buffer];
-
-		return {
-			&buffer.data[accessor.byteOffset + buffer_view.byteOffset],
-			get_accessor_element_size(accessor),
-			accessor.count
-		};
-	}
-
-	render::VertexAttributeFlag GetVertexAttributeFlag(std::string_view name) {
-		using namespace engine::render;
-		if (name.compare("POSITION") == 0) return render::VertexAttributeFlag::ePosition;
-		else if (name.compare("COLOR_0") == 0) return render::VertexAttributeFlag::eColor;
-		else if (name.compare("TEXCOORD_0") == 0) return render::VertexAttributeFlag::eTexCoord;
-		else if (name.compare("NORMAL") == 0) return render::VertexAttributeFlag::eNormal;
-		else if (name.compare("TANGENT") == 0) return render::VertexAttributeFlag::eTangent;
-		else if (name.compare("JOINTS_0") == 0) return render::VertexAttributeFlag::eJoint;
-		else if (name.compare("WEIGHTS_0") == 0) return render::VertexAttributeFlag::eWeight;
-
-		return render::VertexAttributeFlag::ePosition;
-	}
-
-	edge::gfx::Format GetVertexFormat(const tinygltf::Accessor& accessor) {
-		if (accessor.type == TINYGLTF_TYPE_VEC4) {
-			switch (accessor.componentType) {
-			case TINYGLTF_COMPONENT_TYPE_BYTE: return edge::gfx::Format::eR8G8B8A8Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: return edge::gfx::Format::eR8G8B8A8Unorm; break;
-			case TINYGLTF_COMPONENT_TYPE_SHORT: return edge::gfx::Format::eR16G16B16A16Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: return edge::gfx::Format::eR16G16B16A16Unorm; break;
-			case TINYGLTF_COMPONENT_TYPE_INT: return edge::gfx::Format::eR32G32B32A32Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: return edge::gfx::Format::eR32G32B32A32Uint; break;
-			case TINYGLTF_COMPONENT_TYPE_FLOAT: return edge::gfx::Format::eR32G32B32A32Sfloat; break;
-			case TINYGLTF_COMPONENT_TYPE_DOUBLE: return edge::gfx::Format::eR64G64B64A64Sfloat; break;
-			default:
-				break;
-			}
-		}
-		else if (accessor.type == TINYGLTF_TYPE_VEC3) {
-			switch (accessor.componentType) {
-			case TINYGLTF_COMPONENT_TYPE_BYTE: return edge::gfx::Format::eR8G8B8Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: return edge::gfx::Format::eR8G8B8Unorm; break;
-			case TINYGLTF_COMPONENT_TYPE_SHORT: return edge::gfx::Format::eR16G16B16Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: return edge::gfx::Format::eR16G16B16Unorm; break;
-			case TINYGLTF_COMPONENT_TYPE_INT: return edge::gfx::Format::eR32G32B32Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: return edge::gfx::Format::eR32G32B32Uint; break;
-			case TINYGLTF_COMPONENT_TYPE_FLOAT: return edge::gfx::Format::eR32G32B32Sfloat; break;
-			case TINYGLTF_COMPONENT_TYPE_DOUBLE: return edge::gfx::Format::eR64G64B64Sfloat; break;
-			default:
-				break;
-			}
-		}
-		else if (accessor.type == TINYGLTF_TYPE_VEC2) {
-			switch (accessor.componentType) {
-			case TINYGLTF_COMPONENT_TYPE_BYTE: return edge::gfx::Format::eR8G8Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: return edge::gfx::Format::eR8G8Unorm; break;
-			case TINYGLTF_COMPONENT_TYPE_SHORT: return edge::gfx::Format::eR16G16Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: return edge::gfx::Format::eR16G16Unorm; break;
-			case TINYGLTF_COMPONENT_TYPE_INT: return edge::gfx::Format::eR32G32Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: return edge::gfx::Format::eR32G32Uint; break;
-			case TINYGLTF_COMPONENT_TYPE_FLOAT: return edge::gfx::Format::eR32G32Sfloat; break;
-			case TINYGLTF_COMPONENT_TYPE_DOUBLE: return edge::gfx::Format::eR64G64Sfloat; break;
-			default:
-				break;
-			}
-		}
-		else if (accessor.type == TINYGLTF_TYPE_SCALAR) {
-			switch (accessor.componentType) {
-			case TINYGLTF_COMPONENT_TYPE_BYTE: return edge::gfx::Format::eR8Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: return edge::gfx::Format::eR8Unorm; break;
-			case TINYGLTF_COMPONENT_TYPE_SHORT: return edge::gfx::Format::eR16Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: return edge::gfx::Format::eR16Unorm; break;
-			case TINYGLTF_COMPONENT_TYPE_INT: return edge::gfx::Format::eR32Sint; break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: return edge::gfx::Format::eR32Uint; break;
-			case TINYGLTF_COMPONENT_TYPE_FLOAT: return edge::gfx::Format::eR32Sfloat; break;
-			case TINYGLTF_COMPONENT_TYPE_DOUBLE: return edge::gfx::Format::eR64Sfloat; break;
-			default:
-				break;
-			}
-		}
-
-		return edge::gfx::Format::eUndefined;
-	}
-
-	edge::gfx::IndexType GetIndexType(const tinygltf::Accessor& accessor)
-	{
-		switch (accessor.componentType)
+namespace engine::world {
+	auto get_address_mode(cgltf_wrap_mode wrap_mode) -> edge::gfx::SamplerAddressMode {
+		edge::gfx::SamplerAddressMode addr_mode{ edge::gfx::SamplerAddressMode::eClampToBorder };
+		switch (wrap_mode)
 		{
-		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: return edge::gfx::IndexType::eUint16; break;
-		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: return edge::gfx::IndexType::eUint32; break;
-		default:
-			break;
+		case cgltf_wrap_mode_clamp_to_edge: addr_mode = edge::gfx::SamplerAddressMode::eClampToEdge; break;
+		case cgltf_wrap_mode_mirrored_repeat: addr_mode = edge::gfx::SamplerAddressMode::eMirror; break;
+		case cgltf_wrap_mode_repeat: addr_mode = edge::gfx::SamplerAddressMode::eRepeat; break;
+		default: break;
 		}
 
-		return edge::gfx::IndexType::eUint32;
+		return addr_mode;
 	}
 
-	render::GeometryBufferCreateInfo GetGeometryBufferCreateInfo(const tinygltf::Model& root, const tinygltf::Primitive& primitive) {
-		render::GeometryBufferCreateInfo create_info{};
-
-		for (const auto& [name, accessor_index] : primitive.attributes) {
-			// NOT SUPPORTED FOR NOW
-			if (name == "TEXCOORD_1")
-				continue;
-
-			const auto& accessor = root.accessors[accessor_index];
-
-			auto& new_description = create_info.attribute_descriptions.emplace_back();
-			new_description.attribute_flag = GetVertexAttributeFlag(name);
-			new_description.format = GetVertexFormat(accessor);
-		}
-
-		if (primitive.indices >= 0) {
-			const auto& accessor = root.accessors[primitive.indices];
-			create_info.index_description.type = GetIndexType(accessor);
-		}
-
-		std::sort(create_info.attribute_descriptions.begin(), create_info.attribute_descriptions.end(),
-			[](const auto& lhs, const auto& rhs) {
-				return edge::utl::cast(lhs.attribute_flag) < edge::utl::cast(rhs.attribute_flag);
-			});
-
-		return create_info;
-	}
-
-	// FIXME: need to set correct filter mode
-	edge::gfx::Filter GetSamplerFilter(int32_t filter) {
-		edge::gfx::Filter gfx_filter{ edge::gfx::Filter::eNearest };
-
-		switch (filter) {
-		case TINYGLTF_TEXTURE_FILTER_NEAREST:
-		case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
-		case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR:
-			gfx_filter = edge::gfx::Filter::eNearest;
-			break;
-		case TINYGLTF_TEXTURE_FILTER_LINEAR:
-		case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST:
-		case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR:
-			gfx_filter = edge::gfx::Filter::eLinear;
-			break;
-		default:
-			break;
-		}
-
-		return gfx_filter;
-	}
-
-	edge::gfx::SamplerAddressMode GetSamplerAddressMode(int32_t address_mode) {
-		edge::gfx::SamplerAddressMode gfx_address_mode{};
-
-		switch (address_mode) {
-		case TINYGLTF_TEXTURE_WRAP_REPEAT:
-			gfx_address_mode = edge::gfx::SamplerAddressMode::eRepeat;
-			break;
-		case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
-			gfx_address_mode = edge::gfx::SamplerAddressMode::eClampToEdge;
-			break;
-		case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
-			gfx_address_mode = edge::gfx::SamplerAddressMode::eMirror;
-			break;
-		default:
-			break;
-		}
-
-		return gfx_address_mode;
-	}
-
-	edge::gfx::SamplerCreateInfo GetSamplerCreateInfo(const tinygltf::Sampler& sampler) {
+	edge::gfx::SamplerCreateInfo get_sampler_create_info(const cgltf_sampler& sampler) {
 		edge::gfx::SamplerCreateInfo create_info{};
+		create_info.max_anisotropy = 16.0f;
 
-		create_info.min_filter = GetSamplerFilter(sampler.minFilter);
-		create_info.mag_filter = GetSamplerFilter(sampler.magFilter);
-		create_info.mip_map_mode = GetSamplerFilter(sampler.minFilter);
+		create_info.address_u = get_address_mode(sampler.wrap_s);
+		create_info.address_v = get_address_mode(sampler.wrap_t);
 
-		create_info.address_u = GetSamplerAddressMode(sampler.wrapS);
-		create_info.address_v = GetSamplerAddressMode(sampler.wrapT);
+		switch (sampler.min_filter)
+		{
+		case cgltf_filter_type_nearest_mipmap_nearest: {
+			create_info.min_filter = edge::gfx::Filter::eNearest;
+			create_info.mip_map_mode = edge::gfx::Filter::eNearest;
+		} break;
+		case cgltf_filter_type_linear_mipmap_nearest: {
+			create_info.min_filter = edge::gfx::Filter::eLinear;
+			create_info.mip_map_mode = edge::gfx::Filter::eNearest;
+		} break;
+		case cgltf_filter_type_nearest_mipmap_linear: {
+			create_info.min_filter = edge::gfx::Filter::eNearest;
+			create_info.mip_map_mode = edge::gfx::Filter::eLinear;
+		} break;
+		case cgltf_filter_type_linear_mipmap_linear: {
+			create_info.min_filter = edge::gfx::Filter::eLinear;
+			create_info.mip_map_mode = edge::gfx::Filter::eLinear;
+		} break;
+		default: break;
+		}
 
-		create_info.max_anisotropy = 16.f;
+		switch (sampler.mag_filter)
+		{
+		case cgltf_filter_type_nearest: create_info.mag_filter = edge::gfx::Filter::eNearest; break;
+		case cgltf_filter_type_linear: create_info.mag_filter = edge::gfx::Filter::eLinear; break;
+		default: break;
+		}
 
 		return create_info;
 	}
@@ -294,431 +93,405 @@ namespace engine::world
 	}
 
 	void Scene::Load(const std::string& path) {
-		tinygltf::FsCallbacks gltf_fs_callbacks;
-		gltf_fs_callbacks.user_data = this;
-		gltf_fs_callbacks.FileExists = [](const std::string& filename, void* userdata) -> bool {
-			return edge::fs::exists(filename);
-			};
-		gltf_fs_callbacks.ExpandFilePath = [](const std::string& filename, void* userdata) -> std::string {
-			std::array<char, 1024ull> buffer{};
-			return std::string(edge::fs::to_posix_path(filename, buffer));
-			};
-		gltf_fs_callbacks.GetFileSizeInBytes = [](size_t* filesize_out, std::string* err,
-			const std::string& filename, void* userdata) -> bool {
-				*filesize_out = edge::fs::file_size(filename);
-				return true;
-			};
-		gltf_fs_callbacks.ReadWholeFile = [](std::vector<uint8_t>* u8data, std::string* err,
-			const std::string& filename, void* userdata) -> bool {
-				return edge::fs::read_file(filename, *u8data);
-			};
-		gltf_fs_callbacks.WriteWholeFile = [](std::string* err, const std::string& filename,
-			const std::vector<unsigned char>& u8data, void* userdata) -> bool {
-				return edge::fs::write_file(filename, u8data);
-			};
 
-		tinygltf::TinyGLTF gltf_context;
-		gltf_context.SetFsCallbacks(gltf_fs_callbacks);
-		// TODO: Implement this function. Will be needed for glb format.
-		gltf_context.SetImageLoader([](tinygltf::Image* image, const int imageIndex,
-			std::string* err, std::string* warn, int req_width, int req_height,
-			const unsigned char* bytes, int size, void* userdata) -> bool {
-				return true;//tinygltf::LoadImageData(image, imageIndex, error, warning, req_width, req_height, bytes, size, userData);
-			}, this);
-
-		tinygltf::Model gltf_root;
-		std::string error, warning;
-		if (!gltf_context.LoadASCIIFromFile(&gltf_root, &error, &warning, path)) {
-			EDGE_LOGE("[Scene] Failed to load scene file \"{}\" with error: {}", path, error);
+		if (!edge::fs::exists(path)) {
+			EDGE_LOGE("[Scene Importer] Scene file is not exists: {}", path);
 			return;
 		}
 
-		if (!warning.empty()) {
-			EDGE_LOGW("[Scene] {}", warning);
+		std::string gltf_data_str{};
+		if (!edge::fs::read_file(path, gltf_data_str)) {
+			EDGE_LOGE("[GLTF Scene Importer] Failed to open scene file: {}", path);
+			return;
+		}
+
+		gltf_options = new cgltf_options();
+		gltf_data = new cgltf_data();
+
+		gltf_options->type = cgltf_file_type_gltf;
+		gltf_options->file.user_data = this;
+		gltf_options->file.read = [](const cgltf_memory_options* memory_options, const cgltf_file_options* file_options,
+			const char* path, cgltf_size* size, void** data) -> cgltf_result {
+				if (!edge::fs::exists(path)) {
+					return cgltf_result_file_not_found;
+				}
+
+				auto* file = edge::fs::open_file(path, edge::fs::FileModeFlag::eRead | edge::fs::FileModeFlag::eBin);
+				if (!file) {
+					return cgltf_result_file_not_found;
+				}
+
+				*size = file->size();
+				if (!(*size)) {
+					return cgltf_result_data_too_short;
+				}
+
+				*data = new uint8_t[*size];
+				file->read(*data, *size);
+
+				return cgltf_result_success;
+			};
+		gltf_options->file.release = [](const cgltf_memory_options* memory_options,
+			const cgltf_file_options* file_options, void* data) -> void {
+				delete data;
+				data = nullptr;
+			};
+
+		cgltf_result res = cgltf_parse(gltf_options, gltf_data_str.data(), gltf_data_str.size(), &gltf_data);
+		if (res != cgltf_result_success) {
+			EDGE_LOGE("[GLTF Scene Importer] Failed to load file: {}", path);
+			return;
+		}
+
+		res = cgltf_load_buffers(gltf_options, gltf_data, path.data());
+		if (res != cgltf_result_success) {
+			EDGE_LOGE("[GLTF Scene Importer] Failed to load gltf buffers: {}", path);
+			return;
+		}
+
+		res = cgltf_validate(gltf_data);
+		if (res != cgltf_result_success) {
+			EDGE_LOGE("[GLTF Scene Importer] Invalid gltf file data: {}", path);
+			return;
 		}
 
 		scene_root_directory = edge::fs::parent_path(path);
 
-		LoadGLTF(gltf_root);
-	}
-
-	void Scene::Update(float delta_time)
-	{
-		EDGE_PROFILE_ZONE_SCOPED;
-		EntityManager::update(delta_time);
-	}
-
-	void Scene::LoadGLTF(tinygltf::Model& root) {
-
-		resources.images.resize(root.images.size(), constants::invalid_index);
-		resources.samplers.resize(root.samplers.size(), constants::invalid_index);
-
-		auto load_texture = [this, &root](int32_t texture_index, interop::Texture& out_tex) -> void {
-			if (texture_index >= 0) {
-				auto& texture = root.textures[texture_index];
-				if (texture.source < 0) {
-					EDGE_LOGE("[Scene] Loading basisu textures is currently unavaliable.");
-					return;
-				}
-
-				auto& image_handle = resources.images[texture.source];
-				if (image_handle != constants::invalid_index) {
-					out_tex.texture = image_handle;
-				}
-				else {
-					auto& image = root.images[texture.source];
-
-					std::array<char, 1024ull> buffer{};
-					auto image_path = edge::fs::path_append(scene_root_directory, url_decode(image.uri), std::span(buffer));
-					image_handle = out_tex.texture = renderer.add_render_resource(image_path);
-				}
-
-				auto& sampler_handle = resources.samplers[texture.sampler];
-				if (sampler_handle != constants::invalid_index) {
-					out_tex.sampler = sampler_handle;
-				}
-				else {
-					auto sampler_create_info = GetSamplerCreateInfo(root.samplers[texture.sampler]);
-					sampler_handle = out_tex.sampler = renderer.add_render_resource(sampler_create_info);
-				}
-			}};
-
-		for (uint64_t idx = 0ull; idx < root.materials.size(); ++idx) {
-			auto& material = root.materials[idx];
-			interop::Material mat{};
-
-			// TODO: add my own ext that will contain shader EXT_material_shader or something. But in my case it will contain name in format {library}:{shader_name} and other helpfull data
-
-			// Attach base color (aka albedo)
-			load_texture(material.pbrMetallicRoughness.baseColorTexture.index, mat.base_color);
-
-			// Attach metallic roughness texture (metallic = green, roughness = blue)
-			load_texture(material.pbrMetallicRoughness.metallicRoughnessTexture.index, mat.metallic_roughness);
-
-			// Attach normal map texture
-			load_texture(material.normalTexture.index, mat.normal);
-			mat.normal_scale = static_cast<float>(material.normalTexture.scale);
-
-			// Attach baked ambient occlusion texture
-			load_texture(material.occlusionTexture.index, mat.occlusion);
-			mat.occlusion_strenth = static_cast<float>(material.occlusionTexture.strength);
-
-			// Attach emissive texture
-			load_texture(material.emissiveTexture.index, mat.emissive);
-
-			mat.emissive_factor = glm::make_vec3(material.emissiveFactor.data());
-			mat.roughness_factor = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
-			mat.metallic_factor = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
-			mat.base_color_factor = glm::make_vec4(material.pbrMetallicRoughness.baseColorFactor.data());
-
-			if (material.alphaMode.compare("BLEND") == 0) {
-				mat.alpha_mode = interop::AlphaMode::eBlend;
-			}	
-			else if (material.alphaMode.compare("MASK") == 0) {
-				mat.alpha_mode = interop::AlphaMode::eMask;
-			}
-			else {
-				mat.alpha_mode = interop::AlphaMode::eOpaque;
-			}
-
-			mat.alpha_cutoff = static_cast<float>(material.alphaCutoff);
-			mat.double_sided = material.doubleSided;
-
-			renderer.add_material(mat);
+		// Load images
+		for (const auto& image : std::span(gltf_data->images, gltf_data->images_count)) {
+			// TODO: push image name
+			std::string uri = image.uri;
+			uri.resize(cgltf_decode_uri(&uri[0]));
+			uri = scene_root_directory + "/" + uri;
+			resources.images.push_back(renderer.add_render_resource(uri));
 		}
 
-		// Loading nodes
-		const auto& scene = root.scenes[root.defaultScene > -1 ? root.defaultScene : 0];
+		// Load samplers
+		for (const auto& sampler : std::span(gltf_data->samplers, gltf_data->samplers_count)) {
+			auto create_info = get_sampler_create_info(sampler);
+			resources.samplers.push_back(renderer.add_render_resource(create_info));
+		}
+
+		auto get_texture = [this](cgltf_data* gltf, cgltf_texture* gltf_texture, interop::Texture& mat_tex) {
+			if (!gltf_texture) {
+				return;
+			}
+
+			if (gltf_texture->has_basisu) {
+				mat_tex.texture = resources.images[(uint16_t)cgltf_image_index(gltf, gltf_texture->basisu_image)];
+			}
+			else if (gltf_texture->has_webp) {
+				mat_tex.texture = resources.images[(uint16_t)cgltf_image_index(gltf, gltf_texture->webp_image)];
+			}
+			else {
+				mat_tex.texture = resources.images[(uint16_t)cgltf_image_index(gltf, gltf_texture->image)];
+			}
+
+			mat_tex.sampler = resources.samplers[(uint16_t)cgltf_sampler_index(gltf, gltf_texture->sampler)];
+		};
+
+		// Load materials 
+		for (const auto& material : std::span(gltf_data->materials, gltf_data->materials_count)) {
+			interop::Material new_material{};
+
+			if (material.has_pbr_metallic_roughness) {
+				auto& pbr_metallic_roughness = material.pbr_metallic_roughness;
+
+				get_texture(gltf_data, pbr_metallic_roughness.base_color_texture.texture, new_material.base_color);
+				new_material.base_color_factor = glm::make_vec4(pbr_metallic_roughness.base_color_factor);
+
+				get_texture(gltf_data, pbr_metallic_roughness.metallic_roughness_texture.texture, new_material.metallic_roughness);
+				new_material.metal_rough_factor.x = pbr_metallic_roughness.metallic_factor;
+				new_material.metal_rough_factor.y = pbr_metallic_roughness.roughness_factor;
+			}
+
+			get_texture(gltf_data, material.normal_texture.texture, new_material.normal);
+			get_texture(gltf_data, material.emissive_texture.texture, new_material.emissive);
+			get_texture(gltf_data, material.occlusion_texture.texture, new_material.occlusion);
+
+			new_material.emissive_factor = glm::make_vec3(material.emissive_factor);
+			if (material.has_emissive_strength) {
+				new_material.emissive_factor *= material.emissive_strength.emissive_strength;
+			}
+
+			new_material.alpha_mode = static_cast<interop::AlphaMode>(material.alpha_mode);
+			new_material.alpha_cutoff = material.alpha_cutoff;
+
+			renderer.add_material(new_material);
+		}
+
+		const auto& scene = gltf_data->scene ? *gltf_data->scene : gltf_data->scenes[0];
 		auto scene_root = EntityManager::create_root(scene.name);
 
-		for (const auto& node_index : scene.nodes)
-			LoadNode(root, scene_root, node_index);
+		for (const auto* node : std::span(scene.nodes, scene.nodes_count)) {
+			load_node(node, scene_root);
+		}
 
-		LoadAnimations(root);
-		LoadSkins(root);
+		render::GeometryBufferCreateInfo geometry_ci{};
+		geometry_ci.attribute_descriptions.emplace_back(render::VertexAttributeFlag::ePosition, edge::gfx::Format::eR16G16B16Sint);
+		geometry_ci.attribute_descriptions.emplace_back(render::VertexAttributeFlag::eTangent, edge::gfx::Format::eR16Uint);
+		geometry_ci.attribute_descriptions.emplace_back(render::VertexAttributeFlag::eNormal, edge::gfx::Format::eR32Uint);
+		geometry_ci.attribute_descriptions.emplace_back(render::VertexAttributeFlag::eTexCoord, edge::gfx::Format::eR16G16Uint);
+		geometry_ci.index_description.type = edge::gfx::IndexType::eUint32;
+
+		auto geometry_buffer_id = renderer.request_interleaved_geometry_buffer(geometry_ci);
+		auto& geometry_buffer = renderer.lookup_geometry_buffer(geometry_buffer_id);
+		geometry_buffer.add_vertex_stream_data(resources.vertices.data(), resources.vertices.size(), sizeof(interop::Vertex));
+		resources.vertices.clear();
+		geometry_buffer.add_index_stream_data(resources.indices.data(), resources.indices.size(), 4);
+		resources.indices.clear();
 
 		EntityManager::create();
 	}
 
-	void Scene::LoadNode(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index, float global_scale) {
-		const auto& node = root.nodes[node_index];
-		auto new_node = EntityManager::create_node(node.name);
+	void Scene::Update(float delta_time) {
+		EDGE_PROFILE_ZONE_SCOPED;
+		EntityManager::update(delta_time);
+	}
 
-		EDGE_LOGI("[Scene] Loadind node: {}:{}.", node.name, node_index);
+	void Scene::load_node(const cgltf_node* node, const entt::entity parent) {
+		auto new_node = EntityManager::create_node(node->name);
 
+		auto node_index = cgltf_node_index(gltf_data, node);
+		EDGE_LOGI("[Scene] Loadind node: {}:{}.", node->name, node_index);
 		node_to_entity[node_index] = new_node;
 
-		// Parse node local transform
 		auto& transform = EntityManager::get_component<ecs::TransformComponent>(new_node);
-
-		if (!node.translation.empty()) {
-			transform.lposition = glm::make_vec3(node.translation.data());
+		if (node->has_translation) {
+			transform.lposition = glm::make_vec3(node->translation);
 		}
-		if (!node.rotation.empty()) {
-			transform.lrotation = glm::make_quat(node.rotation.data());
+		if (node->has_rotation) {
+			transform.lrotation = glm::make_quat(node->rotation);
 		}
-		if (!node.scale.empty()) {
-			transform.lscale = glm::make_vec3(node.scale.data());
+		if (node->has_scale) {
+			transform.lscale = glm::make_vec3(node->scale);
 		}
-		if (!node.matrix.empty()) {
-			transform.lmodel = glm::make_mat4(node.matrix.data());
+		if (node->has_matrix) {
+			transform.lmodel = glm::make_mat4(node->matrix);
 		}
 
 		// Parse node children
-		if (!node.children.empty()) {
-			for (const auto& child_node_index : node.children)
-				LoadNode(root, node_to_entity[node_index], child_node_index);
+		for (const auto* children : std::span(node->children, node->children_count)) {
+			load_node(children, new_node);
 		}
 
-		if (node.mesh >= 0)
-			LoadMeshComponent(root, node_to_entity[node_index], node_index);
+		if (node->mesh) {
+			load_mesh(node->mesh, new_node);
+		}
 
-		if (node.camera >= 0)
-			LoadCameraComponent(root, node_to_entity[node_index], node_index);
+		if (node->camera) {
+			load_camera(node->camera, new_node);
+		}
 
-		if (node.light >= 0)
-			LoadLightComponent(root, node_to_entity[node_index], node_index);
+		if (node->light) {
+			load_light(node->light, new_node);
+		}
 
 		EntityManager::attach_child(parent, new_node);
 	}
 
-	// Calculate whole mesh bounds and encoders
-	void ComputeMeshBounds(const tinygltf::Model& root, const tinygltf::Mesh& gltf_mesh, interop::Mesh& mesh) {
-		interop::BoundingBox bb{};
-		mesh.bb_enc = glm::vec3(1.0f);
+	void optimize_geometry(std::vector<interop::RawVertex>& vertices, std::vector<uint32_t>& indices) {
+		std::vector<uint32_t> remap_buffer(vertices.size());
+		auto unique_vertices = meshopt_generateVertexRemap(remap_buffer.data(), indices.data(),
+			indices.size(), vertices.data(), vertices.size(), sizeof(interop::RawVertex));
 
-		for (const auto& gltf_primitive : gltf_mesh.primitives) {
-			// Iterate whole all accessors
-			for (const auto& [name, accessor_index] : gltf_primitive.attributes) {
-				// NOT SUPPORTED FOR NOW
-				if (name == "TEXCOORD_1")
-					continue;
+		meshopt_remapVertexBuffer(vertices.data(), vertices.data(), vertices.size(),
+			sizeof(interop::RawVertex), remap_buffer.data());
+		meshopt_remapIndexBuffer(indices.data(), indices.data(), indices.size(),
+			remap_buffer.data());
 
-				const auto& accessor = root.accessors[accessor_index];
-				auto stream = get_buffer_stream(root, accessor);
+		vertices.resize(unique_vertices);
 
-				auto attribute_type = GetVertexAttributeFlag(name);
-				if (attribute_type & render::VertexAttributeFlag::ePosition) {
-					const glm::vec3* begin = reinterpret_cast<const glm::vec3*>(stream.data);
-					const glm::vec3* end = begin + stream.count;
+		meshopt_optimizeVertexCacheFifo(indices.data(), indices.data(), indices.size(), vertices.size(), 16);
+		//meshopt_optimizeVertexCache(indices.data(), indices.data(), indices.size(), vertices.size());
+		meshopt_optimizeVertexFetch(vertices.data(), indices.data(), indices.size(),
+			vertices.data(), vertices.size(), sizeof(interop::RawVertex));
+	}
 
-					for (auto it = begin; it != end; ++it)
-					{
-						mesh.bb_enc = glm::max(mesh.bb_enc, glm::abs(*it));
-						bb.min = glm::min(bb.min, *it);
-						bb.max = glm::max(bb.max, *it);
-					}
-				}
-				else if (attribute_type & render::VertexAttributeFlag::eTexCoord) {
-					const glm::vec2* begin = reinterpret_cast<const glm::vec2*>(stream.data);
-					const glm::vec2* end = begin + stream.count;
+	uint16_t2 quantize_normal(glm::vec3 n) {
+		n /= abs(n.x) + abs(n.y) + abs(n.z);
+		float2 xy = float2(n.x, n.y);
+		xy = n.z >= 0.0f ? xy : interop::oct_wrap(xy);
+		xy = xy * 0.5f + 0.5f;
+		return uint16_t2(min(uint32_t2(round(xy * float(1 << 16))), uint32_t2((1u << 16) - 1)));
+	}
 
-					for (auto it = begin; it != end; ++it)
-					{
-						mesh.uv_enc.min = glm::min(mesh.uv_enc.min, *it);
-						mesh.uv_enc.max = glm::max(mesh.uv_enc.max, *it);
-					}
-				}
-				else
-					continue;
+	uint16_t quantize_tangent(const glm::vec4& t, const glm::vec3& n) {
+		float3 t1 = glm::normalize(interop::ortho_vec(n));
+		float3 t2 = glm::cross(n, t1);
+		float2 xy = float2(glm::dot(float3(t), t1), glm::dot(float3(t), t2));
+		float x = xy.x / (abs(xy.x) + abs(xy.y));
+		x = xy.y >= 0.0f ? x : interop::sq_wrap(x);
+		x = x * 0.25f + 0.5f;
+		uint16_t tangent_and_sign = std::min(static_cast<uint16_t>(round(x * float(1 << 15))), static_cast<uint16_t>((1u << 15) - 1));
+		tangent_and_sign |= (t.w < 0.0f) ? (1 << 15) : 0;
+		return tangent_and_sign;
+	}
+
+	void quantize_geometry(const interop::Mesh& mesh, const std::vector<interop::RawVertex>& in_vertices,
+		std::vector<interop::Vertex>& out_vertices) {
+		glm::mat3 position_encode_mat = interop::make_encode_position_matrix(mesh.bb_enc);
+		glm::mat3 normal_encode_mat = glm::transpose(glm::inverse(position_encode_mat));
+
+		for (const auto& raw_vertex : in_vertices) {
+			auto& new_vertex = out_vertices.emplace_back();
+			new_vertex.position = interop::encode_position(raw_vertex.position, mesh.bb_enc);
+			new_vertex.normal = quantize_normal(normal_encode_mat * raw_vertex.normal);
+			new_vertex.tangent = quantize_tangent(glm::vec4(normal_encode_mat * glm::vec3(raw_vertex.tangent), raw_vertex.tangent.w), raw_vertex.normal);
+			new_vertex.uv = interop::encode_texcoord(raw_vertex.uv, mesh.uv_enc);
+			new_vertex.color = interop::encode_color(raw_vertex.color);
+		}
+	}
+
+	void load_vertices(const cgltf_primitive& primitive, const glm::vec3& bb_enc, std::vector<interop::RawVertex>& vertices) {
+		std::vector<float> temp{};
+		
+		// TODO: Avoid copying to temp buffer
+		if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_position, 0)) {
+			vertices.resize(accessor->count);
+
+			if (temp.size() < accessor->count * 4) {
+				temp.resize(accessor->count * 4);
+			}
+
+			cgltf_accessor_unpack_floats(accessor, temp.data(), accessor->count * 3);
+			for (int32_t i = 0; i < accessor->count; ++i) {
+				vertices[i].position = { temp[i * 3 + 0], temp[i * 3 + 1], temp[i * 3 + 2] };
 			}
 		}
 
-		mesh.bb_enc = glm::exp2(glm::ceil(glm::log2(mesh.bb_enc)));
+		if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_normal, 0)) {
+			cgltf_accessor_unpack_floats(accessor, temp.data(), accessor->count * 3);
+			for (int32_t i = 0; i < accessor->count; ++i) {
+				vertices[i].normal = { temp[i * 3 + 0], temp[i * 3 + 1], temp[i * 3 + 2] };
+			}
+		}
+
+		// TODO: generate tangents with mikktspace
+		if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_tangent, 0)) {
+			cgltf_accessor_unpack_floats(accessor, temp.data(), accessor->count * 4);
+			for (int32_t i = 0; i < accessor->count; ++i) {
+				vertices[i].tangent = { temp[i * 4 + 0], temp[i * 4 + 1], temp[i * 4 + 2], temp[i * 4 + 3] };
+			}
+		}
+		else {
+			EDGE_LOGW("[GLTF Scene Importer] Tangent data not found, but required.");
+		}
+
+		if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_texcoord, 0)) {
+			cgltf_accessor_unpack_floats(accessor, temp.data(), accessor->count * 2);
+			for (int32_t i = 0; i < accessor->count; ++i) {
+				vertices[i].uv = { temp[i * 2 + 0], temp[i * 2 + 1] };
+			}
+		}
+	}
+
+	// Calculate whole mesh bounds and encoders
+	void compute_mesh_bounds(const cgltf_mesh* mesh, interop::Mesh& gpu_mesh) {
+		interop::BoundingBox bb{};
+		gpu_mesh.bb_enc = glm::vec3(1.0f);
+
+		for (const auto& primitive : std::span(mesh->primitives, mesh->primitives_count)) {
+			if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_position, 0)) {
+				const uint8_t* element = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset + accessor->stride;
+				const glm::vec3* begin = reinterpret_cast<const glm::vec3*>(element);
+				const glm::vec3* end = begin + accessor->count;
+
+				for (auto it = begin; it != end; ++it) {
+					gpu_mesh.bb_enc = glm::max(gpu_mesh.bb_enc, glm::abs(*it));
+					bb.min = glm::min(bb.min, *it);
+					bb.max = glm::max(bb.max, *it);
+				}
+			}
+			if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_texcoord, 0)) {
+				const uint8_t* element = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset + accessor->stride;
+				const glm::vec2* begin = reinterpret_cast<const glm::vec2*>(element);
+				const glm::vec2* end = begin + accessor->count;
+
+				for (auto it = begin; it != end; ++it) {
+					gpu_mesh.uv_enc.min = glm::min(gpu_mesh.uv_enc.min, *it);
+					gpu_mesh.uv_enc.max = glm::max(gpu_mesh.uv_enc.max, *it);
+				}
+			}
+		}
+
+		gpu_mesh.bb_enc = glm::exp2(glm::ceil(glm::log2(gpu_mesh.bb_enc)));
 
 		// Round off the minimum and the maximum of the bounding square to the next
 		// power of 2 if they are not equal to 0
 		{
 			// Select a relatively big default square size to avoid log2 NaN
-			glm::vec2 p = glm::log2(glm::max(glm::max(-mesh.uv_enc.min, mesh.uv_enc.max), 1.0f));
+			glm::vec2 p = glm::log2(glm::max(glm::max(-gpu_mesh.uv_enc.min, gpu_mesh.uv_enc.max), 1.0f));
 			glm::vec2 bs = glm::exp2(glm::ceil(p));
-			mesh.uv_enc.min = glm::mix(glm::vec2(0.0f), -bs, glm::notEqual(mesh.uv_enc.min, glm::vec2(0.0f)));
-			mesh.uv_enc.max = glm::mix(glm::vec2(0.0f), bs, glm::notEqual(mesh.uv_enc.max, glm::vec2(0.0f)));
+			gpu_mesh.uv_enc.min = glm::mix(glm::vec2(0.0f), -bs, glm::notEqual(gpu_mesh.uv_enc.min, glm::vec2(0.0f)));
+			gpu_mesh.uv_enc.max = glm::mix(glm::vec2(0.0f), bs, glm::notEqual(gpu_mesh.uv_enc.max, glm::vec2(0.0f)));
 		}
 
-		mesh.ebb = interop::encode_bounding_box(bb, mesh.bb_enc);
+		gpu_mesh.ebb = interop::encode_bounding_box(bb, gpu_mesh.bb_enc);
 	}
 
-	// Maximum vertex size
-	// position: vec3 - 12 bytes -> i16vec2 - 6 bytes
-	// texcoord: vec2 - 8 bytes -> u16vec2 - 4 bytes
-	// normal: vec3 - 12 bytes -> u16vec2 - 4 bytes
-	// tangent: vec4 - 16 bytes -> u16vec2 - 4 bytes
-	// color: vec4 - 16 bytes -> u8vec4 - 4 bytes
-	// joints: u16vec4/u8vec4 - 8 bytes/4 bytes
-	// weights: vec4 - 16 bytes -> vec3 - 12 bytes -> u16vec3 - 6 bytes
-	// Total(before): 12 + 8 + 12 + 16 + 16 + 8|4 + 16 = 84|88
-	// Total(after): 12 + 4 + 4 + 4 + 4 + 8|4 + 6 = 32|36
-
-	struct VertexData {
-		std::vector<glm::i16vec3> positions;
-		std::vector<glm::u8vec4> colors;
-		std::vector<glm::u16vec2> texcoords;
-		std::vector<glm::u16vec2> normals;
-		std::vector<glm::u16vec2> tangents;
-		// TODO: i can use uint16_t for joints by default
-		std::vector<uint8_t> joints;
-		std::vector<glm::u16vec3> weights;
-	};
-
-	template<typename _From, typename _To, typename _Pred>
-	std::span<const uint8_t> Transform(const tinygltf::Model& root, const tinygltf::Accessor& accessor, std::vector<_To>& out, _Pred&& pred) {
-		auto stream = get_buffer_stream(root, accessor);
-		assert(stream.stride == sizeof(_From) && "Incorrect _From data type size.");
-
-		auto* begin = reinterpret_cast<const _From*>(stream.data);
-		auto* end = begin + stream.count;
-
-		for (auto it = begin; it != end; ++it)
-			out.emplace_back(pred(*it));
-
-		auto* bytes_begin = reinterpret_cast<const uint8_t*>(out.data());
-		size_t bytes_count = out.size() * sizeof(_To);
-
-		return std::span<const uint8_t>(bytes_begin, bytes_count);
-	}
-
-	void Scene::LoadMeshComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index) {
+	void Scene::load_mesh(const cgltf_mesh* mesh, const entt::entity parent) {
 		auto& render_world = renderer.get_render_world();
-
-		const auto& gltf_node = root.nodes[node_index];
-		const auto& gltf_mesh = root.meshes[gltf_node.mesh];
-
-		size_t joint_count{ 0 };
-		if (gltf_node.skin != -1) {
-			const auto& skin = root.skins[gltf_node.skin];
-			joint_count = skin.joints.size();
-		}
-
-		// Create gpu mesh instance 
-		auto [mesh_id, mesh] = render_world.create_mesh(joint_count);
-		ComputeMeshBounds(root, gltf_mesh, mesh);
+		// TODO: skinning support
+		auto [mesh_id, gpu_mesh] = render_world.create_mesh(0);
+		compute_mesh_bounds(mesh, gpu_mesh);
 
 		auto& mesh_component = EntityManager::add_component<ecs::MeshComponent>(parent, ecs::MeshComponent{});
 		mesh_component.mesh = mesh_id;
-		mesh_component.skin = gltf_node.skin;
 
 		// Create encode matrices for mesh
-		glm::mat3 position_encode_mat = interop::make_encode_position_matrix(mesh.bb_enc);
+		glm::mat3 position_encode_mat = interop::make_encode_position_matrix(gpu_mesh.bb_enc);
 		glm::mat3 normal_encode_mat = glm::transpose(glm::inverse(position_encode_mat));
 
-		// Load mesh primitives
-		for (uint64_t i = 0ull; i < gltf_mesh.primitives.size(); ++i) {
-			const auto& primitive = gltf_mesh.primitives[i];
-
-			// Load vertices
-			render::GeometryBufferCreateInfo geometry_ci = GetGeometryBufferCreateInfo(root, primitive);
-			auto geometry_buffer_id = renderer.request_deinterleaved_geometry_buffer(geometry_ci);
-			auto& geometry_buffer = renderer.lookup_geometry_buffer(geometry_buffer_id);
+		for (const auto& primitive : std::span(mesh->primitives, mesh->primitives_count)) {
+			std::vector<interop::RawVertex> vertices{};
+			load_vertices(primitive, gpu_mesh.bb_enc, vertices);
 
 			interop::BoundingBox bb{};
-			VertexData vertex_data{};
-
-			uint32_t stream_count{ 0u };
-			std::array<render::AttributeStream, render::k_max_attribure_description> attribute_streams{};
-			for (const auto& [name, accessor_index] : primitive.attributes) {
-				// NOT SUPPORTED FOR NOW
-				if (name == "TEXCOORD_1")
-					continue;
-
-				const auto& accessor = root.accessors[accessor_index];
-				auto attribute_type = GetVertexAttributeFlag(name);
-
-				// Create new data stream
-				auto& attrib_stream = attribute_streams[stream_count++];
-				attrib_stream.attribute_flag = attribute_type;
-				attrib_stream.count = accessor.count;
-
-				if (attribute_type & render::VertexAttributeFlag::ePosition) {
-					attrib_stream.byte_range = Transform<glm::vec3, glm::i16vec3>(root, accessor, vertex_data.positions,
-						[&mesh](const glm::vec3& in)
-						{  return interop::encode_position(in, mesh.bb_enc); });
-
-					// Calculate bounding box for this mesh primitive
-					auto stream = get_buffer_stream(root, accessor);
-					auto* begin = reinterpret_cast<const glm::vec3*>(stream.data);
-					auto* end = begin + stream.count;
-
-					for (auto it = begin; it != end; ++it)
-					{
-						bb.min = glm::min(bb.min, *it);
-						bb.max = glm::max(bb.max, *it);
-					}
-				}
-				else if (attribute_type & render::VertexAttributeFlag::eColor) {
-					attrib_stream.byte_range = Transform<glm::vec4, glm::u8vec4>(root, accessor, vertex_data.colors,
-						[](const glm::vec4& in) { return interop::encode_color(in); });
-				}
-				else if (attribute_type & render::VertexAttributeFlag::eTexCoord) {
-					attrib_stream.byte_range = Transform<glm::vec2, glm::u16vec2>(root, accessor, vertex_data.texcoords,
-						[&mesh](const glm::vec2& in) { return interop::encode_texcoord(in, mesh.uv_enc); });
-				}
-				else if (attribute_type & render::VertexAttributeFlag::eNormal) {
-					attrib_stream.byte_range = Transform<glm::vec3, glm::u16vec2>(root, accessor, vertex_data.normals,
-						[&normal_encode_mat](const glm::vec3& in)
-						{ return interop::encode_normal(glm::normalize(normal_encode_mat * in)); });
-				}
-				else if (attribute_type & render::VertexAttributeFlag::eTangent) {
-					attrib_stream.byte_range = Transform<glm::vec4, glm::u16vec2>(root, accessor, vertex_data.tangents,
-						[&position_encode_mat](const glm::vec4& in)
-						{
-							return interop::encode_tangent(glm::vec4(glm::normalize(position_encode_mat * in), in.w));
-						});
-				}
-				// TODO: can be compressed with using u16vec3
-				else if (attribute_type & render::VertexAttributeFlag::eWeight) {
-					attrib_stream.byte_range = Transform<glm::vec4, glm::u16vec3>(root, accessor, vertex_data.weights,
-						[](const glm::vec4& in) { return interop::encode_weights(in); });
-				}
-				else {
-					// Just copy, transcoding not supported yet
-					auto stream = get_buffer_stream(root, accessor);
-					attrib_stream.byte_range = std::span<const uint8_t>(stream.data, stream.count * stream.stride);
-					attrib_stream.count = stream.count;
-				}
+			for (const auto& vertex : vertices) {
+				bb.min = glm::min(bb.min, vertex.position);
+				bb.max = glm::max(bb.max, vertex.position);
 			}
 
-			render::IndexStream index_stream{};
-			if (primitive.indices >= 0) {
-				const auto& accessor = root.accessors[primitive.indices];
-				auto stream = get_buffer_stream(root, accessor);
-
-				index_stream.byte_range = std::span<const uint8_t>(stream.data, stream.count * stream.stride);
-				index_stream.count = stream.count;
+			std::vector<uint32_t> indices{};
+			if (primitive.indices) {
+				indices.resize(primitive.indices->count);
+				cgltf_accessor_unpack_indices(primitive.indices, indices.data(), 4, indices.size());
 			}
 
-			auto vertex_range = geometry_buffer.add_mesh(attribute_streams, index_stream);
+			// Preprocess new geometry
+			optimize_geometry(vertices, indices);
 
 			interop::SubMesh submesh;
-			submesh.first_index = vertex_range.first_index;
-			submesh.index_count = vertex_range.index_count;
-			submesh.first_vertex = vertex_range.first_vertex;
-			submesh.vertex_count = vertex_range.vertex_count;
-			submesh.material = primitive.material;
-			submesh.ebb =  interop::encode_bounding_box(bb, mesh.bb_enc);
+			submesh.first_index = static_cast<uint32_t>(resources.indices.size());
+			submesh.index_count = static_cast<uint32_t>(indices.size());
+			submesh.first_vertex = static_cast<int32_t>(resources.vertices.size());
+			submesh.vertex_count = static_cast<uint32_t>(vertices.size());
+			submesh.material = cgltf_material_index(gltf_data, primitive.material);
+			submesh.ebb = interop::encode_bounding_box(bb, gpu_mesh.bb_enc);
 
 			render_world.attach_submesh(mesh_id, submesh);
+
+			quantize_geometry(gpu_mesh, vertices, resources.vertices);
+			resources.indices.insert(resources.indices.end(), indices.begin(), indices.end());
 		}
 	}
 
-	void Scene::LoadCameraComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index) {
-		const auto& node = root.nodes[node_index];
-		const auto& camera = root.cameras[node.camera];
-
+	void Scene::load_camera(const cgltf_camera* camera, const entt::entity parent) {
 		ecs::CameraComponent camera_component;
-		if (camera.type.compare("orthographic") == 0) {
+		if (camera->type == cgltf_camera_type_orthographic) {
 			camera_component.ctype = ecs::ECameraType::eOrthographic;
-			camera_component.xmag = static_cast<float>(camera.orthographic.xmag);
-			camera_component.ymag = static_cast<float>(camera.orthographic.ymag);
-			camera_component.nearPlane = static_cast<float>(camera.orthographic.znear);
-			camera_component.farPlane = static_cast<float>(camera.orthographic.zfar);
+			camera_component.xmag = camera->data.orthographic.xmag;
+			camera_component.ymag = camera->data.orthographic.ymag;
+			camera_component.nearPlane = camera->data.orthographic.znear;
+			camera_component.farPlane = camera->data.orthographic.zfar;
 		}
-		else if (camera.type.compare("perspective") == 0) {
+		else if (camera->type == cgltf_camera_type_perspective) {
 			camera_component.ctype = ecs::ECameraType::ePerspective;
-			camera_component.aspectRatio = static_cast<float>(camera.perspective.aspectRatio);
-			camera_component.fieldOfView = static_cast<float>(glm::degrees(2.0f* glm::atan(glm::tan(camera.perspective.yfov * 0.5) * camera.perspective.aspectRatio)));
-			camera_component.nearPlane = static_cast<float>(camera.perspective.znear);
-			camera_component.farPlane = static_cast<float>(camera.perspective.zfar);
+			camera_component.aspectRatio = camera->data.perspective.aspect_ratio;
+			camera_component.fieldOfView = static_cast<float>(glm::degrees(2.0f * glm::atan(glm::tan(camera->data.perspective.yfov * 0.5) * camera->data.perspective.aspect_ratio)));
+			camera_component.nearPlane = camera->data.perspective.znear;
+			camera_component.farPlane = camera->data.perspective.zfar;
 		}
 
 		EntityManager::add_component<ecs::CameraComponent>(parent, std::move(camera_component));
@@ -727,34 +500,31 @@ namespace engine::world
 		engine::render::main_camera_index = static_cast<uint32_t>(nw_camera_component.frustumID);
 	}
 
-	void Scene::LoadLightComponent(const tinygltf::Model& root, const entt::entity parent, uint32_t node_index) {
-		const auto& node = root.nodes[node_index];
-		
-		auto& light = root.lights[node.light];
-		if (light.type.compare("directional") == 0) {
+	void Scene::load_light(const cgltf_light* light, const entt::entity parent) {
+		if (light->type == cgltf_light_type_directional) {
 			ecs::DirectionalLightComponent light_component;
-			light_component.color = glm::make_vec3(light.color.data());
-			light_component.intencity = static_cast<float>(light.intensity / 638.0);
+			light_component.color = glm::make_vec3(light->color);
+			light_component.intencity = light->intensity / 638.0f;
 			EntityManager::add_component<ecs::DirectionalLightComponent>(parent, std::move(light_component));
 		}
-		else if (light.type.compare("spot") == 0) {
+		else if (light->type == cgltf_light_type_spot) {
 			ecs::SpotLightComponent light_component;
-			light_component.color = glm::make_vec3(light.color.data());
-			light_component.innerAngle = static_cast<float>(light.spot.innerConeAngle);
-			light_component.outerAngle = static_cast<float>(light.spot.outerConeAngle);
-			light_component.intencity = static_cast<float>(light.intensity / 638.0);
+			light_component.color = glm::make_vec3(light->color);
+			light_component.innerAngle = light->spot_inner_cone_angle;
+			light_component.outerAngle = light->spot_outer_cone_angle;
+			light_component.intencity = light->intensity / 638.0f;
 			EntityManager::add_component<ecs::SpotLightComponent>(parent, std::move(light_component));
 		}
-		else if (light.type.compare("point")) {
+		else if (light->type == cgltf_light_type_point) {
 			ecs::PointLightComponent light_component;
-			light_component.color = glm::make_vec3(light.color.data());
-			light_component.intencity = static_cast<float>(light.intensity / 638.0);
-			light_component.radius = static_cast<float>((std::max)(light.range, 1.0));
+			light_component.color = glm::make_vec3(light->color);
+			light_component.intencity = light->intensity / 638.0f;
+			light_component.radius = (std::max)(light->range, 1.0f);
 			EntityManager::add_component<ecs::PointLightComponent>(parent, std::move(light_component));
 		}
 	}
 
-	void Scene::LoadAnimations(const tinygltf::Model& root) {
+	/*void Scene::LoadAnimations(const tinygltf::Model& root) {
 		auto scene_root = EntityManager::get_root();
 		auto& root_component = EntityManager::get_component<ecs::RootComponent>(scene_root);
 
@@ -889,5 +659,5 @@ namespace engine::world
 		}
 
 		EDGE_LOGI("[Scene] Loaded {} skins (skeletons).", root_component.skins.size());
-	}
+	}*/
 }

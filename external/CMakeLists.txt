@@ -52,12 +52,6 @@ set(TASKFLOW_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/taskflow)
 target_sources(taskflow INTERFACE ${TASKFLOW_INCLUDE_DIR}/taskflow/taskflow.hpp)
 target_include_directories(taskflow SYSTEM INTERFACE ${TASKFLOW_INCLUDE_DIR})
 
-# tinygltf
-add_library(tinygltf INTERFACE)
-set(TINYGLTF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinygltf)
-target_sources(tinygltf INTERFACE ${TINYGLTF_DIR}/tiny_gltf.h ${TINYGLTF_DIR}/json.hpp)
-target_include_directories(tinygltf SYSTEM INTERFACE ${TINYGLTF_DIR})
-
 # vulkan
 add_library(vulkan INTERFACE)
 set(VULKAN_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vulkan/include)
@@ -400,12 +394,59 @@ add_subdirectory(tracy)
 # slang
 find_package(Slang REQUIRED)
 
+# meshoptimizer
+set(MESHOPTIMIZER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/meshoptimizer")
+set(MESHOPTIMIZER_FILES
+    "${MESHOPTIMIZER_DIR}/src/meshoptimizer.h"
+    "${MESHOPTIMIZER_DIR}/src/allocator.cpp"
+    "${MESHOPTIMIZER_DIR}/src/clusterizer.cpp"
+    "${MESHOPTIMIZER_DIR}/src/indexanalyzer.cpp"
+    "${MESHOPTIMIZER_DIR}/src/indexcodec.cpp"
+    "${MESHOPTIMIZER_DIR}/src/indexgenerator.cpp"
+    "${MESHOPTIMIZER_DIR}/src/overdrawoptimizer.cpp"
+    "${MESHOPTIMIZER_DIR}/src/partition.cpp"
+    "${MESHOPTIMIZER_DIR}/src/quantization.cpp"
+    "${MESHOPTIMIZER_DIR}/src/rasterizer.cpp"
+    "${MESHOPTIMIZER_DIR}/src/simplifier.cpp"
+    "${MESHOPTIMIZER_DIR}/src/spatialorder.cpp"
+    "${MESHOPTIMIZER_DIR}/src/stripifier.cpp"
+    "${MESHOPTIMIZER_DIR}/src/vcacheoptimizer.cpp"
+    "${MESHOPTIMIZER_DIR}/src/vertexcodec.cpp"
+    "${MESHOPTIMIZER_DIR}/src/vertexfilter.cpp"
+    "${MESHOPTIMIZER_DIR}/src/vfetchoptimizer.cpp"
+)
+
+add_library(meshoptimizer STATIC ${MESHOPTIMIZER_FILES})
+target_include_directories(meshoptimizer SYSTEM PUBLIC ${MESHOPTIMIZER_DIR}/src)
+
+# mikktspace
+set(MIKKTSPACE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/mikktspace")
+set(MIKKTSPACE_FILES
+    "${MIKKTSPACE_DIR}/mikktspace.c"
+    "${MIKKTSPACE_DIR}/mikktspace.h"
+)
+add_library(mikktspace STATIC ${MIKKTSPACE_FILES})
+target_include_directories(mikktspace SYSTEM PUBLIC ${MIKKTSPACE_DIR})
+
+# cgltf
+set(CGLTF_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cgltf")
+set(CGLTF_IMPL_C "${CMAKE_CURRENT_BINARY_DIR}/cgltf.c")
+
+file(WRITE "${CGLTF_IMPL_C}"
+"#ifndef CGLTF_IMPLEMENTATION\n"
+"#define CGLTF_IMPLEMENTATION\n"
+"#include \"cgltf.h\"\n"
+"#endif\n"
+)
+
+add_library(cgltf STATIC "${CGLTF_IMPL_C}")
+target_include_directories(cgltf SYSTEM PUBLIC ${CGLTF_DIR})
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
     glm::glm
     refl-cpp
-    tinygltf
     spdlog::spdlog
     stb
     KTX::ktx
@@ -421,6 +462,10 @@ target_link_libraries(${PROJECT_NAME}
     taskflow
 
     imgui
+
+    meshoptimizer
+    mikktspace
+    cgltf
     #vulkan
     #volk
     #vma

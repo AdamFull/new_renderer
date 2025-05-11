@@ -467,29 +467,71 @@ namespace edge::gfx
 		}
 	};
 
-	std::unique_ptr<CommandExecutor> ResourceUpdater::updater{};
-	std::unique_ptr<UploadingDispatcher> ResourceUpdater::uploading_dispatcher{};
+	std::unique_ptr<CommandExecutor> updater{};
+	std::unique_ptr<UploadingDispatcher> uploading_dispatcher{};
 
-	void ResourceUpdater::create(const ResourceUpdaterCreateInfo& create_info) {
+	auto load_texture_impl(ICommandList* cmd_list, StagingBufferAllocator& allocator, std::string path,
+		ResourceStateFlags& output_state) -> ITexture* {
+		EDGE_LOGT("[ResourceUpdater] Loading texture \"{}\"", path);
+		cmd_list->begin_marker(path, 0xFFFFFFFF);
 
+		auto texture_loader = make_texture_loader(path);
+
+		ITexture* dst_texture = texture_loader->get_texture();
+		dst_texture->set_resource_name(path);
+
+		TextureBarrierDesc texture_barrier{};
+		texture_barrier.texture = dst_texture;
+		texture_barrier.src_state = ResourceStateFlag::eUndefined;
+		texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
+
+		ResourceBarrierInfo resource_barrier{};
+		resource_barrier.texture_barriers = { &texture_barrier, 1 };
+
+		// Transfer to intermediate layout
+		cmd_list->resource_barrier(resource_barrier);
+
+		texture_loader->upload(cmd_list, allocator);
+
+		cmd_list->end_marker();
+
+		output_state = ResourceStateFlag::eCopyDst;
+
+		EDGE_LOGT("[ResourceUpdater] Loading texture \"{}\" done", path);
+
+		return dst_texture;
+	}
+
+	void make_resource_uploader(const ResourceUpdaterCreateInfo& create_info) {
 		auto update_queue = get_queue(QueueType::eDirect);
 		update_queue->set_resource_name("UPDATE");
 		updater = std::make_unique<ResourceLoader>(update_queue, create_info.update_buffer_count, create_info.update_buffer_size, "UPDATER");
 
-		//auto compute_queue = request_queue(QueueTypeFlag::eCompute, QueueTypeFlag::eGraphics);
-		//compute_queue->set_resource_name("COMPUTE_ASYNC");
-		//mip_generator = std::make_unique<MipGenerator>(compute_queue, create_info.buffer_count);
-
 		uploading_dispatcher = std::make_unique<UploadingDispatcher>(create_info.upload_buffer_size, create_info.upload_buffer_count);
 	}
 
-	void ResourceUpdater::shutdown() {
+	void shutdown_resource_uploader() {
 		updater = nullptr;
 		uploading_dispatcher = nullptr;
-		//mip_generator = nullptr;
 	}
 
-	auto ResourceUpdater::load_texture(std::string path) -> std::shared_ptr<AsyncResourceHandle> {
+	bool flush_resource_uploads(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores) {
+		SemaphoreSubmitInfo updater_semaphore{};
+		updater->flush(updater_semaphore, wait_semaphores);
+		if (updater_semaphore.semaphore)
+			signalled_semaphores.emplace_back(updater_semaphore);
+
+		bool uploads_flushed{ false };
+		SemaphoreSubmitInfo uploader_semaphore{};
+		if (uploading_dispatcher->is_sync_needed(uploader_semaphore)) {
+			signalled_semaphores.emplace_back(uploader_semaphore);
+			uploads_flushed = true;
+		}
+
+		return uploads_flushed;
+	}
+
+	auto load_texture(std::string path) -> std::shared_ptr<GFXResourcePromise> {
 		return uploading_dispatcher->submit(
 			[path](ICommandList* cmd_list, StagingBufferAllocator& allocator) -> ResourceUploadResult {
 				EDGE_PROFILE_ZONE_SCOPED;
@@ -499,7 +541,7 @@ namespace edge::gfx
 			});
 	}
 
-	auto ResourceUpdater::load_texture_sync(std::string path, ResourceStateFlags& state) -> ITexture* {
+	auto load_texture_sync(std::string path, ResourceStateFlags& state) -> ITexture* {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		ICommandList* cmd_list = updater->acquire_cmd_list();
@@ -507,11 +549,11 @@ namespace edge::gfx
 		return load_texture_impl(cmd_list, *node.allocator, path, state);
 	}
 
-	auto ResourceUpdater::sync_uploads() -> void {
+	auto sync_uploads() -> void {
 		//needs_sync.store(true, std::memory_order_relaxed);
 	}
 
-	void ResourceUpdater::update_texture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data) {
+	void update_texture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		ICommandList* cmd_list = updater->acquire_cmd_list();
@@ -553,23 +595,7 @@ namespace edge::gfx
 		cmd_list->resource_barrier(resource_barrier);
 	}
 
-	bool ResourceUpdater::flush(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores) {
-		SemaphoreSubmitInfo updater_semaphore{};
-		updater->flush(updater_semaphore, wait_semaphores);
-		if (updater_semaphore.semaphore)
-			signalled_semaphores.emplace_back(updater_semaphore);
-
-		bool uploads_flushed{ false };
-		SemaphoreSubmitInfo uploader_semaphore{};
-		if (uploading_dispatcher->is_sync_needed(uploader_semaphore)) {
-			signalled_semaphores.emplace_back(uploader_semaphore);
-			uploads_flushed = true;
-		}
-
-		return uploads_flushed;
-	}
-
-	auto ResourceUpdater::get_buffer_updater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater {
+	auto get_buffer_updater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater {
 		updater->acquire_cmd_list();
 
 		auto& node = (UploaderNode&)updater->get_active_node();
@@ -578,50 +604,14 @@ namespace edge::gfx
 		return { src_buffer, src_offset, update_size, dst_buffer };
 	}
 
-	void ResourceUpdater::submit_buffer_updater(BufferUpdater& buffer_updater, ResourceStateFlags& current_state) {
+	void submit_buffer_updater(BufferUpdater& buffer_updater, ResourceStateFlags& current_state) {
 		ICommandList* cmd_list = updater->acquire_cmd_list();
 		buffer_updater.submit(cmd_list, current_state);
 	}
 
-	void ResourceUpdater::update_buffer(IBuffer* dst_buffer, ResourceStateFlags& current_state, 
-		std::span<const uint8_t> data) {
+	void update_buffer(IBuffer* dst_buffer, ResourceStateFlags& current_state, std::span<const uint8_t> data) {
 		auto updater = get_buffer_updater(dst_buffer, data.size());
 		updater.add_region(data);
 		submit_buffer_updater(updater, current_state);
-	}
-
-	auto ResourceUpdater::load_texture_impl(ICommandList* cmd_list, StagingBufferAllocator& allocator, std::string path, 
-		ResourceStateFlags& output_state) -> ITexture* {
-		EDGE_LOGT("[ResourceUpdater] Loading texture \"{}\"", path);
-		cmd_list->begin_marker(path, 0xFFFFFFFF);
-
-		auto texture_loader = make_texture_loader(path);
-
-		ITexture* dst_texture = texture_loader->get_texture();
-		dst_texture->set_resource_name(path);
-
-		TextureBarrierDesc texture_barrier{};
-		texture_barrier.texture = dst_texture;
-		texture_barrier.src_state = ResourceStateFlag::eUndefined;
-		texture_barrier.dst_state = ResourceStateFlag::eCopyDst;
-
-		ResourceBarrierInfo resource_barrier{};
-		resource_barrier.texture_barriers = { &texture_barrier, 1 };
-
-		// Transfer to intermediate layout
-		cmd_list->resource_barrier(resource_barrier);
-
-		texture_loader->upload(cmd_list, allocator);
-
-		cmd_list->end_marker();
-
-		output_state = ResourceStateFlag::eCopyDst;
-
-		EDGE_LOGT("[ResourceUpdater] Loading texture \"{}\" done", path);
-
-		//if (texture_reader->IsNeedToGenerateMips())
-		//	resource_result.state = mip_generator->WriteCommands(dst_texture, path);
-
-		return dst_texture;
 	}
 }

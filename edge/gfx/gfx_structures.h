@@ -446,7 +446,7 @@ namespace edge
 			ResourceStateFlags state{};
 		};
 
-		struct AsyncResourceHandle {
+		struct GFXResourcePromise {
 			IGFXResource* resource{ nullptr };
 			ResourceStateFlags state{};
 			std::atomic_bool done{ false };

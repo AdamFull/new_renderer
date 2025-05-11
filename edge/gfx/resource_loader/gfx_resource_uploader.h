@@ -64,9 +64,9 @@ namespace edge::gfx
 		~UploadingDispatcher();
 
 		template<typename _Fn>
-		auto submit(_Fn&& task) -> std::shared_ptr<AsyncResourceHandle>
+		auto submit(_Fn&& task) -> std::shared_ptr<GFXResourcePromise>
 		{
-			auto handle = std::make_shared<AsyncResourceHandle>();
+			auto handle = std::make_shared<GFXResourcePromise>();
 
 			{
 				std::lock_guard lock(mutex);
@@ -115,6 +115,6 @@ namespace edge::gfx
 		size_t next_worker{ 0ull };
 		std::mutex context_mtx;
 
-		std::vector<std::shared_ptr<AsyncResourceHandle>> pending_handles{};
+		std::vector<std::shared_ptr<GFXResourcePromise>> pending_handles{};
 	};
 }

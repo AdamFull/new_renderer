@@ -86,7 +86,7 @@ namespace engine::render {
 				}
 
 				auto upload_size = std::accumulate(merged_ranges.begin(), merged_ranges.end(), 0, [](uint64_t acc, const DirtyRange& item) { return acc + item.count * sizeof(_Ty); });
-				auto updater = edge::gfx::ResourceUpdater::get_buffer_updater(buffer, upload_size);
+				auto updater = edge::gfx::get_buffer_updater(buffer, upload_size);
 
 				uint64_t src_offset{ 0ull };
 				for (const auto& range : merged_ranges) {
@@ -101,7 +101,7 @@ namespace engine::render {
 				}
 
 				edge::gfx::ResourceStateFlags resource_state{};
-				edge::gfx::ResourceUpdater::submit_buffer_updater(updater, resource_state);
+				edge::gfx::submit_buffer_updater(updater, resource_state);
 				dirty_ranges.clear();
 			}
 		}

@@ -37,6 +37,8 @@ namespace engine::render {
 		edge::gfx::IBuffer* buffer{ nullptr };
 		edge::gfx::ResourceStateFlags state{};
 		std::vector<uint8_t> data{};
+
+		edge::gfx::IndexType index_type{};
 	};
 
 	struct AttributeStream {

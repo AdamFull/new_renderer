@@ -145,20 +145,19 @@ namespace interop {
 
 	// Based on https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
 	inline float2 oct_wrap(float2 v) {
-		float2 swapped = float2(v.y, v.x);
-		float2 sign = float2(
-			select(v.x >= 0.0f, 1.0f, -1.0f),
-			select(v.y >= 0.0f, 1.0f, -1.0f)
-		);
-		return (1.0f - abs(swapped)) * sign;
+		const float2 t = 1.0f - abs(float2(v.y, v.x));
+		return float2(v.x < 0.0f ? -t.x : t.x, v.y < 0.0f ? -t.y : t.y);
 	}
 
-	inline uint16_t2 encode_normal(float3 n) {
-		n /= abs(n.x) + abs(n.y) + abs(n.z);
-		float2 xy = float2(n.x, n.y);
-		xy = select(n.z >= 0.0f, xy, oct_wrap(xy));
-		xy = xy * 0.5f + 0.5f;
-		return uint16_t2(min(uint32_t2(round(xy * float(1 << 16))), uint32_t2((1u << 16) - 1)));
+	inline float3 ortho_vec(float3 v) {
+		if (abs(v.y) > abs(v.z)) {
+			return float3(v.y, -v.x, 0.0f);
+		}
+		return float3(v.z, 0.0f, -v.x);
+	}
+
+	inline float sq_wrap(float v) {
+		return (2.0f - abs(v)) * (v >= 0.0f ? 1.0f : -1.0f);
 	}
 
 	inline float3 decode_normal(uint16_t2 n) {
@@ -169,16 +168,16 @@ namespace interop {
 		return normalize(float3(xy, z));
 	}
 
-	inline uint16_t2 encode_tangent(float4 t) {
-		uint16_t2 q = encode_normal(float3(t.x, t.y, t.z));
-		q.y = uint16_t(select(t.w == 1.0f, q.y | 1u, q.y & ~1u));
-		return q;
-	}
-
-	inline float4 decode_tangent(uint16_t2 t) {
-		float3 tangent = decode_normal(t);
-		float sign = select(bool(t.y & 1u), 1.0f, -1.0f);
-		return float4(tangent, sign);
+	inline float4 decode_tangent(uint16_t t, float3 n) {
+		float3 t1 = normalize(ortho_vec(n));
+		float3 t2 = cross(n, t1);
+		float x = (t & ((1 << 15) - 1)) / float(1 << 15);
+		x = x * 4.0f - 2.0f;
+		float y = 1.0f - abs(x);
+		x = y >= 0.0f ? x : sq_wrap(x);
+		float2 xy = normalize(float2(x, y));
+		float sign = bool(t & (1 << 15)) ? -1.0f : 1.0f;
+		return float4(t1 * xy.x + t2 * xy.y, sign);
 	}
 
 	inline uint16_t2 encode_texcoord(float2 uv, TexcoordBounds bounds) {
@@ -326,118 +325,18 @@ namespace interop {
 	};
 
 	struct Material {
-		CONSTRUCTOR(Material) {
-			alpha_mode = AlphaMode::eOpaque;
-			alpha_cutoff = 0.5f;
-
-			base_color = Texture();
-			base_color_factor = float4(1.0f);
-
-			metallic_roughness = Texture();
-			metallic_factor = 1.f;
-			roughness_factor = 1.f;
-
-			normal = Texture();
-			normal_scale = 1.f;
-
-			occlusion = Texture();
-			occlusion_strenth = 1.0f;
-
-			emissive = Texture();
-			emissive_factor = float3(0.0f);
-			_pad0 = 0.0f;
-
-			double_sided = 0u;
-
-			// KHR_materials_clearcoat
-			clearcoat_factor = 0.0f;
-			clearcoat_roughness_factor = 0.0f;
-
-			// KHR_materials_emissive_strength
-			emissive_strength = 1.0f;
-
-			// KHR_materials_ior
-			ior = 1.5f;
-				
-			// KHR_materials_iridescence
-			iridescence_factor = 0.0f;
-			iridescence_ior = 1.3f; 
-			iridescence_thickness_minimum = 100.f;
-			iridescence_thickness_maximum = 400.f;
-
-			// KHR_materials_sheen
-			float3 _pad_sheen_align;
-			sheen_color_factor = float3(0.0f);
-			sheen_roughness_factor = 0.0f;
-
-			// KHR_materials_specular
-			specular_factor = 1.0f;
-			specular_color_factor = float3(1.0f);
-
-			// KHR_materials_transmission
-			transmission_factor = 0.0f;
-
-			// KHR_materials_volume
-			thickness_factor = 0.0f;
-			attenuation_distance = constants::flt_inf;
-			attenuation_color = float3(1.0f);
-		}
-
-		float4 base_color_factor;
-
-		AlphaMode alpha_mode;
-		float alpha_cutoff;
-
 		Texture base_color;
-
-		Texture metallic_roughness;
-		float metallic_factor;
-		float roughness_factor;
-
 		Texture normal;
-		float normal_scale;
-
+		Texture metallic_roughness;
 		Texture occlusion;
-		float occlusion_strenth;
 
+		float3 emissive_factor = float3(0.0f, 0.0f, 0.0f);
 		Texture emissive;
-		float emissive_strength; // KHR_materials_emissive_strength
-		float3 emissive_factor;
 
-		uint32_t double_sided;
-
-		// KHR_materials_clearcoat
-		float clearcoat_factor;
-		float clearcoat_roughness_factor;
-
-		// KHR_materials_ior
-		float ior;
-
-		// KHR_materials_iridescence
-		float iridescence_factor;
-		float iridescence_ior;
-		float iridescence_thickness_minimum;
-		float iridescence_thickness_maximum;
-
-		// KHR_materials_sheen
-		float sheen_roughness_factor;
-		float3 sheen_color_factor;
-
-		// KHR_materials_transmission
-		float transmission_factor;
-
-		// KHR_materials_volume
-		float thickness_factor;
-		float attenuation_distance;
-
-		// KHR_materials_specular
-		float specular_factor;
-		float _pad0;
-		float3 specular_color_factor;
-		float _pad1;
-	
-		float3 attenuation_color;
-		float _pad2;
+		float4 base_color_factor = float4(1.0f, 1.0f, 1.0f, 1.0f);
+		float2 metal_rough_factor = float2(1.0f, 1.0f);
+		float alpha_cutoff = 0.5f;
+		AlphaMode alpha_mode = AlphaMode::eOpaque;
 	};
 
 	enum class LightType {
@@ -578,92 +477,46 @@ namespace interop {
 		uint32_t sorting_order;
 	};
 
-	
-
-	struct EncodedVertex {
-		int16_t3 position;
-		uint8_t4 color;
-		uint16_t2 uv;
-		uint16_t2 normal;
-		uint16_t2 tangent;
-
-		jounts_t joints;
-		uint16_t3 weights;
-	};
-
-	struct DecodedVertex {
+	struct RawVertex {
 		float3 position;
 		float3 normal;
 		float4 tangent;
-		float2 uv;
 		float4 color;
-
-		jounts_t joints;
-		float4 weights;
-
-		CONSTRUCTOR(DecodedVertex) {
-
-		}
-
-		CONSTRUCTOR(DecodedVertex, EncodedVertex enc_vert, TexcoordBounds uv_bb) {
-			position = decode_position(enc_vert.position);
-			normal = decode_normal(enc_vert.normal);
-			tangent = decode_tangent(enc_vert.tangent);
-			uv = decode_texcoord(enc_vert.uv, uv_bb);
-			color = decode_color(enc_vert.color);
-			joints = enc_vert.joints;
-			weights = decode_weights(enc_vert.weights);
-		}
+		float2 uv;
 	};
 
-	struct DecodedTriangle {
-		DecodedVertex verts[3];
+	struct Vertex {
+		int16_t3 position;
+		uint16_t tangent;
+		uint16_t2 normal;
+		uint16_t2 uv;
+		uint8_t4 color;
+	};
+
+	struct Triangle {
+		RawVertex vertices[3];
 	};
 
 	struct EncodedGeometryData {
-		TYPE_PTR(int16_t3) position;
-		TYPE_PTR(uint8_t4) color;
-		TYPE_PTR(uint16_t2) texcoord;
-		TYPE_PTR(uint16_t2) normal;
-		TYPE_PTR(uint16_t2) tangent;
-
-		TYPE_PTR(jounts_t) joints;
-		TYPE_PTR(uint16_t3) weights;
-
+		TYPE_PTR(Vertex) vertices;
 		TYPE_PTR(sindex_t) indices;
 
 		TYPE_PTR(DrawDescription) draw_descriptions_ptr;
 		TYPE_PTR(DrawIndexedIndirectData) draw_data_ptr;
 
-		inline EncodedVertex get_enc_vertex(uint32_t vertex_index) {
-			EncodedVertex enc_vert;
+		inline RawVertex get_vertex(uint32_t vertex_index, TexcoordBounds uv_bb) {
+			Vertex enc_vertex = vertices[vertex_index];
 
-			if (position)
-				enc_vert.position = position[vertex_index];
-			if (color)
-				enc_vert.color = color[vertex_index];
-			if (texcoord)
-				enc_vert.uv = texcoord[vertex_index];
-			if (normal)
-				enc_vert.normal = normal[vertex_index];
-			if (tangent)
-				enc_vert.tangent = tangent[vertex_index];
-
-			if (joints)
-				enc_vert.joints = joints[vertex_index];
-			if (weights)
-				enc_vert.weights = weights[vertex_index];
-
-			return enc_vert;
+			RawVertex vertex;
+			vertex.position = decode_position(enc_vertex.position);
+			vertex.normal = decode_normal(enc_vertex.normal);
+			vertex.tangent = decode_tangent(enc_vertex.tangent, vertex.normal);
+			vertex.uv = decode_texcoord(enc_vertex.uv, uv_bb);
+			return vertex;
 		}
 
-		inline DecodedVertex get_dec_vertex(uint32_t vertex_index, TexcoordBounds uv_bb) {
-			EncodedVertex enc_vert = get_enc_vertex(vertex_index);
-			return DecodedVertex(enc_vert, uv_bb);
-		}
-
-		inline DecodedTriangle get_dec_triangle(uint32_t draw_id, uint32_t prim_id, TexcoordBounds uv_bb) {
-			DecodedTriangle triangle;
+		inline Triangle get_triangle(uint32_t draw_id, uint32_t prim_id, TexcoordBounds uv_bb) {
+			Triangle triangle;
 
 			DrawIndexedIndirectData draw_command = draw_data_ptr[draw_id];
 
@@ -680,9 +533,9 @@ namespace interop {
 			sindex_t tri_vert1_index = indices[tri_vert2_index_buffer_position];
 			sindex_t tri_vert2_index = indices[tri_vert3_index_buffer_position];
 
-			triangle.verts[0] = get_dec_vertex(tri_vert0_index + draw_command.vertex_offset, uv_bb);
-			triangle.verts[1] = get_dec_vertex(tri_vert1_index + draw_command.vertex_offset, uv_bb);
-			triangle.verts[2] = get_dec_vertex(tri_vert2_index + draw_command.vertex_offset, uv_bb);
+			triangle.vertices[0] = get_vertex(tri_vert0_index + draw_command.vertex_offset, uv_bb);
+			triangle.vertices[1] = get_vertex(tri_vert1_index + draw_command.vertex_offset, uv_bb);
+			triangle.vertices[2] = get_vertex(tri_vert2_index + draw_command.vertex_offset, uv_bb);
 
 			return triangle;
 		}

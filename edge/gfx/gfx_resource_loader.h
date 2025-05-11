@@ -7,7 +7,6 @@
 #include <condition_variable>
 #include <memory>
 
-#include "gfx_common.h"
 #include "gfx_structures.h"
 
 namespace edge::gfx {
@@ -24,9 +23,9 @@ namespace edge::gfx {
 
 		void add_region(std::span<const uint8_t> data);
 		void insert_region(std::span<const uint8_t> data, uint64_t dst_offset);
-	private:
 		void submit(ICommandList* command_list, ResourceStateFlags& current_state);
 
+	private:
 		CopyBufferInfo copy_buffer_info{};
 		uint64_t src_region_size;
 		uint64_t src_offset{ 0ull };
@@ -59,30 +58,18 @@ namespace edge::gfx {
 		uint32_t upload_buffer_count{ 2u };
 	};
 
-	class ResourceUpdater {
-	public:
-		static void create(const ResourceUpdaterCreateInfo& create_info);
-		static void shutdown();
+	void make_resource_uploader(const ResourceUpdaterCreateInfo& create_info);
+	void shutdown_resource_uploader();
 
-		static bool flush(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores);
+	bool flush_resource_uploads(std::vector<SemaphoreSubmitInfo>& signalled_semaphores, std::span<SemaphoreSubmitInfo> wait_semaphores);
 
-		static auto load_texture(std::string path) -> std::shared_ptr<AsyncResourceHandle>;
-		static auto load_texture_sync(std::string path, ResourceStateFlags& state) -> ITexture*;
-		static auto sync_uploads() -> void;
+	auto load_texture(std::string path) -> std::shared_ptr<GFXResourcePromise>;
+	auto load_texture_sync(std::string path, ResourceStateFlags& state) -> ITexture*;
+	auto sync_uploads() -> void;
 
-		static void update_texture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data);
+	void update_texture(ITexture* dst_texture, ResourceStateFlags& current_state, std::span<const uint8_t> data);
 
-		static auto get_buffer_updater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater;
-		static void submit_buffer_updater(BufferUpdater& updater, ResourceStateFlags& current_state);
-		static void update_buffer(IBuffer* dst_buffer, ResourceStateFlags& current_state, std::span<const uint8_t> data);
-
-		//static auto get_texture_updater(ITexture* dst_texture, uint64_t update_size) -> TextureUpdater;
-	private:
-		static auto load_texture_impl(ICommandList* cmd_list, StagingBufferAllocator& allocator, std::string path, ResourceStateFlags& output_state) -> ITexture*;
-
-		static std::unique_ptr<CommandExecutor> updater;
-		//static std::unique_ptr<CommandExecutor> uploader;
-		//static std::unique_ptr<MipGenerator> mip_generator;
-		static std::unique_ptr<UploadingDispatcher> uploading_dispatcher;
-	};
+	auto get_buffer_updater(IBuffer* dst_buffer, uint64_t update_size) -> BufferUpdater;
+	void submit_buffer_updater(BufferUpdater& updater, ResourceStateFlags& current_state);
+	void update_buffer(IBuffer* dst_buffer, ResourceStateFlags& current_state, std::span<const uint8_t> data);
 }

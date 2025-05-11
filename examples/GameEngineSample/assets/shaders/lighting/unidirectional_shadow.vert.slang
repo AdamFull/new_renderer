@@ -59,9 +59,9 @@ VSOutput main(uint32_t vertex_index: SV_VertexID,
 #endif
 
     output.material = submesh.material;
-    output.pos = mul(model_matrix, float4(interop::decode_position(egd.position[vertex_index]), 1.0));
+    output.pos = mul(model_matrix, float4(interop::decode_position(egd.vertices[vertex_index].position), 1.0));
     output.pos = float4(output.pos.xyz / output.pos.w, 1.0);
-    output.texcoord = interop::decode_texcoord(egd.texcoord[vertex_index], mesh.uv_enc);
+    output.texcoord = interop::decode_texcoord(egd.vertices[vertex_index].uv, mesh.uv_enc);
     output.position = mul(view_projection, output.pos);
 
     return output;

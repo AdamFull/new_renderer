@@ -130,7 +130,7 @@ namespace edge::gfx
 		while (!should_stop.load(std::memory_order_relaxed)) {
 			// Wait for new jobs
 			tf::Taskflow local_jobs{};
-			std::vector<std::shared_ptr<AsyncResourceHandle>> local_handles;
+			std::vector<std::shared_ptr<GFXResourcePromise>> local_handles;
 			{
 				std::unique_lock lock(mutex);
 				cv.wait(lock, [&] { return !pending_jobs.empty() || should_stop.load(std::memory_order_relaxed); });

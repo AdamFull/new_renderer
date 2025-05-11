@@ -172,7 +172,7 @@ namespace engine::render {
 
 		uint8_t dummy_data[64] = { 0 };
 		edge::gfx::ResourceStateFlags resource_state{};
-		edge::gfx::ResourceUpdater::update_texture(dummy_texture, resource_state, dummy_data);
+		edge::gfx::update_texture(dummy_texture, resource_state, dummy_data);
 
 		// Create uniform pool
 		global_uniform_pool = std::make_unique<UniformPool>();
@@ -233,7 +233,7 @@ namespace engine::render {
 		auto& new_resource = render_resources.emplace_back();
 		new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 
-		edge::gfx::ITexture* texture = edge::gfx::ResourceUpdater::load_texture_sync(path.data(), new_resource.current_state);
+		edge::gfx::ITexture* texture = edge::gfx::load_texture_sync(path.data(), new_resource.current_state);
 		new_resource.resource_id = static_textures.add(TextureObject{ texture });
 
 		return static_cast<uint32_t>(render_resources.size() - 1ull);
@@ -243,7 +243,7 @@ namespace engine::render {
 		auto& new_resource = render_resources.emplace_back();
 		new_resource.resource_type = RenderResourceTypeFlag::eStaticImage;
 		new_resource.resource_id = static_textures.add(TextureObject{ dummy_texture });
-		pending_resources.emplace_back(std::make_pair(edge::gfx::ResourceUpdater::load_texture(path.data()), (uint32_t)(render_resources.size() - 1ull)));
+		pending_resources.emplace_back(std::make_pair(edge::gfx::load_texture(path.data()), (uint32_t)(render_resources.size() - 1ull)));
 
 		return static_cast<uint32_t>(render_resources.size() - 1ull);
 	}
@@ -262,7 +262,7 @@ namespace engine::render {
 		texture_create_info.format = create_info.format;
 
 		edge::gfx::ITexture* texture = edge::gfx::create_texture(texture_create_info);
-		edge::gfx::ResourceUpdater::update_texture(texture, new_resource.current_state, texture_data);
+		edge::gfx::update_texture(texture, new_resource.current_state, texture_data);
 		new_resource.resource_id = static_textures.add(TextureObject{ texture });
 
 		//new_resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
@@ -594,7 +594,7 @@ namespace engine::render {
 
 		std::vector<edge::gfx::SemaphoreSubmitInfo> wait_semaphores{};
 		wait_semaphores.emplace_back(acquired_semaphore, 0ull, edge::gfx::StageFlag::eColorAttachmentOutput);
-		edge::gfx::ResourceUpdater::flush(wait_semaphores, {});
+		edge::gfx::flush_resource_uploads(wait_semaphores, {});
 
 		// Finish performance query
 		current_command_list->end_query(timestamp_query, 1u);

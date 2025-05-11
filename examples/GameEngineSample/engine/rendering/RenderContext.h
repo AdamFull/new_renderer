@@ -90,7 +90,7 @@ namespace engine::render {
 		//vk::SurfaceTransformFlagBitsKHR pre_transform{ vk::SurfaceTransformFlagBitsKHR::eIdentity };
 
 		edge::gfx::ITexture* dummy_texture{ nullptr };
-		std::vector<std::pair<std::shared_ptr<edge::gfx::AsyncResourceHandle>, uint32_t>> pending_resources;
+		std::vector<std::pair<std::shared_ptr<edge::gfx::GFXResourcePromise>, uint32_t>> pending_resources;
 
 		RenderFrame* current_frame{ nullptr };
 		edge::gfx::IDescriptorLayout* global_descriptor{ nullptr };

@@ -8,7 +8,21 @@
 namespace engine::render {
 	inline auto get_vertex_format_size_bytes(edge::gfx::Format format) -> uint32_t {
 		switch (format) {
+		case edge::gfx::Format::eR8G8Uint:
+		case edge::gfx::Format::eR8G8Unorm:
+		case edge::gfx::Format::eR16Uint:
+		case edge::gfx::Format::eR16Sint:
+		case edge::gfx::Format::eR16Sfloat: return 2u; break;
+		case edge::gfx::Format::eR32Uint:
+		case edge::gfx::Format::eR32Sint:
+		case edge::gfx::Format::eR32Sfloat:
+		case edge::gfx::Format::eR16G16Uint:
+		case edge::gfx::Format::eR16G16Sint:
+		case edge::gfx::Format::eR16G16Sfloat:
 		case edge::gfx::Format::eR8G8B8A8Unorm: return 4u; break;
+		case edge::gfx::Format::eR16G16B16Uint: 
+		case edge::gfx::Format::eR16G16B16Sint: 
+		case edge::gfx::Format::eR16G16B16Sfloat: return 6u; break;
 		case edge::gfx::Format::eR32G32Sfloat:
 		case edge::gfx::Format::eR16G16B16A16Unorm: return 8u; break;
 		case edge::gfx::Format::eR32G32B32Sfloat: return 12u; break;
@@ -87,7 +101,7 @@ namespace engine::render {
 				command_list.resource_barrier(resource_barrier);
 			}
 
-			command_list.bind_index_buffer(index_data.buffer, edge::gfx::IndexType::eUint16, 0ull);
+			command_list.bind_index_buffer(index_data.buffer, index_data.index_type, 0ull);
 		}
 	}
 
@@ -124,7 +138,7 @@ namespace engine::render {
 			geometry_data.buffer = edge::gfx::create_buffer(create_info);
 		}
 
-		edge::gfx::ResourceUpdater::update_buffer(geometry_data.buffer, geometry_data.state, geometry_data.data);
+		edge::gfx::update_buffer(geometry_data.buffer, geometry_data.state, geometry_data.data);
 	}
 
 
@@ -147,7 +161,7 @@ namespace engine::render {
 		binding.binding = 0;
 		binding.stride = offset;
 
-		//index_data.type = create_info.index_description.type;
+		index_data.index_type = create_info.index_description.type;
 	}
 
 	InterleavedGeometryBuffer::~InterleavedGeometryBuffer() {
