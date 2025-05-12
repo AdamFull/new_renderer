@@ -90,6 +90,16 @@ namespace engine::world {
 	}
 
 	Scene::~Scene() {
+		if (gltf_data) {
+			cgltf_free(gltf_data);
+			delete gltf_data;
+			gltf_data = nullptr;
+		}
+
+		if (gltf_options) {
+			delete gltf_options;
+			gltf_options = nullptr;
+		}
 	}
 
 	void Scene::Load(const std::string& path) {
@@ -343,35 +353,40 @@ namespace engine::world {
 		}
 	}
 
+	template<typename _Ty>
+	void get_range_by_accessor(const cgltf_accessor* accessor, const _Ty*& begin, const _Ty*& end) {
+		const uint8_t* element = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
+		begin = reinterpret_cast<const _Ty*>(element);
+		end = begin + accessor->count;
+	}
+
 	void load_vertices(const cgltf_primitive& primitive, const glm::vec3& bb_enc, std::vector<interop::RawVertex>& vertices) {
-		std::vector<float> temp{};
-		
 		// TODO: Avoid copying to temp buffer
 		if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_position, 0)) {
 			vertices.resize(accessor->count);
 
-			if (temp.size() < accessor->count * 4) {
-				temp.resize(accessor->count * 4);
-			}
-
-			cgltf_accessor_unpack_floats(accessor, temp.data(), accessor->count * 3);
-			for (int32_t i = 0; i < accessor->count; ++i) {
-				vertices[i].position = { temp[i * 3 + 0], temp[i * 3 + 1], temp[i * 3 + 2] };
+			const glm::vec3* begin{}; const glm::vec3* end{};
+			get_range_by_accessor(accessor, begin, end);
+			for (auto it = begin; it != end; ++it) {
+				vertices[std::distance(begin, it)].position = *it;
 			}
 		}
 
 		if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_normal, 0)) {
-			cgltf_accessor_unpack_floats(accessor, temp.data(), accessor->count * 3);
-			for (int32_t i = 0; i < accessor->count; ++i) {
-				vertices[i].normal = { temp[i * 3 + 0], temp[i * 3 + 1], temp[i * 3 + 2] };
+			const glm::vec3* begin{}; const glm::vec3* end{};
+			get_range_by_accessor(accessor, begin, end);
+			for (auto it = begin; it != end; ++it) {
+				vertices[std::distance(begin, it)].normal = *it;
 			}
 		}
 
 		// TODO: generate tangents with mikktspace
 		if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_tangent, 0)) {
-			cgltf_accessor_unpack_floats(accessor, temp.data(), accessor->count * 4);
-			for (int32_t i = 0; i < accessor->count; ++i) {
-				vertices[i].tangent = { temp[i * 4 + 0], temp[i * 4 + 1], temp[i * 4 + 2], temp[i * 4 + 3] };
+			assert(cgltf_num_components(accessor->type) == 4);
+			const glm::vec4* begin{}; const glm::vec4* end{};
+			get_range_by_accessor(accessor, begin, end);
+			for (auto it = begin; it != end; ++it) {
+				vertices[std::distance(begin, it)].tangent = *it;
 			}
 		}
 		else {
@@ -379,9 +394,27 @@ namespace engine::world {
 		}
 
 		if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_texcoord, 0)) {
-			cgltf_accessor_unpack_floats(accessor, temp.data(), accessor->count * 2);
-			for (int32_t i = 0; i < accessor->count; ++i) {
-				vertices[i].uv = { temp[i * 2 + 0], temp[i * 2 + 1] };
+			const glm::vec2* begin{}; const glm::vec2* end{};
+			get_range_by_accessor(accessor, begin, end);
+			for (auto it = begin; it != end; ++it) {
+				vertices[std::distance(begin, it)].uv = *it;
+			}
+		}
+
+		if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_color, 0)) {
+			if (cgltf_num_components(accessor->type) == 3) {
+				const glm::vec3* begin{}; const glm::vec3* end{};
+				get_range_by_accessor(accessor, begin, end);
+				for (auto it = begin; it != end; ++it) {
+					vertices[std::distance(begin, it)].color = glm::vec4(*it, 1.0f);
+				}
+			}
+			else if (cgltf_num_components(accessor->type) == 4) {
+				const glm::vec4* begin{}; const glm::vec4* end{};
+				get_range_by_accessor(accessor, begin, end);
+				for (auto it = begin; it != end; ++it) {
+					vertices[std::distance(begin, it)].color = *it;
+				}
 			}
 		}
 	}
@@ -393,9 +426,8 @@ namespace engine::world {
 
 		for (const auto& primitive : std::span(mesh->primitives, mesh->primitives_count)) {
 			if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_position, 0)) {
-				const uint8_t* element = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset + accessor->stride;
-				const glm::vec3* begin = reinterpret_cast<const glm::vec3*>(element);
-				const glm::vec3* end = begin + accessor->count;
+				const glm::vec3* begin{}; const glm::vec3* end{};
+				get_range_by_accessor(accessor, begin, end);
 
 				for (auto it = begin; it != end; ++it) {
 					gpu_mesh.bb_enc = glm::max(gpu_mesh.bb_enc, glm::abs(*it));
@@ -404,9 +436,8 @@ namespace engine::world {
 				}
 			}
 			if (const cgltf_accessor* accessor = cgltf_find_accessor(&primitive, cgltf_attribute_type_texcoord, 0)) {
-				const uint8_t* element = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset + accessor->stride;
-				const glm::vec2* begin = reinterpret_cast<const glm::vec2*>(element);
-				const glm::vec2* end = begin + accessor->count;
+				const glm::vec2* begin{}; const glm::vec2* end{};
+				get_range_by_accessor(accessor, begin, end);
 
 				for (auto it = begin; it != end; ++it) {
 					gpu_mesh.uv_enc.min = glm::min(gpu_mesh.uv_enc.min, *it);
