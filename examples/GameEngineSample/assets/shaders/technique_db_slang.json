@@ -1,12 +1,5 @@
 [
   {
-    "name": "assemble_commands",
-    "type": "compute",
-    "stages": [
-      { "path": "/internal_res/assets/shaders/culling/assemble_commands.comp.slang" }
-    ]
-  },
-  {
     "name": "cull_and_batch",
     "type": "compute",
     "stages": [
@@ -30,11 +23,11 @@
     "stages": [
       {
         "path": "/internal_res/assets/shaders/deferred/visbufferwrite.vert.slang",
-        "def": [ "HAS_TEXCOORD", "HAS_NORMAL", "HAS_TANGENT" ]
+        "def": [ "INDEX_16BIT" ]
       },
       {
         "path": "/internal_res/assets/shaders/deferred/visbufferwrite.frag.slang",
-        "def": [ "HAS_TEXCOORD", "HAS_NORMAL", "HAS_TANGENT" ]
+        "def": [ "INDEX_16BIT" ]
       }
     ],
     "attachments": [
@@ -58,7 +51,7 @@
     "stages": [
       {
         "path": "/internal_res/assets/shaders/deferred/material_pass_base.comp.slang",
-        "def": [ "LIGHT_DATA", "SHADOW_DATA", "HAS_TEXCOORD", "HAS_NORMAL", "HAS_TANGENT" ]
+        "def": [ "LIGHT_DATA", "INDEX_16BIT" ]
       }
     ]
   },
@@ -114,11 +107,11 @@
     "stages": [
       {
         "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.vert.slang",
-        "def": [ "CASCADED_SHADOW", "HAS_TEXCOORD", "HAS_NORMAL", "HAS_TANGENT" ]
+        "def": [ "CASCADED_SHADOW", "INDEX_16BIT" ]
       },
       {
         "path": "/internal_res/assets/shaders/lighting/unidirectional_shadow.frag.slang",
-        "def": [ "CASCADED_SHADOW", "HAS_TEXCOORD", "HAS_NORMAL", "HAS_TANGENT" ]
+        "def": [ "CASCADED_SHADOW", "INDEX_16BIT" ]
       }
     ],
     "depth_stencil": {

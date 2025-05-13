@@ -257,7 +257,7 @@ namespace engine::render {
 
 		// Register slots for model matrix, old model matrix and normal matrix
 		mesh.matrix_offset = matrices_offset;
-		matrices_offset += 3ull;
+		matrices_offset += 2ull;
 
 		mesh.skin_offset = (joint_count == 0u ? ~0u : matrices_offset);
 		matrices_offset += joint_count;
@@ -276,12 +276,10 @@ namespace engine::render {
 		auto& mesh = world_meshes->get(world_resource.resource_id);
 
 		auto* matrices = world_matrices->data(mesh.matrix_offset);
-		world_matrices->mark_dirty(mesh.matrix_offset, 3ull);
+		world_matrices->mark_dirty(mesh.matrix_offset, 2ull);
 
 		matrices[constants::old_model_matrix_offset] = matrices[constants::model_matrix_offset];
 		matrices[constants::model_matrix_offset] = matrix * interop::make_decode_position_matrix(mesh.bb_enc);
-		// TODO: can be calculated in shader: (https://github.com/graphitemaster/normals_revisited)
-		matrices[constants::normal_matrix_offset] = glm::inverse(glm::transpose(matrices[constants::model_matrix_offset]));
 	}
 
 	void RenderWorld::update_joint_matrices(uint32_t mesh_id, std::span<const glm::mat4> joints) {
@@ -296,16 +294,13 @@ namespace engine::render {
 		std::memcpy(static_cast<void*>(matrices), joints.data(), joints.size() * sizeof(glm::mat4));
 	}
 
-	void RenderWorld::attach_submesh(uint32_t mesh_id, const interop::SubMesh& submesh) {
-		auto& world_resource = world_resources[mesh_id];
-		assert(world_resource.type == WorldResourceType::eMesh);
+	void RenderWorld::add_submeshes(std::span<const interop::SubMesh> submeshes) {
+		for (int32_t i = 0; i < submeshes.size(); ++i) {
+			world_submeshes->get(submesh_count + i) = submeshes[i];
+		}
 
-		auto& mesh = world_meshes->get(world_resource.resource_id);
-		mesh.submesh_count++;
-
-		uint32_t submesh_index = submesh_count++;
-		world_submeshes->get(submesh_index) = submesh;
-		world_submeshes->mark_dirty(submesh_index);
+		world_submeshes->mark_dirty(submesh_count, submeshes.size());
+		submesh_count += submeshes.size();
 	}
 
 	const interop::Mesh& RenderWorld::get_mesh(uint32_t index) {

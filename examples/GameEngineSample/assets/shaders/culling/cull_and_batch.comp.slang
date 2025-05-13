@@ -23,6 +23,52 @@ inline bool check_mesh_in_frustum(in interop::BoundingBox bb, in uint32_t frustu
     return true;
 }
 
+inline float calculate_screen_size(in float3 center, in float radius, in float4x4 view_proj_matrix, in float2 screen_size) {
+    // Transform the center of the bounding sphere to clip space
+    float4 clip_pos = mul(view_proj_matrix, float4(center, 1.0f));
+
+    // Calculate projected radius
+    float w = clip_pos.w;
+
+    // Avoid division by zero
+    if (w <= 0.0f) {
+        return 0.0f;
+    }
+
+    // Project radius to screen space
+    float projected_radius = radius / w;
+
+    // Calculate screen size as a fraction of the screen
+    float screen_radius = projected_radius * min(screen_size.x, screen_size.y) * 0.5f;
+
+    return screen_radius;
+}
+
+inline uint32_t select_mesh_lod(in interop::Camera camera, in interop::BoundingBox bb, in interop::SubMesh submesh) {
+    float3 center = (bb.min + bb.max) * 0.5;
+    float radius = length(bb.max - center);
+
+    float distance = length(camera.position - center);
+
+    // Define desired screen-space error (in pixels)
+    float tau = 1.0f;
+
+    // Compute LOD selection threshold
+    float threshold = (tau * distance * 2.0f * tan(camera.fov / 2.0f)) / camera.size.y;
+
+    // Select the appropriate LOD
+    uint selected_lod = 0;
+    for (uint i = 1; i < submesh.lod_count; i++) {
+        interop::MeshLod lod = submesh.lods[i];
+        if (lod.error > threshold) {
+            break;
+        }
+        selected_lod = i;
+    }
+
+    return selected_lod;
+}
+
 [shader("compute")]
 [numthreads(64, 1, 1)]
 void main(uint32_t3 global_id: SV_DispatchThreadID) {
@@ -45,19 +91,19 @@ void main(uint32_t3 global_id: SV_DispatchThreadID) {
 
     interop::Camera camera = g_fd.camera_ptr[draw_info.camera_index];
     if (check_mesh_in_frustum(submesh_bb, camera.frustum_offset)) {
-        interop::Mesh mesh = g_fd.mesh_ptr[draw_info.mesh_index];
-        interop::SubMesh submesh = g_fd.submesh_ptr[mesh.submesh_offset + draw_info.submesh_index];
+        uint32_t lod_index = select_mesh_lod(camera, submesh_bb, submesh);
+        interop::MeshLod selected_lod = submesh.lods[lod_index];
 
         interop::DrawIndexedIndirectData indirect_command;
-        indirect_command.index_count = submesh.index_count;
+        indirect_command.index_count = selected_lod.index_count;
         indirect_command.instance_count = 1;
-        indirect_command.first_index = submesh.first_index;
+        indirect_command.first_index = selected_lod.first_index;
         indirect_command.vertex_offset = submesh.first_vertex;
         indirect_command.first_instance = 0;
 
         pc.output_draw_indirect_ptr[global_draw_index] = indirect_command;
     }
     else {
-        pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;;
+        pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;
     }
 }

@@ -111,6 +111,11 @@ typedef uint32_t sindex_t;
 #endif
 
 namespace interop {
+	// From: https://github.com/graphitemaster/normals_revisited
+	inline float3x3 adjugate(float3x3 m) {
+		return float3x3(cross(m[1], m[2]), cross(m[2], m[0]), cross(m[0], m[1]));
+	}
+
 	struct TexcoordBounds {
 		float2 min;
 		float2 max;
@@ -272,24 +277,21 @@ namespace interop {
 	}
 
 	struct MeshLod {
-		uint32_t firstIndex;
-		uint32_t indexCount;
-		uint32_t firstVertex;
-		uint32_t vertexCount;
+		uint32_t first_index;
+		uint32_t index_count;
+		float error;
 	};
 
 	struct SubMesh {
 		uint32_t material;
+		uint32_t lod_count;
 
-		uint32_t first_index;
-		uint32_t index_count;
+		// Vertex ranges is the same for lods
 		int32_t first_vertex;
 		uint32_t vertex_count;
-		uint32_t _pad0;
-		uint32_t _pad1;
-		uint32_t _pad2;
 
 		BoundingBoxEnc ebb;
+		MeshLod lods[constants::k_max_lod_count];
 	};
 
 	struct Mesh {
@@ -430,9 +432,6 @@ namespace interop {
 		}
 		inline float4x4 get_old_model_matrix(uint global_offset) { 
 			return matrix_ptr[global_offset + constants::old_model_matrix_offset];
-		}
-		inline float4x4 get_normal_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::normal_matrix_offset];
 		}
 
 		inline float4x4 get_view_matrix(uint global_offset) { 

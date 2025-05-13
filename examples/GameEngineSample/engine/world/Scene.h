@@ -21,6 +21,8 @@ namespace engine
 			std::vector<uint16_t> samplers{};
 			std::vector<uint32_t> materials{};
 
+			std::vector<interop::SubMesh> submeshes{};
+
 			std::vector<interop::Vertex> vertices{};
 			std::vector<uint32_t> indices{};
 		};

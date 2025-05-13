@@ -242,14 +242,25 @@ namespace engine::world {
 		geometry_ci.attribute_descriptions.emplace_back(render::VertexAttributeFlag::eTangent, edge::gfx::Format::eR16Uint);
 		geometry_ci.attribute_descriptions.emplace_back(render::VertexAttributeFlag::eNormal, edge::gfx::Format::eR32Uint);
 		geometry_ci.attribute_descriptions.emplace_back(render::VertexAttributeFlag::eTexCoord, edge::gfx::Format::eR16G16Uint);
-		geometry_ci.index_description.type = edge::gfx::IndexType::eUint32;
+		geometry_ci.index_description.type = edge::gfx::IndexType::eUint16;
 
 		auto geometry_buffer_id = renderer.request_interleaved_geometry_buffer(geometry_ci);
 		auto& geometry_buffer = renderer.lookup_geometry_buffer(geometry_buffer_id);
 		geometry_buffer.add_vertex_stream_data(resources.vertices.data(), resources.vertices.size(), sizeof(interop::Vertex));
 		resources.vertices.clear();
-		geometry_buffer.add_index_stream_data(resources.indices.data(), resources.indices.size(), 4);
+
+		std::vector<uint16_t> indices{};
+		std::transform(resources.indices.begin(), resources.indices.end(), std::back_inserter(indices), 
+			[](auto index) {
+				return static_cast<uint16_t>(index);
+			});
+
+		geometry_buffer.add_index_stream_data(indices.data(), indices.size(), 2);
 		resources.indices.clear();
+
+		auto& render_world = renderer.get_render_world();
+		render_world.add_submeshes(resources.submeshes);
+		resources.submeshes.clear();
 
 		EntityManager::create();
 	}
@@ -417,6 +428,12 @@ namespace engine::world {
 				}
 			}
 		}
+		else {
+			// Fallback. Set white color by default
+			for (auto& vertex : vertices) {
+				vertex.color = glm::vec4(1.0f);
+			}
+		}
 	}
 
 	// Calculate whole mesh bounds and encoders
@@ -467,22 +484,18 @@ namespace engine::world {
 		auto [mesh_id, gpu_mesh] = render_world.create_mesh(0);
 		compute_mesh_bounds(mesh, gpu_mesh);
 
+		gpu_mesh.submesh_offset = static_cast<uint32_t>(resources.submeshes.size());
+
 		auto& mesh_component = EntityManager::add_component<ecs::MeshComponent>(parent, ecs::MeshComponent{});
 		mesh_component.mesh = mesh_id;
 
 		// Create encode matrices for mesh
 		glm::mat3 position_encode_mat = interop::make_encode_position_matrix(gpu_mesh.bb_enc);
-		glm::mat3 normal_encode_mat = glm::transpose(glm::inverse(position_encode_mat));
+		glm::mat3 normal_encode_mat = interop::adjugate(position_encode_mat);
 
 		for (const auto& primitive : std::span(mesh->primitives, mesh->primitives_count)) {
 			std::vector<interop::RawVertex> vertices{};
 			load_vertices(primitive, gpu_mesh.bb_enc, vertices);
-
-			interop::BoundingBox bb{};
-			for (const auto& vertex : vertices) {
-				bb.min = glm::min(bb.min, vertex.position);
-				bb.max = glm::max(bb.max, vertex.position);
-			}
 
 			std::vector<uint32_t> indices{};
 			if (primitive.indices) {
@@ -490,22 +503,72 @@ namespace engine::world {
 				cgltf_accessor_unpack_indices(primitive.indices, indices.data(), 4, indices.size());
 			}
 
+			interop::BoundingBox bb{};
+			for (const auto& vertex : vertices) {
+				bb.min = glm::min(bb.min, vertex.position);
+				bb.max = glm::max(bb.max, vertex.position);
+			}
+
+			auto& new_submesh = resources.submeshes.emplace_back();
+			new_submesh.first_vertex = static_cast<int32_t>(resources.vertices.size());
+			new_submesh.vertex_count = static_cast<uint32_t>(vertices.size());
+			new_submesh.material = cgltf_material_index(gltf_data, primitive.material);
+			new_submesh.ebb = interop::encode_bounding_box(bb, gpu_mesh.bb_enc);
+
 			// Preprocess new geometry
 			optimize_geometry(vertices, indices);
 
-			interop::SubMesh submesh;
-			submesh.first_index = static_cast<uint32_t>(resources.indices.size());
-			submesh.index_count = static_cast<uint32_t>(indices.size());
-			submesh.first_vertex = static_cast<int32_t>(resources.vertices.size());
-			submesh.vertex_count = static_cast<uint32_t>(vertices.size());
-			submesh.material = cgltf_material_index(gltf_data, primitive.material);
-			submesh.ebb = interop::encode_bounding_box(bb, gpu_mesh.bb_enc);
+			float lod_scale = meshopt_simplifyScale((const float*)vertices.data(), vertices.size(), sizeof(interop::RawVertex));
 
-			render_world.attach_submesh(mesh_id, submesh);
+			auto* byte_ptr = reinterpret_cast<const uint8_t*>(vertices.data());
+			const float* pos_ptr = reinterpret_cast<const float*>(byte_ptr + offsetof(interop::RawVertex, position));
+			const float* normal_ptr = reinterpret_cast<const float*>(byte_ptr + offsetof(interop::RawVertex, normal));
+			size_t stride = sizeof(interop::RawVertex);
+
+			std::vector<uint32_t> lod_indices = indices;
+			float lod_error = 0.f;
+
+			float normal_weights[3] = { 1.f, 1.f, 1.f };
+			while (new_submesh.lod_count < constants::k_max_lod_count) {
+				auto& new_lod = new_submesh.lods[new_submesh.lod_count++];
+				new_lod.first_index = static_cast<uint32_t>(resources.indices.size());
+				new_lod.index_count = static_cast<uint32_t>(lod_indices.size());
+				new_lod.error = lod_error * lod_scale;
+
+				resources.indices.insert(resources.indices.end(), lod_indices.begin(), lod_indices.end());
+
+				if (new_submesh.lod_count < constants::k_max_lod_count) {
+					const float max_error = 1e-1f;
+					const uint32_t options = 0;
+
+					size_t next_indices_target = (static_cast<size_t>(static_cast<double>(lod_indices.size()) * 0.65) / 3) * 3;
+					float next_error = 0.f;
+
+					size_t next_indices = meshopt_simplifyWithAttributes(lod_indices.data(),
+						lod_indices.data(), lod_indices.size(), pos_ptr, vertices.size(), stride,
+						normal_ptr, stride, normal_weights, 3, nullptr, next_indices_target,
+						max_error, options, &next_error);
+					assert(next_indices <= lod_indices.size());
+
+					if (next_indices == lod_indices.size() || next_indices == 0) {
+						break;
+					}
+
+					if (next_indices >= static_cast<size_t>(static_cast<double>(lod_indices.size()) * 0.95)) {
+						break;
+					}
+
+					lod_indices.resize(next_indices);
+					lod_error = std::max(lod_error, next_error);
+
+					meshopt_optimizeVertexCacheFifo(lod_indices.data(), lod_indices.data(), lod_indices.size(), vertices.size(), 16);
+				}
+			}
 
 			quantize_geometry(gpu_mesh, vertices, resources.vertices);
-			resources.indices.insert(resources.indices.end(), indices.begin(), indices.end());
 		}
+
+		gpu_mesh.submesh_count = static_cast<uint32_t>(resources.submeshes.size()) - gpu_mesh.submesh_offset;
 	}
 
 	void Scene::load_camera(const cgltf_camera* camera, const entt::entity parent) {

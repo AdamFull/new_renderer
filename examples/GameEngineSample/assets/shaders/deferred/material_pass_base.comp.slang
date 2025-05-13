@@ -405,7 +405,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
         // Load mesh model matrix
 
         float4x4 model = g_fd.get_model_matrix(mesh.matrix_offset);
-        float4x4 normal_matrix = g_fd.get_normal_matrix(mesh.matrix_offset);
+        float3x3 normal_matrix = interop::adjugate(float3x3(model));
 
         interop::Camera camera = g_fd.get_default_camera();
         float4x4 view_projection = g_fd.get_view_projection_matrix(camera.matrices_offset);
@@ -477,7 +477,6 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
         va.barycentrics = bary.barycentrics;
 
         // INTERPOLATE TEXCOORD
-#ifdef HAS_TEXCOORD
         float2 uv0 = triangle.vertices[0].uv;
         float2 uv1 = triangle.vertices[1].uv;
         float2 uv2 = triangle.vertices[2].uv;
@@ -485,32 +484,21 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
         va.uv = interpolate(uv0, uv1, uv2, bary.barycentrics);
         va.uv_dx = interpolate(uv0, uv1, uv2, bary.ddx);
         va.uv_dy = interpolate(uv0, uv1, uv2, bary.ddy);
-#endif
 
-// INTERPOLATE NORMAL
-#ifdef HAS_NORMAL
-        float3 normal_0 = normalize(mul(normal_matrix, float4(triangle.vertices[0].normal, 0.0f)).xyz);
-        float3 normal_1 = normalize(mul(normal_matrix, float4(triangle.vertices[1].normal, 0.0f)).xyz);
-        float3 normal_2 = normalize(mul(normal_matrix, float4(triangle.vertices[2].normal, 0.0f)).xyz);
+        // INTERPOLATE NORMAL
+        float3 normal_0 = normalize(mul(normal_matrix, triangle.vertices[0].normal));
+        float3 normal_1 = normalize(mul(normal_matrix, triangle.vertices[1].normal));
+        float3 normal_2 = normalize(mul(normal_matrix, triangle.vertices[2].normal));
 
         va.normal = normalize(interpolate(normal_0, normal_1, normal_2, bary.barycentrics));
-#else
-        va.normal = cross(va.pos_dx, va.pos_dy);
-#endif // HAS_NORMAL
 
-// INTERPOLATE TANGENT
-#ifdef HAS_TANGENT
+        // INTERPOLATE TANGENT
         float4 tangent0 = float4(normalize(mul(model, float4(triangle.vertices[0].tangent.xyz, 0.0f)).xyz), triangle.vertices[0].tangent.w);
         float4 tangent1 = float4(normalize(mul(model, float4(triangle.vertices[1].tangent.xyz, 0.0f)).xyz), triangle.vertices[1].tangent.w);
         float4 tangent2 = float4(normalize(mul(model, float4(triangle.vertices[2].tangent.xyz, 0.0f)).xyz), triangle.vertices[2].tangent.w);
 
         float4 tangent = interpolate(tangent0, tangent1, tangent2, bary.barycentrics);
         va.tangent = float4(normalize(tangent.xyz), tangent.w);
-#else
-        float3 tangent = (va.uv_dy.y * va.pos_dx - va.uv_dx.y * va.pos_dy) / (va.uv_dx.x * va.uv_dy.y - va.uv_dy.x * va.uv_dx.y);
-        tangent = normalize(tangent - va.normal * dot(va.normal, tangent));
-        va.tangent = float4(tangent, 1.0);
-#endif // TANGENT
 
         // INTERPOLATE COLOR
 #ifdef HAS_COLOR

@@ -44,7 +44,6 @@ namespace constants {
 
 	static const uint32_t model_matrix_offset = 0u;
 	static const uint32_t old_model_matrix_offset = 1u;
-	static const uint32_t normal_matrix_offset = 2u;
 
 	static const uint32_t view_matrix_offset = 0u;
 	static const uint32_t inv_view_matrix_offset = 1u;
@@ -65,4 +64,6 @@ namespace constants {
 	static const uint32_t max_cameras = max_player_cameras + max_directional_light_cameras + max_spot_light_cameras + max_omni_light_cameras;
 
 	static const uint32_t max_draw_command_count = max_draw_instance_count * max_cameras;
+
+	static const uint32_t k_max_lod_count = 8;
 }

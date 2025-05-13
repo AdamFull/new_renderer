@@ -52,7 +52,7 @@ namespace engine::render {
 		virtual std::tuple<uint32_t, interop::Mesh&> create_mesh(uint32_t joint_count = 0u) = 0;
 		virtual void update_mesh_matrices(uint32_t mesh_id, const glm::mat4& matrix) = 0;
 		virtual void update_joint_matrices(uint32_t mesh_id, std::span<const glm::mat4> joints) = 0;
-		virtual void attach_submesh(uint32_t mesh_id, const interop::SubMesh& submesh) = 0;
+		virtual void add_submeshes(std::span<const interop::SubMesh> submeshes) = 0;
 		virtual const interop::Mesh& get_mesh(uint32_t index) = 0;
 
 		virtual void add_light(const interop::LightCommit& light_data) = 0;
