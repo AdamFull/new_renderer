@@ -75,7 +75,7 @@ void HierarchyWindow::__draw(float fDt)
     }
 
     float size_x = static_cast<float>(current_size.x);
-    float size_y = static_cast<float>(current_size.y) - ImGui::GetCursorPosY() - 10.f;
+    float size_y = std::max(static_cast<float>(current_size.y) - ImGui::GetCursorPosY() - 10.f, 1.0f);
     ImGui::SetCursorPosX(0);
     if (ImGui::InvisibleButton("###unselect_all_btn", ImVec2(size_x, size_y)))
     {
