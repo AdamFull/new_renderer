@@ -50,6 +50,7 @@
 #include "../../assets/shaders/testing/imgui.h"
 
 #include "../../assets/shaders/utility/clear_buffer.h"
+#include "../../assets/shaders/utility/reduce_4x.h"
 
 #define DISABLE_SHADOWS 1
 //#define SKINNING_TEST 1
@@ -486,6 +487,32 @@ namespace engine::render
 
 			zbuffer_depth_target = render_context->add_resource(create_info);
 			render_context->set_resource_name(zbuffer_depth_target, "zbuffer_depth_target");
+		}
+
+		// TODO:
+
+		auto prev_pow_of_two = [](uint32_t v) -> uint32_t {
+			uint32_t r = 1;
+
+			while (r * 2 < v) {
+				r *= 2;
+			}
+
+			return r;
+		};
+
+		uint32_t depth_pyramid_terget{ ~0u };
+		{
+			TextureResourceCreateInfo create_info{};
+			create_info.width = backbuffer_texture->get_width();
+			create_info.height = backbuffer_texture->get_height();
+			create_info.format = edge::gfx::Format::eD32Sfloat;
+			create_info.usage = edge::gfx::TextureUsageFlag::eSamplable | edge::gfx::TextureUsageFlag::eStorage;
+			create_info.levels = static_cast<uint32_t>(std::floor(std::log2((std::max)(create_info.width, create_info.height)))) + 1u;
+			//create_info.resizable = true;
+
+			depth_pyramid_terget = render_context->add_resource(create_info);
+			render_context->set_resource_name(depth_pyramid_terget, "depth_pyramid_terget");
 		}
 
 		uint32_t ssao_target{ ~0u };
@@ -1147,6 +1174,81 @@ namespace engine::render
 					command_list.draw_indirect(draw_command);
 					self.end(command_list);
 				};
+
+			render_context->add_node(render_context->create_node(create_info));
+		}
+
+		// Copy depth
+		{
+			ComputeShaderPassCreateInfo create_info{};
+			create_info.technique_name = "copy_image";
+
+			create_info.draw_callback = [this,
+				zbuffer_depth_target,
+				depth_pyramid_terget,
+				nearest_clamp_to_edge_sampler
+			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+				self.bind_read_resource(render_label::texture0, zbuffer_depth_target, ~0u);
+				self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler);
+				self.bind_write_resource(render_label::image0, depth_pyramid_terget, 0);
+				self.resolve_dependencies(command_list);
+				self.bind_resources(command_list);
+
+				self.dispatch_for_target(command_list, zbuffer_depth_target, true);
+			};
+
+			render_context->add_node(render_context->create_node(create_info));
+		}
+
+		// Build depth pyramid
+		{
+			ComputeShaderPassCreateInfo create_info{};
+			create_info.technique_name = "depth_reduce_4x";
+
+			create_info.draw_callback = [this,
+				depth_pyramid_terget,
+				linear_clamp_to_edge_sampler
+			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+				auto* target = render_context->get_texture(depth_pyramid_terget);
+				auto width = target->get_width();
+				auto height = target->get_height();
+				auto mip_levels = target->get_mip_level_count() - 1;
+
+				static uint32_t mip_slots[] = { render_label::image0, render_label::image1, render_label::image2, render_label::image3 };
+
+				for (int32_t mip = 1; mip < mip_levels;) {
+					auto dst_width = width >> mip;
+					auto dst_height = height >> mip;
+
+					uint32_t mip_count = 4;
+					if (mip + mip_count > mip_levels) {
+						mip_count = mip_levels - mip;
+					}
+
+					self.bind_read_resource(render_label::texture0, depth_pyramid_terget, ~0u);
+					self.bind_resource(render_label::sampler0, linear_clamp_to_edge_sampler);
+
+					for (int32_t i = 0; i < mip_count; ++i) {
+						self.bind_write_resource(mip_slots[i], depth_pyramid_terget, mip + i);
+					}
+
+					self.resolve_dependencies(command_list);
+					self.bind_resources(command_list);
+
+					auto& pc = self.get_constant_block();
+					auto& pc_data = pc.as<reduce::PushConstants>();
+					pc_data.mip_count = mip_count;
+					pc_data.mip_level = mip - 1;
+					pc_data.texel_size = 1.0f / float2(dst_width, dst_height);
+					self.push_constant_ranges(command_list);
+
+					uint32_t group_x{ dst_width }, group_y{ dst_height }, group_z{ 1u };
+					self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
+					command_list.dispatch(group_x, group_y, group_z);
+
+					mip += mip_count;
+				}
+			};
 
 			render_context->add_node(render_context->create_node(create_info));
 		}

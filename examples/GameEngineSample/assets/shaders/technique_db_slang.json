@@ -389,5 +389,22 @@
     "stages": [
       { "path": "/internal_res/assets/shaders/utility/copy_image.comp.slang" }
     ]
+  },
+  {
+    "name": "depth_reduce_4x",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/utility/reduce_4x.comp.slang",
+        "def": [ "DEPTH_REDUCE" ]
+      }
+    ]
+  },
+  {
+    "name": "color_reduce_4x",
+    "type": "compute",
+    "stages": [
+      { "path": "/internal_res/assets/shaders/utility/reduce_4x.comp.slang" }
+    ]
   }
 ]
