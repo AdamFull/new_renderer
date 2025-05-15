@@ -1,5 +1,9 @@
 #include "reduce_4x.h"
 
+#define TG_SIZE_X 8
+#define TG_SIZE_Y 8
+#define TG_CACHE_SIZE (TG_SIZE_X * TG_SIZE_Y)
+
 #ifdef DEPTH_REDUCE
 typedef float color_t;
 #define COMPONENTS r
@@ -8,10 +12,7 @@ typedef float4 color_t;
 #define COMPONENTS rgba
 #endif
 
-WTexture2D<color_t> image0;
-WTexture2D<color_t> image1;
-WTexture2D<color_t> image2;
-WTexture2D<color_t> image3;
+WTexture2D<color_t> image0[16];
 
 Texture2D<color_t> texture0;
 SamplerState sampler0;
@@ -19,12 +20,12 @@ SamplerState sampler0;
 [[vk::push_constant]] ConstantBuffer<reduce::PushConstants> pc;
 
 #ifdef DEPTH_REDUCE
-groupshared float color_r[64];
+groupshared float color_r[TG_CACHE_SIZE];
 #else
-groupshared float color_r[64];
-groupshared float color_g[64];
-groupshared float color_b[64];
-groupshared float color_a[64];
+groupshared float color_r[TG_CACHE_SIZE];
+groupshared float color_g[TG_CACHE_SIZE];
+groupshared float color_b[TG_CACHE_SIZE];
+groupshared float color_a[TG_CACHE_SIZE];
 #endif
 
 void store_color(uint32_t id, color_t in_color) {
@@ -46,14 +47,22 @@ color_t load_color(uint32_t id) {
 #endif
 }
 
-[numthreads(8, 8, 1)]
+inline color_t reduction_finction(color_t c0, color_t c1, color_t c2, color_t c3) {
+#ifdef DEPTH_REDUCE
+    return min(min(c0, c1), min(c2, c3));
+#else
+    return 0.25 * (c0 + c1 + c2 + c3);
+#endif
+}
+
+[numthreads(TG_SIZE_X, TG_SIZE_Y, 1)]
 [shader("compute")]
 void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex) {
     float2 uv = (float2(global_id.xy) + 0.5) * pc.texel_size;
 
     // TODO: Need to use specific sampler settings and pass current sample level
     color_t color0 = texture0.SampleLevel(sampler0, uv, pc.mip_level).COMPONENTS;
-    image0.Store(global_id.xy, color0);
+    image0[pc.mip_level + 1].Store(global_id.xy, color0);
 
     if (pc.mip_count == 1) {
         return;
@@ -61,18 +70,19 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
 
     store_color(group_id, color0);
 
+    // Barrier for group-shared writes
     GroupMemoryBarrierWithGroupSync();
 
-    // If X and Y are even => (GIid & 0x9) == 0
+    // If X and Y are even => (group_id & 0x9) == 0
     if ((group_id & 0x9) == 0) {
         color_t color1 = load_color(group_id + 0x01);
         color_t color2 = load_color(group_id + 0x08);
         color_t color3 = load_color(group_id + 0x09);
 
-        color0 = 0.25 * (color0 + color1 + color2 + color3);
+        color0 = reduction_finction(color0, color1, color2, color3);
 
         // Write the 2x2 reduced color
-        image1.Store(global_id.xy / 2, color0);
+        image0[pc.mip_level + 2].Store(global_id.xy >> 1, color0);
 
         // Store again in shared memory, as the next pass depends on it
         store_color(group_id, color0);
@@ -84,7 +94,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
 
     GroupMemoryBarrierWithGroupSync();
 
-    // If X and Y are multiples of four => (GIid & 0x1B) == 0
+    // If X and Y are multiples of four => (group_id & 0x1B) == 0
     //   0x1B in binary is 11011, but the relevant bits are in the low 6 bits
     //   This check means GTid.x is multiple of 4 and GTid.y is multiple of 4.
     if ((group_id & 0x1B) == 0) {
@@ -92,10 +102,11 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
         color_t color2 = load_color(group_id + 0x10);
         color_t color3 = load_color(group_id + 0x12);
 
-        color0 = 0.25 * (color0 + color1 + color2 + color3);
+        color0 = reduction_finction(color0, color1, color2, color3);
 
         // Write the 4x4 reduced color
-        image2.Store(global_id.xy / 4, color0);
+        image0[pc.mip_level + 3].Store(global_id.xy >> 2, color0);
+
         store_color(group_id, color0);
     }
 
@@ -111,9 +122,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
         color_t color2 = load_color(group_id + 0x20);
         color_t color3 = load_color(group_id + 0x24);
 
-        color0 = 0.25 * (color0 + color1 + color2 + color3);
+        color0 = reduction_finction(color0, color1, color2, color3);
 
         // Write the 8x8 reduced color
-        image3.Store(global_id.xy / 8, color0);
+        image0[pc.mip_level + 4].Store(global_id.xy >> 3, color0);
     }
 }

@@ -1,5 +1,9 @@
 #include "cull_and_batch.h"
 #include "../include/bindles_layout.slang"
+#include "../include/util.slang"
+
+[[vk::binding(0, 1)]] Texture2D<float> texture0 : register(to, space1); // depth pyramid (hiz)
+[[vk::binding(1, 1)]] SamplerState sampler0 : register(s0, space1); // depth sampler (nearest)
 
 [[vk::push_constant]] ConstantBuffer<cull_and_batch::PushConstants> pc;
 
@@ -69,6 +73,55 @@ inline uint32_t select_mesh_lod(in interop::Camera camera, in interop::BoundingB
     return selected_lod;
 }
 
+bool is_occluded(in interop::Camera camera, in interop::BoundingBox bb) {
+    uint32_t2 pyramid_size;
+    texture0.GetDimensions(pyramid_size.x, pyramid_size.y);
+
+    float4x4 view_proj_matrix = g_fd.get_view_projection_matrix(camera.matrices_offset);
+
+    float3 corners[8] = {
+        bb.min,
+        float3(bb.max.x, bb.min.y, bb.min.z),
+        float3(bb.min.x, bb.max.y, bb.min.z),
+        float3(bb.max.x, bb.max.y, bb.min.z),
+        float3(bb.min.x, bb.min.y, bb.max.z),
+        float3(bb.max.x, bb.min.y, bb.max.z),
+        float3(bb.min.x, bb.max.y, bb.max.z),
+        bb.max
+    };
+
+    float2 uv_min = float2(1.0, 1.0);
+    float2 uv_max = float2(0.0, 0.0);
+    float min_depth = 1.0;
+
+    [unroll]
+    for (int i = 0; i < 8; ++i) {
+        float4 clip_pos = mul(view_proj_matrix, float4(corners[i], 1.0));
+        float3 ndc = clip_pos.xyz / clip_pos.w;
+        float2 uv = util::clip_to_uv(ndc.xy);
+
+        uv_min = min(uv_min, uv);
+        uv_max = max(uv_max, uv);
+        min_depth = min(min_depth, ndc.z);
+    }
+
+    uv_min = clamp(uv_min, 0.0, 1.0);
+    uv_max = clamp(uv_max, 0.0, 1.0);
+
+    float2 aabb_size_pixels = (uv_max - uv_min) * float2(pyramid_size);
+    float max_pixel_size = max(aabb_size_pixels.x, aabb_size_pixels.y);
+    float mip_level = ceil(log2(max_pixel_size));
+
+    float max_depth_sample = 0.0f;
+    max_depth_sample = max(max_depth_sample, texture0.SampleLevel(sampler0, float2(uv_min.x, uv_min.y), mip_level));
+    max_depth_sample = max(max_depth_sample, texture0.SampleLevel(sampler0, float2(uv_min.x, uv_max.y), mip_level));
+    max_depth_sample = max(max_depth_sample, texture0.SampleLevel(sampler0, float2(uv_max.x, uv_min.y), mip_level));
+    max_depth_sample = max(max_depth_sample, texture0.SampleLevel(sampler0, float2(uv_max.x, uv_max.y), mip_level));
+
+    const float epsilon = 1e-5;
+    return min_depth > (max_depth_sample + epsilon);
+}
+
 [shader("compute")]
 [numthreads(64, 1, 1)]
 void main(uint32_t3 global_id: SV_DispatchThreadID) {
@@ -90,20 +143,25 @@ void main(uint32_t3 global_id: SV_DispatchThreadID) {
     interop::BoundingBox submesh_bb = submesh.ebb.decode(model);
 
     interop::Camera camera = g_fd.camera_ptr[draw_info.camera_index];
-    if (check_mesh_in_frustum(submesh_bb, camera.frustum_offset)) {
-        uint32_t lod_index = select_mesh_lod(camera, submesh_bb, submesh);
-        interop::MeshLod selected_lod = submesh.lods[lod_index];
-
-        interop::DrawIndexedIndirectData indirect_command;
-        indirect_command.index_count = selected_lod.index_count;
-        indirect_command.instance_count = 1;
-        indirect_command.first_index = selected_lod.first_index;
-        indirect_command.vertex_offset = submesh.first_vertex;
-        indirect_command.first_instance = 0;
-
-        pc.output_draw_indirect_ptr[global_draw_index] = indirect_command;
-    }
-    else {
+    if (!check_mesh_in_frustum(submesh_bb, camera.frustum_offset)) {
         pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;
+        return;
     }
+
+    //if (is_occluded(camera, submesh_bb) && g_fd.frame_number > 1) {
+    //    pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;
+    //    return;
+    //}
+
+    uint32_t lod_index = select_mesh_lod(camera, submesh_bb, submesh);
+    interop::MeshLod selected_lod = submesh.lods[lod_index];
+
+    interop::DrawIndexedIndirectData indirect_command;
+    indirect_command.index_count = selected_lod.index_count;
+    indirect_command.instance_count = 1;
+    indirect_command.first_index = selected_lod.first_index;
+    indirect_command.vertex_offset = submesh.first_vertex;
+    indirect_command.first_instance = 0;
+
+    pc.output_draw_indirect_ptr[global_draw_index] = indirect_command;
 }
