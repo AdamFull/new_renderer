@@ -75,7 +75,7 @@ namespace edge::gfx::vulkan
 			}
 		}
 
-		vk::DeviceCreateInfo create_info({}, queue_create_infos, {}, enabled_extensions, &gpu.get_mutable_requested_features());
+		vk::DeviceCreateInfo create_info({}, queue_create_infos, {}, enabled_extensions);
 
 #if USE_NSIGHT_AFTERMATH
 		// Initialize Nsight Aftermath for this device.
@@ -106,12 +106,12 @@ namespace edge::gfx::vulkan
 
 		if (is_enabled(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME))
 		{
-			aftermath_info.pNext = gpu.GetExtensionFeatureChain();
+			aftermath_info.pNext = gpu.get_extension_feature_chain();
 			create_info.pNext = &aftermath_info;
 		}
 		else
 		{
-			create_info.pNext = gpu.GetExtensionFeatureChain();
+			create_info.pNext = gpu.get_extension_feature_chain();
 		}
 #else
 		// Latest requested feature will have the pNext's all set up for device creation.

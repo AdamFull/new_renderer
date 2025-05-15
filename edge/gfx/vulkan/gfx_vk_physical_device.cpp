@@ -11,7 +11,9 @@ namespace edge::gfx::vulkan
 		instance{ instance },
 		Resource{ physical_device, instance.get_allocation_callbacks() } {
 
-		features = physical_device.getFeatures();
+		features.pNext = &requested_12_features;
+		physical_device.getFeatures2(&features);
+
 		properties = physical_device.getProperties();
 		memory_properties = physical_device.getMemoryProperties();
 

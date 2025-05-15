@@ -36,13 +36,17 @@ namespace edge::gfx::vulkan
 		 * @returns A void pointer to the start of the extension linked list
 		 */
 		auto get_extension_feature_chain() const noexcept -> void* {
-			return last_requested_extension_feature;
+			return (void*)(&features);
 		}
 
 		auto is_extension_supported(const char* requested_extension) const noexcept -> bool;
 
-		auto get_features() const noexcept -> vk::PhysicalDeviceFeatures const& {
-			return features;
+		auto get_requested_features() const noexcept -> const vk::PhysicalDeviceFeatures& {
+			return requested_features;
+		}
+
+		auto get_mutable_requested_features() noexcept -> vk::PhysicalDeviceFeatures& {
+			return requested_features;
 		}
 
 		auto get_instance() const noexcept -> Instance& {
@@ -59,14 +63,6 @@ namespace edge::gfx::vulkan
 
 		auto get_queue_family_properties() const noexcept -> std::vector<vk::QueueFamilyProperties> const& {
 			return queue_family_properties;
-		}
-
-		auto get_requested_features() const noexcept -> const vk::PhysicalDeviceFeatures& {
-			return requested_features;
-		}
-
-		auto get_mutable_requested_features() noexcept -> vk::PhysicalDeviceFeatures& {
-			return requested_features;
 		}
 
 		/**
@@ -94,7 +90,7 @@ namespace edge::gfx::vulkan
 			vk::StructureChain<vk::PhysicalDeviceFeatures2KHR, StructureType> featureChain = handle_.getFeatures2KHR<vk::PhysicalDeviceFeatures2KHR, StructureType>();
 
 			// Insert the extension feature into the extension feature map so its ownership is held
-			extension_features.insert({ structureType, std::make_shared<StructureType>(featureChain.template get<StructureType>()) });
+			extension_features.insert({ structureType, std::make_shared<StructureType>(featureChain.template get<StructureType>())});
 
 			// Pull out the dereferenced void pointer, we can assume its type based on the template
 			auto* extension_ptr = static_cast<StructureType*>(extension_features.find(structureType)->second.get());
@@ -105,6 +101,7 @@ namespace edge::gfx::vulkan
 				extension_ptr->pNext = last_requested_extension_feature;
 			}
 			last_requested_extension_feature = extension_ptr;
+			requested_12_features.pNext = extension_ptr;
 
 			return *extension_ptr;
 		}
@@ -132,7 +129,7 @@ namespace edge::gfx::vulkan
 		Instance& instance;
 
 		// The features that this GPU supports
-		vk::PhysicalDeviceFeatures features;
+		vk::PhysicalDeviceFeatures2 features;
 
 		// The extensions that this GPU supports
 		std::vector<vk::ExtensionProperties> device_extensions;
@@ -148,6 +145,8 @@ namespace edge::gfx::vulkan
 
 		// The features that will be requested to be enabled in the logical device
 		vk::PhysicalDeviceFeatures requested_features;
+
+		vk::PhysicalDeviceVulkan12Features requested_12_features;
 
 		// The extension feature pointer
 		void* last_requested_extension_feature{ nullptr };

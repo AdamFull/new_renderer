@@ -29,15 +29,10 @@ namespace edge::gfx::vulkan
 		VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
 		VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
 		VK_KHR_SPIRV_1_4_EXTENSION_NAME,
-		//VK_EXT_MESH_SHADER_EXTENSION_NAME,
 		VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
-		//VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
 		VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
-		//VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME,
 		VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
 		VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
-		//VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME
-		//VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME
 		VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME
 	};
 
@@ -48,23 +43,4 @@ namespace edge::gfx::vulkan
 				VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME
 #endif
 	};
-
-	static void enable_physical_device_features(vk::PhysicalDeviceFeatures& features) {
-		features.samplerAnisotropy = true;
-		features.sampleRateShading = true;
-		features.fillModeNonSolid = true;
-		features.multiViewport = true;
-		features.geometryShader = true;
-		features.tessellationShader = true;
-		features.fragmentStoresAndAtomics = true;
-		features.logicOp = true;
-		features.imageCubeArray = true;
-		features.depthClamp = true;
-		features.independentBlend = true;
-		features.multiDrawIndirect = true;
-		features.shaderInt16 = true;
-		features.shaderStorageImageReadWithoutFormat = true;
-		features.shaderStorageImageWriteWithoutFormat = true;
-		features.shaderInt64 = true;
-	}
 }

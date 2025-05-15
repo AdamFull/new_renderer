@@ -165,9 +165,45 @@ namespace edge::gfx::vulkan
 		// Enable vulkan features
 		enable_device_features(physical_device);
 
-		// Enable vk 1.0 features
-		auto& requested_features = physical_device.get_mutable_requested_features();
-		enable_physical_device_features(requested_features);
+		// TODO: validate required features
+		//features.samplerAnisotropy = true;
+		//features.sampleRateShading = true;
+		//features.fillModeNonSolid = true;
+		//features.multiViewport = true;
+		//features.geometryShader = true;
+		//features.tessellationShader = true;
+		//features.fragmentStoresAndAtomics = true;
+		//features.logicOp = true;
+		//features.imageCubeArray = true;
+		//features.depthClamp = true;
+		//features.independentBlend = true;
+		//features.multiDrawIndirect = true;
+		//features.shaderInt16 = true;
+		//features.shaderStorageImageReadWithoutFormat = true;
+		//features.shaderStorageImageWriteWithoutFormat = true;
+		//features.shaderInt64 = true;
+
+		//vk::PhysicalDeviceVulkan12Features vk12_features{};
+		//vk12_features.storageBuffer8BitAccess = true;
+		//vk12_features.uniformAndStorageBuffer8BitAccess = true;
+		//vk12_features.shaderFloat16 = true;
+		//vk12_features.shaderInt8 = true;
+		//vk12_features.descriptorBindingUniformBufferUpdateAfterBind = true;
+		//vk12_features.descriptorBindingSampledImageUpdateAfterBind = true;
+		//vk12_features.descriptorBindingStorageImageUpdateAfterBind = true;
+		//vk12_features.descriptorBindingStorageBufferUpdateAfterBind = true;
+		//vk12_features.descriptorBindingUniformTexelBufferUpdateAfterBind = true;
+		//vk12_features.descriptorBindingStorageTexelBufferUpdateAfterBind = true;
+		//vk12_features.descriptorBindingUpdateUnusedWhilePending = true;
+		//vk12_features.descriptorBindingPartiallyBound = true;
+		//vk12_features.descriptorBindingVariableDescriptorCount = true;
+		//vk12_features.hostQueryReset = true;
+		//vk12_features.timelineSemaphore = true;
+		//vk12_features.bufferDeviceAddress = true;
+		//vk12_features.bufferDeviceAddressCaptureReplay = true;
+		//vk12_features.bufferDeviceAddressMultiDevice = true;
+		//vk12_features.vulkanMemoryModel = true;
+		//vk12_features.vulkanMemoryModelDeviceScope = true;
 
 		device = std::make_unique<Device>(physical_device, surface, device_extensions);
 
@@ -386,51 +422,14 @@ namespace edge::gfx::vulkan
 		for (auto& extension_name : device_extensions) {
 			if (strcmp(extension_name, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) == 0)
 				device.request_extension_features<vk::PhysicalDeviceSynchronization2FeaturesKHR>();
-			else if (strcmp(extension_name, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR>();
 			else if (strcmp(extension_name, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0)
 				device.request_extension_features<vk::PhysicalDeviceDynamicRenderingFeaturesKHR>();
-			else if (strcmp(extension_name, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
 			else if (strcmp(extension_name, VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME) == 0)
 				device.request_extension_features<vk::PhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>();
-			else if (strcmp(extension_name, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
-			else if (strcmp(extension_name, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
-			else if (strcmp(extension_name, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-			else if (strcmp(extension_name, VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceDescriptorBufferFeaturesEXT>();
-			else if (strcmp(extension_name, VK_EXT_SHADER_OBJECT_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceShaderObjectFeaturesEXT>();
-			else if (strcmp(extension_name, VK_KHR_8BIT_STORAGE_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDevice8BitStorageFeaturesKHR>();
 			else if (strcmp(extension_name, VK_KHR_16BIT_STORAGE_EXTENSION_NAME) == 0)
 				device.request_extension_features<vk::PhysicalDevice16BitStorageFeaturesKHR>();
-			else if (strcmp(extension_name, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceShaderFloat16Int8FeaturesKHR>();
-			//else if (strcmp(extension_name, VK_NV_MESH_SHADER_EXTENSION_NAME) == 0)
-			//	device.request_extension_features<vk::PhysicalDeviceMeshShaderPropertiesEXT>();
-			else if (strcmp(extension_name, VK_EXT_MULTI_DRAW_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceMultiDrawFeaturesEXT>();
-			else if (strcmp(extension_name, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceHostQueryResetFeaturesEXT>();
-			else if (strcmp(extension_name, VK_EXT_MESH_SHADER_EXTENSION_NAME) == 0) {
-				auto& ext = device.request_extension_features<vk::PhysicalDeviceMeshShaderFeaturesEXT>();
-				ext.multiviewMeshShader = VK_FALSE;
-				ext.primitiveFragmentShadingRateMeshShader = VK_FALSE;
-			}
-			else if (strcmp(extension_name, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceDiagnosticsConfigFeaturesNV>();
 			else if (strcmp(extension_name, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) == 0)
 				device.request_extension_features<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-			else if (strcmp(extension_name, VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME) == 0)
-				device.request_extension_features<vk::PhysicalDeviceShaderTileImageFeaturesEXT>();
-			else if (strcmp(extension_name, VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME) == 0) {
-				auto& ext = device.request_extension_features<vk::PhysicalDeviceVulkanMemoryModelFeatures>();
-				ext.vulkanMemoryModelAvailabilityVisibilityChains = VK_FALSE;
-			}
 			else if (strcmp(extension_name, VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME) == 0)
 				auto& ext = device.request_extension_features<vk::PhysicalDeviceDiagnosticsConfigFeaturesNV>();
 			else if (strcmp(extension_name, VK_KHR_RAY_QUERY_EXTENSION_NAME) == 0) {
@@ -439,8 +438,6 @@ namespace edge::gfx::vulkan
 					EDGE_LOGW("[Vulkan Context] Ray query extension is not supported.");
 				}
 			}
-			//else if(strcmp(extension_name, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME) == 0)
-			//	device.request_extension_features(vk::PhysicalDeviceIndirect)
 		}
 	}
 }
