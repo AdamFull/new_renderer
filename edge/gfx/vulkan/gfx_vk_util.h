@@ -312,6 +312,21 @@ namespace edge::gfx::vulkan
 		return vk::CompareOp::eNever;
 	}
 
+	inline vk::SamplerReductionMode reduction_code_to_vk(ReductionMode mode) {
+		if (mode == ReductionMode::eMin) {
+			return vk::SamplerReductionMode::eMin;
+		}
+		else if (mode == ReductionMode::eMax) {
+			return vk::SamplerReductionMode::eMax;
+		}
+		else if (mode == ReductionMode::eWeightedAverage) {
+			return vk::SamplerReductionMode::eWeightedAverage;
+		}
+
+		assert(false && "UNKNOWN REDUCTION MODE");
+		return (vk::SamplerReductionMode)0;
+	}
+
 	inline vk::QueryType query_type_to_vk(QueryType type) {
 		if (type == QueryType::eTimestamp)
 			return vk::QueryType::eTimestamp;
