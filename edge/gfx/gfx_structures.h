@@ -301,6 +301,7 @@ namespace edge
 			float max_lod{ 12.f };
 			float max_anisotropy{ 0.f };
 			CompareOp depth_compare{ CompareOp::eNone };
+			ReductionMode reduction_mode{ ReductionMode::eNone };
 		};
 
 		void to_json(nlohmann::json& json, const SamplerCreateInfo& type);

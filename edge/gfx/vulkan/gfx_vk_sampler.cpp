@@ -32,6 +32,12 @@ namespace edge::gfx::vulkan
 		vk_create_info.compareEnable = create_info.depth_compare != CompareOp::eNone;
 		vk_create_info.compareOp = compare_op_to_vk(create_info.depth_compare);
 
+		vk::SamplerReductionModeCreateInfo sampler_reduction_ci{};
+		if (create_info.reduction_mode != ReductionMode::eNone) {
+			sampler_reduction_ci.reductionMode = reduction_code_to_vk(create_info.reduction_mode);
+			vk_create_info.pNext = &sampler_reduction_ci;
+		}
+
 		vk::Result result = device.get_handle().createSampler(&vk_create_info, allocation_callbacks, &handle_);
 	}
 

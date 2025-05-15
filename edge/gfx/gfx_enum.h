@@ -171,6 +171,13 @@ namespace edge::gfx
 		eAlways
 	};
 
+	enum class ReductionMode {
+		eNone,
+		eMin,
+		eMax,
+		eWeightedAverage
+	};
+
 	// For query pool
 	enum class QueryType {
 		eTimestamp,
