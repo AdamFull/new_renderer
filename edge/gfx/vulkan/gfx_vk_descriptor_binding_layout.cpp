@@ -18,6 +18,8 @@ namespace edge::gfx::vulkan {
 		device{ device },
 		descriptor_layout{ descriptor_layout } {
 
+		image_descriptors.reserve(512);
+		buffer_descriptors.reserve(512);
 	}
 
 	DescriptorBindingLayout::DescriptorBindingLayout(DescriptorBindingLayout&& other) :
@@ -61,27 +63,47 @@ namespace edge::gfx::vulkan {
 	auto DescriptorBindingLayout::bind(const TextureDescriptor& texture_desc) -> void {
 		assert(handle_ && "Descriptor set is not allocated.");
 
-		auto& descriptor = image_descriptors.emplace_back();
+		auto image_desc_offset = image_descriptors.size();
+		uint32_t descritpro_count = 0u;
 
 		auto* vk_texture = texture_desc.texture->as<Texture*>();
 		if (texture_desc.type == DescriptorType::eStorageImage) {
-			auto& subresource = vk_texture->get_uav_view(texture_desc.subresource_index);
-			descriptor.imageView = subresource.get_handle();
+			if (texture_desc.subresource_index != ~0u) {
+				auto& subresource = vk_texture->get_uav_view(texture_desc.subresource_index);
+
+				auto& descriptor = image_descriptors.emplace_back();
+				descriptor.imageView = subresource.get_handle();
+				descriptor.imageLayout = resource_state_to_vk_image_layout(texture_desc.resource_state);
+				descritpro_count = 1;
+			}
+			else {
+				auto view_count = vk_texture->get_mip_level_count();
+				for (int32_t i = 0; i < view_count; ++i) {
+					auto& subresource = vk_texture->get_uav_view(i);
+
+					auto& descriptor = image_descriptors.emplace_back();
+					descriptor.imageView = subresource.get_handle();
+					descriptor.imageLayout = resource_state_to_vk_image_layout(texture_desc.resource_state);
+					descritpro_count++;
+				}
+			}
 		}
 		else {
 			auto& subresource = vk_texture->get_srv_view();
+
+			auto& descriptor = image_descriptors.emplace_back();
 			descriptor.imageView = subresource.get_handle();
+			descriptor.imageLayout = resource_state_to_vk_image_layout(texture_desc.resource_state);
+			descritpro_count = 1;
 		}
-		
-		descriptor.imageLayout = resource_state_to_vk_image_layout(texture_desc.resource_state);
 
 		auto& vk_descriptor_write = write_descriptor_sets.emplace_back();
 		vk_descriptor_write.descriptorType = descriptor_type_to_vk(texture_desc.type);
-		vk_descriptor_write.descriptorCount = 1u;
+		vk_descriptor_write.descriptorCount = descritpro_count;
 		vk_descriptor_write.dstSet = handle_;
 		vk_descriptor_write.dstBinding = texture_desc.binding;
 		vk_descriptor_write.dstArrayElement = texture_desc.array_index;
-		vk_descriptor_write.pImageInfo = &descriptor;
+		vk_descriptor_write.pImageInfo = image_descriptors.data() + image_desc_offset;
 	}
 
 	auto DescriptorBindingLayout::bind(const BufferDescriptor& buffer_desc) -> void {

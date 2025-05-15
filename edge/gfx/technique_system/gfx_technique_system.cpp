@@ -403,6 +403,9 @@ namespace edge::gfx
 
 			unique_descriptor_spaces.emplace(it->set);
 
+			hash_combine(murmur_hash(it->binding), space.space_hash);
+			hash_combine(murmur_hash(it->count), space.space_hash);
+			hash_combine(murmur_hash(it->type), space.space_hash);
 			hash_combine(it->name_hash, space.space_hash);
 		}
 

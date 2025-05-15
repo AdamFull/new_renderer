@@ -19,6 +19,9 @@ namespace edge::gfx::vulkan
 		std::vector<vk::DescriptorSetLayoutBinding> bindings{};
 
 		for (const auto& layout_binding : layout_ci.bindings) {
+			hash_combine(murmur_hash(layout_binding.binding), resource_hash);
+			hash_combine(murmur_hash(layout_binding.count), resource_hash);
+			hash_combine(murmur_hash(layout_binding.type), resource_hash);
 			hash_combine(layout_binding.name_hash, resource_hash);
 
 			auto& new_binding = bindings.emplace_back();
@@ -28,8 +31,9 @@ namespace edge::gfx::vulkan
 			new_binding.stageFlags = shader_stage_flags_to_vk(layout_binding.stages);
 
 			auto& new_flags = binding_flags.emplace_back();
+			new_flags |= vk::DescriptorBindingFlagBits::ePartiallyBound;
 			if (layout_ci.support_bindless) {
-				new_flags |= vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind;
+				new_flags |= vk::DescriptorBindingFlagBits::eUpdateAfterBind;
 			}
 
 			pool_sizes.sizes[utl::cast(new_binding.descriptorType)] += new_binding.descriptorCount;

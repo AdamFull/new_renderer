@@ -46,7 +46,7 @@ namespace edge::gfx::vulkan {
 		bool is_invalidated{ false };
 
 		std::vector<vk::WriteDescriptorSet> write_descriptor_sets{};
-		std::deque<vk::DescriptorImageInfo> image_descriptors{};
-		std::deque<vk::DescriptorBufferInfo> buffer_descriptors{};
+		std::vector<vk::DescriptorImageInfo> image_descriptors{};
+		std::vector<vk::DescriptorBufferInfo> buffer_descriptors{};
 	};
 }
