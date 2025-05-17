@@ -47,9 +47,10 @@ color_t load_color(uint32_t id) {
 #endif
 }
 
-inline color_t reduction_finction(color_t c0, color_t c1, color_t c2, color_t c3) {
+inline color_t reduce2x2(color_t c0, color_t c1, color_t c2, color_t c3) {
 #ifdef DEPTH_REDUCE
     return min(min(c0, c1), min(c2, c3));
+    //return max(max(c0, c1), max(c2, c3));
 #else
     return 0.25 * (c0 + c1 + c2 + c3);
 #endif
@@ -79,7 +80,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
         color_t color2 = load_color(group_id + 0x08);
         color_t color3 = load_color(group_id + 0x09);
 
-        color0 = reduction_finction(color0, color1, color2, color3);
+        color0 = reduce2x2(color0, color1, color2, color3);
 
         // Write the 2x2 reduced color
         image0[pc.mip_level + 2].Store(global_id.xy >> 1, color0);
@@ -102,7 +103,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
         color_t color2 = load_color(group_id + 0x10);
         color_t color3 = load_color(group_id + 0x12);
 
-        color0 = reduction_finction(color0, color1, color2, color3);
+        color0 = reduce2x2(color0, color1, color2, color3);
 
         // Write the 4x4 reduced color
         image0[pc.mip_level + 3].Store(global_id.xy >> 2, color0);
@@ -122,7 +123,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
         color_t color2 = load_color(group_id + 0x20);
         color_t color3 = load_color(group_id + 0x24);
 
-        color0 = reduction_finction(color0, color1, color2, color3);
+        color0 = reduce2x2(color0, color1, color2, color3);
 
         // Write the 8x8 reduced color
         image0[pc.mip_level + 4].Store(global_id.xy >> 3, color0);
