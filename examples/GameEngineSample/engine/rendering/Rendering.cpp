@@ -111,6 +111,7 @@ namespace engine::render
 {
 	uint32_t main_camera_index{ ~0u };
 	PostProcessData postprocess{};
+	bool enable_culling = true;
 
 	Renderer::Renderer(edge::Window* window) {
 		edge::gfx::ContextCreateInfo gfx_create_info{};
@@ -786,6 +787,10 @@ namespace engine::render
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 					EDGE_PROFILE_ZONE_SCOPED;
 
+					if (!enable_culling) {
+						return;
+					}
+
 					auto* draw_commands = render_world->get_draw_buffer();
 					auto* indirect_cmds = render_context->get_buffer(indirect_draw_commands);
 
@@ -1130,7 +1135,7 @@ namespace engine::render
 #endif
 			create_info.add_write_attachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
 			create_info.add_write_attachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
-			create_info.add_write_attachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 1.f });
+			create_info.add_write_attachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 0.f });
 
 			create_info.draw_callback = [this,
 				indirect_draw_commands
@@ -1144,7 +1149,7 @@ namespace engine::render
 					auto viewport_width = backbuffer->get_width();
 					auto viewport_height = backbuffer->get_height();
 
-					command_list.set_viewport(0.f, 0.f, static_cast<float>(viewport_width), static_cast<float>(viewport_height), 0.f, 1.f);
+					command_list.set_viewport(0.f, 0.f, static_cast<float>(viewport_width), static_cast<float>(viewport_height), 0.0f, 1.0f);
 					command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
 
 					self.read_resource(indirect_draw_commands, ~0u);
@@ -1195,10 +1200,10 @@ namespace engine::render
 			create_info.draw_callback = [this,
 				zbuffer_depth_target,
 				depth_pyramid_terget,
-				nearest_clamp_to_edge_sampler
+				nearest_mipmap_linear_reduce_min
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 				self.bind_read_resource(render_label::texture0, zbuffer_depth_target, ~0u);
-				self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler);
+				self.bind_resource(render_label::sampler0, nearest_mipmap_linear_reduce_min);
 				self.bind_write_resource(render_label::image0, depth_pyramid_terget, 0);
 				self.resolve_dependencies(command_list);
 				self.bind_resources(command_list);

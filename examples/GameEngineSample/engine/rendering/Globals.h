@@ -5,4 +5,5 @@
 namespace engine::render {
 	extern PostProcessData postprocess;
 	extern uint32_t main_camera_index;
+	extern bool enable_culling;
 }

@@ -90,36 +90,35 @@ bool is_occluded(in interop::Camera camera, in interop::BoundingBox bb) {
         bb.max
     };
 
-    float2 uv_min = float2(1.0, 1.0);
-    float2 uv_max = float2(0.0, 0.0);
-    float min_depth = 1.0;
-
+    // Compute corners in ndc
     [unroll]
     for (int i = 0; i < 8; ++i) {
         float4 clip_pos = mul(view_proj_matrix, float4(corners[i], 1.0));
-        float3 ndc = clip_pos.xyz / clip_pos.w;
-        float2 uv = util::clip_to_uv(ndc.xy);
-
-        uv_min = min(uv_min, uv);
-        uv_max = max(uv_max, uv);
-        min_depth = min(min_depth, ndc.z);
+        corners[i] = clip_pos.xyz / clip_pos.w;
     }
 
-    uv_min = clamp(uv_min, 0.0, 1.0);
-    uv_max = clamp(uv_max, 0.0, 1.0);
+    float3 ndc_min = corners[0];
+    float3 ndc_max = corners[0];
+
+    [unroll]
+    for (int i = 1; i < 8; ++i) {
+        ndc_min = min(ndc_min, corners[i]);
+        ndc_max = max(ndc_max, corners[i]);
+    }
+
+    float2 uv_min = util::clip_to_uv(ndc_min.xy);
+    float2 uv_max = util::clip_to_uv(ndc_max.xy);
 
     float2 aabb_size_pixels = (uv_max - uv_min) * float2(pyramid_size);
-    float max_pixel_size = max(aabb_size_pixels.x, aabb_size_pixels.y);
-    float mip_level = ceil(log2(max_pixel_size));
+    float mip_level = ceil(log2(max(max(aabb_size_pixels.x, aabb_size_pixels.y), 1.0)));
 
-    float max_depth_sample = 0.0f;
-    max_depth_sample = max(max_depth_sample, texture0.SampleLevel(sampler0, float2(uv_min.x, uv_min.y), mip_level));
-    max_depth_sample = max(max_depth_sample, texture0.SampleLevel(sampler0, float2(uv_min.x, uv_max.y), mip_level));
-    max_depth_sample = max(max_depth_sample, texture0.SampleLevel(sampler0, float2(uv_max.x, uv_min.y), mip_level));
-    max_depth_sample = max(max_depth_sample, texture0.SampleLevel(sampler0, float2(uv_max.x, uv_max.y), mip_level));
+    float depth = 1.0f;
+    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_min.x, uv_min.y), mip_level));
+    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_min.x, uv_max.y), mip_level));
+    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_max.x, uv_min.y), mip_level));
+    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_max.x, uv_max.y), mip_level));
 
-    const float epsilon = 1e-5;
-    return min_depth > (max_depth_sample + epsilon);
+    return depth > ndc_max.z;
 }
 
 [shader("compute")]

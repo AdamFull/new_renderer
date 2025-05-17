@@ -23,5 +23,7 @@ namespace engine
 		InspectorDrawer::draw_big(postprocess.filmgrain, ImGuiTreeNodeFlags_AllowItemOverlap);
 		InspectorDrawer::draw_big(postprocess.tonemap, ImGuiTreeNodeFlags_AllowItemOverlap);
 		InspectorDrawer::draw_big(postprocess.motionblur, ImGuiTreeNodeFlags_AllowItemOverlap);
+
+		ImGui::Checkbox("Enable culling", &enable_culling);
 	}
 }
