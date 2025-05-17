@@ -358,8 +358,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
         float4 dir_world_space = float4(0.0);
         const float3 origin = float3(0, atmosphere::k_planet_radius, 0) + camera_pos;
 
-        float depth = texture5.SampleLevel(sampler_point, uv, 0.0f).r;
-        dir_world_space.xyz = util::position_from_depth(uv, 1.0f, g_fd.get_inv_view_projection_matrix(camera.matrices_offset));
+        dir_world_space.xyz = util::position_from_depth(uv, constants::flt_epsilon, g_fd.get_inv_view_projection_matrix(camera.matrices_offset));
 
         uint sun_count = 0;
         for (int i = 0; i < g_fd.light_count; i++) {
@@ -368,7 +367,6 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
                 const float3 dir_to_sun = normalize(-light.direction);
 
                 pixel_color.rgb += atmosphere::scatter(origin, dir_world_space.xyz, -dir_to_sun, light.intencity);
-                //pixel_color.rgb += atmosphere::scatter(origin, dir_world_space.xyz, dir_to_sun, light.intencity);
 
                 sun_count++;
                 break;

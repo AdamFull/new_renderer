@@ -24,7 +24,8 @@ namespace util {
     }
 
     inline float linearize_depth(in float z, in float n, in float f) {
-        return (2.0f * n * f) / (f + n - z * (f - n));
+        // return (2.0f * n * f) / (f + n - z * (f - n)); // for normal z
+        return n / z;
     }
 
     float2 encode_velocity(in float2 velocity) {

@@ -1,6 +1,7 @@
 #include "RenderWorld.h"
 #include "../Rendering.h"
 
+#include <glm/gtc/reciprocal.hpp>
 #include <glm/gtx/quaternion.hpp>
 
 #include <edge/util/utl_profiler.h>
@@ -9,6 +10,17 @@
 #include "../Globals.h"
 
 namespace engine::render {
+	template<typename _Ty>
+	inline auto perspectiveRH_ReverseZ_InfiniteFar(_Ty fovy, _Ty aspect, _Ty znear) {
+		auto cot_half_fovy = glm::cot(fovy / static_cast<_Ty>(2));
+		auto result = glm::zero<glm::mat<4, 4, _Ty, glm::defaultp>>();
+		result[0][0] = cot_half_fovy / aspect;
+		result[1][1] = cot_half_fovy;
+		result[2][3] = -static_cast<_Ty>(1);
+		result[3][2] = znear;
+		return result;
+	}
+
 	RenderWorld::RenderWorld(IRenderer& renderer) :
 		renderer{ renderer } {
 		draw_descriptions = std::make_unique<DynamicBuffer<interop::DrawDescription>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
@@ -105,7 +117,7 @@ namespace engine::render {
 
 			matrices[constants::view_matrix_offset] = glm::lookAt(translation, translation + forward, up);
 			matrices[constants::inv_view_matrix_offset] = glm::inverse(matrices[constants::view_matrix_offset]);
-			matrices[constants::projection_matrix_offset] = glm::perspective(camera.fov, camera.aspect, camera.z_near, camera.z_far);
+			matrices[constants::projection_matrix_offset] = perspectiveRH_ReverseZ_InfiniteFar(camera.fov, camera.aspect, camera.z_near);
 			matrices[constants::inv_projection_matrix_offset] = glm::inverse(matrices[constants::projection_matrix_offset]);
 			matrices[constants::prev_view_projection_matrix_offset] = matrices[constants::view_projection_matrix_offset];
 			matrices[constants::view_projection_matrix_offset] = matrices[constants::projection_matrix_offset] * matrices[constants::view_matrix_offset];

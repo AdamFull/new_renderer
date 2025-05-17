@@ -38,7 +38,7 @@
       "depth_format": "d32_sfloat",
       "depth_test": true,
       "depth_write": true,
-      "depth_compare_op": "less"
+      "depth_compare_op": "greater_or_equal"
     },
     "primitive_topology": "triangle_list",
     "rasterization": {
