@@ -6,6 +6,9 @@
 #include "ImGuiTraits.h"
 #include <imgui_internal.h>
 
+#include <edge/util/utl_imgui.hpp>
+
+#include <algorithm>
 #include <string>
 #include <string_view>
 
@@ -196,5 +199,36 @@ namespace ImGui
     bool GInputDouble(std::string_view label, double* value, double step, double fast_step)
     {
         return Input<double, _Count>(label, value, step, fast_step);
+    }
+
+    template<typename _Ty>
+    bool GFlagEdit(std::string_view label, _Ty* flags, const char* const* labels = nullptr, size_t bit_count = 32ull) {
+        size_t max_bit_count = sizeof(_Ty) * 8ull;
+        bit_count = std::min(bit_count, max_bit_count);
+
+        bool changed = false;
+        if (edge::imui::make_scoped_push_id(label.data())) {
+            for (int32_t i = 0; i < bit_count; ++i) {
+                bool v = (*flags & (1u << i)) != 0;
+                const char* bit_label = labels ? labels[i] : nullptr;
+                char default_label[32];
+                if (!bit_label)
+                {
+                    snprintf(default_label, sizeof(default_label), "Bit %d", i);
+                    bit_label = default_label;
+                }
+
+                changed = changed || ImGui::Checkbox(bit_label, &v);
+
+                if (v) {
+                    *flags |= (1u << i);
+                }
+                else {
+                    *flags &= ~(1u << i);
+                }
+            }
+        }
+
+        return changed;
     }
 }
