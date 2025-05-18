@@ -61,11 +61,6 @@ namespace engine::render {
 				attachment = &rendering_info.attachments[rendering_info.attachment_count++];
 			}
 
-			auto& barrier = texture_barriers.emplace_back();
-			barrier.texture = execution_context.get_texture(render_resource);
-			barrier.src_state = render_resource.GetState();
-			barrier.dst_state = new_state;
-
 			if (last_access == 0) {
 				attachment->load_op = edge::gfx::LoadOp::eClear;
 			}
@@ -73,6 +68,11 @@ namespace engine::render {
 				attachment->load_op = edge::gfx::LoadOp::eLoad;
 				new_state |= edge::gfx::ResourceStateFlag::eRead;
 			}
+
+			auto& barrier = texture_barriers.emplace_back();
+			barrier.texture = execution_context.get_texture(render_resource);
+			barrier.src_state = render_resource.GetState();
+			barrier.dst_state = new_state;			
 
 			attachment->texture = barrier.texture;
 			attachment->store_op = edge::gfx::StoreOp::eNone;
