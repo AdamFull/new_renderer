@@ -111,7 +111,10 @@ namespace engine::render
 {
 	uint32_t main_camera_index{ ~0u };
 	PostProcessData postprocess{};
-	bool enable_culling = true;
+	bool freeze_culling = false;
+	bool is_culling_freezed = false;
+	bool enable_frustum_culling = true;
+	bool enable_occlusion_culling = false;
 
 	Renderer::Renderer(edge::Window* window) {
 		edge::gfx::ContextCreateInfo gfx_create_info{};
@@ -638,6 +641,16 @@ namespace engine::render
 			render_context->set_resource_name(indirect_draw_commands, "indirect_draw_commands");
 		}
 
+		uint32_t visibility_buffer{ ~0u };
+		{
+			edge::gfx::BufferCreateInfo create_info{};
+			create_info.size = sizeof(uint32_t) * constants::max_draw_command_count / 32ull;
+			create_info.usage = edge::gfx::BufferUsageFlag::eIndirectBuffer;
+
+			visibility_buffer = render_context->add_resource(create_info);
+			render_context->set_resource_name(visibility_buffer, "visibility_buffer");
+		}
+
 #ifdef TILE_MATERIAL_CLASSIFICATION
 		uint32_t indirect_material_technique_buffer{ ~0u };
 		{
@@ -775,44 +788,61 @@ namespace engine::render
 			render_context->add_node(std::move(group_node));
 		}
 
-		// Cull meshes
+		auto cull_meshes_fn = [this,
+			indirect_draw_commands,
+			depth_pyramid_terget,
+			visibility_buffer,
+			nearest_mipmap_linear_reduce_min
+		](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time, bool prepass) {
+			EDGE_PROFILE_ZONE_SCOPED;
+
+			auto* draw_commands = render_world->get_draw_buffer();
+			auto* indirect_cmds = render_context->get_buffer(indirect_draw_commands);
+			auto* visibility = render_context->get_buffer(visibility_buffer);
+
+			self.bind_read_resource(render_label::texture0, depth_pyramid_terget, ~0u);
+			self.bind_resource(render_label::sampler0, nearest_mipmap_linear_reduce_min);
+
+			self.write_resource(indirect_draw_commands, ~0u);
+			self.write_resource(visibility_buffer, ~0u);
+			self.resolve_dependencies(command_list);
+
+			auto& pc = self.get_constant_block();
+			auto& pc_data = pc.as<cull_and_batch::PushConstants>();
+			pc_data.input_draw_desc_ptr = draw_commands->get_address();
+			pc_data.output_draw_indirect_ptr = indirect_cmds->get_address();
+			pc_data.visibility_ptr = visibility->get_address();
+			pc_data.prepass = prepass ? 1 : -1;
+			pc_data.frustum_culling_enabled = enable_frustum_culling ? 1 : -1;
+			pc_data.occlusion_culling_enabled = enable_occlusion_culling ? 1 : -1;
+			self.push_constant_ranges(command_list);
+
+			self.bind_resources(command_list);
+
+			uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
+			group_x = render_world->get_draw_count();
+
+			self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
+			command_list.dispatch(group_x, group_y, group_z);
+			};
+
+		// Cull meshes prepass
 		{
 			ComputeShaderPassCreateInfo create_info{};
 			create_info.technique_name = "cull_and_batch";
 
-			create_info.draw_callback = [this,
-				indirect_draw_commands,
-				depth_pyramid_terget,
-				nearest_clamp_to_edge_sampler
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-					EDGE_PROFILE_ZONE_SCOPED;
+			create_info.enabled_callback = []() -> bool { 
+				bool need_to_freeze = is_culling_freezed;
+				if (freeze_culling && !is_culling_freezed) {
+					is_culling_freezed = true;
+				}
 
-					if (!enable_culling) {
-						return;
-					}
-
-					auto* draw_commands = render_world->get_draw_buffer();
-					auto* indirect_cmds = render_context->get_buffer(indirect_draw_commands);
-
-					self.bind_read_resource(render_label::texture0, depth_pyramid_terget, ~0u);
-					self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler);
-
-					self.write_resource(indirect_draw_commands, ~0u);
-					self.resolve_dependencies(command_list);
-
-					auto& pc = self.get_constant_block();
-					auto& pc_data = pc.as<cull_and_batch::PushConstants>();
-					pc_data.input_draw_desc_ptr = draw_commands->get_address();
-					pc_data.output_draw_indirect_ptr = indirect_cmds->get_address();
-					self.push_constant_ranges(command_list);
-
-					self.bind_resources(command_list);
-
-					uint32_t group_x{ 1u }, group_y{ 1u }, group_z{ 1u };
-					group_x = render_world->get_draw_count();
-
-					self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
-					command_list.dispatch(group_x, group_y, group_z);
+				return !need_to_freeze;
+				};
+			create_info.draw_callback = 
+				[cull_meshes_fn]
+				(ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+				cull_meshes_fn(self, command_list, delta_time, true);
 				};
 
 			render_context->add_node(render_context->create_node(create_info));
@@ -1125,7 +1155,59 @@ namespace engine::render
 		}
 #endif
 
-		// Geometry draw
+		auto geometry_draw_fn = [this,
+			indirect_draw_commands
+		](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+			EDGE_PROFILE_ZONE_SCOPED;
+
+			auto* backbuffer = render_context->get_texture(backbuffer_resource);
+			auto* draw_commands = render_world->get_draw_buffer();
+			auto* argument_buffer = render_context->get_buffer(indirect_draw_commands);
+
+			auto viewport_width = backbuffer->get_width();
+			auto viewport_height = backbuffer->get_height();
+
+			command_list.set_viewport(0.f, 0.f, static_cast<float>(viewport_width), static_cast<float>(viewport_height), 0.0f, 1.0f);
+			command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
+
+			self.read_resource(indirect_draw_commands, ~0u);
+			self.resolve_dependencies(command_list);
+
+			auto& geometry_buffer = *geometry_buffers.back();
+			geometry_buffer.bind_index_buffer(command_list);
+
+			// Bind buffers that uses in draw
+			auto& draw_data_block = self.get_uniform_block(edge::murmur_hash("egd"));
+			auto& draw_data_block_data = draw_data_block.as<interop::EncodedGeometryData>();
+			draw_data_block_data.vertices = geometry_buffer.get_buffer_address();
+			draw_data_block_data.draw_descriptions_ptr = draw_commands->get_address();
+			draw_data_block_data.draw_data_ptr = argument_buffer->get_address();
+
+			self.bind_resources(command_list);
+
+			auto camera_id = render_world->get_resource_id(main_camera_index);
+			auto draw_call_offset = camera_id * render_world->get_mesh_count();
+
+			auto& pc = self.get_constant_block();
+			auto& pc_data = pc.as<visbufferwrite::PushConstants>();
+			pc_data.call_id = draw_call_offset;
+			pc_data.camera_id = camera_id;
+
+			self.push_constant_ranges(command_list);
+
+			edge::gfx::IndirectDrawCommand draw_command{};
+			draw_command.indexed_draw = true;
+			draw_command.draw_count = render_world->get_mesh_count();
+			draw_command.argument_buffer = argument_buffer;
+			draw_command.command_stride = sizeof(interop::DrawIndexedIndirectData);
+			draw_command.argument_offset = draw_call_offset * draw_command.command_stride;
+
+			self.begin(command_list);
+			command_list.draw_indirect(draw_command);
+			self.end(command_list);
+			};
+
+		// Geometry draw prepass
 		{
 			RenderShaderPassCreateInfo create_info{};
 #if SKINNING_TEST
@@ -1137,57 +1219,7 @@ namespace engine::render
 			create_info.add_write_attachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
 			create_info.add_write_attachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 0.f });
 
-			create_info.draw_callback = [this,
-				indirect_draw_commands
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-					EDGE_PROFILE_ZONE_SCOPED;
-
-					auto* backbuffer = render_context->get_texture(backbuffer_resource);
-					auto* draw_commands = render_world->get_draw_buffer();
-					auto* argument_buffer = render_context->get_buffer(indirect_draw_commands);
-
-					auto viewport_width = backbuffer->get_width();
-					auto viewport_height = backbuffer->get_height();
-
-					command_list.set_viewport(0.f, 0.f, static_cast<float>(viewport_width), static_cast<float>(viewport_height), 0.0f, 1.0f);
-					command_list.set_scissor(0u, 0u, viewport_width, viewport_height);
-
-					self.read_resource(indirect_draw_commands, ~0u);
-					self.resolve_dependencies(command_list);
-
-					auto& geometry_buffer = *geometry_buffers.back();
-					geometry_buffer.bind_index_buffer(command_list);
-
-					// Bind buffers that uses in draw
-					auto& draw_data_block = self.get_uniform_block(edge::murmur_hash("egd"));
-					auto& draw_data_block_data = draw_data_block.as<interop::EncodedGeometryData>();
-					draw_data_block_data.vertices = geometry_buffer.get_buffer_address();
-					draw_data_block_data.draw_descriptions_ptr = draw_commands->get_address();
-					draw_data_block_data.draw_data_ptr = argument_buffer->get_address();
-					
-					self.bind_resources(command_list);
-
-					auto camera_id = render_world->get_resource_id(main_camera_index);
-					auto draw_call_offset = camera_id * render_world->get_mesh_count();
-
-					auto& pc = self.get_constant_block();
-					auto& pc_data = pc.as<visbufferwrite::PushConstants>();
-					pc_data.call_id = draw_call_offset;
-					pc_data.camera_id = camera_id;
-
-					self.push_constant_ranges(command_list);
-
-					edge::gfx::IndirectDrawCommand draw_command{};
-					draw_command.indexed_draw = true;
-					draw_command.draw_count = render_world->get_mesh_count();
-					draw_command.argument_buffer = argument_buffer;
-					draw_command.command_stride = sizeof(interop::DrawIndexedIndirectData);
-					draw_command.argument_offset = draw_call_offset * draw_command.command_stride;
-
-					self.begin(command_list);
-					command_list.draw_indirect(draw_command);
-					self.end(command_list);
-				};
+			create_info.draw_callback = geometry_draw_fn;
 
 			render_context->add_node(render_context->create_node(create_info));
 		}
@@ -1197,6 +1229,7 @@ namespace engine::render
 			ComputeShaderPassCreateInfo create_info{};
 			create_info.technique_name = "copy_image";
 
+			create_info.enabled_callback = []() -> bool { return !is_culling_freezed; };
 			create_info.draw_callback = [this,
 				zbuffer_depth_target,
 				depth_pyramid_terget,
@@ -1214,11 +1247,12 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
-		// Build depth pyramid
+		// Build hiz
 		{
 			ComputeShaderPassCreateInfo create_info{};
 			create_info.technique_name = "depth_reduce_4x";
 
+			create_info.enabled_callback = []() -> bool { return !is_culling_freezed; };
 			create_info.draw_callback = [this,
 				depth_pyramid_terget,
 				nearest_mipmap_linear_reduce_min
@@ -1257,6 +1291,39 @@ namespace engine::render
 					mip += mip_count;
 				}
 			};
+
+			render_context->add_node(render_context->create_node(create_info));
+		}
+
+		// Cull meshes
+		{
+			ComputeShaderPassCreateInfo create_info{};
+			create_info.technique_name = "cull_and_batch";
+
+			create_info.enabled_callback = []() -> bool { return !is_culling_freezed; };
+			create_info.draw_callback =
+				[cull_meshes_fn]
+				(ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
+				cull_meshes_fn(self, command_list, delta_time, false);
+				};
+
+			render_context->add_node(render_context->create_node(create_info));
+		}
+
+		// Geometry draw
+		{
+			RenderShaderPassCreateInfo create_info{};
+#if SKINNING_TEST
+			create_info.technique_name = "visibilitybuffer_write_skin";
+#else
+			create_info.technique_name = "visibilitybuffer_write";
+#endif
+			create_info.add_write_attachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
+			create_info.add_write_attachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
+			create_info.add_write_attachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 0.f });
+
+			create_info.enabled_callback = []() -> bool { return !is_culling_freezed; };
+			create_info.draw_callback = geometry_draw_fn;
 
 			render_context->add_node(render_context->create_node(create_info));
 		}

@@ -121,6 +121,28 @@ bool is_occluded(in interop::Camera camera, in interop::BoundingBox bb) {
     return depth > ndc_max.z;
 }
 
+bool get_visibility(uint32_t index) {
+    uint32_t word_index = index >> 5; // Divide by 32
+    uint32_t bit_index = index & 31;  // Modulo 32
+    return bool((pc.visibility_ptr[word_index] >> bit_index) & 1u);
+}
+
+void set_visibility(uint32_t index, bool value) {
+    uint32_t word_index = index >> 5; // Divide by 32
+    uint32_t bit_index = index & 31;  // Modulo 32
+    uint32_t bit_mask = 1u << bit_index;
+
+    [branch]
+    if (value) {
+        InterlockedOr(pc.visibility_ptr[word_index], bit_mask);
+    }
+    else {
+        InterlockedAnd(pc.visibility_ptr[word_index], ~bit_mask);
+    }
+}
+
+groupshared uint32_t draw_offset;
+
 [shader("compute")]
 [numthreads(64, 1, 1)]
 void main(uint32_t3 global_id: SV_DispatchThreadID) {
@@ -132,6 +154,9 @@ void main(uint32_t3 global_id: SV_DispatchThreadID) {
     uint32_t global_draw_index = global_id.x;
     interop::DrawDescription draw_info = pc.input_draw_desc_ptr[global_draw_index];
 
+    bool is_prepass = WaveActiveAnyTrue(pc.prepass > 0);
+    bool is_visible = is_prepass ? get_visibility(global_draw_index) : true;
+
     interop::Mesh mesh = g_fd.mesh_ptr[draw_info.mesh_index];
     interop::SubMesh submesh = g_fd.submesh_ptr[mesh.submesh_offset + draw_info.submesh_index];
 
@@ -142,25 +167,66 @@ void main(uint32_t3 global_id: SV_DispatchThreadID) {
     interop::BoundingBox submesh_bb = submesh.ebb.decode(model);
 
     interop::Camera camera = g_fd.camera_ptr[draw_info.camera_index];
-    if (!check_mesh_in_frustum(submesh_bb, camera.frustum_offset)) {
-        pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;
-        return;
+    if (WaveActiveAnyTrue(pc.frustum_culling_enabled > 0) && is_visible) {
+            is_visible = is_visible && check_mesh_in_frustum(submesh_bb, camera.frustum_offset);
     }
 
-    //if (is_occluded(camera, submesh_bb) && g_fd.frame_number > 1) {
+    if (!is_prepass && WaveActiveAnyTrue(pc.occlusion_culling_enabled > 0) && is_visible) {
+                is_visible = is_visible && is_occluded(camera, submesh_bb);
+    }
+
+    bool need_draw_mesh = is_prepass ? is_visible : is_visible && !get_visibility(global_draw_index);
+    uint32_t4 need_draw_mesh_ballot = WaveActiveBallot(need_draw_mesh);
+
+    if (global_draw_index == 0)
+    {
+        uint32_t draw_mesh_count = countbits(need_draw_mesh_ballot.x) + countbits(need_draw_mesh_ballot.y)
+                           + countbits(need_draw_mesh_ballot.z) + countbits(need_draw_mesh_ballot.w);
+        InterlockedAdd(draw_offset, draw_mesh_count);
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    if (need_draw_mesh) {
+        uint32_t lod_index = select_mesh_lod(camera, submesh_bb, submesh);
+        interop::MeshLod selected_lod = submesh.lods[lod_index];
+
+        interop::DrawIndexedIndirectData indirect_command;
+        indirect_command.index_count = selected_lod.index_count;
+        indirect_command.instance_count = 1;
+        indirect_command.first_index = selected_lod.first_index;
+        indirect_command.vertex_offset = submesh.first_vertex;
+        indirect_command.first_instance = 0;
+
+        pc.output_draw_indirect_ptr[global_draw_index] = indirect_command;
+    }
+    else {
+        pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;
+    }
+
+    if (!is_prepass) {
+        set_visibility(global_draw_index, is_visible);
+    }
+
+    //if (!check_mesh_in_frustum(submesh_bb, camera.frustum_offset)) {
     //    pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;
     //    return;
     //}
-
-    uint32_t lod_index = select_mesh_lod(camera, submesh_bb, submesh);
-    interop::MeshLod selected_lod = submesh.lods[lod_index];
-
-    interop::DrawIndexedIndirectData indirect_command;
-    indirect_command.index_count = selected_lod.index_count;
-    indirect_command.instance_count = 1;
-    indirect_command.first_index = selected_lod.first_index;
-    indirect_command.vertex_offset = submesh.first_vertex;
-    indirect_command.first_instance = 0;
-
-    pc.output_draw_indirect_ptr[global_draw_index] = indirect_command;
+    //
+    ////if (is_occluded(camera, submesh_bb) && g_fd.frame_number > 1) {
+    ////    pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;
+    ////    return;
+    ////}
+    //
+    //uint32_t lod_index = select_mesh_lod(camera, submesh_bb, submesh);
+    //interop::MeshLod selected_lod = submesh.lods[lod_index];
+    //
+    //interop::DrawIndexedIndirectData indirect_command;
+    //indirect_command.index_count = selected_lod.index_count;
+    //indirect_command.instance_count = 1;
+    //indirect_command.first_index = selected_lod.first_index;
+    //indirect_command.vertex_offset = submesh.first_vertex;
+    //indirect_command.first_instance = 0;
+    //
+    //pc.output_draw_indirect_ptr[global_draw_index] = indirect_command;
 }

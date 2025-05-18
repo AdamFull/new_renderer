@@ -24,6 +24,11 @@ namespace engine
 		InspectorDrawer::draw_big(postprocess.tonemap, ImGuiTreeNodeFlags_AllowItemOverlap);
 		InspectorDrawer::draw_big(postprocess.motionblur, ImGuiTreeNodeFlags_AllowItemOverlap);
 
-		ImGui::Checkbox("Enable culling", &enable_culling);
+		if (ImGui::Checkbox("Freeze culling", &freeze_culling)) {
+			is_culling_freezed = false;
+		}
+
+		ImGui::Checkbox("Enable frustum culling", &enable_frustum_culling);
+		ImGui::Checkbox("Enable occlusion culling", &enable_occlusion_culling);
 	}
 }
