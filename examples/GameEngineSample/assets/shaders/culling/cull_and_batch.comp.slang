@@ -110,15 +110,11 @@ bool is_occluded(in interop::Camera camera, in interop::BoundingBox bb) {
     float2 uv_max = util::clip_to_uv(ndc_max.xy);
 
     float2 aabb_size_pixels = (uv_max - uv_min) * float2(pyramid_size);
-    float mip_level = ceil(log2(max(max(aabb_size_pixels.x, aabb_size_pixels.y), 1.0)));
+    float mip_level = ceil(log2(max(aabb_size_pixels.x, aabb_size_pixels.y)));
 
-    float depth = 1.0f;
-    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_min.x, uv_min.y), mip_level));
-    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_min.x, uv_max.y), mip_level));
-    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_max.x, uv_min.y), mip_level));
-    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_max.x, uv_max.y), mip_level));
-
-    return depth > ndc_max.z;
+    // Sample with min reduxtion sampler
+    float depth = texture0.SampleLevel(sampler0, (uv_min + uv_max) * 0.5f, mip_level);
+    return ndc_max.z >= depth;
 }
 
 bool get_visibility(uint32_t index) {
@@ -154,7 +150,10 @@ void main(uint32_t3 global_id: SV_DispatchThreadID) {
     uint32_t global_draw_index = global_id.x;
     interop::DrawDescription draw_info = pc.input_draw_desc_ptr[global_draw_index];
 
-    bool is_prepass = WaveActiveAnyTrue(pc.prepass > 0);
+    bool is_prepass = WaveActiveAnyTrue((pc.flags & interop::CullingFlag::ePrepass) == interop::CullingFlag::ePrepass);
+    bool frustum_culling_enabled = WaveActiveAnyTrue((pc.flags & interop::CullingFlag::eFrustum) == interop::CullingFlag::eFrustum);
+    bool occlusion_culling_enabled = WaveActiveAnyTrue((pc.flags & interop::CullingFlag::eOcclusion) == interop::CullingFlag::eOcclusion);
+    bool lod_selection_enabled = WaveActiveAnyTrue((pc.flags & interop::CullingFlag::eLodSelect) == interop::CullingFlag::eLodSelect);
     bool is_visible = is_prepass ? get_visibility(global_draw_index) : true;
 
     interop::Mesh mesh = g_fd.mesh_ptr[draw_info.mesh_index];
@@ -163,32 +162,23 @@ void main(uint32_t3 global_id: SV_DispatchThreadID) {
     float4x4 model = g_fd.get_model_matrix(mesh.matrix_offset);
 
     // Calculate bounding box
-    interop::BoundingBox bb = mesh.ebb.decode(model);
     interop::BoundingBox submesh_bb = submesh.ebb.decode(model);
 
     interop::Camera camera = g_fd.camera_ptr[draw_info.camera_index];
-    if (WaveActiveAnyTrue(pc.frustum_culling_enabled > 0) && is_visible) {
-            is_visible = is_visible && check_mesh_in_frustum(submesh_bb, camera.frustum_offset);
+    if (frustum_culling_enabled && is_visible) {
+        is_visible = is_visible && check_mesh_in_frustum(submesh_bb, camera.frustum_offset);
     }
 
-    if (!is_prepass && WaveActiveAnyTrue(pc.occlusion_culling_enabled > 0) && is_visible) {
-                is_visible = is_visible && is_occluded(camera, submesh_bb);
+    if (!is_prepass && occlusion_culling_enabled && is_visible) {
+        is_visible = is_visible && is_occluded(camera, submesh_bb);
     }
 
     bool need_draw_mesh = is_prepass ? is_visible : is_visible && !get_visibility(global_draw_index);
-    uint32_t4 need_draw_mesh_ballot = WaveActiveBallot(need_draw_mesh);
-
-    if (global_draw_index == 0)
-    {
-        uint32_t draw_mesh_count = countbits(need_draw_mesh_ballot.x) + countbits(need_draw_mesh_ballot.y)
-                           + countbits(need_draw_mesh_ballot.z) + countbits(need_draw_mesh_ballot.w);
-        InterlockedAdd(draw_offset, draw_mesh_count);
-    }
 
     GroupMemoryBarrierWithGroupSync();
 
     if (need_draw_mesh) {
-        uint32_t lod_index = select_mesh_lod(camera, submesh_bb, submesh);
+        uint32_t lod_index = lod_selection_enabled ? select_mesh_lod(camera, submesh_bb, submesh) : 0;
         interop::MeshLod selected_lod = submesh.lods[lod_index];
 
         interop::DrawIndexedIndirectData indirect_command;
