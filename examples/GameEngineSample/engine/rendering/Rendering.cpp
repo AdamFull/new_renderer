@@ -23,7 +23,6 @@
 #include <regex>
 
 #include <imgui.h>
-//#include <imdbg.h>
 #include <edge/util/utl_profiler.h>
 
 #include <edge/fs/fs_virtual_filesystem.h>
@@ -31,6 +30,8 @@
 #if USE_NSIGHT_AFTERMATH
 #include <edge/gfx/gfx_nsight_aftermath.h>
 #endif
+
+#include "debug.h"
 
 // Pass data includes
 #include "../../assets/shaders/culling/cull_and_batch.h"
@@ -111,10 +112,8 @@ namespace engine::render
 {
 	uint32_t main_camera_index{ ~0u };
 	PostProcessData postprocess{};
-	bool freeze_culling = false;
+	interop::CullingFlags culling_flags = interop::CullingFlag::eFrustum | interop::CullingFlag::eLodSelect;
 	bool is_culling_freezed = false;
-	bool enable_frustum_culling = true;
-	bool enable_occlusion_culling = false;
 
 	Renderer::Renderer(edge::Window* window) {
 		edge::gfx::ContextCreateInfo gfx_create_info{};
@@ -131,12 +130,15 @@ namespace engine::render
 
 		render_world = std::make_unique<RenderWorld>(*this);
 
+		debug::create_debug_draw_context();
 
 		// Temporary func to create test render graph
 		build_graph();
 	}
 
 	Renderer::~Renderer() {
+		debug::shutdown_debug_draw_context();
+
 		edge::gfx::shutdown_resource_uploader();
 		edge::gfx::shutdown_context();
 	}
@@ -812,9 +814,7 @@ namespace engine::render
 			pc_data.input_draw_desc_ptr = draw_commands->get_address();
 			pc_data.output_draw_indirect_ptr = indirect_cmds->get_address();
 			pc_data.visibility_ptr = visibility->get_address();
-			pc_data.prepass = prepass ? 1 : -1;
-			pc_data.frustum_culling_enabled = enable_frustum_culling ? 1 : -1;
-			pc_data.occlusion_culling_enabled = enable_occlusion_culling ? 1 : -1;
+			pc_data.flags = static_cast<uint32_t>(culling_flags | (prepass ? interop::CullingFlag::ePrepass : (interop::CullingFlag)0));
 			self.push_constant_ranges(command_list);
 
 			self.bind_resources(command_list);
@@ -831,7 +831,8 @@ namespace engine::render
 			ComputeShaderPassCreateInfo create_info{};
 			create_info.technique_name = "cull_and_batch";
 
-			create_info.enabled_callback = []() -> bool { 
+			create_info.enabled_callback = []() -> bool {
+				bool freeze_culling = (culling_flags & interop::CullingFlag::eFreeze) == interop::CullingFlag::eFreeze;
 				bool need_to_freeze = is_culling_freezed;
 				if (freeze_culling && !is_culling_freezed) {
 					is_culling_freezed = true;
@@ -2257,119 +2258,12 @@ namespace engine::render
 			render_context->add_node(render_context->create_node(create_info));
 		}
 
-		// ImDbg renderer
-		//{
-		//	if (ImDbg::GetCurrentContext())
-		//	{
-		//		GeometryBufferCreateInfo geometry_buffer_ci{};
-		//		geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, edge::gfx::Format::eR16G16B16A16Sint);
-		//		geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eTexCoord, edge::gfx::Format::eR16G16Unorm);
-		//		geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::eColor, edge::gfx::Format::eR8G8B8A8Unorm);
-		//		geometry_buffer_ci.index_description.type = edge::gfx::IndexType::eUint16;
-		//
-		//		auto geometry_buffer_id = request_interleaved_geometry_buffer(geometry_buffer_ci);
-		//		auto& geometry_buffer = lookup_geometry_buffer(geometry_buffer_id);
-		//
-		//		RenderShaderPassCreateInfo create_info{};
-		//		create_info.technique_name = "debug_draw";
-		//		create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
-		//	}
-		//}
-
 		// Debug text
 		{
-			GeometryBufferCreateInfo geometry_buffer_ci{};
-			geometry_buffer_ci.attribute_descriptions.emplace_back(VertexAttributeFlag::ePosition, edge::gfx::Format::eR32G32Sfloat);
-			geometry_buffer_ci.index_description.type = edge::gfx::IndexType::eUint16;
-
-			glm::vec2 vertex_positions[] = {
-				{0, 16},
-				{0, 0},
-				{8 * 4, 0},
-				{8 * 4, 16}
-			};
-
-			uint16_t indices[] = {
-				0, 1, 2,
-				0, 2, 3,
-			};
-
-			auto geometry_buffer_id = request_interleaved_geometry_buffer(geometry_buffer_ci);
-			auto& geometry_buffer = lookup_geometry_buffer(geometry_buffer_id);
-			geometry_buffer.add_vertex_stream_data(vertex_positions, 4, sizeof(glm::vec2));
-			geometry_buffer.add_index_stream_data(indices, 6, sizeof(uint16_t));
-
 			RenderShaderPassCreateInfo create_info{};
 			create_info.technique_name = "debug_text";
 			create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
-
-			uint32_t debug_text_buffer{ ~0u };
-			{
-				edge::gfx::BufferCreateInfo create_info{};
-				create_info.size = sizeof(debug_text::DebugTextData) * 512;
-				create_info.usage = edge::gfx::BufferUsageFlag::eStorageBufferCPU;
-
-				debug_text_buffer = render_context->add_resource(create_info);
-				render_context->set_resource_name(debug_text_buffer, "debug_text_buffer");
-			}
-
-
-
-			auto debug_text_maker = [](const glm::u16vec2& pos, const char* text, std::vector<debug_text::DebugTextData>& out) {
-					int32_t text_len = static_cast<int32_t>(strlen(text));
-					int32_t word_count = (text_len + 4) / 4;
-
-					for (int32_t word_idx = 0; word_idx < word_count; ++word_idx) {
-						int32_t word_offset = word_idx * 4;
-						int32_t char_remain = text_len - word_offset;
-
-						uint32_t word{ 0 };
-						memcpy(&word, text + word_offset, char_remain < 4 ? char_remain : 4);
-
-						out.push_back({
-								.word = word,
-								.pos = {8 * 4 * word_idx * 2.f + pos.x, pos.y},
-								.scale = 2.f,
-								.fg_color = {255, 255, 255, 255},
-								.bg_color = {0, 0, 0, 0}
-							});
-					}
-				};
-
-			static std::vector<debug_text::DebugTextData> text_data{};
-			debug_text_maker({ 100, 100 }, "Hello World!", text_data);
-
-			auto* text_buffer = render_context->get_buffer(debug_text_buffer);
-			text_buffer->update(text_data.data(), text_data.size() * sizeof(debug_text::DebugTextData));
-
-			create_info.draw_callback = [this,
-				&geometry_buffer,
-				debug_text_buffer
-			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
-					EDGE_PROFILE_ZONE_SCOPED;
-
-					auto* backbuffer = render_context->get_texture(backbuffer_resource);
-					glm::vec2 viewport_resolution{ backbuffer->get_width(), backbuffer->get_height() };
-
-					command_list.set_scissor(0, 0, static_cast<uint32_t>(viewport_resolution.x), static_cast<uint32_t>(viewport_resolution.y));
-					command_list.set_viewport(0.f, 0.f, viewport_resolution.x, viewport_resolution.y, 0.f, 1.f);
-
-					// Bind vertex and index buffers
-					geometry_buffer.bind(command_list);
-
-					auto* text_buffer = render_context->get_buffer(debug_text_buffer);
-
-					auto& pc = self.get_constant_block();
-					auto& pc_data = pc.as<debug_text::PushConstants>();
-					pc_data.word_data = text_buffer->get_address();
-					pc_data.inv_viewport_resolution = 1.f / viewport_resolution;
-					self.push_constant_ranges(command_list);
-					self.resolve_dependencies(command_list);
-
-					self.begin(command_list);
-					command_list.draw_indexed(6u, 0u, static_cast<uint32_t>(text_data.size()), 0u, 0u);
-					self.end(command_list);
-				};
+			create_info.draw_callback = debug::draw_cb;
 
 			render_context->add_node(render_context->create_node(create_info));
 		}

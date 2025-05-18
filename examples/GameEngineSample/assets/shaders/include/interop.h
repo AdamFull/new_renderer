@@ -8,6 +8,8 @@
 #include <glm/packing.hpp>
 #include <glm/gtx/compatibility.hpp>
 
+#include <edge/util/utl_enum.hpp>
+
 using int8_t2 = glm::i8vec2;
 using int8_t3 = glm::i8vec3;
 using int8_t4 = glm::i8vec4;
@@ -111,6 +113,14 @@ typedef uint32_t sindex_t;
 #endif
 
 namespace interop {
+	enum class CullingFlag : uint32_t {
+		eFreeze = 1 << 0,
+		eFrustum = 1 << 1,
+		eOcclusion = 1 << 2,
+		eLodSelect = 1 << 3,
+		ePrepass = 1 << 4
+	};
+
 	// From: https://github.com/graphitemaster/normals_revisited
 	inline float3x3 adjugate(float3x3 m) {
 		return float3x3(cross(m[1], m[2]), cross(m[2], m[0]), cross(m[0], m[1]));
@@ -540,3 +550,13 @@ namespace interop {
 		}
 	};
 }
+
+#ifdef __cplusplus
+EDGE_REGISTER_ENUM_FLAGS(interop, CullingFlags, CullingFlag,
+	EDGE_ENUM_META(interop::CullingFlag::eFreeze, "freeze"),
+	EDGE_ENUM_META(interop::CullingFlag::eFrustum, "frustum"),
+	EDGE_ENUM_META(interop::CullingFlag::eOcclusion, "occlusion"),
+	EDGE_ENUM_META(interop::CullingFlag::eLodSelect, "lod_selection"),
+	EDGE_ENUM_META(interop::CullingFlag::ePrepass, "prepass")
+)
+#endif

@@ -24,11 +24,12 @@ namespace engine
 		InspectorDrawer::draw_big(postprocess.tonemap, ImGuiTreeNodeFlags_AllowItemOverlap);
 		InspectorDrawer::draw_big(postprocess.motionblur, ImGuiTreeNodeFlags_AllowItemOverlap);
 
-		if (ImGui::Checkbox("Freeze culling", &freeze_culling)) {
-			is_culling_freezed = false;
-		}
+		const char* culling_labels[4] = { "Freeze culling", "Enable frustum culling", "Enable occlusion culling", "Enable lod selection" };
 
-		ImGui::Checkbox("Enable frustum culling", &enable_frustum_culling);
-		ImGui::Checkbox("Enable occlusion culling", &enable_occlusion_culling);
+		uint32_t culling_flags_int = static_cast<uint32_t>(culling_flags);
+		if (ImGui::GFlagEdit("Culling flags", &culling_flags_int, culling_labels, 4)) {
+			is_culling_freezed = false;
+			culling_flags = culling_flags_int;
+		}
 	}
 }
