@@ -3,7 +3,7 @@
 #include "../include/util.slang"
 
 [[vk::binding(0, 1)]] Texture2D<float> texture0 : register(to, space1); // depth pyramid (hiz)
-[[vk::binding(1, 1)]] SamplerState sampler0 : register(s0, space1); // depth sampler (nearest)
+[[vk::binding(1, 1)]] SamplerState sampler0 : register(s0, space1); // nearest sampler
 
 [[vk::push_constant]] ConstantBuffer<cull_and_batch::PushConstants> pc;
 
@@ -90,42 +90,45 @@ bool is_occluded(in interop::Camera camera, in interop::BoundingBox bb) {
         bb.max
     };
 
+    float3 ndc_min = constants::flt_max;
+    float3 ndc_max = -constants::flt_max;
+
     // Compute corners in ndc
     [unroll]
     for (int i = 0; i < 8; ++i) {
         float4 clip_pos = mul(view_proj_matrix, float4(corners[i], 1.0));
-        corners[i] = clip_pos.xyz / clip_pos.w;
+        float3 ndc_pos = clip_pos.xyz / clip_pos.w;
+        ndc_min = min(ndc_min, ndc_pos);
+        ndc_max = max(ndc_max, ndc_pos);
     }
 
-    float3 ndc_min = corners[0];
-    float3 ndc_max = corners[0];
-
-    [unroll]
-    for (int i = 1; i < 8; ++i) {
-        ndc_min = min(ndc_min, corners[i]);
-        ndc_max = max(ndc_max, corners[i]);
-    }
-
-    float2 uv_min = util::clip_to_uv(ndc_min.xy);
-    float2 uv_max = util::clip_to_uv(ndc_max.xy);
+    float2 uv_min = saturate(util::clip_to_uv(ndc_min.xy));
+    float2 uv_max = saturate(util::clip_to_uv(ndc_max.xy));
 
     float2 aabb_size_pixels = (uv_max - uv_min) * float2(pyramid_size);
-    float mip_level = ceil(log2(max(aabb_size_pixels.x, aabb_size_pixels.y)));
+    float mip_level = ceil(log2(max(1.0f, max(aabb_size_pixels.x, aabb_size_pixels.y))));
 
-    // Sample with min reduxtion sampler
-    float depth = texture0.SampleLevel(sampler0, (uv_min + uv_max) * 0.5f, mip_level);
-    return ndc_max.z >= depth;
+    // Sample with min reduction (for reverse z)
+    float depth = 1.0f;
+    depth = min(depth, texture0.SampleLevel(sampler0, uv_min, mip_level));
+    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_min.x, uv_max.y), mip_level));
+    depth = min(depth, texture0.SampleLevel(sampler0, float2(uv_max.x, uv_min.y), mip_level));
+    depth = min(depth, texture0.SampleLevel(sampler0, uv_max, mip_level));
+    //depth = min(depth, texture0.SampleLevel(sampler0, (uv_min + uv_max) * 0.5f, mip_level));
+    // Object is occluded when sampled depth is higher than current ndc max (for hiz)
+    return depth > ndc_max.z;
 }
 
+// Get previous frame object visibility
 bool get_visibility(uint32_t index) {
-    uint32_t word_index = index >> 5; // Divide by 32
-    uint32_t bit_index = index & 31;  // Modulo 32
+    uint32_t word_index = index >> 5;
+    uint32_t bit_index = index & 31;
     return bool((pc.visibility_ptr[word_index] >> bit_index) & 1u);
 }
 
 void set_visibility(uint32_t index, bool value) {
-    uint32_t word_index = index >> 5; // Divide by 32
-    uint32_t bit_index = index & 31;  // Modulo 32
+    uint32_t word_index = index >> 5;
+    uint32_t bit_index = index & 31;
     uint32_t bit_mask = 1u << bit_index;
 
     [branch]
@@ -170,10 +173,10 @@ void main(uint32_t3 global_id: SV_DispatchThreadID) {
     }
 
     if (!is_prepass && occlusion_culling_enabled && is_visible) {
-        is_visible = is_visible && is_occluded(camera, submesh_bb);
+        is_visible = is_visible && !is_occluded(camera, submesh_bb);
     }
 
-    bool need_draw_mesh = is_prepass ? is_visible : is_visible && !get_visibility(global_draw_index);
+    bool need_draw_mesh = is_prepass ? is_visible : (is_visible && !get_visibility(global_draw_index));
 
     GroupMemoryBarrierWithGroupSync();
 
@@ -197,26 +200,4 @@ void main(uint32_t3 global_id: SV_DispatchThreadID) {
     if (!is_prepass) {
         set_visibility(global_draw_index, is_visible);
     }
-
-    //if (!check_mesh_in_frustum(submesh_bb, camera.frustum_offset)) {
-    //    pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;
-    //    return;
-    //}
-    //
-    ////if (is_occluded(camera, submesh_bb) && g_fd.frame_number > 1) {
-    ////    pc.output_draw_indirect_ptr[global_draw_index].instance_count = 0;
-    ////    return;
-    ////}
-    //
-    //uint32_t lod_index = select_mesh_lod(camera, submesh_bb, submesh);
-    //interop::MeshLod selected_lod = submesh.lods[lod_index];
-    //
-    //interop::DrawIndexedIndirectData indirect_command;
-    //indirect_command.index_count = selected_lod.index_count;
-    //indirect_command.instance_count = 1;
-    //indirect_command.first_index = selected_lod.first_index;
-    //indirect_command.vertex_offset = submesh.first_vertex;
-    //indirect_command.first_instance = 0;
-    //
-    //pc.output_draw_indirect_ptr[global_draw_index] = indirect_command;
 }

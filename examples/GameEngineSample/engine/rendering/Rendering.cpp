@@ -333,22 +333,6 @@ namespace engine::render
 			linear_clamp_to_border_sampler = render_context->add_resource(create_info);
 		}
 
-		uint32_t nearest_mipmap_linear_reduce_min{ ~0u };
-		{
-			edge::gfx::SamplerCreateInfo create_info{};
-			create_info.min_filter = edge::gfx::Filter::eLinear;
-			create_info.mag_filter = edge::gfx::Filter::eLinear;
-			create_info.mip_map_mode = edge::gfx::Filter::eNearest;
-
-			create_info.address_u = create_info.address_v = edge::gfx::SamplerAddressMode::eClampToEdge;
-			create_info.min_lod = 0.0f;
-			create_info.max_lod = 16.0f;
-
-			create_info.reduction_mode = edge::gfx::ReductionMode::eMin;
-
-			nearest_mipmap_linear_reduce_min = render_context->add_resource(create_info);
-		}
-
 		// Shadow samplers
 		uint32_t default_shadow_sampler{ ~0u };
 		{
@@ -794,7 +778,7 @@ namespace engine::render
 			indirect_draw_commands,
 			depth_pyramid_terget,
 			visibility_buffer,
-			nearest_mipmap_linear_reduce_min
+			nearest_clamp_to_edge_sampler
 		](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time, bool prepass) {
 			EDGE_PROFILE_ZONE_SCOPED;
 
@@ -803,7 +787,7 @@ namespace engine::render
 			auto* visibility = render_context->get_buffer(visibility_buffer);
 
 			self.bind_read_resource(render_label::texture0, depth_pyramid_terget, ~0u);
-			self.bind_resource(render_label::sampler0, nearest_mipmap_linear_reduce_min);
+			self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler);
 
 			self.write_resource(indirect_draw_commands, ~0u);
 			self.write_resource(visibility_buffer, ~0u);
@@ -1234,10 +1218,10 @@ namespace engine::render
 			create_info.draw_callback = [this,
 				zbuffer_depth_target,
 				depth_pyramid_terget,
-				nearest_mipmap_linear_reduce_min
+				nearest_clamp_to_edge_sampler
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 				self.bind_read_resource(render_label::texture0, zbuffer_depth_target, ~0u);
-				self.bind_resource(render_label::sampler0, nearest_mipmap_linear_reduce_min);
+				self.bind_resource(render_label::sampler0, nearest_clamp_to_edge_sampler);
 				self.bind_write_resource(render_label::image0, depth_pyramid_terget, 0);
 				self.resolve_dependencies(command_list);
 				self.bind_resources(command_list);
@@ -1251,12 +1235,11 @@ namespace engine::render
 		// Build hiz
 		{
 			ComputeShaderPassCreateInfo create_info{};
-			create_info.technique_name = "depth_reduce_4x";
+			create_info.technique_name = "depth_reduce_min_4x";
 
 			create_info.enabled_callback = []() -> bool { return !is_culling_freezed; };
 			create_info.draw_callback = [this,
-				depth_pyramid_terget,
-				nearest_mipmap_linear_reduce_min
+				depth_pyramid_terget
 			](ShaderPass& self, edge::gfx::ICommandList& command_list, float delta_time) {
 				auto* target = render_context->get_texture(depth_pyramid_terget);
 				auto width = target->get_width();
@@ -1264,7 +1247,6 @@ namespace engine::render
 				auto mip_levels = target->get_mip_level_count();
 
 				self.bind_read_resource(render_label::texture0, depth_pyramid_terget, ~0u);
-				self.bind_resource(render_label::sampler0, nearest_mipmap_linear_reduce_min);
 				self.bind_write_resource(render_label::image0, depth_pyramid_terget, ~0u);
 				self.resolve_dependencies(command_list);
 				self.bind_resources(command_list);
@@ -1273,7 +1255,7 @@ namespace engine::render
 					auto dst_width = width >> mip;
 					auto dst_height = height >> mip;
 
-					uint32_t mip_count = reduce::k_mip_per_pass;
+					uint32_t mip_count = 4;
 					if (mip + mip_count > mip_levels) {
 						mip_count = mip_levels - mip;
 					}

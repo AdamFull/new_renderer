@@ -4,6 +4,10 @@
 #define TG_SIZE_Y 8
 #define TG_CACHE_SIZE (TG_SIZE_X * TG_SIZE_Y)
 
+#if defined(DEPTH_REDUCE_MIN) || defined(DEPTH_REDUCE_MAX)
+#define DEPTH_REDUCE
+#endif
+
 #ifdef DEPTH_REDUCE
 typedef float color_t;
 #define COMPONENTS r
@@ -15,7 +19,6 @@ typedef float4 color_t;
 WTexture2D<color_t> image0[16];
 
 Texture2D<color_t> texture0;
-SamplerState sampler0;
 
 [[vk::push_constant]] ConstantBuffer<reduce::PushConstants> pc;
 
@@ -48,9 +51,10 @@ color_t load_color(uint32_t id) {
 }
 
 inline color_t reduce2x2(color_t c0, color_t c1, color_t c2, color_t c3) {
-#ifdef DEPTH_REDUCE
+#if defined(DEPTH_REDUCE_MIN)
     return min(min(c0, c1), min(c2, c3));
-    //return max(max(c0, c1), max(c2, c3));
+#elif defined(DEPTH_REDUCE_MAX)
+    return max(max(c0, c1), max(c2, c3));
 #else
     return 0.25 * (c0 + c1 + c2 + c3);
 #endif
@@ -60,11 +64,18 @@ inline color_t reduce2x2(color_t c0, color_t c1, color_t c2, color_t c3) {
 [shader("compute")]
 void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex) {
     float2 uv = (float2(global_id.xy) + 0.5) * pc.texel_size;
+    uint32_t2 dst_pixel = global_id.xy;
+    uint32_t2 src_pixel = dst_pixel * 2;
 
-    // TODO: Need to use specific sampler settings and pass current sample level
-    color_t color0 = texture0.SampleLevel(sampler0, uv, pc.mip_level).COMPONENTS;
+    color_t color0 = texture0.Load(int32_t3(src_pixel, pc.mip_level)).COMPONENTS;
+    color_t color1 = texture0.Load(int32_t3(src_pixel, pc.mip_level), int32_t2(0, 1)).COMPONENTS;
+    color_t color2 = texture0.Load(int32_t3(src_pixel, pc.mip_level), int32_t2(1, 0)).COMPONENTS;
+    color_t color3 = texture0.Load(int32_t3(src_pixel, pc.mip_level), int32_t2(1, 1)).COMPONENTS;
+
+    color0 = reduce2x2(color0, color1, color2, color3);
     image0[pc.mip_level + 1].Store(global_id.xy, color0);
 
+    // TODO: Need to use specific sampler settings and pass current sample level
     if (pc.mip_count == 1) {
         return;
     }
@@ -76,9 +87,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
 
     // If X and Y are even => (group_id & 0x9) == 0
     if ((group_id & 0x9) == 0) {
-        color_t color1 = load_color(group_id + 0x01);
-        color_t color2 = load_color(group_id + 0x08);
-        color_t color3 = load_color(group_id + 0x09);
+        color1 = load_color(group_id + 0x01);
+        color2 = load_color(group_id + 0x08);
+        color3 = load_color(group_id + 0x09);
 
         color0 = reduce2x2(color0, color1, color2, color3);
 
@@ -99,9 +110,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
     //   0x1B in binary is 11011, but the relevant bits are in the low 6 bits
     //   This check means GTid.x is multiple of 4 and GTid.y is multiple of 4.
     if ((group_id & 0x1B) == 0) {
-        color_t color1 = load_color(group_id + 0x02);
-        color_t color2 = load_color(group_id + 0x10);
-        color_t color3 = load_color(group_id + 0x12);
+        color1 = load_color(group_id + 0x02);
+        color2 = load_color(group_id + 0x10);
+        color3 = load_color(group_id + 0x12);
 
         color0 = reduce2x2(color0, color1, color2, color3);
 
@@ -119,9 +130,9 @@ void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex
 
     // If X and Y are multiples of eight => only GIid == 0 in an 8x8 group
     if (group_id == 0) {
-        color_t color1 = load_color(group_id + 0x04);
-        color_t color2 = load_color(group_id + 0x20);
-        color_t color3 = load_color(group_id + 0x24);
+        color1 = load_color(group_id + 0x04);
+        color2 = load_color(group_id + 0x20);
+        color3 = load_color(group_id + 0x24);
 
         color0 = reduce2x2(color0, color1, color2, color3);
 

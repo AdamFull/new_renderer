@@ -391,12 +391,22 @@
     ]
   },
   {
-    "name": "depth_reduce_4x",
+    "name": "depth_reduce_min_4x",
     "type": "compute",
     "stages": [
       {
         "path": "/internal_res/assets/shaders/utility/reduce_4x.comp.slang",
-        "def": [ "DEPTH_REDUCE" ]
+        "def": [ "DEPTH_REDUCE_MIN" ]
+      }
+    ]
+  },
+  {
+    "name": "depth_reduce_max_4x",
+    "type": "compute",
+    "stages": [
+      {
+        "path": "/internal_res/assets/shaders/utility/reduce_4x.comp.slang",
+        "def": [ "DEPTH_REDUCE_MAX" ]
       }
     ]
   },
