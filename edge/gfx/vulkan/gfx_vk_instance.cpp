@@ -345,7 +345,8 @@ namespace edge::gfx::vulkan
 		if (has_debug_utils) {
 			debug_utils_create_info =
 				vk::DebugUtilsMessengerCreateInfoEXT({},
-					vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning,
+					vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | 
+					vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
 					vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
 					debug_utils_messenger_callback);
 
@@ -369,6 +370,8 @@ namespace edge::gfx::vulkan
 #ifdef USE_VALIDATION_LAYER_FEATURES
 		vk::ValidationFeaturesEXT validation_features_info;
 		std::vector<vk::ValidationFeatureEnableEXT> enable_features{};
+		enable_features.emplace_back(vk::ValidationFeatureEnableEXT::eDebugPrintf);
+
 		if (validation_features) {
 #if defined(VULKAN_VALIDATION_LAYERS_GPU_ASSISTED)
 			enable_features.emplace_back(vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot);
