@@ -8,6 +8,7 @@ namespace reduce {
 	struct PushConstants {
 		uint32_t mip_count;
 		uint32_t mip_level;
-		float2 texel_size;
+		uint32_t src_width;
+		uint32_t src_height;
 	};
 }

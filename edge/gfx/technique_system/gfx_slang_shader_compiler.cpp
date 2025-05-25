@@ -464,7 +464,7 @@ namespace edge::gfx {
 
 		slang::CompilerOptionEntry compiler_options[] = {
 			{ slang::CompilerOptionName::Optimization, {.intValue0 = SLANG_OPTIMIZATION_LEVEL_NONE } },
-			{ slang::CompilerOptionName::DebugInformation, {.intValue0 = SLANG_DEBUG_INFO_LEVEL_MINIMAL } },
+			{ slang::CompilerOptionName::DebugInformation, {.intValue0 = SLANG_DEBUG_INFO_LEVEL_MAXIMAL } },
 			{ slang::CompilerOptionName::EmitSpirvMethod, {.intValue0 = SLANG_EMIT_SPIRV_DIRECTLY } }
 		};
 

@@ -60,17 +60,26 @@ inline color_t reduce2x2(color_t c0, color_t c1, color_t c2, color_t c3) {
 #endif
 }
 
+uint2 clamp_to_edge(uint2 coord, uint2 size) {
+    return clamp(coord, uint2(0, 0), size);
+}
+
 [numthreads(TG_SIZE_X, TG_SIZE_Y, 1)]
 [shader("compute")]
 void main(uint3 global_id: SV_DispatchThreadID, uint32_t group_id: SV_GroupIndex) {
-    float2 uv = (float2(global_id.xy) + 0.5) * pc.texel_size;
     uint32_t2 dst_pixel = global_id.xy;
     uint32_t2 src_pixel = dst_pixel * 2;
 
-    color_t color0 = texture0.Load(int32_t3(src_pixel, pc.mip_level)).COMPONENTS;
-    color_t color1 = texture0.Load(int32_t3(src_pixel, pc.mip_level), int32_t2(0, 1)).COMPONENTS;
-    color_t color2 = texture0.Load(int32_t3(src_pixel, pc.mip_level), int32_t2(1, 0)).COMPONENTS;
-    color_t color3 = texture0.Load(int32_t3(src_pixel, pc.mip_level), int32_t2(1, 1)).COMPONENTS;
+    uint2 tex_size = uint2(pc.src_width, pc.src_height);
+    uint2 src00 = clamp_to_edge(src_pixel + uint2(0, 0), tex_size);
+    uint2 src01 = clamp_to_edge(src_pixel + uint2(0, 1), tex_size);
+    uint2 src10 = clamp_to_edge(src_pixel + uint2(1, 0), tex_size);
+    uint2 src11 = clamp_to_edge(src_pixel + uint2(1, 1), tex_size);
+
+    color_t color0 = texture0.Load(int32_t3(src00, pc.mip_level)).COMPONENTS;
+    color_t color1 = texture0.Load(int32_t3(src01, pc.mip_level)).COMPONENTS;
+    color_t color2 = texture0.Load(int32_t3(src10, pc.mip_level)).COMPONENTS;
+    color_t color3 = texture0.Load(int32_t3(src11, pc.mip_level)).COMPONENTS;
 
     color0 = reduce2x2(color0, color1, color2, color3);
     image0[pc.mip_level + 1].Store(global_id.xy, color0);

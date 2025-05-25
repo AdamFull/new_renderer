@@ -94,7 +94,7 @@ namespace edge::gfx
 		ePreRasterizationShaders = 1 << 25
 	};
 
-	enum class ResourceStateFlag {
+	enum class ResourceStateFlag : uint16_t {
 		eUndefined = 0,
 		eRead = 1 << 0,
 		eWrite = 1 << 1,

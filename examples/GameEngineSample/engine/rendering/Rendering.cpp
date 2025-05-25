@@ -1252,6 +1252,8 @@ namespace engine::render
 				self.bind_resources(command_list);
 
 				for (int32_t mip = 1; mip < mip_levels;) {
+					auto src_width = width >> (mip - 1);
+					auto src_height = height >> (mip - 1);
 					auto dst_width = width >> mip;
 					auto dst_height = height >> mip;
 
@@ -1264,7 +1266,8 @@ namespace engine::render
 					auto& pc_data = pc.as<reduce::PushConstants>();
 					pc_data.mip_count = mip_count;
 					pc_data.mip_level = mip - 1;
-					pc_data.texel_size = 1.0f / float2(dst_width, dst_height);
+					pc_data.src_width = src_width;
+					pc_data.src_height = src_height;
 					self.push_constant_ranges(command_list);
 
 					uint32_t group_x{ dst_width }, group_y{ dst_height }, group_z{ 1u };
