@@ -175,7 +175,7 @@ namespace edge::gfx
 #endif
 
 			// Collect command lists for submit
-			std::vector<ICommandList*> cmds{};
+			utl::fixed_vector<ICommandList*> cmds{};
 			for (auto& worker : upload_ctx.workers)
 			{
 				if (auto* cmd = worker->end_cmd())

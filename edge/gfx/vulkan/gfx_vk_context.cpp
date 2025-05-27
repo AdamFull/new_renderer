@@ -355,11 +355,11 @@ namespace edge::gfx::vulkan
 
 	void GFXContext::wait_for_fences(std::span<IFence*> fences, uint64_t timeout) const
 	{
-		std::array<vk::Fence, 16ull> wait_fences{};
+		utl::fixed_vector<vk::Fence, 16ull> wait_fences{};
 
-		for (int32_t i = 0; i < fences.size(); ++i)
+		for (auto& fence : fences)
 		{
-			wait_fences[i] = utl::cast<Fence*>(fences[i])->get_handle();
+			wait_fences.push_back(utl::cast<Fence*>(fence)->get_handle());
 		}
 
 		vk::Result result = device->get_handle().waitForFences(static_cast<uint32_t>(fences.size()), wait_fences.data(), VK_TRUE, timeout);

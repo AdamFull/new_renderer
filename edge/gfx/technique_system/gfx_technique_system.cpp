@@ -276,7 +276,7 @@ namespace edge::gfx
 	}
 
 	void TechniqueDatabase::add_technique(const std::string& name, const TechniqueDesc& technique_desc) {
-		std::vector<ShaderStageInfo> shader_stages{};
+		utl::fixed_vector<ShaderStageInfo> shader_stages{};
 
 		if (technique_desc.type == TechniqueType::eNone) {
 			EDGE_LOGE("Incorrect technique type for technique named: {}.", name);
@@ -337,26 +337,17 @@ namespace edge::gfx
 			pipeline_ci.root_signature = new_technique.root_signature;
 			pipeline_ci.pipeline_cache = pipeline_cache;
 
-			for (const auto& attribute : technique_desc.vertex_layout.attributes) {
-				pipeline_ci.pipeline_state.vertex_layout.attributes[pipeline_ci.pipeline_state.vertex_layout.attribute_count++] = attribute;
-			}
+			pipeline_ci.pipeline_state.vertex_layout.attributes = technique_desc.vertex_layout.attributes;
+			pipeline_ci.pipeline_state.vertex_layout.bindings = technique_desc.vertex_layout.bindings;
 
-			for (const auto& binding : technique_desc.vertex_layout.bindings) {
-				pipeline_ci.pipeline_state.vertex_layout.bindings[pipeline_ci.pipeline_state.vertex_layout.binding_count++] = binding;
-			}
-
-			for (const auto& attachment : technique_desc.color_blending_attachments) {
-				pipeline_ci.pipeline_state.color_blending_state.attachments[pipeline_ci.pipeline_state.color_blending_state.attachment_count++] = attachment;
-			}
+			pipeline_ci.pipeline_state.color_blending_state.attachments = technique_desc.color_blending_attachments;
 
 			pipeline_ci.pipeline_state.rasterization_state = technique_desc.rasterization_state;
 			pipeline_ci.pipeline_state.multisample_state = technique_desc.multisample_state;
 			pipeline_ci.pipeline_state.depth_stencil_state = technique_desc.depth_stencil_state;
 			pipeline_ci.pipeline_state.primitive_topology = technique_desc.primitive_topology;
 
-			for (Format format : technique_desc.color_formats) {
-				pipeline_ci.color_formats[pipeline_ci.color_format_count++] = format;
-			}
+			pipeline_ci.color_formats = technique_desc.color_formats;
 
 			pipeline_ci.depth_format = technique_desc.depth_format;
 			pipeline_ci.stencil_format = technique_desc.stencil_format;
@@ -381,7 +372,7 @@ namespace edge::gfx
 		return fallback_technique;
 	}
 
-	auto TechniqueDatabase::create_descriptor_table(IShader* shader, std::vector<IDescriptorLayout*>& table_layouts) -> void {
+	auto TechniqueDatabase::create_descriptor_table(IShader* shader, utl::fixed_vector<IDescriptorLayout*>& table_layouts) -> void {
 		struct DescriptorSpaceDesc {
 			std::vector<DescrptorLayoutBindingDesc> bindings;
 			uint32_t space_hash{};
@@ -444,7 +435,7 @@ namespace edge::gfx
 		auto& reflection = shader->get_reflection();
 		if (reflection.constants.range_begin != ~0u) {
 			for (int32_t i = reflection.constants.range_begin; i < static_cast<int32_t>(reflection.constants.variable_count); ++i) {
-				auto& variable = reflection.shader_variables.data[i];
+				auto& variable = reflection.shader_variables[i];
 				hash_combine(variable.name_hash, root_sign_hash);
 			}
 		}

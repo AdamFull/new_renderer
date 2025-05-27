@@ -382,8 +382,7 @@ namespace edge::gfx::vulkan
 		std::array<vk::RenderingAttachmentInfo, 8ull> color_attachments{};
 		begin_rendering_info.pColorAttachments = color_attachments.data();
 
-		for (int32_t i = 0; i < static_cast<int32_t>(rendering_info.attachment_count); ++i) {
-			auto& attachment = rendering_info.attachments[i];
+		for (const auto& attachment : rendering_info.attachments) {
 			auto& vk_attachment = color_attachments[begin_rendering_info.colorAttachmentCount++];
 
 			assert(attachment.texture);

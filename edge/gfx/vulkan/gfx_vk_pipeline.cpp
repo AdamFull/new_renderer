@@ -39,8 +39,8 @@ namespace edge::gfx::vulkan
 
 		vk::ComputePipelineCreateInfo pipeline_create_info{};
 
-		auto& shader_modules = shader->get_modules();
-		pipeline_create_info.stage = shader_modules.data[0]->get_stage_create_info();
+		auto shader_modules = shader->get_modules();
+		pipeline_create_info.stage = shader_modules[0]->get_stage_create_info();
 
 		auto& pipeline_layout = root_signature->get_pipeline_layout();
 		pipeline_create_info.layout = pipeline_layout.get_handle();
@@ -67,9 +67,9 @@ namespace edge::gfx::vulkan
 		pipeline_create_info.pStages = shader_stages.data();
 
 		// Get shader modules
-		auto& shader_modules = shader->get_modules();
-		for (auto it = shader_modules.begin(); it != shader_modules.end(); ++it) {
-			shader_stages[pipeline_create_info.stageCount++] = (*it)->get_stage_create_info();
+		auto shader_modules = shader->get_modules();
+		for (const auto& sm : shader_modules) {
+			shader_stages[pipeline_create_info.stageCount++] = sm->get_stage_create_info();
 		}
 
 		// Get vertex input
@@ -80,8 +80,7 @@ namespace edge::gfx::vulkan
 		vertex_input_state.pVertexBindingDescriptions = vertex_input_bindings.data();
 		vertex_input_state.pVertexAttributeDescriptions = vertex_input_attributes.data();
 
-		for (int32_t i = 0; i < static_cast<int32_t>(create_info.pipeline_state.vertex_layout.binding_count); ++i) {
-			auto& binding = create_info.pipeline_state.vertex_layout.bindings[i];
+		for (const auto& binding : create_info.pipeline_state.vertex_layout.bindings) {
 			auto& vk_binding = vertex_input_bindings[vertex_input_state.vertexBindingDescriptionCount++];
 
 			vk_binding.binding = binding.binding;
@@ -89,8 +88,7 @@ namespace edge::gfx::vulkan
 			vk_binding.inputRate = vk::VertexInputRate::eVertex;
 		}
 
-		for (int32_t i = 0; i < static_cast<int32_t>(create_info.pipeline_state.vertex_layout.attribute_count); ++i) {
-			auto& attribute = create_info.pipeline_state.vertex_layout.attributes[i];
+		for (const auto& attribute : create_info.pipeline_state.vertex_layout.attributes) {
 			auto& vk_attribute = vertex_input_attributes[vertex_input_state.vertexAttributeDescriptionCount++];
 
 			vk_attribute.location = attribute.location;
@@ -156,8 +154,7 @@ namespace edge::gfx::vulkan
 		pipeline_create_info.pColorBlendState = &color_blending_state;
 		color_blending_state.pAttachments = blend_state_attachments.data();
 
-		for (int32_t i = 0; i < static_cast<int32_t>(create_info.pipeline_state.color_blending_state.attachment_count); ++i) {
-			auto& attachment = create_info.pipeline_state.color_blending_state.attachments[i];
+		for (const auto& attachment : create_info.pipeline_state.color_blending_state.attachments) {
 			auto& vk_attachment = blend_state_attachments[color_blending_state.attachmentCount++];
 
 			vk_attachment.blendEnable = attachment.enable;
@@ -182,8 +179,8 @@ namespace edge::gfx::vulkan
 		pipeline_create_info.pNext = &dynamic_rendering;
 		dynamic_rendering.pColorAttachmentFormats = color_formats.data();
 
-		for (int32_t i = 0; i < static_cast<int32_t>(create_info.color_format_count); ++i) {
-			color_formats[dynamic_rendering.colorAttachmentCount++] = static_cast<vk::Format>(format_to_vk(create_info.color_formats[i]));
+		for (auto format : create_info.color_formats) {
+			color_formats[dynamic_rendering.colorAttachmentCount++] = static_cast<vk::Format>(format_to_vk(format));
 		}
 
 		dynamic_rendering.depthAttachmentFormat = static_cast<vk::Format>(format_to_vk(create_info.depth_format));

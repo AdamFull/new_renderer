@@ -355,7 +355,7 @@ namespace edge::gfx {
 
 					auto* content_type = param_type->getElementTypeLayout();
 					resource.size = get_size_from_slang_type(content_type);
-					resource.range_begin = refl.shader_variables.count;
+					resource.range_begin = refl.shader_variables.size();
 
 					for (int32_t f_idx = 0; f_idx < content_type->getFieldCount(); ++f_idx) {
 						auto* field = content_type->getFieldByIndex(f_idx);
@@ -367,7 +367,7 @@ namespace edge::gfx {
 						variable.offset = field->getOffset();
 						variable.size = get_size_from_slang_type(field->getTypeLayout());
 					}
-					resource.variable_count = refl.shader_variables.count - resource.range_begin;
+					resource.variable_count = refl.shader_variables.size() - resource.range_begin;
 				}
 			}
 			else {
@@ -397,7 +397,7 @@ namespace edge::gfx {
 
 					auto* content_type = param_type->getElementTypeLayout();
 					resource.size = get_size_from_slang_type(content_type);
-					resource.range_begin = refl.shader_variables.count;
+					resource.range_begin = refl.shader_variables.size();
 
 					for (int32_t f_idx = 0; f_idx < content_type->getFieldCount(); ++f_idx) {
 						auto* field = content_type->getFieldByIndex(f_idx);
@@ -409,7 +409,7 @@ namespace edge::gfx {
 						variable.offset = field->getOffset();
 						variable.size = get_size_from_slang_type(field->getTypeLayout());
 					}
-					resource.variable_count = refl.shader_variables.count - resource.range_begin;
+					resource.variable_count = refl.shader_variables.size() - resource.range_begin;
 				}
 			}
 		}

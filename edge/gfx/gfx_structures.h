@@ -93,10 +93,8 @@ namespace edge
 		void from_json(const nlohmann::json& json, VertexBindingDescription& type);
 
 		struct VertexLayout {
-			std::array<VertexBindingDescription, 16ull> bindings{};
-			uint32_t binding_count{ 0u };
-			std::array<VertexAttributeDescription, 16ull> attributes{};
-			uint32_t attribute_count{ 0u };
+			utl::fixed_vector<VertexBindingDescription> bindings{};
+			utl::fixed_vector<VertexAttributeDescription> attributes{};
 		};
 
 		void to_json(nlohmann::json& json, const VertexLayout& type);
@@ -157,8 +155,7 @@ namespace edge
 		void from_json(const nlohmann::json& json, ColorBlendAttachment& type);
 
 		struct ColorBlendingState {
-			std::array<ColorBlendAttachment, k_max_attachment_count> attachments{};
-			uint32_t attachment_count{ 0u };
+			utl::fixed_vector<ColorBlendAttachment> attachments{};
 		};
 
 		void to_json(nlohmann::json& json, const ColorBlendingState& type);
@@ -184,8 +181,7 @@ namespace edge
 
 			PipelineState pipeline_state{};
 
-			std::array<Format, k_max_attachment_count> color_formats{};
-			uint32_t color_format_count{};
+			utl::fixed_vector<Format> color_formats{};
 
 			Format depth_format{ Format::eUndefined };
 			Format stencil_format{ Format::eUndefined };
@@ -241,8 +237,7 @@ namespace edge
 
 			uint32_t layer_count{ 1u };
 
-			std::array<Attachment, k_max_attachment_count> attachments{};
-			uint32_t attachment_count{ 0u };
+			utl::fixed_vector<Attachment> attachments{};
 
 			Attachment depth_attachment{};
 			Attachment stencil_attachment{};
@@ -461,7 +456,7 @@ namespace edge
 		};
 
 		struct MemoryUsageStats {
-			std::vector<MemoryHeapInfo> memory_heaps{};
+			utl::fixed_vector<MemoryHeapInfo, 8> memory_heaps{};
 		};
 
 		uint32_t hash(const VertexAttributeDescription& desc, uint32_t hash = 0u);

@@ -246,7 +246,7 @@ namespace edge::gfx
 
 		// Add internal variables if have them
 		if (member_count > 0) {
-			uniform_block.range_begin = reflection.shader_variables.count;
+			uniform_block.range_begin = reflection.shader_variables.size();
 
 			for (int32_t i = 0; i < static_cast<int32_t>(member_count); ++i) {
 				uint64_t array_stride{ 0ull }, matrix_stride{ 0ull };
@@ -261,7 +261,7 @@ namespace edge::gfx
 				variable.name_hash = murmur_hash(variable_name);
 			}
 
-			uniform_block.variable_count = reflection.shader_variables.count;
+			uniform_block.variable_count = reflection.shader_variables.size();
 		}
 	}
 
@@ -305,7 +305,7 @@ namespace edge::gfx
 		constants.stages |= stage;
 
 		if (member_count > 0) {
-			constants.range_begin = reflection.shader_variables.count;
+			constants.range_begin = reflection.shader_variables.size();
 
 			for (int32_t i = 0; i < static_cast<int32_t>(member_count); ++i) {
 				uint64_t array_stride{ 0ull }, matrix_stride{ 0ull };
@@ -320,7 +320,7 @@ namespace edge::gfx
 				variable.name_hash = murmur_hash(variable_name);
 			}
 
-			constants.variable_count = reflection.shader_variables.count;
+			constants.variable_count = reflection.shader_variables.size();
 		}
 	}
 

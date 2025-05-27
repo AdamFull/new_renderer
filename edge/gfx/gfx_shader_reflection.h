@@ -2,38 +2,9 @@
 
 #include "gfx_enum.h"
 #include "../util/utl_hash.hpp"
+#include "../util/utl_vector.h"
 
-namespace edge::gfx
-{
-	template<typename _Ty, size_t element_count>
-	struct StaticArray {
-		std::array<_Ty, element_count> data{};
-		uint32_t count{};
-
-		_Ty& new_element() {
-			assert(count + 1u < element_count);
-			return data[count++];
-		}
-
-		auto begin() {
-			return data.begin();
-		}
-
-		auto begin() const {
-			return data.begin();
-		}
-
-		auto end() {
-			assert(count < element_count);
-			return data.begin() + count;
-		}
-
-		auto end() const {
-			assert(count < element_count);
-			return data.begin() + count;
-		}
-	};
-
+namespace edge::gfx {
 	struct ReflectionBase {
 		static constexpr size_t k_max_name_len{ 128 };
 
@@ -103,24 +74,24 @@ namespace edge::gfx
 			return { false, new_resource };
 		}
 
-		StaticArray<VertexInput, 16ull> vertex_inputs{};
+		utl::fixed_vector<VertexInput, 16ull> vertex_inputs{};
 
 		VertexInput& add_vertex_input() {
-			return vertex_inputs.new_element();
+			return vertex_inputs.emplace_back();
 		}
 
 		// Uniforms/storage blocks/textures/samplers etc.
-		StaticArray<ShaderResource, 32ull> shader_resources{};
+		utl::fixed_vector<ShaderResource, 32ull> shader_resources{};
 
 		ShaderResource& add_shader_resource() {
-			return shader_resources.new_element();
+			return shader_resources.emplace_back();
 		}
 
 		// Variables inside uniforms/push constants
-		StaticArray<ShaderVariable, 64ull> shader_variables{};
+		utl::fixed_vector<ShaderVariable, 64ull> shader_variables{};
 
 		ShaderVariable& add_shader_variable(const char* n = nullptr) {
-			auto& new_var = shader_variables.new_element();
+			auto& new_var = shader_variables.emplace_back();
 			if (n) {
 				new_var.set_name(n);
 			}

@@ -14,7 +14,7 @@ namespace engine::render {
 	}
 
 	void RenderPass::add_color_attachment(edge::gfx::Attachment attachment) {
-		rendering_info.attachments[rendering_info.attachment_count++] = attachment;
+		rendering_info.attachments.push_back(attachment);
 	}
 
 	ShaderPassType RenderPass::get_pass_type() {
@@ -58,7 +58,7 @@ namespace engine::render {
 			}
 			else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eColor) {
 				new_state |= edge::gfx::ResourceStateFlag::eColorAttachment;
-				attachment = &rendering_info.attachments[rendering_info.attachment_count++];
+				attachment = &rendering_info.attachments.emplace_back();
 			}
 
 			if (last_access == 0) {
@@ -92,7 +92,7 @@ namespace engine::render {
 		}
 
 		// Clear rendering info
-		rendering_info.attachment_count = 0;
+		rendering_info.attachments.clear();
 		rendering_info.depth_attachment = {};
 		rendering_info.stencil_attachment = {};
 	}

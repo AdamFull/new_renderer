@@ -161,7 +161,7 @@ namespace edge::gfx
 		}
 	protected:
 		const IQueue* queue;
-		std::vector<std::unique_ptr<CommandNode>> nodes;
+		utl::fixed_vector<std::unique_ptr<CommandNode>, 8> nodes;
 		uint32_t active_node_index{ 0 };
 		StageFlag stage;
 		std::string_view name;

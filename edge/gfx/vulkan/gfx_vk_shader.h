@@ -37,11 +37,11 @@ namespace edge::gfx::vulkan
 
 		void set_resource_name(std::string_view name) const noexcept override;
 
-		auto get_modules() const noexcept -> StaticArray<std::unique_ptr<ShaderModule>, 6ull> const& {
+		auto get_modules() const noexcept -> std::span<const std::unique_ptr<ShaderModule>> {
 			return shader_modules;
 		}
 	private:
 		Device& device;
-		StaticArray<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};
+		utl::fixed_vector<std::unique_ptr<ShaderModule>, 6ull> shader_modules{};
 	};
 }

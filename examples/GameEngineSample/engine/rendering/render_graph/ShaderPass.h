@@ -19,7 +19,7 @@ namespace engine::render {
 		edge::gfx::IShader* shader{ nullptr };
 		edge::gfx::IRootSignature* root_signature{ nullptr };
 		edge::gfx::IPipeline* pipeline{ nullptr };
-		std::vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
+		edge::utl::fixed_vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
 
 		std::function<void(ShaderPass&, edge::gfx::ICommandList&, float)> draw_callback{};
 		std::function<bool()> enabled_callback{};
@@ -197,7 +197,7 @@ namespace engine::render {
 		edge::gfx::IShader* shader{ nullptr };
 		edge::gfx::IRootSignature* root_signature{ nullptr };
 		edge::gfx::IPipeline* pipeline{ nullptr };
-		std::vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
+		edge::utl::fixed_vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
 
 		// Per frame barriers
 		std::vector<edge::gfx::BufferBarrierDesc> buffer_barriers{};

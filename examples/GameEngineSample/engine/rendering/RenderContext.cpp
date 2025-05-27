@@ -463,6 +463,7 @@ namespace engine::render {
 			// We will use the acquired semaphore in a different frame context,
 			// so we need to hold ownership.
 			acquired_semaphore = previous_frame->image_avaliable;
+			previous_frame->reset();
 
 			if (swapchain) {
 				if (!swapchain->acquire_next_image(acquired_semaphore, nullptr, &active_frame_index)) {
@@ -482,7 +483,6 @@ namespace engine::render {
 
 			// Now the frame is active again
 			frame_active = true;
-			previous_frame->reset();
 
 			current_frame = render_frames[active_frame_index].get();
 		}

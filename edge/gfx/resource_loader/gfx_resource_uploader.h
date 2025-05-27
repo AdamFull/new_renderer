@@ -109,7 +109,7 @@ namespace edge::gfx
 		std::mutex semaphore_mutex;
 		std::condition_variable cv;
 
-		std::vector<std::unique_ptr<UploadContext>> upload_contexts{};
+		utl::fixed_vector<std::unique_ptr<UploadContext>> upload_contexts{};
 		uint32_t active_uploader_idx{ 0 };
 		uint32_t last_used_uploader_idx{ 0 };
 		size_t next_worker{ 0ull };

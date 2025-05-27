@@ -33,16 +33,14 @@ namespace edge::gfx
 
 	void to_json(nlohmann::json& json, const VertexLayout& type) {
 		serialize_to("bindings", json, type.bindings);
-		serialize_to("binding_count", json, type.binding_count);
+		//serialize_to("binding_count", json, type.bindings.size());
 		serialize_to("attributes", json, type.attributes);
-		serialize_to("attribute_count", json, type.attribute_count);
+		//serialize_to("attribute_count", json, type.attributes.size());
 	}
 
 	void from_json(const nlohmann::json& json, VertexLayout& type) {
 		parse_from("bindings", json, type.bindings);
-		parse_from("binding_count", json, type.binding_count);
 		parse_from("attributes", json, type.attributes);
-		parse_from("attribute_count", json, type.attribute_count);
 	}
 
 
@@ -136,12 +134,10 @@ namespace edge::gfx
 
 	void to_json(nlohmann::json& json, const ColorBlendingState& type) {
 		serialize_to("attachments", json, type.attachments);
-		serialize_to("attachment_count", json, type.attachment_count);
 	}
 
 	void from_json(const nlohmann::json& json, ColorBlendingState& type) {
 		parse_from("attachments", json, type.attachments);
-		parse_from("attachment_count", json, type.attachment_count);
 	}
 
 
@@ -255,12 +251,12 @@ namespace edge::gfx
 	}
 
 	uint32_t hash(const VertexLayout& layout, uint32_t h) {
-		for (int32_t i = 0; i < static_cast<int32_t>(layout.attribute_count); ++i) {
-			h = hash(layout.attributes[i], h);
+		for (const auto& attribute : layout.attributes) {
+			h = hash(attribute, h);
 		}
 
-		for (int32_t i = 0; i < static_cast<int32_t>(layout.binding_count); ++i) {
-			h = hash(layout.bindings[i], h);
+		for (const auto& binding : layout.bindings) {
+			h = hash(binding, h);
 		}
 
 		return h;
@@ -329,8 +325,8 @@ namespace edge::gfx
 	}
 
 	uint32_t hash(const ColorBlendingState& state, uint32_t h) {
-		for (int32_t i = 0; i < static_cast<int32_t>(state.attachment_count); ++i) {
-			h = hash(state.attachments[i], h);
+		for (const auto& attachment : state.attachments) {
+			h = hash(attachment, h);
 		}
 
 		return h;

@@ -16,12 +16,6 @@ namespace edge::gfx
 
 	class TechniqueDatabase {
 	public:
-		struct ShaderDesc {
-			std::string_view path;
-			std::vector<std::string_view> defines;
-			std::vector<std::string_view> permutations;
-		};
-
 		struct TechniqueDesc {
 			static constexpr size_t k_max_render_target_count = 8;
 
@@ -31,14 +25,14 @@ namespace edge::gfx
 			};
 
 			TechniqueType type{};
-			std::vector<ShaderStage> stages{};
+			utl::fixed_vector<ShaderStage> stages{};
 
 			struct {
-				std::vector<VertexAttributeDescription> attributes;
-				std::vector<VertexBindingDescription> bindings;
+				utl::fixed_vector<VertexAttributeDescription> attributes;
+				utl::fixed_vector<VertexBindingDescription> bindings;
 			} vertex_layout;
 
-			std::vector<ColorBlendAttachment> color_blending_attachments;
+			utl::fixed_vector<ColorBlendAttachment> color_blending_attachments;
 
 			RasterizationState rasterization_state{};
 			MultisampleState multisample_state{};
@@ -46,7 +40,7 @@ namespace edge::gfx
 
 			PrimitiveTopology primitive_topology{ PrimitiveTopology::ePointList };
 
-			std::vector<Format> color_formats{};
+			utl::fixed_vector<Format> color_formats{};
 
 			Format depth_format{};
 			Format stencil_format{};
@@ -57,7 +51,7 @@ namespace edge::gfx
 			IShader* shader{ nullptr };
 			IRootSignature* root_signature{ nullptr };
 			IPipeline* pipeline{ nullptr };
-			std::vector<IDescriptorLayout*> descriptor_layouts;
+			utl::fixed_vector<IDescriptorLayout*> descriptor_layouts;
 		};
 
 		struct Shader {
@@ -84,7 +78,7 @@ namespace edge::gfx
 		void add_technique(const std::string& name, const TechniqueDesc& technique_desc);
 		auto get_technique(const std::string& name) -> Technique&;
 	private:
-		auto create_descriptor_table(IShader* shader, std::vector<IDescriptorLayout*>& table_layouts) -> void;
+		auto create_descriptor_table(IShader* shader, utl::fixed_vector<IDescriptorLayout*>& table_layouts) -> void;
 		auto lookup_root_signature(IShader* shader, std::span<IDescriptorLayout*> table_layouts) -> IRootSignature*;
 
 		std::span<const uint8_t> get_or_compile_shader(const TechniqueDesc::ShaderStage& stage, ShaderReflection& refl);

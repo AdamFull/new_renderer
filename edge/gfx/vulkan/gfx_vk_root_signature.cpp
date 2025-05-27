@@ -55,7 +55,7 @@ namespace edge::gfx::vulkan
 			auto range_begin = reflection.constants.range_begin;
 			auto rabge_end = range_begin + static_cast<int32_t>(reflection.constants.variable_count);
 			for (int32_t i = range_begin; i < rabge_end; ++i) {
-				auto& variable = reflection.shader_variables.data[i];
+				auto& variable = reflection.shader_variables[i];
 				range.stageFlags = shader_stage_flags_to_vk(reflection.constants.stages);
 				range.size += variable.size;
 

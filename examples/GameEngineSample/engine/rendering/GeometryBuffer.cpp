@@ -148,7 +148,7 @@ namespace engine::render {
 		uint32_t offset{ 0u };
 
 		for (auto& desc : create_info.attribute_descriptions) {
-			auto& attr_desc = vertex_layout.attributes[vertex_layout.attribute_count++];
+			auto& attr_desc = vertex_layout.attributes.emplace_back();
 			attr_desc.binding = 0;
 			attr_desc.format = desc.format;
 			attr_desc.offset = offset;
@@ -157,7 +157,7 @@ namespace engine::render {
 			offset += get_vertex_format_size_bytes(desc.format);
 		}
 
-		auto& binding = vertex_layout.bindings[vertex_layout.binding_count++];
+		auto& binding = vertex_layout.bindings.emplace_back();
 		binding.binding = 0;
 		binding.stride = offset;
 
@@ -233,12 +233,12 @@ namespace engine::render {
 
 	DeinterleavedGeometryBuffer::DeinterleavedGeometryBuffer(const GeometryBufferCreateInfo& create_info) {
 		for (auto& desc : create_info.attribute_descriptions) {
-			auto& attr_desc = vertex_layout.attributes[vertex_layout.attribute_count++];
-			attr_desc.binding = vertex_layout.binding_count;
+			auto& attr_desc = vertex_layout.attributes.emplace_back();
+			attr_desc.binding = static_cast<uint32_t>(vertex_layout.bindings.size());
 			attr_desc.format = desc.format;
 			attr_desc.location = GetVertexAttributeLocation(desc.attribute_flag);
 
-			auto& bind_desc = vertex_layout.bindings[vertex_layout.binding_count++];
+			auto& bind_desc = vertex_layout.bindings.emplace_back();
 			bind_desc.binding = attr_desc.binding;
 			bind_desc.stride = get_vertex_format_size_bytes(desc.format);
 		}

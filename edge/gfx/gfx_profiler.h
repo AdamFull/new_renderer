@@ -4,6 +4,7 @@
 
 #include "gfx_structures.h"
 #include "../util/utl_design.h"
+#include "../util/utl_vector.h"
 
 #define ENABLE_EDGE_GFX_PROFILER
 #ifdef ENABLE_EDGE_GFX_PROFILER

@@ -39,8 +39,7 @@ namespace edge::gfx::vulkan
 		device{ device } {
 
 		for (const auto& stage : shader_stages) {
-			auto& new_shader_module = shader_modules.new_element();
-			new_shader_module = std::make_unique<ShaderModule>(device, stage);
+			shader_modules.push_back(std::make_unique<ShaderModule>(device, stage));
 			//add_reflection_stage(stage);
 		}
 
