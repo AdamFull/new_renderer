@@ -381,6 +381,40 @@ namespace edge {
 
 		_Pool& pool_;
 	};
+
+	namespace utl {
+		template <typename _T>
+		class observer_ptr {
+		public:
+			using element_type = _T;
+
+			constexpr observer_ptr() noexcept : ptr_(nullptr) {}
+			constexpr observer_ptr(std::nullptr_t) noexcept : ptr_(nullptr) {}
+
+			explicit constexpr observer_ptr(_T* ptr) noexcept : ptr_(ptr) {}
+
+			template <typename _U>
+			observer_ptr(const std::unique_ptr<_U>& p) noexcept : ptr_(p.get()) {}
+			template <typename _U>
+			observer_ptr(const std::shared_ptr<_U>& p) noexcept : ptr_(p.get()) {}
+
+			constexpr observer_ptr(const observer_ptr&) noexcept = default;
+			constexpr observer_ptr(observer_ptr&&) noexcept = default;
+			constexpr observer_ptr& operator=(const observer_ptr&) noexcept = default;
+			constexpr observer_ptr& operator=(observer_ptr&&) noexcept = default;
+
+			constexpr _T* get() const noexcept { return ptr_; }
+			constexpr _T& operator*() const noexcept { return *ptr_; }
+			constexpr _T* operator->() const noexcept { return ptr_; }
+			constexpr explicit operator bool() const noexcept { return ptr_ != nullptr; }
+
+			friend bool operator==(const observer_ptr& a, const observer_ptr& b) noexcept { return a.ptr_ == b.ptr_; }
+			friend bool operator!=(const observer_ptr& a, const observer_ptr& b) noexcept { return a.ptr_ != b.ptr_; }
+
+		private:
+			_T* ptr_;
+		};
+	}
 }
 
 // Specialization of allocator_traits for allocator
