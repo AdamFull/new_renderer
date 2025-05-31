@@ -41,6 +41,11 @@ namespace edge
 			RenderApi render_api{ RenderApi::eVulkan };
 			Window* window{ nullptr };
 			const char* app_name{ nullptr };
+
+			struct Features {
+				bool mesh_shading{};
+				bool ray_tracing{};
+			} features{};
 		};
 
 		struct SemaphoreSubmitInfo {
@@ -435,6 +440,13 @@ namespace edge
 		struct DescriptorLayoutCreateInfo {
 			std::span<DescrptorLayoutBindingDesc> bindings;
 			bool support_bindless{ false };
+		};
+
+		struct AccelerationStructureCreateInfo {
+			IBuffer* buffer{ nullptr };
+			uint64_t offset{ 0 };
+			uint64_t size{ 0 };
+			AccelerationStructureType type{};
 		};
 
 		struct RenderResourceDesc {

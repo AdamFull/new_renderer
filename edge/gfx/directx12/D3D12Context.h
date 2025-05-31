@@ -45,6 +45,8 @@ namespace edge::gfx::d3d12
 
 		auto create_query_pool(const QueryPoolCreateInfo& create_info) const->IQueryPool* override;
 
+		auto create_acceleration_structure(const AccelerationStructureCreateInfo& create_info) const->IAccelerationStructure* override;
+
 		void wait_for_fences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const override;
 
 		void request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment) const override;

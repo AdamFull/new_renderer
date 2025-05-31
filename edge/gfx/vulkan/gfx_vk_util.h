@@ -229,31 +229,27 @@ namespace edge::gfx::vulkan
 	}
 
 	inline vk::DescriptorType descriptor_type_to_vk(DescriptorType type) {
-		if (type == DescriptorType::eSampler)
-			return vk::DescriptorType::eSampler;
-		else if (type == DescriptorType::eCombinedImageSampler)
-			return vk::DescriptorType::eCombinedImageSampler;
-		else if (type == DescriptorType::eSampledImage)
-			return vk::DescriptorType::eSampledImage;
-		else if (type == DescriptorType::eStorageImage)
-			return vk::DescriptorType::eStorageImage;
-		else if (type == DescriptorType::eUniformTexelBuffer)
-			return vk::DescriptorType::eUniformTexelBuffer;
-		else if (type == DescriptorType::eStorageTexelBuffer)
-			return vk::DescriptorType::eStorageTexelBuffer;
-		else if (type == DescriptorType::eUniformBuffer)
-			return vk::DescriptorType::eUniformBuffer;
-		else if (type == DescriptorType::eStorageBuffer)
-			return vk::DescriptorType::eStorageBuffer;
-		else if (type == DescriptorType::eUniformBufferDynamic)
-			return vk::DescriptorType::eUniformBufferDynamic;
-		else if (type == DescriptorType::eStorageBufferDynamic)
-			return vk::DescriptorType::eStorageBufferDynamic;
-		else if (type == DescriptorType::eInputAttachment)
-			return vk::DescriptorType::eInputAttachment;
+		static constexpr vk::DescriptorType k_map[] = {
+			vk::DescriptorType::eSampler,
+			vk::DescriptorType::eCombinedImageSampler,
+			vk::DescriptorType::eSampledImage,
+			vk::DescriptorType::eStorageImage,
+			vk::DescriptorType::eUniformTexelBuffer,
+			vk::DescriptorType::eStorageTexelBuffer,
+			vk::DescriptorType::eUniformBuffer,
+			vk::DescriptorType::eStorageBuffer,
+			vk::DescriptorType::eUniformBufferDynamic,
+			vk::DescriptorType::eStorageBufferDynamic,
+			vk::DescriptorType::eInputAttachment,
+			vk::DescriptorType::eAccelerationStructureKHR
+		};
 
-		assert(false && "NOT IMPLEMENTED STATE");
-		return vk::DescriptorType::eSampler;
+		if (type == DescriptorType::eUnknown) {
+			assert(false && "NOT IMPLEMENTED STATE");
+			return vk::DescriptorType::eSampler;
+		}
+
+		return k_map[utl::cast(type)];
 	}
 
 	inline vk::Filter filter_to_vk(Filter filter) {
@@ -516,5 +512,17 @@ namespace edge::gfx::vulkan
 			return vk::AttachmentStoreOp::eNone;
 
 		return vk::AttachmentStoreOp::eDontCare;
+	}
+
+	inline vk::AccelerationStructureTypeKHR acceleration_structure_type_to_vk(AccelerationStructureType type) {
+		if (type == AccelerationStructureType::eTopLevel) {
+			return vk::AccelerationStructureTypeKHR::eTopLevel;
+		}
+		else if (type == AccelerationStructureType::eBottomLevel) {
+			return vk::AccelerationStructureTypeKHR::eBottomLevel;
+		}
+
+		assert(false && "NOT IMPLEMENTED STATE");
+		return vk::AccelerationStructureTypeKHR::eTopLevel;
 	}
 }

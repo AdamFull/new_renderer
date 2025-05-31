@@ -15,7 +15,7 @@ namespace edge::gfx::vulkan {
 
 	class Device;
 
-	static constexpr int32_t k_max_pool_sizes_count{ 11 };
+	static constexpr int32_t k_max_pool_sizes_count{ 12 };
 
 	struct PoolSizes {
 		std::array<int32_t, k_max_pool_sizes_count> sizes{};

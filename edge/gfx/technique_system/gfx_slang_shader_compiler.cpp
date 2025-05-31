@@ -238,6 +238,8 @@ namespace edge::gfx {
 			return DescriptorType::eCombinedImageSampler;
 		case slang::BindingType::MutableTexture:
 			return DescriptorType::eStorageImage;
+		case slang::BindingType::RayTracingAccelerationStructure:
+			return DescriptorType::eAccelerationStructure;
 		default:
 			return DescriptorType::eUnknown;
 		}

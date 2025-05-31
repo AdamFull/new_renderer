@@ -108,6 +108,11 @@ namespace edge::gfx::d3d12
 		return nullptr;
 	}
 
+	auto D3D12Context::create_acceleration_structure(const AccelerationStructureCreateInfo& create_info) const -> IAccelerationStructure* {
+		assert(false && "NOT IMPLEMENTED");
+		return nullptr;
+	}
+
 	void D3D12Context::wait_for_fences(std::span<IFence*> fences, uint64_t timeout) const {
 		assert(false && "NOT IMPLEMENTED");
 	}

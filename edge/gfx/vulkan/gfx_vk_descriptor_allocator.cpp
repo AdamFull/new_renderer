@@ -3,26 +3,27 @@
 #include "gfx_vk_device.h"
 #include "gfx_vk_root_signature.h"
 #include "gfx_vk_descriptor_binding_layout.h"
+#include "gfx_vk_util.h"
 
 #include "../../util/Logger.h"
 #include "../../util/utl_profiler.h"
 
-namespace edge::gfx::vulkan
-{
+namespace edge::gfx::vulkan {
 	constexpr const int32_t k_default_pool_multiplier{ 128 };
 	constexpr const PoolSizes k_default_pool_sizes {
-		4 * k_default_pool_multiplier,		// vk::DescriptorType::eSampler
-		4 * k_default_pool_multiplier,		// vk::DescriptorType::eCombinedImageSampler
-		4 * k_default_pool_multiplier,		// vk::DescriptorType::eSampledImage
-		4 * k_default_pool_multiplier,		// vk::DescriptorType::eStorageImage
-		k_default_pool_multiplier,			// vk::DescriptorType::eUniformTexelBuffer
-		k_default_pool_multiplier,			// vk::DescriptorType::eStorageTexelBuffer
-		2 * k_default_pool_multiplier,		// vk::DescriptorType::eUniformBuffer
-		2 * k_default_pool_multiplier,		// vk::DescriptorType::eStorageBuffer
-		k_default_pool_multiplier,			// vk::DescriptorType::eUniformBufferDynamic
-		k_default_pool_multiplier,			// vk::DescriptorType::eStorageBufferDynamic
-		k_default_pool_multiplier			// vk::DescriptorType::eInputAttachment
-	};
+		4 * k_default_pool_multiplier,		// gfx::DescriptorType::eSampler
+		4 * k_default_pool_multiplier,		// gfx::DescriptorType::eCombinedImageSampler
+		4 * k_default_pool_multiplier,		// gfx::DescriptorType::eSampledImage
+		4 * k_default_pool_multiplier,		// gfx::DescriptorType::eStorageImage
+		k_default_pool_multiplier,			// gfx::DescriptorType::eUniformTexelBuffer
+		k_default_pool_multiplier,			// gfx::DescriptorType::eStorageTexelBuffer
+		2 * k_default_pool_multiplier,		// gfx::DescriptorType::eUniformBuffer
+		2 * k_default_pool_multiplier,		// gfx::DescriptorType::eStorageBuffer
+		k_default_pool_multiplier,			// gfx::DescriptorType::eUniformBufferDynamic
+		k_default_pool_multiplier,			// gfx::DescriptorType::eStorageBufferDynamic
+		k_default_pool_multiplier,			// gfx::DescriptorType::eInputAttachment
+		k_default_pool_multiplier / 2,		// gfx::DescriptorType::eAccelerationStructure
+	}; 
 
 	DescriptorAllocator::DescriptorAllocator(Device& device, uint32_t grow_factor) :
 		device{ device } {
@@ -178,7 +179,7 @@ namespace edge::gfx::vulkan
 
 		std::array<vk::DescriptorPoolSize, k_max_pool_sizes_count> pool_sizes{};
 		for (int32_t i = 0; i < k_max_pool_sizes_count; ++i) {
-			pool_sizes[i] = { static_cast<vk::DescriptorType>(i), static_cast<uint32_t>(new_pool_block.inilial_sizes[i]) };
+			pool_sizes[i] = { descriptor_type_to_vk(static_cast<DescriptorType>(i)), static_cast<uint32_t>(new_pool_block.inilial_sizes[i]) };
 		}
 
 		vk::DescriptorPoolCreateInfo create_info{};

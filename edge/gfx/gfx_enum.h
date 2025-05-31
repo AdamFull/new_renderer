@@ -34,7 +34,8 @@ namespace edge::gfx
 		eBindingLayout,
 		eDescriptorAllocator,
 		eSharedDescriptor,
-		eQueryPool
+		eQueryPool,
+		eAccelerationStructure
 	};
 
 	enum class ShaderStageFlag {
@@ -194,6 +195,9 @@ namespace edge::gfx
 		eIndirect = 1 << 5,
 		eGpuOnly = 1 << 6,
 		eCpuToGpu = 1 << 7,
+		eAccelerationStructureBuildInput = 1 << 8,
+		eAccelerationStructureStorage = 1 << 9,
+		eShaderBindingTable = 1 << 10,
 
 		eHasDeviceAddress = eVertex | eIndex | eStorage | eIndirect,
 
@@ -205,7 +209,11 @@ namespace edge::gfx
 		eIndexBufferCPU = eCopy | eIndex | eCpuToGpu,
 		eIndexBuffer = eCopy | eIndex | eGpuOnly,
 		eUniformBuffer = eCopy | eUniform | eCpuToGpu,
-		eIndirectBuffer = eCopy | eStorage | eIndirect | eGpuOnly
+		eIndirectBuffer = eCopy | eStorage | eIndirect | eGpuOnly,
+
+		eASBuild = eCopy | eAccelerationStructureBuildInput | eCpuToGpu,
+		eASStorage = eCopy | eAccelerationStructureStorage | eGpuOnly,
+		eSBT = eCopy | eAccelerationStructureStorage | eGpuOnly,
 	};
 
 	enum class TextureUsageFlag {
@@ -309,8 +317,8 @@ namespace edge::gfx
 		eNone
 	};
 
-	enum class DescriptorType {
-		eUnknown,
+	enum class DescriptorType : int8_t {
+		eUnknown = -1,
 		eSampler,
 		eCombinedImageSampler,
 		eSampledImage,
@@ -322,6 +330,12 @@ namespace edge::gfx
 		eUniformBufferDynamic,
 		eStorageBufferDynamic,
 		eInputAttachment,
+		eAccelerationStructure
+	};
+
+	enum class AccelerationStructureType {
+		eTopLevel,
+		eBottomLevel
 	};
 }
 
@@ -349,7 +363,8 @@ EDGE_REGISTER_ENUM_CLASS(edge::gfx, ResourceType,
 	EDGE_ENUM_META(edge::gfx::ResourceType::ePipelineCache, "IPipelineCache"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::eDescriptorAllocator, "IDescriptorAllocator"),
 	EDGE_ENUM_META(edge::gfx::ResourceType::eSharedDescriptor, "ISharedDescriptor"),
-	EDGE_ENUM_META(edge::gfx::ResourceType::eQueryPool, "IQueryPool")
+	EDGE_ENUM_META(edge::gfx::ResourceType::eQueryPool, "IQueryPool"),
+	EDGE_ENUM_META(edge::gfx::ResourceType::eAccelerationStructure, "iAccelerationStructure")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, ShaderStageFlags, ShaderStageFlag,
@@ -606,7 +621,8 @@ EDGE_REGISTER_ENUM_CLASS(edge::gfx, DescriptorType,
 	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageBuffer, "storage_buffer"),
 	EDGE_ENUM_META(edge::gfx::DescriptorType::eUniformBufferDynamic, "uniform_buffer_dynamic"),
 	EDGE_ENUM_META(edge::gfx::DescriptorType::eStorageBufferDynamic, "storage_buffer_dynamic"),
-	EDGE_ENUM_META(edge::gfx::DescriptorType::eInputAttachment, "input_attachment")
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eInputAttachment, "input_attachment"),
+	EDGE_ENUM_META(edge::gfx::DescriptorType::eAccelerationStructure, "acceleration_structure")
 )
 
 namespace edge::gfx

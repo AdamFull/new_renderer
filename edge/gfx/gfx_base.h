@@ -98,7 +98,7 @@ namespace edge::gfx {
 		[[nodiscard]] virtual auto update(const void* data, uint64_t size, uint64_t offset = 0ull) -> uint64_t = 0;
 
 		[[nodiscard]] virtual auto get_size() const noexcept -> uint64_t = 0;
-		[[nodiscard]] virtual auto get_address() const->uint64_t = 0;
+		[[nodiscard]] virtual auto get_address() const -> uint64_t = 0;
 
 		[[nodiscard]] virtual auto get_usage_flags() const noexcept -> BufferUsageFlags = 0;
 	};
@@ -351,5 +351,17 @@ namespace edge::gfx {
 		virtual auto reset(uint32_t start_query, uint32_t query_count = 0u) -> void = 0;
 		virtual auto get_data(uint32_t query_index, void* data) const -> void = 0;
 		virtual auto get_data(uint64_t first_query, uint32_t query_count, void* data) const -> void = 0;
+	};
+
+	class IAccelerationStructure : public IGFXResource {
+	public:
+		~IAccelerationStructure() override = default;
+
+		[[nodiscard]] auto get_resource_type() const noexcept
+			-> ResourceType override final {
+			return ResourceType::eAccelerationStructure;
+		}
+
+		virtual auto get_address() const -> uint64_t = 0;
 	};
 }

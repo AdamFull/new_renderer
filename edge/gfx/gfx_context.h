@@ -42,6 +42,8 @@ namespace edge::gfx
 
 	[[nodiscard]] auto create_query_pool(const QueryPoolCreateInfo& create_info) -> IQueryPool*;
 
+	[[nodiscard]] auto create_acceleration_structure(const AccelerationStructureCreateInfo& create_info) -> IAccelerationStructure*;
+
 	void wait_for_fences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max());
 
 	void request_minimal_buffer_alignment(BufferUsageFlags usage, uint64_t& alignment);
@@ -87,6 +89,8 @@ namespace edge::gfx
 		virtual auto create_sampler(const SamplerCreateInfo& create_info) const->ISampler* = 0;
 
 		virtual auto create_query_pool(const QueryPoolCreateInfo& create_info) const->IQueryPool* = 0;
+
+		virtual auto create_acceleration_structure(const AccelerationStructureCreateInfo& create_info) const -> IAccelerationStructure* = 0;
 
 		virtual void wait_for_fences(std::span<IFence*> fences, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const = 0;
 

@@ -51,6 +51,18 @@ namespace edge::gfx::vulkan
 			buffer_create_info.usage |= vk::BufferUsageFlagBits::eShaderDeviceAddressKHR;
 		}
 
+		if (create_info.usage & BufferUsageFlag::eAccelerationStructureBuildInput) {
+			buffer_create_info.usage |= vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR;
+		}
+
+		if (create_info.usage & BufferUsageFlag::eAccelerationStructureStorage) {
+			buffer_create_info.usage |= vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
+		}
+
+		if (create_info.usage & BufferUsageFlag::eShaderBindingTable) {
+			buffer_create_info.usage |= vk::BufferUsageFlagBits::eShaderBindingTableKHR;
+		}
+
 		if (create_info.usage & BufferUsageFlag::eGpuOnly)
 			alloc_create_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 		else if (create_info.usage & BufferUsageFlag::eCpuToGpu)

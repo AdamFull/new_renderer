@@ -15,6 +15,7 @@
 #include "gfx_vk_device.h"
 #include "gfx_vk_debug.h"
 
+#include "gfx_vk_acceleration_structure.h"
 #include "gfx_vk_buffer.h"
 #include "gfx_vk_fence.h"
 #include "gfx_vk_semaphore.h"
@@ -343,22 +344,22 @@ namespace edge::gfx::vulkan
 		return new DescriptorBindingLayout(*device, descriptor_layout);
 	}
 
-	auto GFXContext::create_sampler(const SamplerCreateInfo& create_info) const -> ISampler*
-	{
+	auto GFXContext::create_sampler(const SamplerCreateInfo& create_info) const -> ISampler* {
 		return new Sampler(*device, create_info);
 	}
 
-	auto GFXContext::create_query_pool(const QueryPoolCreateInfo& create_info) const -> IQueryPool*
-	{
+	auto GFXContext::create_query_pool(const QueryPoolCreateInfo& create_info) const -> IQueryPool* {
 		return new QueryPool(*device, create_info);
 	}
 
-	void GFXContext::wait_for_fences(std::span<IFence*> fences, uint64_t timeout) const
-	{
+	auto GFXContext::create_acceleration_structure(const AccelerationStructureCreateInfo& create_info) const -> IAccelerationStructure* {
+		return new AccelerationStructure(*device, create_info);
+	}
+
+	void GFXContext::wait_for_fences(std::span<IFence*> fences, uint64_t timeout) const {
 		utl::fixed_vector<vk::Fence, 16ull> wait_fences{};
 
-		for (auto& fence : fences)
-		{
+		for (auto& fence : fences) {
 			wait_fences.push_back(utl::cast<Fence*>(fence)->get_handle());
 		}
 
@@ -437,6 +438,17 @@ namespace edge::gfx::vulkan
 				if (!ext.rayQuery) {
 					EDGE_LOGW("[Vulkan Context] Ray query extension is not supported.");
 				}
+			}
+
+			// For ray tracing
+			else if (strcmp(extension_name, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) == 0) {
+				device.request_extension_features<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>();
+			}
+			else if (strcmp(extension_name, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) == 0) {
+				device.request_extension_features<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>();
+			}
+			else if (strcmp(extension_name, VK_KHR_RAY_QUERY_EXTENSION_NAME) == 0) {
+				device.request_extension_features<vk::PhysicalDeviceRayQueryFeaturesKHR>();
 			}
 		}
 	}
