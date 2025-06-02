@@ -37,6 +37,7 @@ namespace engine::render {
 
 		world_cameras = std::make_unique<DynamicBuffer<interop::Camera>>(8ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 		world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
+		transform_matrices = std::make_unique<DynamicBuffer<glm::mat4x4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 		world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 	}
 
@@ -46,9 +47,6 @@ namespace engine::render {
 		world_resource.resource_id = camera_offset++;
 
 		auto& camera = world_cameras->get(world_resource.resource_id);
-		camera.matrices_offset = matrices_offset;
-		matrices_offset += constants::matrix_offset_count;
-
 		camera.frustum_offset = frustum_offset;
 		frustum_offset += 6ull; // Because 6 frustum sides
 
@@ -69,9 +67,7 @@ namespace engine::render {
 	glm::mat4 const& RenderWorld::get_camera_matrix(uint32_t camera_id, uint32_t matrix_index) {
 		auto& world_resource = world_resources[camera_id];
 		auto& camera = world_cameras->get(world_resource.resource_id);
-
-		auto* matrix_begin = world_matrices->data(camera.matrices_offset);
-		return *(matrix_begin + matrix_index);
+		return camera.matrices[matrix_index];
 	}
 
 	uint32_t RenderWorld::get_camera_count() const {
@@ -112,23 +108,20 @@ namespace engine::render {
 			auto right = glm::normalize(glm::cross(forward, glm::vec3{ 0.f, 1.f, 0.f }));
 			auto up = glm::normalize(glm::cross(right, forward));
 
-			auto* matrices = world_matrices->data(camera.matrices_offset);
-			world_matrices->mark_dirty(camera.matrices_offset, constants::matrix_offset_count);
-
-			matrices[constants::view_matrix_offset] = glm::lookAt(translation, translation + forward, up);
-			matrices[constants::inv_view_matrix_offset] = glm::inverse(matrices[constants::view_matrix_offset]);
-			matrices[constants::projection_matrix_offset] = perspectiveRH_ReverseZ_InfiniteFar(camera.fov, camera.aspect, camera.z_near);
-			matrices[constants::inv_projection_matrix_offset] = glm::inverse(matrices[constants::projection_matrix_offset]);
-			matrices[constants::prev_view_projection_matrix_offset] = matrices[constants::view_projection_matrix_offset];
-			matrices[constants::view_projection_matrix_offset] = matrices[constants::projection_matrix_offset] * matrices[constants::view_matrix_offset];
-			matrices[constants::inv_view_projection_matrix_offset] = glm::inverse(matrices[constants::view_projection_matrix_offset]);
+			camera.matrices[constants::view_matrix_offset] = glm::lookAt(translation, translation + forward, up);
+			camera.matrices[constants::inv_view_matrix_offset] = glm::inverse(camera.matrices[constants::view_matrix_offset]);
+			camera.matrices[constants::projection_matrix_offset] = perspectiveRH_ReverseZ_InfiniteFar(camera.fov, camera.aspect, camera.z_near);
+			camera.matrices[constants::inv_projection_matrix_offset] = glm::inverse(camera.matrices[constants::projection_matrix_offset]);
+			camera.matrices[constants::prev_view_projection_matrix_offset] = camera.matrices[constants::view_projection_matrix_offset];
+			camera.matrices[constants::view_projection_matrix_offset] = camera.matrices[constants::projection_matrix_offset] * camera.matrices[constants::view_matrix_offset];
+			camera.matrices[constants::inv_view_projection_matrix_offset] = glm::inverse(camera.matrices[constants::view_projection_matrix_offset]);
 
 			// Calculate frustum
 			update_camera_frustum(camera_id);
 
 			// Update reprojection
-			auto& camera_reprojection = matrices[constants::reprojection_matrix_offset];
-			camera_reprojection = matrices[constants::prev_view_projection_matrix_offset] * matrices[constants::inv_view_projection_matrix_offset];
+			auto& camera_reprojection = camera.matrices[constants::reprojection_matrix_offset];
+			camera_reprojection = camera.matrices[constants::prev_view_projection_matrix_offset] * camera.matrices[constants::inv_view_projection_matrix_offset];
 
 			float rcp_half_dimx = 2.0f / screen_size_x;
 			float rcp_half_dimy = 2.0f / screen_size_y;
@@ -195,12 +188,9 @@ namespace engine::render {
 				camera.z_far = (m43 - 1.0f) / m33;
 			}
 
-			auto* matrices = world_matrices->data(camera.matrices_offset);
-			world_matrices->mark_dirty(camera.matrices_offset, constants::matrix_offset_count);
-
-			matrices[constants::view_matrix_offset] = view;
-			matrices[constants::projection_matrix_offset] = projection;
-			matrices[constants::view_projection_matrix_offset] = projection * view;
+			camera.matrices[constants::view_matrix_offset] = view;
+			camera.matrices[constants::projection_matrix_offset] = projection;
+			camera.matrices[constants::view_projection_matrix_offset] = projection * view;
 
 			update_camera_frustum(camera_id);
 		}
@@ -268,11 +258,11 @@ namespace engine::render {
 		world_meshes->mark_dirty(world_resource.resource_id);
 
 		// Register slots for model matrix, old model matrix and normal matrix
-		mesh.matrix_offset = matrices_offset;
-		matrices_offset += 2ull;
+		mesh.transform_offset = transform_offset;
+		transform_offset += 2ull;
 
-		mesh.skin_offset = (joint_count == 0u ? ~0u : matrices_offset);
-		matrices_offset += joint_count;
+		mesh.skin_offset = (joint_count == 0u ? ~0u : transform_offset);
+		transform_offset += joint_count;
 
 		mesh.submesh_offset = submesh_count;
 
@@ -287,8 +277,8 @@ namespace engine::render {
 
 		auto& mesh = world_meshes->get(world_resource.resource_id);
 
-		auto* matrices = world_matrices->data(mesh.matrix_offset);
-		world_matrices->mark_dirty(mesh.matrix_offset, 2ull);
+		auto* matrices = transform_matrices->data(mesh.transform_offset);
+		transform_matrices->mark_dirty(mesh.transform_offset, 2ull);
 
 		matrices[constants::old_model_matrix_offset] = matrices[constants::model_matrix_offset];
 		matrices[constants::model_matrix_offset] = matrix * interop::make_decode_position_matrix(mesh.bb_enc);
@@ -369,6 +359,9 @@ namespace engine::render {
 			fd.matrix_ptr = world_matrices->get_buffer()->get_address();
 			world_matrices->flush();
 
+			fd.transform_ptr = transform_matrices->get_buffer()->get_address();
+			transform_matrices->flush();
+
 			fd.frustum_sides_ptr = world_frustum->get_buffer()->get_address();
 			world_frustum->flush();
 
@@ -442,9 +435,7 @@ namespace engine::render {
 		auto* frustum_begin = world_frustum->data(camera.frustum_offset);
 		world_frustum->mark_dirty(camera.frustum_offset, 6u);
 
-		auto* matrices = world_matrices->data(camera.matrices_offset);
-
-		auto& clip_matrix = matrices[constants::view_projection_matrix_offset];
+		auto& clip_matrix = camera.matrices[constants::view_projection_matrix_offset];
 
 		// Lesft
 		auto frustum_left = glm::vec4(

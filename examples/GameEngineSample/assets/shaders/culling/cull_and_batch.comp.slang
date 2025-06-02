@@ -77,7 +77,7 @@ bool is_occluded(in interop::Camera camera, in interop::BoundingBox bb) {
     uint32_t2 pyramid_size;
     texture0.GetDimensions(pyramid_size.x, pyramid_size.y);
 
-    float4x4 view_proj_matrix = g_fd.get_view_projection_matrix(camera.matrices_offset);
+    float4x4 view_proj_matrix = camera.get_view_projection_matrix();
 
     float3 corners[8] = {
         bb.min,
@@ -162,7 +162,7 @@ void main(uint32_t3 global_id: SV_DispatchThreadID) {
     interop::Mesh mesh = g_fd.mesh_ptr[draw_info.mesh_index];
     interop::SubMesh submesh = g_fd.submesh_ptr[mesh.submesh_offset + draw_info.submesh_index];
 
-    float4x4 model = g_fd.get_model_matrix(mesh.matrix_offset);
+    float4x4 model = g_fd.get_model_matrix(mesh.transform_offset);
 
     // Calculate bounding box
     interop::BoundingBox submesh_bb = submesh.ebb.decode(model);

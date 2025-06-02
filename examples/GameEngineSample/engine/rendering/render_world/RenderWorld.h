@@ -67,6 +67,9 @@ namespace engine::render {
 		std::unique_ptr<DynamicBuffer<glm::mat4>> world_matrices{};
 		uint32_t matrices_offset{ 0u };
 
+		std::unique_ptr<DynamicBuffer<glm::mat4x4>> transform_matrices{};
+		uint32_t transform_offset{ 0u };
+
 		std::unique_ptr<DynamicBuffer<glm::vec4>> world_frustum{};
 		uint32_t frustum_offset{ 0u };
 

@@ -22,8 +22,8 @@ void main(uint32_t3 local_id: SV_GroupThreadID,
     }
 
     interop::Camera camera = g_fd.get_default_camera();
-    float4x4 inv_view_projection = g_fd.get_inv_view_projection_matrix(camera.matrices_offset);
-    float4x4 prev_view_projection = g_fd.get_prev_view_projection_matrix(camera.matrices_offset);
+    float4x4 inv_view_projection = camera.get_inv_view_projection_matrix();
+    float4x4 prev_view_projection = camera.get_prev_view_projection_matrix();
 
     float depth = texture0.SampleLevel(sampler0, uv, 0.0f).r;
 

@@ -32,7 +32,7 @@ void main(uint32_t3 local_id: SV_GroupThreadID,
     float2 sample_texel_size = 1.0f / float2(sample_image_size);
 
     interop::Camera camera = g_fd.get_default_camera();
-    float4x4 inv_proj = g_fd.get_inv_projection_matrix(camera.matrices_offset);
+    float4x4 inv_proj = camera.get_inv_projection_matrix();
 
     uint32_t2 local_id_xy = local_id.xy;
     uint32_t2 global_id_xy = global_id.xy;
@@ -84,7 +84,7 @@ void main(uint32_t3 local_id: SV_GroupThreadID,
     const float3 bitangent = cross(normal, tangent);
     const float3x3 tbn = float3x3(tangent, bitangent, normal);
 
-    const float4x4 projection = g_fd.get_projection_matrix(camera.matrices_offset);
+    const float4x4 projection = camera.get_projection_matrix();
     
     float occlusion = 0;
     

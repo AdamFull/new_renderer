@@ -24,7 +24,7 @@ VSOutput main(uint32_t vertex_index: SV_VertexID,
     interop::Mesh mesh = g_fd.mesh_ptr[draw_info.mesh_index];
     interop::SubMesh submesh = g_fd.submesh_ptr[mesh.submesh_offset + draw_info.submesh_index];
 
-    float4x4 model_matrix = g_fd.get_model_matrix(mesh.matrix_offset);
+    float4x4 model_matrix = g_fd.get_model_matrix(mesh.transform_offset);
 
 #ifdef HAS_SKIN
     if (mesh.skin_offset != ~0u) {
@@ -46,15 +46,18 @@ VSOutput main(uint32_t vertex_index: SV_VertexID,
     float4x4 view_projection;
 #if defined(CASCADED_SHADOW)
     interop::CascadedShadowCommit shadow = g_fd.cascaded_shadow_ptr[pc.shadow_index];
-    view_projection = g_fd.get_view_projection_matrix(shadow.matrix_offsets[pc.layer]);
+    interop::Camera camera = g_fd.camera_ptr[shadow.cameras[pc.layer]];
+    view_projection = camera.get_view_projection_matrix();
     output.layer = pc.shadow_index * int(constants::cascade_shadow_map_cascade_count) + pc.layer;
 #elif defined(OMNI_SHADOW)
     interop::OmniShadowCommit shadow = g_fd.omni_shadow_ptr[pc.shadow_index];
-    view_projection = g_fd.get_view_projection_matrix(shadow.matrix_offsets[pc.layer]);
+    interop::Camera camera = g_fd.camera_ptr[shadow.cameras[pc.layer]];
+    view_projection = camera.get_view_projection_matrix();
     output.layer = pc.shadow_index * 6 + pc.layer;
 #else
     interop::SpotShadowCommit shadow = g_fd.spot_shadow_ptr[pc.shadow_index];
-    view_projection = g_fd.get_view_projection_matrix(shadow.matrix_offset);
+    interop::Camera camera = g_fd.camera_ptr[shadow.camera];
+    view_projection = camera.get_view_projection_matrix();
     output.layer = pc.layer;
 #endif
 

@@ -23,7 +23,7 @@ VSOutput main(uint32_t vertex_index: SV_VertexID,
     interop::Mesh mesh = g_fd.mesh_ptr[draw_info.mesh_index];
     interop::SubMesh submesh = g_fd.submesh_ptr[mesh.submesh_offset + draw_info.submesh_index];
 
-    float4x4 model_matrix = g_fd.get_model_matrix(mesh.matrix_offset);
+    float4x4 model_matrix = g_fd.get_model_matrix(mesh.transform_offset);
 
     uint32_t draw_id = pc.call_id + draw_index;
     
@@ -44,7 +44,7 @@ VSOutput main(uint32_t vertex_index: SV_VertexID,
 #endif
 
     interop::Camera camera = g_fd.camera_ptr[pc.camera_id];
-    float4x4 view_projection = g_fd.get_view_projection_matrix(camera.matrices_offset);
+    float4x4 view_projection = camera.get_view_projection_matrix();
 
     // Sample vertex position
     float4 local_pos = mul(model_matrix, float4(interop::decode_position(egd.vertices[vertex_index].position), 1.0));

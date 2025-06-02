@@ -199,7 +199,8 @@ float sample_cascaded_shadow(in interop::LightCommit light, in VertexAttribute v
 
     uint32_t cascade_index = get_scadow_cascade_split(commit, va.linearZ);
 
-    float4 shadow_coord = mul(csm_bias_mat, mul(g_fd.get_view_projection_matrix(commit.matrix_offsets[cascade_index]), float4(va.pos, 1.0)));
+    interop::Camera camera = g_fd.camera_ptr[commit.cameras[cascade_index]];
+    float4 shadow_coord = mul(csm_bias_mat, mul(camera.get_view_projection_matrix(), float4(va.pos, 1.0)));
     shadow_coord = shadow_coord / shadow_coord.w;
 
     float shadow_sample = 1.f;
@@ -334,7 +335,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
     // TODO: set camera from another place
     interop::Camera camera = g_fd.get_default_camera();
-    float4x4 inv_view = g_fd.get_inv_view_matrix(camera.matrices_offset);
+    float4x4 inv_view = camera.get_inv_view_matrix();
 
     float3 camera_pos = camera.position;
 
@@ -358,7 +359,7 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
         float4 dir_world_space = float4(0.0);
         const float3 origin = float3(0, atmosphere::k_planet_radius, 0) + camera_pos;
 
-        dir_world_space.xyz = util::position_from_depth(uv, constants::flt_epsilon, g_fd.get_inv_view_projection_matrix(camera.matrices_offset));
+        dir_world_space.xyz = util::position_from_depth(uv, constants::flt_epsilon, camera.get_inv_view_projection_matrix());
 
         uint sun_count = 0;
         for (int i = 0; i < g_fd.light_count; i++) {
@@ -402,11 +403,11 @@ void main(uint3 global_id: SV_DispatchThreadID, uint3 local_id: SV_GroupThreadID
 
         // Load mesh model matrix
 
-        float4x4 model = g_fd.get_model_matrix(mesh.matrix_offset);
+        float4x4 model = g_fd.get_model_matrix(mesh.transform_offset);
         float3x3 normal_matrix = interop::adjugate(float3x3(model));
 
         interop::Camera camera = g_fd.get_default_camera();
-        float4x4 view_projection = g_fd.get_view_projection_matrix(camera.matrices_offset);
+        float4x4 view_projection = camera.get_view_projection_matrix();
 
         float4 clip_pos_0;
         float4 clip_pos_1;

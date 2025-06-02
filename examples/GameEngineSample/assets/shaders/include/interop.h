@@ -305,7 +305,7 @@ namespace interop {
 	};
 
 	struct Mesh {
-		uint32_t matrix_offset;
+		uint32_t transform_offset;
 		uint32_t submesh_offset;
 		uint32_t submesh_count;
 		uint32_t skin_offset;
@@ -375,31 +375,33 @@ namespace interop {
 
 	struct CascadedShadowCommit {
 		float split_depths[constants::cascade_shadow_map_cascade_count];
-		uint32_t matrix_offsets[constants::cascade_shadow_map_cascade_count];
+		uint32_t cameras[constants::cascade_shadow_map_cascade_count];
 		float far_clip;
 		int index;
 		uint32_t pad;
 	};
 
 	struct OmniShadowCommit {
-		uint32_t matrix_offsets[6];
+		uint32_t cameras[6];
 		float far_plane;
 		int index;
 	};
 
 	struct SpotShadowCommit {
-		uint32_t matrix_offset;
+		uint32_t camera;
 		int index;
 	};
 
 	struct Camera {
+		float4x4 matrices[8];
+
 		uint32_t type;
-		uint32_t matrices_offset;
 		uint32_t frustum_offset;
 		uint32_t last_hash;
+		uint32_t _pad0;
 
 		float3 position;
-		float _pad0;
+		float _pad1;
 
 		float fov;
 		float z_near;
@@ -408,10 +410,36 @@ namespace interop {
 
 		float2 size;
 		float2 inv_size;
+
+		inline float4x4 get_view_matrix() {
+			return matrices[constants::view_matrix_offset];
+		}
+		inline float4x4 get_inv_view_matrix() {
+			return matrices[constants::inv_view_matrix_offset];
+		}
+		inline float4x4 get_projection_matrix() {
+			return matrices[constants::projection_matrix_offset];
+		}
+		inline float4x4 get_inv_projection_matrix() {
+			return matrices[constants::inv_projection_matrix_offset];
+		}
+		inline float4x4 get_view_projection_matrix() {
+			return matrices[constants::view_projection_matrix_offset];
+		}
+		inline float4x4 get_prev_view_projection_matrix() {
+			return matrices[constants::prev_view_projection_matrix_offset];
+		}
+		inline float4x4 get_inv_view_projection_matrix() {
+			return matrices[constants::inv_view_projection_matrix_offset];
+		}
+		inline float4x4 get_reprojection_matrix() {
+			return matrices[constants::reprojection_matrix_offset];
+		}
 	};
 
 	struct FrameData {
 		TYPE_PTR(float4x4) matrix_ptr;
+		TYPE_PTR(float4x4) transform_ptr;
 		TYPE_PTR(float4) frustum_sides_ptr;
 		TYPE_PTR(Mesh) mesh_ptr;
 		TYPE_PTR(SubMesh) submesh_ptr;
@@ -438,37 +466,11 @@ namespace interop {
 		}
 
 		inline float4x4 get_model_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::model_matrix_offset];
+			return transform_ptr[global_offset + constants::model_matrix_offset];
 		}
 		inline float4x4 get_old_model_matrix(uint global_offset) { 
 			return matrix_ptr[global_offset + constants::old_model_matrix_offset];
 		}
-
-		inline float4x4 get_view_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::view_matrix_offset];
-		}
-		inline float4x4 get_inv_view_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::inv_view_matrix_offset];
-		}
-		inline float4x4 get_projection_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::projection_matrix_offset];
-		}
-		inline float4x4 get_inv_projection_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::inv_projection_matrix_offset];
-		}
-		inline float4x4 get_view_projection_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::view_projection_matrix_offset];
-		}
-		inline float4x4 get_prev_view_projection_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::prev_view_projection_matrix_offset];
-		}
-		inline float4x4 get_inv_view_projection_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::inv_view_projection_matrix_offset];
-		}
-		inline float4x4 get_reprojection_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::reprojection_matrix_offset];
-		}
-
 	};
 
 	struct DrawIndexedIndirectData {
