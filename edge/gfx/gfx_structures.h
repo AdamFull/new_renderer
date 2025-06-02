@@ -449,6 +449,25 @@ namespace edge
 			AccelerationStructureType type{};
 		};
 
+		struct AccelerationStructureVertexInfo {
+			IBuffer* vertex_buffer{};
+			IBuffer* index_buffer{};
+			IBuffer* transform_buffer{};
+			uint32_t triangle_count{}; 
+			uint32_t max_vertex{};
+			uint64_t vertex_stride{};
+			uint32_t transform_offset{};
+			Format vertex_format;
+			//vk::GeometryFlagsKHR flags
+		};
+
+		struct AccelerationStructureInstanceInfo {
+			IBuffer* instance_buffer{};
+			uint32_t instance_count{};
+			uint32_t transform_offset{};
+//			vk::GeometryFlagsKHR flags
+		};
+
 		struct RenderResourceDesc {
 			IGFXResource* resource{ nullptr };
 			ResourceStateFlags state{};

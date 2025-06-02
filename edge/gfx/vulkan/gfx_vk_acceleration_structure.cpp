@@ -96,7 +96,25 @@ namespace edge::gfx::vulkan {
 	}
 
 	void AccelerationStructure::build(const IQueue* queue, vk::BuildAccelerationStructureFlagsKHR flags, vk::BuildAccelerationStructureModeKHR mode) {
+		std::vector<vk::AccelerationStructureGeometryKHR> acceleration_structure_geometries{};
+		std::vector<vk::AccelerationStructureBuildRangeInfoKHR> acceleration_structure_build_range_infos{};
+		std::vector<uint32_t> primitive_counts{};
 
+		for (auto& geometry : geometries) {
+			if (mode == vk::BuildAccelerationStructureModeKHR::eUpdate && !geometry.updated) {
+				continue;
+			}
+			acceleration_structure_geometries.push_back(geometry.geometry);
+			// Infer build range info from geometry
+			vk::AccelerationStructureBuildRangeInfoKHR build_range_info;
+			build_range_info.primitiveCount = geometry.primitive_count;
+			build_range_info.primitiveOffset = 0;
+			build_range_info.firstVertex = 0;
+			build_range_info.transformOffset = geometry.transform_offset;
+			acceleration_structure_build_range_infos.push_back(build_range_info);
+			primitive_counts.push_back(geometry.primitive_count);
+			geometry.updated = false;
+		}
 	}
 
 	auto AccelerationStructure::get_address() const -> uint64_t {
