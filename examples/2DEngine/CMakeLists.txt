@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.28.0)
 project(e2d)
 
-if(WIN32)
-add_compile_definitions("PLATFORM_WIN32")
-endif()
-
 add_compile_definitions(FMT_UNICODE=0)
 
 if(MSVC)

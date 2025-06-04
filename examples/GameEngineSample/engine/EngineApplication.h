@@ -6,19 +6,13 @@
 #include "ui/EngineUI.h"
 #include "ui/windows/EditorWindow.h"
 
-namespace engine
-{
-	namespace world
-	{
-		class Scene;
-	}
+#include "world/Scene.h"
 
-	class EngineApplication : public edge::Application
-	{
+namespace engine {
+	class EngineApplication : public edge::Application {
 	public:
-		EngineApplication();
-
-		virtual ~EngineApplication() override;
+		EngineApplication() = default;
+		virtual ~EngineApplication() override = default;
 	protected:
 		void on_input_event(const edge::InputEvent& input_event) override;
 		void finish() override;

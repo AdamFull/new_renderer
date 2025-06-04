@@ -7,6 +7,8 @@ int runtime_main(edge::IRuntimeContext& context) {
     auto runtime = edge::create_application_context(context);
 
     edge::ApplicationCreateInfo app_ci{};
+    app_ci.features.use_graphics = true;
+    app_ci.features.use_uploader = true;
     app_ci.name = "E2D";
     app_ci.app_allocator = []() { return std::make_unique<e2d::App>(); };
 

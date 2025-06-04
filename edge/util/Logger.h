@@ -7,7 +7,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
-#ifdef PLATFORM_ANDROID
+#ifdef EDGE_PLATFORM_ANDROID
 #include <spdlog/sinks/android_sink.h>
 #else
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -35,7 +35,7 @@ namespace edge
 
 	inline void create_default_logger(std::string_view logger_name, std::string_view output_path) {
 		spdlog::sinks_init_list sink_list{
-#ifdef PLATFORM_ANDROID
+#ifdef EDGE_PLATFORM_ANDROID
 			std::make_shared<spdlog::sinks::android_sink_mt>(logger_name.data())
 #else
 			std::make_shared<spdlog::sinks::basic_file_sink_mt>(output_path.data(), true),

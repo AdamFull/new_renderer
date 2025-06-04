@@ -12,22 +12,31 @@
 namespace edge {
 	class Window;
 	class Application;
+	class Runtime;
+
+	struct ApplicationFeatures {
+		bool use_graphics{ false };
+		bool use_uploader{ false };
+		bool use_ray_tracing{ false };
+	};
 
 	struct ApplicationCreateInfo {
-		std::string name;
+		std::string name{};
+		ApplicationFeatures features;
 		std::function<std::unique_ptr<Application>()> app_allocator;
 	};
 
 	struct ApplicationOptions {
-		bool benchmark_enabled;
-		Window* window;
+		Window* window{ nullptr };
+		Runtime* runtime{ nullptr };
+		ApplicationFeatures features;
 	};
 
 	class Application {
 	public:
 		Application() = default;
 
-		virtual ~Application() = default;
+		virtual ~Application();
 
 		/**
 		* @brief Prepares the application for execution
@@ -79,7 +88,9 @@ namespace edge {
 		Window* window;
 
 		std::string name;
-		bool lock_simulation_speed{ false };
+		bool graphics_initialized{ false };
+		bool resource_uploader_initialized{ false };
+
 	private:
 		bool requested_close{ false };
 	};

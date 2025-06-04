@@ -116,16 +116,6 @@ namespace engine::render
 	bool is_culling_freezed = false;
 
 	Renderer::Renderer(edge::Window* window) {
-		edge::gfx::ContextCreateInfo gfx_create_info{};
-		gfx_create_info.app_name = "MyVulkanEngine";
-		gfx_create_info.render_api = edge::gfx::RenderApi::eVulkan;
-		gfx_create_info.window = window;
-
-		edge::gfx::make_context(gfx_create_info);
-
-		edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
-		edge::gfx::make_resource_uploader(resource_updater_init);
-
 		render_context = std::make_unique<RenderContext>(window);
 
 		render_world = std::make_unique<RenderWorld>(*this);

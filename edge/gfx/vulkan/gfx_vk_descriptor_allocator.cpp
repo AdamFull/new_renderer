@@ -177,13 +177,19 @@ namespace edge::gfx::vulkan {
 				new_pool_block.inilial_sizes = requested_sizes + k_default_pool_sizes;
 		}
 
-		std::array<vk::DescriptorPoolSize, k_max_pool_sizes_count> pool_sizes{};
+		utl::fixed_vector<vk::DescriptorPoolSize, k_max_pool_sizes_count> pool_sizes{};
 		for (int32_t i = 0; i < k_max_pool_sizes_count; ++i) {
-			pool_sizes[i] = { descriptor_type_to_vk(static_cast<DescriptorType>(i)), static_cast<uint32_t>(new_pool_block.inilial_sizes[i]) };
+			auto descriptor_type = static_cast<DescriptorType>(i);
+			if (descriptor_type == DescriptorType::eAccelerationStructure &&
+				!device.is_enabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+				continue;
+			}
+
+			pool_sizes.emplace_back(descriptor_type_to_vk(descriptor_type) , static_cast<uint32_t>(new_pool_block.inilial_sizes[i]));
 		}
 
 		vk::DescriptorPoolCreateInfo create_info{};
-		create_info.poolSizeCount = k_max_pool_sizes_count;
+		create_info.poolSizeCount = pool_sizes.size();
 		create_info.pPoolSizes = pool_sizes.data();
 		create_info.maxSets = k_default_pool_multiplier;
 		// For support individual allocations free

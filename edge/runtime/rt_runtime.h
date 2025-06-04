@@ -97,6 +97,13 @@ namespace edge {
 		}
 
 		void set_window_properties(const Window::OptionalProperties& properties);
+
+		/**
+		 * @brief Needed to get platform dependent executable path
+		 * @return Path to application executable
+		 */
+		auto get_app_path() const -> const std::string&;
+		auto get_temp_path() const -> const std::string&;
 	protected:
 		std::unique_ptr<Window> window{ nullptr };
 
@@ -111,12 +118,6 @@ namespace edge {
 		 */
 		virtual void create_window(const Window::Properties& properties) = 0;
 
-		void on_update(float delta_time);
-		void on_app_error(const std::string& app_id);
-		void on_app_start(const std::string& app_id);
-		void on_app_close(const std::string& app_id);
-		void on_close();
-
 		const float fixed_delta_time{ 0.02f };
 		float accumulated_frame_time{ 0.0f };
 
@@ -126,10 +127,9 @@ namespace edge {
 		bool focused{ true };                 /* App is currently in focus at an operating system level */
 		bool close_requested{ false };        /* Close requested */
 
-        std::string internal_resources_path{};
-        std::string external_resources_path{};
-        std::string internal_data_path{};
-        std::string external_data_path{};
+		// Platform dependent paths
+		std::string app_path{};
+		std::string temp_path{};
 
 	private:
 		utl::Stopwatch stopwatch{};

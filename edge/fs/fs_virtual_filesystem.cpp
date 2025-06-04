@@ -6,6 +6,8 @@
 #include "fs_file.h"
 #include "fs_filesystem.h"
 
+// TODO: Add ability to mount multiple filesystems to the same mount point and merge them
+
 namespace edge::fs
 {
 	static std::unordered_map<std::string_view, std::unique_ptr<IFilesystem>> filesystems{};

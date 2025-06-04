@@ -42,10 +42,10 @@ namespace edge
 			Window* window{ nullptr };
 			const char* app_name{ nullptr };
 
-			struct Features {
+			struct RequireFeatures {
 				bool mesh_shading{};
 				bool ray_tracing{};
-			} features{};
+			} require_features{};
 		};
 
 		struct SemaphoreSubmitInfo {

@@ -1,6 +1,6 @@
 #include "Edge.h"
 
-#if defined(PLATFORM_WINDOWS)
+#if defined(EDGE_PLATFORM_WINDOWS)
 #include "runtime/win64/rt_windows_runtime_context.h"
 #include "runtime/win64/rt_windows_runtime.h"
 
@@ -9,7 +9,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLin
 	auto context = std::make_unique<edge::win64::WindowsRuntimeContext>(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 	return runtime_main(*context);
 }
-#elif defined(PLATFORM_ANDROID)
+#elif defined(EDGE_PLATFORM_ANDROID)
 #include "runtime/android/rt_android_runtime_context.h"
 #include "runtime/android/rt_android_runtime.h"
 
@@ -33,9 +33,9 @@ namespace edge
 {
 	std::unique_ptr<Runtime> create_application_context(IRuntimeContext& context)
 	{
-#if defined(PLATFORM_WINDOWS)
+#if defined(EDGE_PLATFORM_WINDOWS)
 		return std::make_unique<win64::WindowsRuntime>(context);
-#elif defined(PLATFORM_ANDROID)
+#elif defined(EDGE_PLATFORM_ANDROID)
 		return std::make_unique<android::AndroidRuntime>(context);
 #else
 #	error "Platform not supported"

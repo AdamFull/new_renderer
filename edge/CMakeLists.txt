@@ -4,13 +4,13 @@ project(edge_framework)
 add_library(${PROJECT_NAME} STATIC)
 
 if(ANDROID)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM_ANDROID)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC EDGE_PLATFORM_ANDROID)
 elseif(WIN32)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM_WINDOWS)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC EDGE_PLATFORM_WINDOWS)
 elseif(APPLE)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM_MACOS)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC EDGE_PLATFORM_MACOS)
 elseif(UNIX)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM_LINUX)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC EDGE_PLATFORM_LINUX)
 endif()
 
 target_sources(${PROJECT_NAME} PRIVATE

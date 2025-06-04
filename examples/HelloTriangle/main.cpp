@@ -74,16 +74,7 @@ struct RenderFrame
 class Application final : public edge::Application
 {
 public:
-    Application()
-    {
-        edge::LoggerCreateInfo logger_create_info{};
-        logger_create_info.logger_name = "EdgeHelloTriangle";
-        edge::CreateLogger(logger_create_info);
-
-        EDGE_LOGI("Starting app: {}", name);
-    }
-
-	~Application()
+	~Application() override
 	{
 		queue->wait_idle();
 
@@ -94,25 +85,11 @@ public:
 		}
 
 		edge::gfx::destroy(swapchain);
-
-		edge::gfx::shutdown_resource_uploader();
-		edge::gfx::shutdown_context();
 	}
 
     bool prepare(const edge::ApplicationOptions& options) override
     {
 		window = options.window;
-
-        edge::gfx::ContextCreateInfo gfx_create_info{};
-        gfx_create_info.app_name = "EdgeHelloTriangle";
-        gfx_create_info.render_api = edge::gfx::RenderApi::eVulkan;
-        gfx_create_info.window = options.window;
-
-        // Init graphics context
-		edge::gfx::make_context(gfx_create_info);
-
-		edge::gfx::ResourceUpdaterCreateInfo resource_updater_init{};
-		edge::gfx::make_resource_uploader(resource_updater_init);
 
 		// Init everything we need for rendering
 		queue = edge::gfx::get_queue(edge::gfx::QueueType::eDirect);
@@ -154,32 +131,29 @@ public:
 		edge::gfx::GraphicsPipelineCreateInfo pipeline_ci{};
 		pipeline_ci.shader = shader;
 		pipeline_ci.root_signature = root_sign;
-
-		pipeline_ci.color_formats[0] = render_frames[0]->backbuffer->get_format();
-		pipeline_ci.color_format_count = 1u;
+		pipeline_ci.color_formats.emplace_back(render_frames[0]->backbuffer->get_format());
 
 		pipeline_ci.pipeline_state.rasterization_state.front_face = edge::gfx::FrontFace::eCW;
 
 		// Position
-		pipeline_ci.pipeline_state.vertex_layout.attributes[0].binding = 0;
-		pipeline_ci.pipeline_state.vertex_layout.attributes[0].location = 0;
-		pipeline_ci.pipeline_state.vertex_layout.attributes[0].offset = offsetof(BasicVertex, pos);
-		pipeline_ci.pipeline_state.vertex_layout.attributes[0].format = edge::gfx::Format::eR32G32Sfloat;
+		auto& pos_attr = pipeline_ci.pipeline_state.vertex_layout.attributes.emplace_back();
+		pos_attr.binding = 0;
+		pos_attr.location = 0;
+		pos_attr.offset = offsetof(BasicVertex, pos);
+		pos_attr.format = edge::gfx::Format::eR32G32Sfloat;
 
 		// UV
-		pipeline_ci.pipeline_state.vertex_layout.attributes[1].binding = 0;
-		pipeline_ci.pipeline_state.vertex_layout.attributes[1].location = 1;
-		pipeline_ci.pipeline_state.vertex_layout.attributes[1].offset = offsetof(BasicVertex, color);
-		pipeline_ci.pipeline_state.vertex_layout.attributes[1].format = edge::gfx::Format::eR32G32B32Sfloat;
+		auto& uv_attr = pipeline_ci.pipeline_state.vertex_layout.attributes.emplace_back();
+		uv_attr.binding = 0;
+		uv_attr.location = 1;
+		uv_attr.offset = offsetof(BasicVertex, color);
+		uv_attr.format = edge::gfx::Format::eR32G32B32Sfloat;
 
-		pipeline_ci.pipeline_state.vertex_layout.attribute_count = 2u;
-
-		pipeline_ci.pipeline_state.vertex_layout.bindings[0].binding = 0;
-		pipeline_ci.pipeline_state.vertex_layout.bindings[0].stride = sizeof(BasicVertex);
-		pipeline_ci.pipeline_state.vertex_layout.binding_count = 1u;
+		auto& binding = pipeline_ci.pipeline_state.vertex_layout.bindings.emplace_back();
+		binding.stride = sizeof(BasicVertex);
 
 		pipeline_ci.pipeline_state.primitive_topology = edge::gfx::PrimitiveTopology::eTriangleList;
-		pipeline_ci.pipeline_state.color_blending_state.attachment_count = 1u;
+		pipeline_ci.pipeline_state.color_blending_state.attachments.emplace_back();
 
 		pipeline = edge::gfx::create_pipeline(pipeline_ci);
 
@@ -273,11 +247,11 @@ public:
 		edge::gfx::RenderingInfo rendering_info{};
 		rendering_info.width = current_frame->backbuffer->get_width();
 		rendering_info.height = current_frame->backbuffer->get_height();
-		rendering_info.attachments[0].texture = current_frame->backbuffer;
-		rendering_info.attachments[0].texture_state = texture_translation.dst_state;
-		rendering_info.attachments[0].load_op = edge::gfx::LoadOp::eClear;
-		rendering_info.attachments[0].store_op = edge::gfx::StoreOp::eStore;
-		rendering_info.attachment_count = 1;
+		auto& attachment = rendering_info.attachments.emplace_back();
+		attachment.texture = current_frame->backbuffer;
+		attachment.texture_state = texture_translation.dst_state;
+		attachment.load_op = edge::gfx::LoadOp::eClear;
+		attachment.store_op = edge::gfx::StoreOp::eStore;
 
 		command_list->set_viewport(0, 0, static_cast<float>(rendering_info.width), static_cast<float>(rendering_info.height), 0.f, 1.f);
 		command_list->set_scissor(0, 0, rendering_info.width, rendering_info.height);
@@ -441,6 +415,8 @@ int runtime_main(edge::IRuntimeContext& context)
     auto runtime = edge::create_application_context(context);
 
     edge::ApplicationCreateInfo app_ci{};
+	app_ci.features.use_graphics = true;
+	app_ci.features.use_uploader = true;
     app_ci.name = "EdgeHelloTriangle";
     app_ci.app_allocator = []() { return std::make_unique<Application>(); };
 

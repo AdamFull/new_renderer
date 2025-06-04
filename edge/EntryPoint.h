@@ -4,4 +4,4 @@
 
 #include "runtime/rt_runtime_context.h"
 
-int runtime_main(edge::IRuntimeContext&);
+auto runtime_main(edge::IRuntimeContext&) -> int;

@@ -6,8 +6,8 @@ namespace e2d {
 	class App : public edge::Application
 	{
 	public:
-		App();
-		virtual ~App() override;
+		App() = default;
+		virtual ~App() override = default;
 	protected:
 		void on_input_event(const edge::InputEvent& input_event) override;
 		void finish() override;

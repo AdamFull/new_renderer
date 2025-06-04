@@ -45,8 +45,7 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-namespace edge::gfx::vulkan
-{
+namespace edge::gfx::vulkan {
 	GFXContext::GFXContext(const ContextCreateInfo& create_info) {
 #if USE_NSIGHT_AFTERMATH
 		nsight_aftermath = std::make_unique<VkNsightAftermath>();
@@ -81,8 +80,10 @@ namespace edge::gfx::vulkan
 			instance_builder.add_required_extensions(required_surface_extensions);
 		}
 
-		// Apply extensions requested by user
-		instance_builder.add_required_extensions(std::span<const char*>(k_required_instance_extensions));
+		// Apply surface extension if we use it
+		if (!headless) {
+			instance_builder.add_required_extension(VK_KHR_SURFACE_EXTENSION_NAME);
+		}
 
 #ifdef VULKAN_DEBUG
 		bool VK_EXT_debug_utils_enabled{ false };
@@ -141,8 +142,27 @@ namespace edge::gfx::vulkan
 #endif
 
 		// Apply required device extensions
+		device_extensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
+		// Enable extensions for use nsight aftermath
+#if USE_NSIGHT_AFTERMATH
+		device_extensions.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+		device_extensions.push_back(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
+#endif
+
+		// Optional extensions
+		if (!headless) {
+			device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+		}
+
+		if (create_info.require_features.ray_tracing) {
+			device_extensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+			device_extensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+			device_extensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+			device_extensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+		}
+
 		device_extensions.insert(device_extensions.end(), k_required_device_extensions, k_required_device_extensions + std::size(k_required_device_extensions));
-		device_extensions.insert(device_extensions.end(), k_optional_device_extensions, k_optional_device_extensions + std::size(k_optional_device_extensions));
 
 		// Pick best device from found on device
 		instance->select_best_device(surface, device_extensions);

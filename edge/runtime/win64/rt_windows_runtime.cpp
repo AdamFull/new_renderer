@@ -18,16 +18,11 @@ namespace edge::win64
         GetModuleFileNameA(NULL, executable_path, MAX_PATH);
 
         auto exec_path = std::filesystem::weakly_canonical(executable_path);
-
-        std::array<char, 512> buffer{};
-        internal_data_path = exec_path.parent_path().string();
-        external_data_path = (std::filesystem::temp_directory_path() / exec_path.stem()).string();
-        if (!std::filesystem::exists(external_data_path)) {
-            std::filesystem::create_directories(external_data_path);
+        app_path = exec_path.string();
+        temp_path = (std::filesystem::temp_directory_path() / exec_path.stem()).string();
+        if (!std::filesystem::exists(temp_path)) {
+            std::filesystem::create_directories(temp_path);
         }
-
-        internal_resources_path = fs::path_append(internal_data_path, "internal.pak", buffer);
-        external_resources_path = fs::path_append(external_data_path, "external.pak", buffer);
 
         auto code = Runtime::initialize();
         if (code != ExitCode::Success) {

@@ -1,10 +1,5 @@
 #include "rt_runtime.h"
 
-// Filesystem headers
-#include "../fs/fs_virtual_filesystem.h"
-#include "../fs/native/fs_native_filesystem.h"
-#include "../fs/zip/fs_zip_filesystem.h"
-
 #include "rt_runtime_context.h"
 #include "../util/Logger.h"
 
@@ -26,12 +21,6 @@ namespace edge {
 			return ExitCode::FatalError;
 		}
 
-		// Mount default engine root filesystem
-		fs::mount("/internal_res", new fs::ZipFilesystem(internal_resources_path));
-		//fs::mount("/external_res", new fs::ZipFilesystem(external_resources_path));
-		fs::mount("/internal", new fs::NativeFilesystem(internal_data_path));
-		fs::mount("/external", new fs::NativeFilesystem(external_data_path));
-
 		return 0;
 	}
 
@@ -49,8 +38,7 @@ namespace edge {
 
 		auto delta_time = stopwatch.stop<float>();
 
-		//try
-		{
+		try {
 			// Load the requested app
 			if (app_requested()) {
 				if (!start_app()) {
@@ -70,7 +58,6 @@ namespace edge {
 
 			if (app->should_close()) {
 				std::string id = app->get_name();
-				on_app_close(id);
 				app->finish();
 			}
 
@@ -78,16 +65,11 @@ namespace edge {
 
 			frame_counter.update(delta_time);
 		}
-		//catch (std::exception& e)
-		//{
-		//	EDGE_LOGE("Error Message: {}", e.what());
-		//	EDGE_LOGE("Failed when running application {}", app->GetName());
-		//
-		//	OnAppError(app->GetName());
-		//
-		//	SetLastError(e.what());
-		//	return 4;
-		//}
+		catch (std::exception& e) {
+			EDGE_LOGE("Error Message: {}", e.what());
+			EDGE_LOGE("Failed when running application {}", app->get_name());
+			return 4;
+		}
 
 		return 0;
 	}
@@ -96,13 +78,9 @@ namespace edge {
 		EDGE_PROFILE_ZONE_SCOPED;
 
 		auto new_windows_name = std::format("{} [{} fps; {:.2f} ms]", app->get_name(), frame_counter.fps(), delta_time);
-		//auto winname = std::format("Vulkan App {} fps ({:.2f} ms); {} gpu fps ({:.2f} ms); gpu memory ({:.2f}/{:.2f} Gb)", cpuCounter.fps(), cpuCounter.delta_time() * 1000.f, gpuCounter.fps(), gpuCounter.delta_time() * 1000.f, used_gpu_memory, total_gpu_memory);
 		window->set_title(new_windows_name);
 
 		if (focused || always_render) {
-			//ui->NewFrame(delta_time);
-			on_update(delta_time);
-
 			accumulated_frame_time += delta_time;
 			while (accumulated_frame_time > fixed_delta_time) {
 				app->fixed_update(fixed_delta_time);
@@ -117,15 +95,11 @@ namespace edge {
 
 	void Runtime::terminate(int32_t code) {
 		if (app) {
-			std::string id = app->get_name();
-			on_app_close(id);
 			app->finish();
 		}
 
 		app.reset();
 		window.reset();
-
-		on_close();
 	}
 
 	void Runtime::close() {
@@ -185,15 +159,14 @@ namespace edge {
 		app->set_name(app_ci->name);
 
 		ApplicationOptions options{};
-		options.benchmark_enabled = false;
 		options.window = window.get();
+		options.runtime = this;
+		options.features = app_ci->features;
 
 		if (!app->prepare(options)) {
 			EDGE_LOGE("[Runtime] Failed to prepare app.");
 			return false;
 		}
-
-		on_app_start(app_ci->name);
 
 		return true;
 	}
@@ -207,24 +180,11 @@ namespace edge {
 		window_properties.extent.height = properties.extent.height.has_value() ? properties.extent.height.value() : window_properties.extent.height;
 	}
 
-	void Runtime::on_update(float delta_time) {
-
+	auto Runtime::get_app_path() const -> const std::string& {
+		return app_path;
 	}
 
-	void Runtime::on_app_error(const std::string& app_id) {
-
-	}
-
-	void Runtime::on_app_start(const std::string& app_id) {
-
-	}
-
-	void Runtime::on_app_close(const std::string& app_id) {
-
-	}
-
-	void Runtime::on_close()
-	{
-
+	auto Runtime::get_temp_path() const -> const std::string& {
+		return temp_path;
 	}
 }

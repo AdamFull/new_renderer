@@ -251,10 +251,10 @@ namespace edge::android
 	int32_t AndroidRuntime::initialize() {
 		auto* app = ctx->get_app();
 
-        internal_resources_path = get_package_code_path(app);
-        external_resources_path = app->activity->obbPath;
-        internal_data_path = app->activity->internalDataPath;
-        external_data_path = app->activity->externalDataPath;
+		app_path = get_package_code_path(app);
+        //external_resources_path = app->activity->obbPath;
+        app->activity->internalDataPath;
+        temp_path = app->activity->externalDataPath;
 
 		android_app_set_key_event_filter(app, key_event_filter);
 		android_app_set_motion_event_filter(app, motion_event_filter);

@@ -4,18 +4,10 @@
 #include <edge/util/utl_profiler.h>
 #include <edge/gfx/gfx_profiler.h>
 
+#include <edge/gfx/gfx_resource_loader.h>
+#include <edge/gfx/gfx_context.h>
+
 namespace e2d {
-	App::App() {
-		edge::LoggerCreateInfo logger_create_info{};
-		logger_create_info.logger_name = "E2D";
-		edge::CreateLogger(logger_create_info);
-
-		EDGE_LOGI("Starting app: {}", name);
-	}
-
-	App::~App() {
-	}
-
 	void App::on_input_event(const edge::InputEvent& input_event) {
 	}
 
@@ -27,7 +19,7 @@ namespace e2d {
 	}
 
 	bool App::prepare(const edge::ApplicationOptions& options) {
-		return true;
+		return edge::Application::prepare(options);
 	}
 
 	void App::update(float delta_time) {
