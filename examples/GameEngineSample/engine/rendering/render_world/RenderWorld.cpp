@@ -36,7 +36,6 @@ namespace engine::render {
 		draw_materials = std::make_unique<DynamicBuffer<interop::Material>>(16ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 
 		world_cameras = std::make_unique<DynamicBuffer<interop::Camera>>(8ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
-		world_matrices = std::make_unique<DynamicBuffer<glm::mat4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 		transform_matrices = std::make_unique<DynamicBuffer<glm::mat4x4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 		world_frustum = std::make_unique<DynamicBuffer<glm::vec4>>(64ull, edge::gfx::BufferUsageFlag::eStorageBuffer);
 	}
@@ -196,10 +195,6 @@ namespace engine::render {
 		}
 	}
 
-	glm::mat4 const& RenderWorld::get_matrix(uint32_t matrix_offset) const {
-		return world_matrices->get(matrix_offset);
-	}
-
 	void RenderWorld::add_geometry_draw(uint32_t camera_id, uint32_t mesh_id) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
@@ -290,10 +285,10 @@ namespace engine::render {
 
 		auto& mesh = world_meshes->get(world_resource.resource_id);
 
-		auto* matrices = world_matrices->data(mesh.skin_offset);
-		world_matrices->mark_dirty(mesh.skin_offset, static_cast<uint32_t>(joints.size()));
+		//auto* matrices = world_matrices->data(mesh.skin_offset);
+		//world_matrices->mark_dirty(mesh.skin_offset, static_cast<uint32_t>(joints.size()));
 
-		std::memcpy(static_cast<void*>(matrices), joints.data(), joints.size() * sizeof(glm::mat4));
+		//std::memcpy(static_cast<void*>(matrices), joints.data(), joints.size() * sizeof(glm::mat4));
 	}
 
 	void RenderWorld::add_submeshes(std::span<const interop::SubMesh> submeshes) {
@@ -355,9 +350,6 @@ namespace engine::render {
 
 		{
 			interop::FrameData fd{};
-
-			fd.matrix_ptr = world_matrices->get_buffer()->get_address();
-			world_matrices->flush();
 
 			fd.transform_ptr = transform_matrices->get_buffer()->get_address();
 			transform_matrices->flush();

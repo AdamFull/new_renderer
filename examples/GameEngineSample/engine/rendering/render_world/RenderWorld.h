@@ -24,8 +24,6 @@ namespace engine::render {
 		void update_render_camera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) override;
 		void update_render_camera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, bool perspective, uint32_t width, uint32_t height) override;
 
-		glm::mat4 const& get_matrix(uint32_t matrix_offset) const override;
-
 		void add_geometry_draw(uint32_t camera_id, uint32_t mesh_id) override;
 
 		uint32_t add_material(const interop::Material& material) override;
@@ -63,9 +61,6 @@ namespace engine::render {
 
 		std::unique_ptr<DynamicBuffer<interop::Camera>> world_cameras{};
 		uint32_t camera_offset{ 0u };
-
-		std::unique_ptr<DynamicBuffer<glm::mat4>> world_matrices{};
-		uint32_t matrices_offset{ 0u };
 
 		std::unique_ptr<DynamicBuffer<glm::mat4x4>> transform_matrices{};
 		uint32_t transform_offset{ 0u };

@@ -42,8 +42,6 @@ namespace engine::render {
 		virtual void update_render_camera(uint32_t camera_id, const glm::vec3& translation, const glm::quat& rotation) = 0;
 		virtual void update_render_camera(uint32_t camera_id, const glm::mat4& view, const glm::mat4& projection, bool perspective, uint32_t width, uint32_t height) = 0;
 
-		virtual glm::mat4 const& get_matrix(uint32_t matrix_offset) const = 0;
-
 		virtual void add_geometry_draw(uint32_t camera_id, uint32_t mesh_id) = 0;
 
 		virtual uint32_t add_material(const interop::Material& material) = 0;

@@ -438,7 +438,6 @@ namespace interop {
 	};
 
 	struct FrameData {
-		TYPE_PTR(float4x4) matrix_ptr;
 		TYPE_PTR(float4x4) transform_ptr;
 		TYPE_PTR(float4) frustum_sides_ptr;
 		TYPE_PTR(Mesh) mesh_ptr;
@@ -469,7 +468,7 @@ namespace interop {
 			return transform_ptr[global_offset + constants::model_matrix_offset];
 		}
 		inline float4x4 get_old_model_matrix(uint global_offset) { 
-			return matrix_ptr[global_offset + constants::old_model_matrix_offset];
+			return transform_ptr[global_offset + constants::old_model_matrix_offset];
 		}
 	};
 
