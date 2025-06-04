@@ -6,7 +6,7 @@
 #include "../util/utl_design.h"
 #include "../util/utl_vector.h"
 
-#define ENABLE_EDGE_GFX_PROFILER
+//#define ENABLE_EDGE_GFX_PROFILER
 #ifdef ENABLE_EDGE_GFX_PROFILER
 #define EDGE_GFX_PROFILER_BEGIN_ZONE(cmd_list, label) edge::gfx::Profiler::get_instance()->begin_zone(cmd_list, "NOT IMPLEMENTED");
 #define EDGE_GFX_PROFILER_BEGIN_ZONE_N(cmd_list, label) edge::gfx::Profiler::get_instance()->begin_zone(cmd_list, label);

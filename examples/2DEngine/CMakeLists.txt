@@ -1,0 +1,88 @@
+cmake_minimum_required(VERSION 3.28.0)
+project(e2d)
+
+if(WIN32)
+add_compile_definitions("PLATFORM_WIN32")
+endif()
+
+add_compile_definitions(FMT_UNICODE=0)
+
+if(MSVC)
+    add_compile_options(/bigobj)
+endif()
+
+add_compile_definitions(
+    IMGUI_DEFINE_MATH_OPERATORS
+    IMGUI_USE_WCHAR32
+    NOMINMAX
+)
+
+add_compile_definitions($<$<CONFIG:DEBUG>:ENGINE_DEBUG>)
+
+add_subdirectory(engine)
+
+set(APP_SOURCES main.cpp)
+
+if(ANDROID)
+    if(CMAKE_VS_NsightTegra_VERSION)
+        list(APPEND APP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/android/AndroidManifest.xml)
+    endif()
+
+    add_library(${PROJECT_NAME} SHARED ${APP_SOURCES})
+elseif(IOS)
+	list(REMOVE_AT APP_SOURCES 0)
+	list(APPEND APP_SOURCES
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/main.mm
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/AppDelegate.h
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/AppDelegate.m
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/ViewController.h
+			${CMAKE_CURRENT_SOURCE_DIR}/ios/ViewController.mm
+	)
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${APP_SOURCES})
+else()
+    add_executable(${PROJECT_NAME} WIN32 ${APP_SOURCES})
+endif()
+
+target_link_libraries(${PROJECT_NAME} 
+    PUBLIC 
+    e2d_app
+)
+
+set(PROJECT_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/engine")
+
+if(MSVC)
+    set(ARCHIVE_EXT "pak")
+    set(ARCHIVE_NAME "internal")
+    set(ARCHIVE_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/archives")
+    file(MAKE_DIRECTORY ${ARCHIVE_OUTPUT_DIR})
+
+    file(GLOB_RECURSE ARCHIVE_FILES_DEPS "${CMAKE_CURRENT_SOURCE_DIR}/assets/*")
+    
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+        #OUTPUT ${ARCHIVE_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT}
+        COMMAND ${CMAKE_COMMAND} -E tar "cf" "${ARCHIVE_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT}" --format=zip "assets"
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS ${ARCHIVE_FILES_DEPS}
+        COMMENT "Creating archive ${ARCHIVE_NAME}.${ARCHIVE_EXT}"
+        VERBATIM
+    )
+    
+    add_custom_target(e2d_create_archive ALL DEPENDS ${ARCHIVE_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT})
+    
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${ARCHIVE_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT}
+        ${PROJECT_OUTPUT_DIR}/${ARCHIVE_NAME}.${ARCHIVE_EXT}
+    COMMENT "Copying archive next to the executable"
+    )
+    
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR}
+    )
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}>
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        COMMAND_EXPAND_LISTS
+    )
+endif()
