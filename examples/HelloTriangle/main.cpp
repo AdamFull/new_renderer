@@ -20,7 +20,7 @@ struct BasicVertex
 
 struct RenderFrame
 {
-	RenderFrame(edge::gfx::ISwapchain* swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index)
+	RenderFrame(const edge::gfx::ISwapchain& swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index)
 	{
 		backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
 		command_pool = edge::gfx::create_command_pool(queue);
@@ -49,7 +49,7 @@ struct RenderFrame
 		edge::gfx::destroy(fence);
 	}
 
-	void UpdateBackbuffer(edge::gfx::ISwapchain* swapchain, uint32_t frame_index)
+	void UpdateBackbuffer(const edge::gfx::ISwapchain& swapchain, uint32_t frame_index)
 	{
 		edge::gfx::destroy(backbuffer);
 		backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
@@ -104,7 +104,7 @@ public:
 
 		for (int32_t i = 0; i < static_cast<int32_t>(image_count); ++i)
 		{
-			render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
+			render_frames[i] = std::make_unique<RenderFrame>(*swapchain, queue, i);
 		}
 
 		// Create shader and pipeline
@@ -343,12 +343,12 @@ private:
 		{
 			if (frame_it != render_frames.end())
 			{
-				(*frame_it)->UpdateBackbuffer(swapchain, i);
+				(*frame_it)->UpdateBackbuffer(*swapchain, i);
 			}
 			else
 			{
 				// Create a new frame if the new swapchain has more images than current frames
-				render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
+				render_frames[i] = std::make_unique<RenderFrame>(*swapchain, queue, i);
 			}
 
 			++frame_it;

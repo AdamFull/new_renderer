@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 3.18.0)
 project(e2d_app)
 
 file(GLOB E2D_APP_SOURCES FILES *.cpp *.h)
+file(GLOB E2D_RENDER_SOURCES FILES render/*.cpp render/*.h)
 
 add_library(${PROJECT_NAME} STATIC 
     ${E2D_APP_SOURCES}
+    ${E2D_RENDER_SOURCES}
 )
 
 if(MSVC)

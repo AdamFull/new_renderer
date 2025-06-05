@@ -7,7 +7,12 @@
 #include <edge/gfx/gfx_resource_loader.h>
 #include <edge/gfx/gfx_context.h>
 
+#include "render/Renderer.h"
+
 namespace e2d {
+	App::~App() {
+	}
+
 	void App::on_input_event(const edge::InputEvent& input_event) {
 	}
 
@@ -19,7 +24,12 @@ namespace e2d {
 	}
 
 	bool App::prepare(const edge::ApplicationOptions& options) {
-		return edge::Application::prepare(options);
+		auto result = edge::Application::prepare(options);
+
+		RendererCreateInfo initial_create_info{};
+		renderer = Renderer::construct(initial_create_info);
+
+		return result;
 	}
 
 	void App::update(float delta_time) {

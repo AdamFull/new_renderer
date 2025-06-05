@@ -25,7 +25,7 @@
 namespace engine::render {
 	class RenderContext::RenderFrame {
 	public:
-		RenderFrame(edge::gfx::ISwapchain* swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index) {
+		RenderFrame(const edge::gfx::ISwapchain& swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index) {
 			backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
 			command_pool = edge::gfx::create_command_pool(queue);
 			descriptor_allocator = edge::gfx::create_descriptor_allocator();
@@ -55,7 +55,7 @@ namespace engine::render {
 			uniform_pool.reset();
 		}
 
-		void update_backbuffer(edge::gfx::ISwapchain* swapchain, uint32_t frame_index) {
+		void update_backbuffer(const edge::gfx::ISwapchain& swapchain, uint32_t frame_index) {
 			edge::gfx::destroy(backbuffer);
 			backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
 		}
@@ -127,7 +127,7 @@ namespace engine::render {
 		auto image_count = swapchain->get_image_count();
 
 		for (int32_t i = 0; i < static_cast<int32_t>(image_count); ++i) {
-			render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
+			render_frames[i] = std::make_unique<RenderFrame>(*swapchain, queue, i);
 		}
 
 		// Create default image sampler
@@ -859,11 +859,11 @@ namespace engine::render {
 		auto frame_it = render_frames.begin();
 		for (int32_t i = 0; i < static_cast<int32_t>(image_count); ++i) {
 			if (frame_it != render_frames.end()) {
-				(*frame_it)->update_backbuffer(swapchain, i);
+				(*frame_it)->update_backbuffer(*swapchain, i);
 			}
 			else {
 				// Create a new frame if the new swapchain has more images than current frames
-				render_frames[i] = std::make_unique<RenderFrame>(swapchain, queue, i);
+				render_frames[i] = std::make_unique<RenderFrame>(*swapchain, queue, i);
 			}
 
 			++frame_it;
