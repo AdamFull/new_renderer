@@ -93,20 +93,20 @@ namespace edge::gfx::vulkan {
 		}
 	}
 
-	Texture::Texture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index) :
+	Texture::Texture(Allocator& allocator, const ISwapchain& swapchain, uint32_t image_index) :
 		device{ allocator.get_device() } {
 
-		Swapchain* vk_swapchain = utl::cast<Swapchain*>(swapchain);
-		auto& extent = vk_swapchain->get_extent();
+		auto& vk_swapchain = static_cast<const Swapchain&>(swapchain);
+		auto& extent = vk_swapchain.get_extent();
 
 		TextureCreateInfo create_info{};
 		create_info.width = extent.width;
 		create_info.height = extent.height;
 		create_info.usage = TextureUsageFlag::eRenderTarget;
-		create_info.format = vk_swapchain->get_image_format();
+		create_info.format = vk_swapchain.get_image_format();
 
-		assert(image_index < vk_swapchain->get_image_count());
-		auto& image_handle = vk_swapchain->get_image(image_index);
+		assert(image_index < vk_swapchain.get_image_count());
+		auto& image_handle = vk_swapchain.get_image(image_index);
 
 		image = std::make_unique<Image>(allocator, create_info, image_handle);
 

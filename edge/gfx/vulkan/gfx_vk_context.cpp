@@ -321,8 +321,7 @@ namespace edge::gfx::vulkan {
 		return new Texture(*allocator, create_info);
 	}
 
-	auto GFXContext::create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const -> ITexture*
-	{
+	auto GFXContext::create_swapchain_texture(const ISwapchain& swapchain, uint32_t image_index) const -> ITexture* {
 		return new Texture(*allocator, swapchain, image_index);
 	}
 

@@ -8,7 +8,7 @@ namespace edge::gfx::vulkan
 	class Texture final : public ITexture {
 	public:
 		Texture(Allocator& allocator, const TextureCreateInfo& create_info);
-		Texture(Allocator& allocator, ISwapchain* swapchain, uint32_t image_index);
+		Texture(Allocator& allocator, const ISwapchain& swapchain, uint32_t image_index);
 
 		Texture(const Texture&) = delete;
 		Texture(Texture&& other);

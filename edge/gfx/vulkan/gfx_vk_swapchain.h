@@ -77,7 +77,7 @@ namespace edge::gfx::vulkan
 			return create_info.imageFormat;
 		}
 
-		[[nodiscard]] auto get_image(uint32_t index) noexcept -> vk::Image& {
+		[[nodiscard]] auto get_image(uint32_t index) const noexcept -> const vk::Image& {
 			return images[index];
 		}
 

@@ -26,7 +26,7 @@ namespace edge::gfx::d3d12
 		auto create_buffer(const BufferCreateInfo& create_info) const->IBuffer* override;
 
 		auto create_texture(const TextureCreateInfo& create_info) const->ITexture* override;
-		auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const->ITexture* override;
+		auto create_swapchain_texture(const ISwapchain& swapchain, uint32_t image_index) const->ITexture* override;
 
 		auto create_shader(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl = nullptr) const->IShader* override;
 

@@ -23,7 +23,7 @@ namespace edge::gfx
 	[[nodiscard]] auto create_buffer(const BufferCreateInfo& create_info) -> IBuffer*;
 
 	[[nodiscard]] auto create_texture(const TextureCreateInfo& create_info) -> ITexture*;
-	[[nodiscard]] auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) -> ITexture*;
+	[[nodiscard]] auto create_swapchain_texture(const ISwapchain& swapchain, uint32_t image_index) -> ITexture*;
 
 	[[nodiscard]] auto create_shader(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl = nullptr) -> IShader*;
 
@@ -71,7 +71,7 @@ namespace edge::gfx
 		virtual auto create_buffer(const BufferCreateInfo& create_info) const->IBuffer* = 0;
 
 		virtual auto create_texture(const TextureCreateInfo& create_info) const->ITexture* = 0;
-		virtual auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const->ITexture* = 0;
+		virtual auto create_swapchain_texture(const ISwapchain& swapchain, uint32_t image_index) const->ITexture* = 0;
 
 		virtual auto create_shader(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl = nullptr) const->IShader* = 0;
 

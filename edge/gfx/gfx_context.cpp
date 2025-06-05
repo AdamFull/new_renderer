@@ -84,7 +84,7 @@ namespace edge::gfx
         return gfx_context->create_texture(create_info);
 	}
 
-	auto create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) -> ITexture* {
+	auto create_swapchain_texture(const ISwapchain& swapchain, uint32_t image_index) -> ITexture* {
 		CHECK_CONTEXT();
         return gfx_context->create_swapchain_texture(swapchain, image_index);
 	}

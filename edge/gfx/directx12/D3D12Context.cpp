@@ -53,7 +53,7 @@ namespace edge::gfx::d3d12
 		return nullptr;
 	}
 
-	auto D3D12Context::create_swapchain_texture(ISwapchain* swapchain, uint32_t image_index) const -> ITexture* {
+	auto D3D12Context::create_swapchain_texture(const ISwapchain& swapchain, uint32_t image_index) const -> ITexture* {
 		assert(false && "NOT IMPLEMENTED");
 		return nullptr;
 	}
