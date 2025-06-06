@@ -1,6 +1,6 @@
 #pragma once
 
-#include <memory>
+#include <edge/util/utl_vector.h>
 #include "IRenderer.h"
 
 namespace e2d {
@@ -25,9 +25,18 @@ namespace e2d {
 
 	class Renderer final : public IRenderer {
 	public:
+		Renderer(const edge::gfx::IQueue& queue);
 		~Renderer() override;
 
 		static auto construct(const RendererCreateInfo& create_info) -> std::unique_ptr<IRenderer>;
+
+		void begin_frame(float delta_time) override;
+		void end_frame(float delta_time) override;
 	private:
+		const edge::gfx::IQueue& graphics_queue;
+
+		std::unique_ptr<edge::gfx::ISwapchain> swapchain;
+
+		edge::utl::fixed_vector<std::unique_ptr<IRendererFrame>> frames_in_flight{};
 	};
 }

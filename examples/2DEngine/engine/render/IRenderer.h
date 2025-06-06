@@ -10,6 +10,7 @@ namespace e2d {
 	};
 
 	struct RendererCreateInfo {
+		const edge::Window* window{ nullptr };
 		RendererBufferization bufferization{};
 	};
 

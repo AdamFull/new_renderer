@@ -27,6 +27,7 @@ namespace e2d {
 		auto result = edge::Application::prepare(options);
 
 		RendererCreateInfo initial_create_info{};
+		initial_create_info.window = options.window;
 		renderer = Renderer::construct(initial_create_info);
 
 		return result;
@@ -35,8 +36,11 @@ namespace e2d {
 	void App::update(float delta_time) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
+		renderer->begin_frame(delta_time);
+
 		EDGE_GFX_PROFILER_DRAW_UI();
 
+		renderer->end_frame(delta_time);
 		EDGE_GFX_PROFILER_FRAME_MARK();
 	}
 }
