@@ -650,11 +650,9 @@ namespace engine::render {
 
 		// Update render resources state
 		for (auto& render_resource : render_resources) {
-			if (render_resource.resource_type & RenderResourceTypeFlag::eStaticImage || render_resource.finalized) {
-				continue;
+			if (render_resource.resource_type & RenderResourceTypeFlag::eBackbuffer) {
+				render_resource.current_state = edge::gfx::ResourceStateFlag::eUndefined;
 			}
-
-			render_resource.current_state = edge::gfx::ResourceStateFlag::eUndefined;
 		}
 
 		frame_active = false;
