@@ -27,7 +27,7 @@ namespace engine::render {
 	public:
 		RenderFrame(const edge::gfx::ISwapchain& swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index) {
 			backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
-			command_pool = edge::gfx::create_command_pool(queue);
+			command_pool = edge::gfx::create_command_pool(*queue);
 			descriptor_allocator = edge::gfx::create_descriptor_allocator();
 
 			//descriptor_allocator->allocate({ &global_descriptor, 1 });
@@ -95,7 +95,7 @@ namespace engine::render {
 			// Binding layout is not found, create new one
 			auto& binding_layouts = binding_layout_table[descriptor_layout->get_hash()];
 			auto& new_binding_layout = binding_layouts.emplace_back();
-			new_binding_layout = edge::gfx::create_binding_layout(descriptor_layout);
+			new_binding_layout = edge::gfx::create_binding_layout(*descriptor_layout);
 			descriptor_allocator->allocate({ &new_binding_layout , 1 });
 			return new_binding_layout;
 		}

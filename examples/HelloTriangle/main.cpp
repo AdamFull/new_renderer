@@ -23,7 +23,7 @@ struct RenderFrame
 	RenderFrame(const edge::gfx::ISwapchain& swapchain, const edge::gfx::IQueue* queue, uint32_t frame_index)
 	{
 		backbuffer = edge::gfx::create_swapchain_texture(swapchain, frame_index);
-		command_pool = edge::gfx::create_command_pool(queue);
+		command_pool = edge::gfx::create_command_pool(*queue);
 		descriptor_allocator = edge::gfx::create_descriptor_allocator();
 
 		image_avaliable = edge::gfx::create_semaphore(edge::gfx::SemaphoreType::eBinary);
