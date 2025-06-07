@@ -8,6 +8,7 @@
 #include <span>
 
 #include <edge/gfx/gfx_base.h>
+#include <edge/gfx/gfx_uniform_pool.h>
 
 namespace edge {
 	class Window;
@@ -19,7 +20,6 @@ namespace edge {
 
 namespace engine::render {
 	class IRenderer;
-	class UniformPool;
 
 	class RenderContext final : public IExecutionContext {
 	public:
@@ -115,7 +115,7 @@ namespace engine::render {
 		double gpu_delta_time{ 0.0 };
 
 		// Shared descriptors
-		std::unique_ptr<UniformPool> global_uniform_pool{};
+		std::unique_ptr<edge::gfx::IUniformPool> global_uniform_pool{};
 
 		ResourceContainer<TextureObject> static_textures{};
 		ResourceContainer<TextureObject> render_targets{};

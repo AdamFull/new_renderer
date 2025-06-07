@@ -1,5 +1,4 @@
 #include "RenderContext.h"
-#include "UniformPool.h"
 #include "RendererInterface.h"
 
 #include "GroupExecutionNode.h"
@@ -32,7 +31,7 @@ namespace engine::render {
 
 			//descriptor_allocator->allocate({ &global_descriptor, 1 });
 
-			uniform_pool = std::make_unique<UniformPool>(16384ull);
+			uniform_pool = edge::gfx::create_uniform_pool_unique(16384ull);
 			image_avaliable = edge::gfx::create_semaphore(edge::gfx::SemaphoreType::eBinary);
 			image_avaliable->set_resource_name(std::format("image_avaliable_{}", frame_index));
 			render_finished = edge::gfx::create_semaphore(edge::gfx::SemaphoreType::eBinary);
@@ -102,7 +101,7 @@ namespace engine::render {
 
 		edge::gfx::ITexture* backbuffer{ nullptr };
 		edge::gfx::ICommandPool* command_pool{ nullptr };
-		std::unique_ptr<UniformPool> uniform_pool{};
+		std::unique_ptr<edge::gfx::IUniformPool> uniform_pool{};
 		edge::gfx::ISemaphore* image_avaliable{ nullptr };
 		edge::gfx::ISemaphore* render_finished{ nullptr };
 		edge::gfx::ISemaphore* upload_avaliable{ nullptr };
@@ -175,7 +174,7 @@ namespace engine::render {
 		edge::gfx::update_texture(dummy_texture, resource_state, dummy_data);
 
 		// Create uniform pool
-		global_uniform_pool = std::make_unique<UniformPool>();
+		global_uniform_pool = edge::gfx::create_uniform_pool_unique();
 
 		active_frame_index = image_count - 1;
 		current_frame = render_frames[active_frame_index].get();
@@ -599,7 +598,7 @@ namespace engine::render {
 		// Finish performance query
 		current_command_list->end_query(timestamp_query, 1u);
 
-		current_frame->uniform_pool->end();
+		current_frame->uniform_pool->frame_mark();
 
 		// Submit commands
 		current_command_list->end();
