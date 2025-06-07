@@ -20,9 +20,16 @@ namespace e2d {
 
 		virtual void reset() = 0;
 		virtual void update(const edge::gfx::ISwapchain& swapchain) = 0;
+		virtual void begin() = 0;
+		virtual void end() = 0;
 
+		virtual auto get_fence() -> edge::gfx::IFence& = 0;
+		virtual auto get_command_list() -> edge::gfx::ICommandList& = 0;
+		virtual auto get_acquired_semaphore() -> edge::gfx::ISemaphore& = 0;
+		virtual auto get_ready_semaphore() -> edge::gfx::ISemaphore& = 0;
 		virtual auto get_backbuffer() const -> edge::gfx::ITexture& = 0;
 		virtual auto get_or_allocate_binding_layout(edge::gfx::IDescriptorLayout& descriptor_layout) -> edge::gfx::IBindingLayout& = 0;
+		virtual auto allocate_uniform_block(uint64_t size) -> edge::gfx::BufferSuballocation = 0;
 	};
 
 	class IRenderer {
