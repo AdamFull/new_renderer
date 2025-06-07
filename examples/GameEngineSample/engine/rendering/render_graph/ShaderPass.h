@@ -165,7 +165,6 @@ namespace engine::render {
 
 		void dispatch_for_buffer(edge::gfx::ICommandList& command_list, uint32_t buffer_id, bool divide_by_locals);
 		void dispatch_for_target(edge::gfx::ICommandList& command_list, uint32_t target_it, bool divide_by_locals);
-		void finalize_target(edge::gfx::ICommandList& command_list, uint32_t binding_point, uint32_t target);
 
 		virtual void begin(edge::gfx::ICommandList& command_list) = 0;
 		virtual void end(edge::gfx::ICommandList& command_list) = 0;

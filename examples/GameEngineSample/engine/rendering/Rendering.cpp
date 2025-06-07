@@ -668,7 +668,6 @@ namespace engine::render
 					self.bind_resources(command_list);
 
 					self.dispatch_for_target(command_list, brdf_lut_target, true);
-					self.finalize_target(command_list, render_label::image0, brdf_lut_target);
 				};
 
 			render_context->add_node(render_context->create_node(create_info));
@@ -697,8 +696,6 @@ namespace engine::render
 					self.bind_resources(command_list);
 
 					self.dispatch_for_target(command_list, irradiance_cube_target, true);
-
-					self.finalize_target(command_list, render_label::image0, irradiance_cube_target);
 				};
 
 			render_context->add_node(render_context->create_node(create_info));
@@ -755,8 +752,6 @@ namespace engine::render
 						self.divide_workgroup_by_local_sizes(group_x, group_y, group_z);
 						command_list.dispatch(group_x, group_y, group_z);
 					}
-
-					self.finalize_target(command_list, render_label::texture0, prefiltered_cube_target);
 				};
 
 			static_cast<GroupNode*>(group_node.get())->add_node(std::move(render_context->create_node(create_info)));

@@ -200,6 +200,10 @@ namespace engine::render {
 					new_state |= edge::gfx::ResourceStateFlag::eGeneral;
 				}
 
+				if (render_resource.current_state == new_state) {
+					return;
+				}
+
 				auto& barrier = texture_barriers.emplace_back();
 				barrier.texture = execution_context.get_texture(render_resource);
 				barrier.subresource_index = sebresource_id;
@@ -207,6 +211,10 @@ namespace engine::render {
 				barrier.dst_state = new_state;
 			}
 			else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer) {
+				if (render_resource.current_state == new_state) {
+					return;
+				}
+
 				auto& barrier = buffer_barriers.emplace_back();
 				barrier.buffer = execution_context.get_buffer(render_resource);
 				barrier.src_state = render_resource.GetState();
@@ -344,14 +352,6 @@ namespace engine::render {
 			divide_workgroup_by_local_sizes(group_x, group_y, group_z);
 
 		command_list.dispatch(group_x, group_y, group_z);
-	}
-
-	void ShaderPass::finalize_target(edge::gfx::ICommandList& command_list, uint32_t binding_point, uint32_t target) {
-		read_resource(binding_point, target, ~0u);
-		resolve_dependencies(command_list);
-
-		auto& resource = execution_context.get_resource(target);
-		resource.finalized = true;
 	}
 
 	bool ShaderPass::can_execute() const {

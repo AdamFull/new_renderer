@@ -25,10 +25,6 @@ namespace engine::render {
 
 		edge::gfx::ResourceStateFlags current_state{};
 
-		bool finalized{ false };
-
-		//std::unordered_set<ResourceAccess> usages{};
-
 		edge::gfx::AccessTypeFlags GetAccess() const {
 			if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eRead)) {
 				return edge::gfx::AccessTypeFlag::eRead;
