@@ -38,7 +38,7 @@ namespace edge::gfx::d3d12
 		return nullptr;
 	}
 
-	auto D3D12Context::create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) const -> ICommandPool* {
+	auto D3D12Context::create_command_pool(const IQueue& queue, CommandPoolResetMode reset_mode) const -> ICommandPool* {
 		assert(false && "NOT IMPLEMENTED");
 		return nullptr;
 	}
@@ -93,7 +93,7 @@ namespace edge::gfx::d3d12
 		return nullptr;
 	}
 
-	auto D3D12Context::create_binding_layout(IDescriptorLayout* descriptor_layout) const->IBindingLayout* {
+	auto D3D12Context::create_binding_layout(const IDescriptorLayout& descriptor_layout) const->IBindingLayout* {
 		assert(false && "NOT IMPLEMENTED");
 		return nullptr;
 	}

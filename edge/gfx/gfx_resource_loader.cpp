@@ -30,7 +30,7 @@ namespace edge::gfx
 			fence->set_resource_name(name);
 			semaphore = create_semaphore(SemaphoreType::eTimeline);
 			semaphore->set_resource_name(name);
-			cmd_pool = create_command_pool(queue);
+			cmd_pool = create_command_pool(*queue);
 			cmd_pool->set_resource_name(name);
 		}
 

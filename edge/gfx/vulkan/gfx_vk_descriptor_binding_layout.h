@@ -9,7 +9,7 @@ namespace edge::gfx::vulkan {
 	class DescriptorBindingLayout final : 
 		public IBindingLayout, public Resource<vk::DescriptorSet> {
 	public:
-		DescriptorBindingLayout(Device& device, IDescriptorLayout* descriptor_layout);
+		DescriptorBindingLayout(Device& device, const IDescriptorLayout& descriptor_layout);
 		DescriptorBindingLayout(const DescriptorBindingLayout&) = delete;
 		DescriptorBindingLayout(DescriptorBindingLayout&& other);
 		~DescriptorBindingLayout();
@@ -25,7 +25,7 @@ namespace edge::gfx::vulkan {
 		auto bind(const TextureDescriptor& texture_desc) -> void override;
 		auto bind(const BufferDescriptor& buffer_desc) -> void override;
 
-		auto get_descriptor_layout() -> IDescriptorLayout* override {
+		auto get_descriptor_layout() -> const IDescriptorLayout& override {
 			return descriptor_layout;
 		}
 
@@ -40,7 +40,7 @@ namespace edge::gfx::vulkan {
 	private:
 		Device& device;
 
-		IDescriptorLayout* descriptor_layout{ nullptr };
+		const IDescriptorLayout& descriptor_layout;
 
 		int32_t descriptor_pool_idx{ -1 };
 		bool is_invalidated{ false };

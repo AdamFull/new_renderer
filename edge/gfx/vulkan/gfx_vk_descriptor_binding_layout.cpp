@@ -13,7 +13,7 @@
 #include "../../util/utl_profiler.h"
 
 namespace edge::gfx::vulkan {
-	DescriptorBindingLayout::DescriptorBindingLayout(Device& device, IDescriptorLayout* descriptor_layout) :
+	DescriptorBindingLayout::DescriptorBindingLayout(Device& device, const IDescriptorLayout& descriptor_layout) :
 		Resource{ nullptr, device.get_allocation_callbacks() },
 		device{ device },
 		descriptor_layout{ descriptor_layout } {
@@ -25,7 +25,7 @@ namespace edge::gfx::vulkan {
 	DescriptorBindingLayout::DescriptorBindingLayout(DescriptorBindingLayout&& other) :
 		Resource{ std::move(other) },
 		device{ other.device },
-		descriptor_layout{ std::exchange(other.descriptor_layout, nullptr) },
+		descriptor_layout{ other.descriptor_layout },
 		descriptor_pool_idx{ std::exchange(other.descriptor_pool_idx, {}) },
 		write_descriptor_sets{ std::exchange(other.write_descriptor_sets, {}) },
 		image_descriptors{ std::exchange(other.image_descriptors, {}) },
@@ -138,8 +138,8 @@ namespace edge::gfx::vulkan {
 		buffer_descriptors.clear();
 		image_descriptors.clear();
 
-		auto* vk_descriptor_layout = descriptor_layout->as<DescriptorSetLayout*>();
-		if (!vk_descriptor_layout->is_bindless()) {
+		const auto& vk_descriptor_layout = static_cast<const DescriptorSetLayout&>(descriptor_layout);
+		if (!vk_descriptor_layout.is_bindless()) {
 			is_invalidated = true;
 		}
 	}

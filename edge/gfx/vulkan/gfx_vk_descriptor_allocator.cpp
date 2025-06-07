@@ -87,12 +87,12 @@ namespace edge::gfx::vulkan {
 
 		for (int32_t i = 0; i < static_cast<int32_t>(layouts.size()); ++i) {
 			auto* vk_binding_layout = layouts[i]->as<DescriptorBindingLayout*>();
-			auto* vk_layout = vk_binding_layout->get_descriptor_layout()->as<DescriptorSetLayout*>();
-			required_sizes += vk_layout->get_required_descriptor_count();
+			const auto& vk_layout = static_cast<const DescriptorSetLayout&>(vk_binding_layout->get_descriptor_layout());
+			required_sizes += vk_layout.get_required_descriptor_count();
 
-			descriptor_set_layouts[i] = vk_layout->get_handle();
+			descriptor_set_layouts[i] = vk_layout.get_handle();
 
-			if (vk_layout->is_bindless()) {
+			if (vk_layout.is_bindless()) {
 				is_bindless_required = true;
 			}
 		}
@@ -124,6 +124,16 @@ namespace edge::gfx::vulkan {
 		return true;
 	}
 
+	auto DescriptorAllocator::allocate(std::span<std::unique_ptr<IBindingLayout>> layouts) -> bool {
+		utl::fixed_vector<IBindingLayout*, 128> layout_ptrs{};
+
+		for (auto& layout : layouts) {
+			layout_ptrs.emplace_back(layout.get());
+		}
+
+		return allocate(layout_ptrs);
+	}
+
 	auto DescriptorAllocator::free(std::span<IBindingLayout*> layouts) -> bool {
 		std::vector<std::vector<vk::DescriptorSet>> descriptor_sets{ pool_blocks.size() };
 
@@ -133,12 +143,12 @@ namespace edge::gfx::vulkan {
 				return;
 			}
 
-			auto* descriptor_layout = layout->get_descriptor_layout();
-			auto* vk_descriptor_layout = descriptor_layout->as<DescriptorSetLayout*>();
+			auto& descriptor_layout = layout->get_descriptor_layout();
+			const auto& vk_descriptor_layout = static_cast<const DescriptorSetLayout&>(descriptor_layout);
 
 			auto& pool = pool_blocks[pool_idx];
 			pool.avaliable_sets += 1;
-			pool.avaliable_sizes += vk_descriptor_layout->get_required_descriptor_count();
+			pool.avaliable_sizes += vk_descriptor_layout.get_required_descriptor_count();
 
 			descriptor_sets[pool_idx].push_back(set);
 			};
@@ -164,6 +174,16 @@ namespace edge::gfx::vulkan {
 		}
 		
 		return true;
+	}
+
+	auto DescriptorAllocator::free(std::span<std::unique_ptr<IBindingLayout>> layouts) -> bool {
+		utl::fixed_vector<IBindingLayout*, 128> layout_ptrs{};
+
+		for (auto& layout : layouts) {
+			layout_ptrs.emplace_back(layout.get());
+		}
+
+		return free(layout_ptrs);
 	}
 
 	auto DescriptorAllocator::create_new_pool(const PoolSizes& requested_sizes, bool bindless_support) -> DescriptorPoolBlock& {

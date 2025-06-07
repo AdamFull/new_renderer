@@ -13,7 +13,7 @@ namespace edge::gfx
 {
 	WorkerContext::WorkerContext(const IQueue* queue, uint64_t buffer_size) {
 		allocator = std::make_unique<ArenaStagingAllocator>(buffer_size);
-		cmd_pool = create_command_pool(queue);
+		cmd_pool = create_command_pool(*queue);
 	}
 
 	WorkerContext::~WorkerContext() {

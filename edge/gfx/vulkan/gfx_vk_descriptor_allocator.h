@@ -29,7 +29,9 @@ namespace edge::gfx::vulkan
 
 		void reset() override;
 		auto allocate(std::span<IBindingLayout*> layouts) -> bool override;
+		auto allocate(std::span<std::unique_ptr<IBindingLayout>> layouts) -> bool override;
 		auto free(std::span<IBindingLayout*> layouts) -> bool override;
+		auto free(std::span<std::unique_ptr<IBindingLayout>> layouts) -> bool override;
 	private:
 		auto create_new_pool(const PoolSizes& requested_sizes, bool bindless_support = false) -> DescriptorPoolBlock&;
 		auto lookup_free_pool(const PoolSizes& requested_sizes, int32_t requested_set_count, bool bindless_support = false) -> std::tuple<DescriptorPoolBlock&, size_t>;

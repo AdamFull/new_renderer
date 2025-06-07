@@ -18,6 +18,13 @@ namespace edge::gfx
 {
 	static std::unique_ptr<IGFXContext> gfx_context;
 
+	template<typename _Ty>
+	auto make_unique(_Ty* ptr) -> std::unique_ptr<_Ty> {
+		std::unique_ptr<_Ty> uptr;
+		uptr.reset(ptr);
+		return uptr;
+	}
+
 	void make_context(const ContextCreateInfo& create_info) {
 		switch (create_info.render_api) {
 #if D3D12_SUPPORTED
@@ -49,9 +56,17 @@ namespace edge::gfx
         return gfx_context->create_fence();
 	}
 
+	auto create_fence_unique() -> std::unique_ptr<IFence> {
+		return make_unique(create_fence());
+	}
+
 	auto create_semaphore(SemaphoreType sem_type) -> ISemaphore* {
 		CHECK_CONTEXT();
         return gfx_context->create_semaphore(sem_type);
+	}
+
+	auto create_semaphore_unique(SemaphoreType sem_type) -> std::unique_ptr<ISemaphore> {
+		return make_unique(create_semaphore(sem_type));
 	}
 
 	auto get_queue_qount(QueueType queue_type) -> uint32_t {
@@ -69,9 +84,17 @@ namespace edge::gfx
         return gfx_context->create_swapchain(create_info);
 	}
 
-	auto create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) -> ICommandPool* {
+	auto create_swapchain_unique(const SwapChainCreateInfo& create_info) -> std::unique_ptr<ISwapchain> {
+		return make_unique(create_swapchain(create_info));
+	}
+
+	auto create_command_pool(const IQueue& queue, CommandPoolResetMode reset_mode) -> ICommandPool* {
 		CHECK_CONTEXT();
         return gfx_context->create_command_pool(queue, reset_mode);
+	}
+
+	auto create_command_pool_unique(const IQueue& queue, CommandPoolResetMode reset_mode) -> std::unique_ptr<ICommandPool> {
+		return make_unique(create_command_pool(queue, reset_mode));
 	}
 
 	auto create_buffer(const BufferCreateInfo& create_info) -> IBuffer* {
@@ -79,9 +102,17 @@ namespace edge::gfx
         return gfx_context->create_buffer(create_info);
 	}
 
+	auto create_buffer_unique(const BufferCreateInfo& create_info) -> std::unique_ptr<IBuffer> {
+		return make_unique(create_buffer(create_info));
+	}
+
 	auto create_texture(const TextureCreateInfo& create_info) -> ITexture* {
 		CHECK_CONTEXT();
         return gfx_context->create_texture(create_info);
+	}
+
+	auto create_texture_unique(const TextureCreateInfo& create_info) -> std::unique_ptr<ITexture> {
+		return make_unique(create_texture(create_info));
 	}
 
 	auto create_swapchain_texture(const ISwapchain& swapchain, uint32_t image_index) -> ITexture* {
@@ -89,9 +120,17 @@ namespace edge::gfx
         return gfx_context->create_swapchain_texture(swapchain, image_index);
 	}
 
+	auto create_swapchain_texture_unique(const ISwapchain& swapchain, uint32_t image_index) -> std::unique_ptr<ITexture> {
+		return make_unique(create_swapchain_texture(swapchain, image_index));
+	}
+
 	auto create_shader(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl) -> IShader* {
 		CHECK_CONTEXT();
         return gfx_context->create_shader(shader_stages, refl);
+	}
+
+	auto create_shader_unique(std::span<const ShaderStageInfo> shader_stages, ShaderReflection* refl) -> std::unique_ptr<IShader> {
+		return make_unique(create_shader(shader_stages, refl));
 	}
 
 	auto create_root_signature(const RootSignatureCreateInfo& create_info) -> IRootSignature* {
@@ -99,9 +138,17 @@ namespace edge::gfx
         return gfx_context->create_root_signature(create_info);
 	}
 
+	auto create_root_signature_unique(const RootSignatureCreateInfo& create_info) -> std::unique_ptr<IRootSignature> {
+		return make_unique(create_root_signature(create_info));
+	}
+
 	auto create_pipeline(const GraphicsPipelineCreateInfo& create_info) -> IPipeline* {
 		CHECK_CONTEXT();
         return gfx_context->create_pipeline(create_info);
+	}
+
+	auto create_pipeline_unique(const GraphicsPipelineCreateInfo& create_info) -> std::unique_ptr<IPipeline> {
+		return make_unique(create_pipeline(create_info));
 	}
 
 	auto create_pipeline(const ComputePipelineCreateInfo& create_info) -> IPipeline* {
@@ -109,9 +156,17 @@ namespace edge::gfx
         return gfx_context->create_pipeline(create_info);
 	}
 
+	auto create_pipeline_unique(const ComputePipelineCreateInfo& create_info) -> std::unique_ptr<IPipeline> {
+		return make_unique(create_pipeline(create_info));
+	}
+
 	auto create_pipeline_cache(const PipelineCacheCreateInfo& create_info) -> IPipelineCache* {
 		CHECK_CONTEXT();
         return gfx_context->create_pipeline_cache(create_info);
+	}
+
+	auto create_pipeline_cache_unique(const PipelineCacheCreateInfo& create_info) -> std::unique_ptr<IPipelineCache> {
+		return make_unique(create_pipeline_cache(create_info));
 	}
 
 	auto create_descriptor_allocator() -> IDescriptorAllocator* {
@@ -119,14 +174,26 @@ namespace edge::gfx
         return gfx_context->create_descriptor_allocator();
 	}
 
+	auto create_descriptor_allocator_unique() -> std::unique_ptr<IDescriptorAllocator> {
+		return make_unique(create_descriptor_allocator());
+	}
+
 	auto create_descriptor_layout(const DescriptorLayoutCreateInfo& create_info) -> IDescriptorLayout* {
 		CHECK_CONTEXT();
 		return gfx_context->create_descriptor_layout(create_info);
 	}
 
-	auto create_binding_layout(IDescriptorLayout* descriptor_layout) -> IBindingLayout* {
+	auto create_descriptor_layout_unique(const DescriptorLayoutCreateInfo& create_info) -> std::unique_ptr<IDescriptorLayout> {
+		return make_unique(create_descriptor_layout(create_info));
+	}
+
+	auto create_binding_layout(const IDescriptorLayout& descriptor_layout) -> IBindingLayout* {
 		CHECK_CONTEXT();
 		return gfx_context->create_binding_layout(descriptor_layout);
+	}
+
+	auto create_binding_layout_unique(const IDescriptorLayout& descriptor_layout) -> std::unique_ptr<IBindingLayout> {
+		return make_unique(create_binding_layout(descriptor_layout));
 	}
 
 	auto create_sampler(const SamplerCreateInfo& create_info) -> ISampler* {
@@ -134,9 +201,17 @@ namespace edge::gfx
         return gfx_context->create_sampler(create_info);
 	}
 
+	auto create_sampler_unique(const SamplerCreateInfo& create_info) -> std::unique_ptr<ISampler> {
+		return make_unique(create_sampler(create_info));
+	}
+
 	auto create_query_pool(const QueryPoolCreateInfo& create_info) -> IQueryPool* {
 		CHECK_CONTEXT();
         return gfx_context->create_query_pool(create_info);
+	}
+
+	auto create_query_pool_unique(const QueryPoolCreateInfo& create_info) -> std::unique_ptr<IQueryPool> {
+		return make_unique(create_query_pool(create_info));
 	}
 
 	void wait_for_fences(std::span<IFence*> fences, uint64_t timeout) {

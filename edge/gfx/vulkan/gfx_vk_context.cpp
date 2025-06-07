@@ -306,9 +306,9 @@ namespace edge::gfx::vulkan {
 			create_info.image_count);
 	}
 
-	auto GFXContext::create_command_pool(const IQueue* queue, CommandPoolResetMode reset_mode) const -> ICommandPool* {
-		auto* vkqueue = utl::cast<const Queue*>(queue);
-		return new CommandPool(*vkqueue, reset_mode);
+	auto GFXContext::create_command_pool(const IQueue& queue, CommandPoolResetMode reset_mode) const -> ICommandPool* {
+		auto& vkqueue = static_cast<const Queue&>(queue);
+		return new CommandPool(vkqueue, reset_mode);
 	}
 
 	auto GFXContext::create_buffer(const BufferCreateInfo& create_info) const -> IBuffer*
@@ -359,7 +359,7 @@ namespace edge::gfx::vulkan {
 		return new DescriptorSetLayout(*device, create_info);
 	}
 
-	auto GFXContext::create_binding_layout(IDescriptorLayout* descriptor_layout) const->IBindingLayout* {
+	auto GFXContext::create_binding_layout(const IDescriptorLayout& descriptor_layout) const->IBindingLayout* {
 		return new DescriptorBindingLayout(*device, descriptor_layout);
 	}
 

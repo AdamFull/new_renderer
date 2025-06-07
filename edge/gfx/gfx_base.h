@@ -322,7 +322,7 @@ namespace edge::gfx {
 		virtual auto bind(const TextureDescriptor& texture_desc) -> void = 0;
 		virtual auto bind(const BufferDescriptor& buffer_desc) -> void = 0;
 
-		virtual auto get_descriptor_layout() -> IDescriptorLayout* = 0;
+		virtual auto get_descriptor_layout() -> const IDescriptorLayout& = 0;
 	};
 
 	class IDescriptorAllocator : public IGFXResource {
@@ -336,7 +336,9 @@ namespace edge::gfx {
 
 		virtual void reset() = 0;
 		virtual auto allocate(std::span<IBindingLayout*> layouts) -> bool = 0;
+		virtual auto allocate(std::span<std::unique_ptr<IBindingLayout>> layouts) -> bool = 0;
 		virtual auto free(std::span<IBindingLayout*> layouts) -> bool = 0;
+		virtual auto free(std::span<std::unique_ptr<IBindingLayout>> layouts) -> bool = 0;
 	};
 
 	class IQueryPool : public IGFXResource {
