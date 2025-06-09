@@ -351,7 +351,17 @@ namespace edge::gfx
 		return h;
 	}
 
+	uint32_t hash(const TextureCreateInfo& create_info, uint32_t h) {
+		h = murmur_hash(static_cast<uint16_t>(create_info.usage), h);
+		h = murmur_hash(create_info.width, h);
+		h = murmur_hash(create_info.height, h);
+		h = murmur_hash(create_info.depth, h);
+		h = murmur_hash(create_info.layers, h);
+		h = murmur_hash(create_info.levels, h);
+		h = murmur_hash(utl::cast(create_info.format), h);
 
+		return h;
+	}
 
 	uint32_t hash(const SamplerCreateInfo& create_info, uint32_t h) {
 		h = murmur_hash(utl::cast(create_info.mag_filter), h);

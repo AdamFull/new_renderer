@@ -501,6 +501,7 @@ namespace edge
 		uint32_t hash(const ColorBlendingState& state, uint32_t hash = 0u);
 		uint32_t hash(const PipelineState& state, uint32_t hash = 0u);
 
+		uint32_t hash(const TextureCreateInfo& create_info, uint32_t hash = 0u);
 		uint32_t hash(const SamplerCreateInfo& create_info, uint32_t hash = 0u);
 
 		uint32_t hash(const DescrptorLayoutBindingDesc& desc, uint32_t hash = 0u);

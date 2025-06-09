@@ -216,7 +216,7 @@ namespace edge::gfx
 		eSBT = eCopy | eAccelerationStructureStorage | eGpuOnly,
 	};
 
-	enum class TextureUsageFlag {
+	enum class TextureUsageFlag : uint16_t {
 		eCubemap = 1 << 0,
 		eTransferable = 1 << 1,
 		eSamplable = 1 << 2,

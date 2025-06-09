@@ -4,43 +4,108 @@
 #include "gfx_structures.h"
 
 namespace edge::gfx {
-	struct FGResource {
+	// Flags to describe what i need to inherit from parent resource
+	enum class FGResourceDependencyFlag {
+		eUsage = 1 << 0,
+		eDimensions = 1 << 1,
+		eLayers = 1 << 2,
+		eLevels = 1 << 3,
+		eFormat = 1 << 4,
+		eAll = eUsage | eDimensions | eLayers | eLevels | eFormat
+	};
+
+	enum class FGPassType {
+		eCompute,
+		eGraphics,
+		eRayTrace
+	};
+
+	class IFGResource {
+	public:
+		virtual ~IFGResource() = default;
+
+		virtual auto evaluate(IFGResource* parent) -> bool = 0;
+		virtual auto get_resource() -> IGFXResource* { return resource; }
+		virtual auto get_state() const -> ResourceStateFlags { return state; }
+		virtual auto set_state(ResourceStateFlags new_state) -> void { state = new_state; }
+		virtual auto is_external() const -> bool { return external; }
+		virtual auto has_children() const -> bool { return !children.empty(); }
+
+		virtual auto add_children(IFGResource& fgresource) -> void {
+			children.emplace_back(fgresource);
+		}
+	protected:
+		// Resource handle IBuffer/ITexture
 		IGFXResource* resource{ nullptr };
+		// Last resource usage state
 		ResourceStateFlags state{ ResourceStateFlag::eUndefined };
+		// Externally allocated, not graph resource
 		bool external{ false };
+
+		// Child resources
+		std::vector<IFGResource*> children{};
 	};
 
-	struct FGResourceDesc {
-		// Binding point in shader to get more info about resource
-		uint32_t binding_point{ ~0u }; 
-		uint32_t handle{ ~0u };
-	};
+	class IFGPass {
+	public:
+		virtual ~IFGPass() = default;
 
-	struct FGPass {
+		virtual auto execute(ICommandList& cmd_list, float delta_time) -> void = 0;
+		virtual auto get_type() const -> FGPassType = 0;
+		virtual auto get_queue_type() const -> QueueType = 0;
+		virtual auto setup() -> void = 0;
+		virtual auto teardown() -> void = 0;
+	protected:
 		IShader* shader{ nullptr };
 		IRootSignature* root_sign{ nullptr };
 		IPipeline* pipeline{ nullptr };
+		// Resource binding layouts
 		edge::utl::fixed_vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
+	};
 
-		std::vector<FGResourceDesc> read_resources{};
-		std::vector<FGResourceDesc> write_resources{};
+	struct FGResourceCreateInfo {
+		std::string_view name;
+		// The base resource from which the parameters will be inherited
+		uint32_t parent_handle{ ~0u };
+		FGResourceDependencyFlags dependency_flags{};
+		// External resource created outside of graph
+		IGFXResource* external{ nullptr };
+	};
 
-		// TODO: Need to think can pass create resources by it's own or not
+	struct FGTextureResourceCreateInfo final : FGResourceCreateInfo {
+		TextureCreateInfo create_info{};
+	};
+
+	struct FGBufferResourceCreateInfo final : FGResourceCreateInfo {
+		BufferCreateInfo create_info{};
+	};
+
+	struct FGPassCreateInfo {
+		std::string_view name;
+		FGPassType type{ FGPassType::eGraphics };
+		QueueType queue_type{ QueueType::eDirect };
+		std::function<void(ICommandList&, float)> execute_func;
+		std::function<void()> setup_func;
+		std::function<void()> teardown_func;
+		std::vector<uint32_t> input_resources;
+		std::vector<uint32_t> output_resources;
 	};
 
 	class IFrameGraph {
 	public:
 		virtual ~IFrameGraph() = default;
 
-		virtual auto add_resource(std::string_view name, const TextureCreateInfo& create_info) -> uint32_t = 0;
-		virtual auto add_resource(std::string_view name, const BufferCreateInfo& create_info) -> uint32_t = 0;
-		virtual auto add_resource(std::string_view name, IGFXResource* resource) -> uint32_t = 0;
+		virtual auto add_resource(const FGTextureResourceCreateInfo& create_info) -> uint32_t = 0;
+		virtual auto add_resource(const FGBufferResourceCreateInfo& create_info) -> uint32_t = 0;
+		virtual auto add_pass(const FGPassCreateInfo& create_info) -> uint32_t = 0;
 		virtual void update_resource(uint32_t handle, IGFXResource* resource) = 0;
-		// TODO: Add remove resource functions
+		virtual void remove_resource(uint32_t handle) = 0;
+		virtual void remove_pass(uint32_t handle) = 0;
 
-		virtual auto get_resource(uint32_t handle) -> FGResource& = 0;
+		virtual auto get_resource(uint32_t handle) -> IFGResource& = 0;
+		virtual auto get_pass(uint32_t handle) -> IFGPass& = 0;
 
-		virtual auto add_pass() -> uint32_t = 0;
+		// TODO: need render pass
 		virtual auto build() -> bool = 0;
 		virtual auto execute(ICommandList& cmd_list, float delta_time) -> bool = 0;
 	};
@@ -48,3 +113,11 @@ namespace edge::gfx {
 	[[nodiscard]] auto create_frame_graph() -> IFrameGraph*;
 	[[nodiscard]] auto create_frame_graph_unique() -> std::unique_ptr<IFrameGraph>;
 }
+
+EDGE_REGISTER_ENUM_FLAGS(edge::gfx, FGResourceDependencyFlags, FGResourceDependencyFlag,
+	EDGE_ENUM_META(edge::gfx::FGResourceDependencyFlag::eUsage, "usage"),
+	EDGE_ENUM_META(edge::gfx::FGResourceDependencyFlag::eDimensions, "dimensions"),
+	EDGE_ENUM_META(edge::gfx::FGResourceDependencyFlag::eLayers, "layers"),
+	EDGE_ENUM_META(edge::gfx::FGResourceDependencyFlag::eLevels, "levels"),
+	EDGE_ENUM_META(edge::gfx::FGResourceDependencyFlag::eFormat, "format")
+)
