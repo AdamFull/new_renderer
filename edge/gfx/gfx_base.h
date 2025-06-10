@@ -227,6 +227,7 @@ namespace edge::gfx {
 			return ResourceType::eTexture;
 		}
 
+		[[nodiscard]] virtual auto get_usage() const noexcept -> TextureUsageFlags = 0;
 		[[nodiscard]] virtual auto get_width() const noexcept -> uint32_t = 0;
 		[[nodiscard]] virtual auto get_height() const noexcept -> uint32_t = 0;
 		[[nodiscard]] virtual auto get_depth() const noexcept -> uint32_t = 0;

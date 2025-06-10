@@ -28,30 +28,35 @@ namespace edge::gfx::vulkan
 
 		void set_resource_name(std::string_view name) const noexcept override;
 
-		[[nodiscard]] auto get_width() const noexcept -> uint32_t override {
+		auto get_usage() const noexcept -> TextureUsageFlags override {
+			return usage;
+		}
+
+		auto get_width() const noexcept -> uint32_t override {
 			return image->get_extent().width;
 		}
 
-		[[nodiscard]] auto get_height() const noexcept -> uint32_t override {
+		auto get_height() const noexcept -> uint32_t override {
 			return image->get_extent().height;
 		}
 
-		[[nodiscard]] auto get_depth() const noexcept -> uint32_t override {
+		auto get_depth() const noexcept -> uint32_t override {
 			return image->get_extent().depth;
 		}
 
-		[[nodiscard]] auto get_mip_level_count() const noexcept -> uint32_t override {
+		auto get_mip_level_count() const noexcept -> uint32_t override {
 			return image->get_mip_level_count();
 		}
 
-		[[nodiscard]] auto get_array_layer_count() const noexcept -> uint32_t override {
+		auto get_array_layer_count() const noexcept -> uint32_t override {
 			return image->get_array_layer_count();
 		}
 
-		[[nodiscard]] auto get_format() const noexcept -> Format override;
+		auto get_format() const noexcept -> Format override;
 	private:
 		Device& device;
 
+		TextureUsageFlags usage{};
 		std::unique_ptr<Image> image{};
 
 		std::unique_ptr<ImageView> srv_view{};

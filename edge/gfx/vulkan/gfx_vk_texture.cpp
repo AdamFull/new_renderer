@@ -31,7 +31,8 @@ namespace edge::gfx::vulkan {
 	}
 
 	Texture::Texture(Allocator& allocator, const TextureCreateInfo& create_info) :
-		device{ allocator.get_device() } {
+		device{ allocator.get_device() },
+		usage{ create_info.usage } {
 		// Create image handle
 		image = std::make_unique<Image>(allocator, create_info);
 
@@ -102,7 +103,7 @@ namespace edge::gfx::vulkan {
 		TextureCreateInfo create_info{};
 		create_info.width = extent.width;
 		create_info.height = extent.height;
-		create_info.usage = TextureUsageFlag::eRenderTarget;
+		create_info.usage = usage = TextureUsageFlag::eRenderTarget;
 		create_info.format = vk_swapchain.get_image_format();
 
 		assert(image_index < vk_swapchain.get_image_count());
