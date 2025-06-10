@@ -4,6 +4,8 @@
 #include "gfx_structures.h"
 
 namespace edge::gfx {
+	class IFrameGraph;
+
 	// Flags to describe what i need to inherit from parent resource
 	enum class FGResourceDependencyFlag {
 		eUsage = 1 << 0,
@@ -20,53 +22,13 @@ namespace edge::gfx {
 		eRayTrace
 	};
 
-	class IFGResource {
-	public:
-		virtual ~IFGResource() = default;
-
-		virtual auto evaluate(IFGResource* parent) -> bool = 0;
-		virtual auto get_resource() -> IGFXResource* { return resource; }
-		virtual auto get_state() const -> ResourceStateFlags { return state; }
-		virtual auto set_state(ResourceStateFlags new_state) -> void { state = new_state; }
-		virtual auto is_external() const -> bool { return external; }
-		virtual auto has_children() const -> bool { return !children.empty(); }
-
-		virtual auto add_children(IFGResource& fgresource) -> void {
-			children.emplace_back(fgresource);
-		}
-	protected:
-		// Resource handle IBuffer/ITexture
-		IGFXResource* resource{ nullptr };
-		// Last resource usage state
-		ResourceStateFlags state{ ResourceStateFlag::eUndefined };
-		// Externally allocated, not graph resource
-		bool external{ false };
-
-		// Child resources
-		std::vector<IFGResource*> children{};
-	};
-
-	class IFGPass {
-	public:
-		virtual ~IFGPass() = default;
-
-		virtual auto execute(ICommandList& cmd_list, float delta_time) -> void = 0;
-		virtual auto get_type() const -> FGPassType = 0;
-		virtual auto get_queue_type() const -> QueueType = 0;
-		virtual auto setup() -> void = 0;
-		virtual auto teardown() -> void = 0;
-	protected:
-		IShader* shader{ nullptr };
-		IRootSignature* root_sign{ nullptr };
-		IPipeline* pipeline{ nullptr };
-		// Resource binding layouts
-		edge::utl::fixed_vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
-	};
+	using FGResourceHandle = uint32_t;
+	using FGPassHandle = uint32_t;
 
 	struct FGResourceCreateInfo {
 		std::string_view name;
 		// The base resource from which the parameters will be inherited
-		uint32_t parent_handle{ ~0u };
+		FGResourceHandle parent_handle{ ~0u };
 		FGResourceDependencyFlags dependency_flags{};
 		// External resource created outside of graph
 		IGFXResource* external{ nullptr };
@@ -91,19 +53,66 @@ namespace edge::gfx {
 		std::vector<uint32_t> output_resources;
 	};
 
+	class IFGResource {
+	public:
+		virtual ~IFGResource() = default;
+
+		virtual auto evaluate(IFrameGraph& graph) -> bool = 0;
+		virtual auto create_resources(const FGResourceCreateInfo& texture_ci) -> bool;
+		virtual auto get_resource() -> IGFXResource* { return resource; }
+		virtual auto get_state() const -> ResourceStateFlags { return state; }
+		virtual auto set_state(ResourceStateFlags new_state) -> void { state = new_state; }
+		virtual auto is_imported() const -> bool { return imported; }
+		virtual auto has_parent() const -> bool { return parent != !0u; }
+		virtual auto has_children() const -> bool { return !children.empty(); }
+
+		virtual auto set_parent(FGResourceHandle handle) -> void { parent = handle; }
+		virtual auto add_children(FGResourceHandle handle) -> void { children.push_back(handle); }
+	protected:
+		std::string name{};
+		// Resource handle IBuffer/ITexture
+		IGFXResource* resource{ nullptr };
+		// Last resource usage state
+		ResourceStateFlags state{ ResourceStateFlag::eUndefined };
+		// Externally allocated, not graph resource
+		bool imported{ false };
+
+		FGResourceDependencyFlags dependency_flags{};
+
+		FGResourceHandle parent{ ~0u };
+		std::vector<FGResourceHandle> children{};
+	};
+
+	class IFGPass {
+	public:
+		virtual ~IFGPass() = default;
+
+		virtual auto execute(ICommandList& cmd_list, float delta_time) -> void = 0;
+		virtual auto get_type() const -> FGPassType = 0;
+		virtual auto get_queue_type() const -> QueueType = 0;
+		virtual auto setup() -> void = 0;
+		virtual auto teardown() -> void = 0;
+	protected:
+		IShader* shader{ nullptr };
+		IRootSignature* root_sign{ nullptr };
+		IPipeline* pipeline{ nullptr };
+		// Resource binding layouts
+		edge::utl::fixed_vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
+	};
+
 	class IFrameGraph {
 	public:
 		virtual ~IFrameGraph() = default;
 
-		virtual auto add_resource(const FGTextureResourceCreateInfo& create_info) -> uint32_t = 0;
-		virtual auto add_resource(const FGBufferResourceCreateInfo& create_info) -> uint32_t = 0;
-		virtual auto add_pass(const FGPassCreateInfo& create_info) -> uint32_t = 0;
-		virtual void update_resource(uint32_t handle, IGFXResource* resource) = 0;
-		virtual void remove_resource(uint32_t handle) = 0;
-		virtual void remove_pass(uint32_t handle) = 0;
+		virtual auto add_resource(const FGTextureResourceCreateInfo& create_info) -> FGResourceHandle = 0;
+		virtual auto add_resource(const FGBufferResourceCreateInfo& create_info) -> FGResourceHandle = 0;
+		virtual auto add_pass(const FGPassCreateInfo& create_info) -> FGResourceHandle = 0;
+		virtual void update_resource(FGResourceHandle handle, IGFXResource* resource) = 0;
+		virtual void remove_resource(FGResourceHandle handle) = 0;
+		virtual void remove_pass(FGPassHandle handle) = 0;
 
-		virtual auto get_resource(uint32_t handle) -> IFGResource& = 0;
-		virtual auto get_pass(uint32_t handle) -> IFGPass& = 0;
+		virtual auto get_resource(FGResourceHandle handle) -> IFGResource& = 0;
+		virtual auto get_pass(FGPassHandle handle) -> IFGPass& = 0;
 
 		// TODO: need render pass
 		virtual auto build() -> bool = 0;

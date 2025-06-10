@@ -8,26 +8,41 @@
 #include "../fs/fs_virtual_filesystem.h"
 
 namespace edge::gfx {
+	auto IFGResource::create_resources(const FGResourceCreateInfo& texture_ci) -> bool {
+		name = texture_ci.name;
+		dependency_flags = texture_ci.dependency_flags;
+		parent = texture_ci.parent_handle;
+
+		if (texture_ci.external) {
+			resource = texture_ci.external;
+			imported;
+			resource->set_resource_name(name);
+		}
+
+		return true;
+	}
+
 	class TextureResource final : public IFGResource {
 	public:
 		~TextureResource() override = default;
 
-		static auto consturct(const TextureCreateInfo& texture_ci) -> std::unique_ptr<IFGResource> {
-			std::unique_ptr<TextureResource> self{};
-
+		static auto consturct(const FGTextureResourceCreateInfo& texture_ci) -> std::unique_ptr<IFGResource> {
+			std::unique_ptr<TextureResource> self = std::make_unique<TextureResource>();
+			self->last_ci = texture_ci.create_info;
+			self->create_resources(texture_ci);
 			return self;
 		}
 
-		auto evaluate(IFGResource* parent) -> bool override {
+		auto evaluate(IFrameGraph& graph) -> bool override {
 			TextureCreateInfo new_ci{ last_ci };
 			uint32_t new_hash = last_hash;
 
-			if (parent) {
-				auto* parent_resource = parent->get_resource();
-				auto* texture = parent_resource->as<ITexture*>();
+			if (parent != ~0u) {
+				auto& perent_resource = graph.get_resource(parent);
+				auto* texture = perent_resource.get_resource()->as<ITexture*>();
 
 				if (dependency_flags & FGResourceDependencyFlag::eUsage) {
-					//new_ci.usage = texture->get_usage();
+					new_ci.usage = texture->get_usage();
 				}
 
 				if (dependency_flags & FGResourceDependencyFlag::eDimensions) {
@@ -51,7 +66,7 @@ namespace edge::gfx {
 				new_hash = gfx::hash(new_ci);
 			}
 
-			if ((last_hash != new_hash && !external) || !resource) {
+			if ((last_hash != new_hash && !imported) || !resource) {
 				if (resource) {
 					destroy(resource);
 				}
@@ -60,16 +75,18 @@ namespace edge::gfx {
 				last_ci = new_ci;
 
 				resource = create_texture(new_ci);
+				resource->set_resource_name(name);
+				state = ResourceStateFlag::eUndefined;
 			}
 
-			for (auto* child : children) {
-				child->evaluate(this);
+			for (FGResourceHandle child_handle : children) {
+				auto& child = graph.get_resource(child_handle);
+				child.evaluate(graph);
 			}
 		}
 	private:
 		TextureCreateInfo last_ci{};
 		uint32_t last_hash{ ~0u };
-		FGResourceDependencyFlags dependency_flags{};
 		float relative_scale{ 1.0f };
 	};
 
@@ -77,9 +94,54 @@ namespace edge::gfx {
 	public:
 		~BufferResource() override = default;
 
-	private:
-		BufferCreateInfo create_info{};
+		static auto consturct(const FGBufferResourceCreateInfo& buffer_ci) -> std::unique_ptr<IFGResource> {
+			std::unique_ptr<BufferResource> self = std::make_unique<BufferResource>();
+			self->last_ci = buffer_ci.create_info;
+			self->create_resources(buffer_ci);
+			return self;
+		}
 
+		auto evaluate(IFrameGraph& graph) -> bool override {
+			BufferCreateInfo new_ci{ last_ci };
+			uint32_t new_hash = last_hash;
+
+			if (parent != ~0u) {
+				auto& perent_resource = graph.get_resource(parent);
+				auto* buffer = perent_resource.get_resource()->as<IBuffer*>();
+
+				if (dependency_flags & FGResourceDependencyFlag::eUsage) {
+					new_ci.usage = buffer->get_usage_flags();
+				}
+
+				if (dependency_flags & FGResourceDependencyFlag::eDimensions) {
+					new_ci.size = buffer->get_size();
+				}
+			}
+
+			if ((last_hash != new_hash && !imported) || !resource) {
+				if (resource) {
+					destroy(resource);
+				}
+
+				last_hash = new_hash;
+				last_ci = new_ci;
+
+				resource = create_buffer(new_ci);
+				resource->set_resource_name(name);
+				state = ResourceStateFlag::eUndefined;
+			}
+
+			for (FGResourceHandle child_handle : children) {
+				auto& child = graph.get_resource(child_handle);
+				child.evaluate(graph);
+			}
+
+			return false;
+		}
+
+	private:
+		BufferCreateInfo last_ci{};
+		uint32_t last_hash{ ~0u };
 	};
 
 	class FrameGraph final : public IFrameGraph {
@@ -87,30 +149,48 @@ namespace edge::gfx {
 		~FrameGraph() override {
 		}
 
-		auto add_resource(const FGTextureResourceCreateInfo& create_info) -> uint32_t override {
-			auto handle_id = static_cast<uint32_t>(resources.size());
-			// TODO:
-			return handle_id;
+		auto add_resource(const FGTextureResourceCreateInfo& create_info) -> FGResourceHandle override {
+			FGResourceHandle resource_handle = static_cast<FGResourceHandle>(resources.size());
+			resources.emplace_back(TextureResource::consturct(create_info));
+			return resource_handle;
 		}
 
-		auto add_resource(const FGBufferResourceCreateInfo& create_info) -> uint32_t override {
-			auto handle_id = static_cast<uint32_t>(resources.size());
-			// TODO:
-			return handle_id;
+		auto add_resource(const FGBufferResourceCreateInfo& create_info) -> FGResourceHandle override {
+			FGResourceHandle resource_handle = static_cast<FGResourceHandle>(resources.size());
+			resources.emplace_back(BufferResource::consturct(create_info));
+			return resource_handle;
+		}
+
+		auto add_pass(const FGPassCreateInfo& create_info) -> FGResourceHandle override {
+			return ~0u;
 		}
 
 		void update_resource(uint32_t handle, IGFXResource* resource) override {
 			// TODO: 
 		}
 
+		void remove_resource(FGResourceHandle handle) override {
+
+		}
+
+		void remove_pass(FGPassHandle handle) override {
+
+		}
+
 		auto get_resource(uint32_t handle) -> IFGResource& override {
 			return *resources[handle];
+		}
+
+		auto get_pass(FGPassHandle handle) -> IFGPass & override {
+
 		}
 
 		auto build() -> bool override {
 			// Update resources
 			for (auto& resource : resources) {
-				// TODO: evaluate resources without parent
+				if (!resource->has_parent()) {
+					resource->evaluate(*this);
+				}
 			}
 
 			return false;
