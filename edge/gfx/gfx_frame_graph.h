@@ -42,6 +42,11 @@ namespace edge::gfx {
 		BufferCreateInfo create_info{};
 	};
 
+	struct FGBindingDesc {
+		uint32_t binding_point{ ~0u };
+		FGResourceHandle resource_handle{ ~0u };
+	};
+
 	struct FGPassCreateInfo {
 		std::string_view name;
 		FGPassType type{ FGPassType::eGraphics };
@@ -49,8 +54,8 @@ namespace edge::gfx {
 		std::function<void(ICommandList&, float)> execute_func;
 		std::function<void()> setup_func;
 		std::function<void()> teardown_func;
-		std::vector<uint32_t> input_resources;
-		std::vector<uint32_t> output_resources;
+		utl::fixed_vector<FGBindingDesc, 32> input_resources;
+		utl::fixed_vector<FGBindingDesc, 32> output_resources;
 	};
 
 	class IFGResource {
@@ -92,12 +97,6 @@ namespace edge::gfx {
 		virtual auto get_queue_type() const -> QueueType = 0;
 		virtual auto setup() -> void = 0;
 		virtual auto teardown() -> void = 0;
-	protected:
-		IShader* shader{ nullptr };
-		IRootSignature* root_sign{ nullptr };
-		IPipeline* pipeline{ nullptr };
-		// Resource binding layouts
-		edge::utl::fixed_vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
 	};
 
 	class IFrameGraph {

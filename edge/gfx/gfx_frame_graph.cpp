@@ -144,6 +144,58 @@ namespace edge::gfx {
 		uint32_t last_hash{ ~0u };
 	};
 
+	class BasePass : public IFGPass {
+	public:
+		virtual ~BasePass() override = default;
+
+		auto execute(ICommandList& cmd_list, float delta_time) -> void override {
+			// TODO: apply barriers and bind resources
+		}
+
+		auto get_queue_type() const -> QueueType override { return QueueType::eDirect; }
+
+		auto setup() -> void override {
+			if (setup_func) {
+				setup_func();
+			}
+
+			// TODO: generate barriers
+		}
+
+		auto teardown() -> void override {
+			if (teardown_func) {
+				teardown_func();
+			}
+		}
+	protected:
+		IShader* shader{ nullptr };
+		IRootSignature* root_sign{ nullptr };
+		IPipeline* pipeline{ nullptr };
+		// Resource binding layouts
+		edge::utl::fixed_vector<edge::gfx::IDescriptorLayout*> descriptor_layouts;
+
+		// Callbacks
+		std::function<void(ICommandList&, float)> execute_func;
+		std::function<void()> setup_func;
+		std::function<void()> teardown_func;
+
+		// Resources
+		utl::fixed_vector<IFGResource*, 32> input_resources;
+		utl::fixed_vector<IFGResource*, 32> output_resources;
+	};
+
+	class RenderPass final : public BasePass {
+	public:
+		auto get_type() const -> FGPassType override { return FGPassType::eGraphics; }
+	private:
+	};
+
+	class ComputePass final : public BasePass {
+	public:
+		auto get_type() const -> FGPassType override { return FGPassType::eCompute; }
+	private:
+	};
+
 	class FrameGraph final : public IFrameGraph {
 	public:
 		~FrameGraph() override {
