@@ -1,6 +1,7 @@
 #include "gfx_frame_graph.h"
 
 #include "gfx_context.h"
+#include "gfx_util.h"
 
 #include "../fs/fs_helper.h"
 #include "../util/Logger.h"
@@ -149,7 +150,21 @@ namespace edge::gfx {
 		virtual ~BasePass() override = default;
 
 		auto execute(ICommandList& cmd_list, float delta_time) -> void override {
-			// TODO: apply barriers and bind resources
+			if (!buffer_barriers.empty() || !texture_barriers.empty() || !memory_barriers.empty()) {
+				resource_barriers.buffer_barriers = buffer_barriers;
+				resource_barriers.texture_barriers = texture_barriers;
+				resource_barriers.memory_barriers = memory_barriers;
+
+				cmd_list.resource_barrier(resource_barriers);
+
+				buffer_barriers.clear();
+				texture_barriers.clear();
+				memory_barriers.clear();
+			}
+
+			if (execute_func) {
+				execute_func(cmd_list, delta_time);
+			}
 		}
 
 		auto get_queue_type() const -> QueueType override { return QueueType::eDirect; }
@@ -158,13 +173,62 @@ namespace edge::gfx {
 			if (setup_func) {
 				setup_func();
 			}
-
-			// TODO: generate barriers
 		}
 
 		auto teardown() -> void override {
 			if (teardown_func) {
 				teardown_func();
+			}
+		}
+
+		auto resolve_resource_state(IFrameGraph& graph, FGBindingDesc binding, edge::gfx::AccessTypeFlags access) -> void {
+			ResourceStateFlags new_state = get_access_state(access);
+
+			auto pass_type = get_type();
+			if (pass_type == FGPassType::eCompute) {
+				new_state |= edge::gfx::ResourceStateFlag::eCompute;
+			}
+			else if (pass_type == FGPassType::eGraphics) {
+				new_state |= edge::gfx::ResourceStateFlag::eGraphics;
+			}
+
+			// Try to get more info about usage from reflection
+			if (binding.binding_point != ~0u) {
+				auto& reflection = shader->get_reflection();
+				auto found = std::find_if(reflection.shader_resources.begin(), reflection.shader_resources.end(),
+					[binding_point = binding.binding_point](const ShaderResource& resource)
+					{ return resource.name_hash == binding_point; });
+
+				if (found != reflection.shader_resources.end()) {
+					const ShaderResource& refl_resource = *found;
+					new_state |= get_state_by_descriptor_type(refl_resource.type);
+
+					auto& resource = graph.get_resource(binding.resource_handle);
+
+					bool needs_translation = resource.get_state() != new_state;
+					if (refl_resource.type == DescriptorType::eCombinedImageSampler || refl_resource.type == DescriptorType::eSampledImage || refl_resource.type == DescriptorType::eStorageImage) {
+						if (needs_translation) {
+							auto& barrier = texture_barriers.emplace_back();
+							barrier.texture = resource.get_resource()->as<ITexture*>();
+							barrier.subresource_index = binding.subresource_index;
+							barrier.src_state = resource.get_state();
+							barrier.dst_state = new_state;
+							resource.set_state(new_state);
+						}
+					}
+					else if (refl_resource.type == DescriptorType::eStorageBuffer || refl_resource.type == DescriptorType::eStorageBufferDynamic) {
+						if (needs_translation) {
+							auto& barrier = buffer_barriers.emplace_back();
+							barrier.buffer = resource.get_resource()->as<IBuffer*>();
+							barrier.src_state = resource.get_state();
+							barrier.dst_state = new_state;
+							resource.set_state(new_state);
+						}
+					}
+					else {
+
+					}
+				}
 			}
 		}
 	protected:
@@ -182,6 +246,11 @@ namespace edge::gfx {
 		// Resources
 		utl::fixed_vector<IFGResource*, 32> input_resources;
 		utl::fixed_vector<IFGResource*, 32> output_resources;
+
+		utl::fixed_vector<edge::gfx::BufferBarrierDesc, 16> buffer_barriers{};
+		utl::fixed_vector<edge::gfx::TextureBarrierDesc, 16> texture_barriers{};
+		utl::fixed_vector<edge::gfx::MemoryBarrierDesc, 16> memory_barriers{};
+		edge::gfx::ResourceBarrierInfo resource_barriers{};
 	};
 
 	class RenderPass final : public BasePass {

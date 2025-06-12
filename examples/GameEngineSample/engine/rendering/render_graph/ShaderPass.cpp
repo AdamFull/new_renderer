@@ -195,11 +195,6 @@ namespace engine::render {
 			new_state |= edge::gfx::get_state_by_descriptor_type(refl_resource.type);
 
 			if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage) {
-				// May be create another tag like unordered resource?
-				if (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget) {
-					new_state |= edge::gfx::ResourceStateFlag::eGeneral;
-				}
-
 				if (render_resource.current_state == new_state) {
 					return;
 				}

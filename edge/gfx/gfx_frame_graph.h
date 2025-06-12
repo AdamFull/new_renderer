@@ -45,11 +45,12 @@ namespace edge::gfx {
 	struct FGBindingDesc {
 		uint32_t binding_point{ ~0u };
 		FGResourceHandle resource_handle{ ~0u };
+		uint32_t subresource_index{ ~0u };
 	};
 
 	struct FGPassCreateInfo {
 		std::string_view name;
-		FGPassType type{ FGPassType::eGraphics };
+		std::string_view technique_name;
 		QueueType queue_type{ QueueType::eDirect };
 		std::function<void(ICommandList&, float)> execute_func;
 		std::function<void()> setup_func;
