@@ -16,7 +16,7 @@ namespace edge::gfx {
 		return state_flags;
 	}
 
-	inline ResourceStateFlag get_state_by_descriptor_type(DescriptorType type) {
+	inline ResourceStateFlags get_state_by_descriptor_type(DescriptorType type) {
 		switch (type)
 		{
 		case DescriptorType::eSampler:
@@ -27,10 +27,8 @@ namespace edge::gfx {
 		case DescriptorType::eStorageImage:
 		case DescriptorType::eStorageTexelBuffer:
 		case DescriptorType::eStorageBuffer:
-			return ResourceStateFlag::eStorage;
-			break;
 		case DescriptorType::eStorageBufferDynamic:
-			return ResourceStateFlag::eStorage;
+			return ResourceStateFlag::eStorage | ResourceStateFlag::eGeneral;
 			break;
 		case DescriptorType::eInputAttachment:
 			break;
