@@ -3,6 +3,9 @@
 #include <edge/gfx/gfx_uniform_pool.h>
 #include <edge/util/utl_vector.h>
 #include "IRenderer.h"
+#include "IRenderGraph.h"
+
+#include <edge/gfx/technique_system/gfx_technique_system.h>
 
 namespace e2d {
 	class RendererFrame final : public IRendererFrame {
@@ -75,5 +78,10 @@ namespace e2d {
 		uint32_t active_frame_index{ 0 };
 		IRendererFrame* current_frame{ nullptr };
 		edge::utl::fixed_vector<std::unique_ptr<IRendererFrame>> frames_in_flight{};
+
+		std::unique_ptr<edge::gfx::TechniqueDatabase> technique_system_{};
+		std::unique_ptr<IRenderGraph> render_graph_{};
+
+		RGResourceHandle backbuffer_handle_;
 	};
 }

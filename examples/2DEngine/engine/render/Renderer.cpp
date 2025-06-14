@@ -5,6 +5,8 @@
 #include <edge/util/utl_profiler.h>
 #include <edge/util/Logger.h>
 
+#include "RenderGraph.h"
+
 namespace e2d {
 	// Renderer frame impl
 	RendererFrame::~RendererFrame() {
@@ -187,6 +189,9 @@ namespace e2d {
 		current_frame->begin();
 		auto& cmd_list = current_frame->get_command_list();
 
+		// Update graph resources
+		render_graph_->update_texture(backbuffer_handle_, &current_frame->get_backbuffer());
+
 		// Get previous frame time 
 		uint64_t timestamps[2] = {};
 		query_pool->get_data(0u, &timestamps[0]);
@@ -201,6 +206,30 @@ namespace e2d {
 		// Reset performance query
 		cmd_list.reset_query(query_pool.get(), 0u, 2u);
 		cmd_list.begin_query(query_pool.get(), 0u);
+
+		// Test pass
+		render_graph_->add_pass({
+			.name = "TestPass",
+			.technique_name = "fullscreen",
+			.setup_func = [this](IRGPass& self) -> void {
+				auto& backbuffer = current_frame->get_backbuffer();
+
+				self.add_color_attachment(backbuffer_handle_, edge::gfx::LoadOp::eClear);
+				self.set_size(backbuffer.get_width(), backbuffer.get_height());
+			},
+			.execute_func = [this](edge::gfx::ICommandList& cmd_list, float delta_time) -> void {
+
+				// TODO: push constants
+
+				auto& backbuffer = current_frame->get_backbuffer();
+
+				cmd_list.set_viewport(0.f, 0.f, backbuffer.get_width(), backbuffer.get_height(), 0.0f, 1.0f);
+				cmd_list.set_scissor(0u, 0u, backbuffer.get_width(), backbuffer.get_height());
+				cmd_list.draw(3u, 0u, 0u, 1u);
+			} 
+			});
+
+		render_graph_->execute(current_frame->get_command_list(), delta_time);
 	}
 
 	void Renderer::end_frame(float delta_time) {
@@ -214,15 +243,20 @@ namespace e2d {
 		edge::gfx::ICommandList* cmd_list = &current_frame->get_command_list();
 		cmd_list->end_query(query_pool.get(), 1u);
 
-		// TODO: needed only for now
-		edge::gfx::TextureBarrierDesc texture_barrier{};
-		texture_barrier.src_state = edge::gfx::ResourceStateFlag::eUndefined;
-		texture_barrier.dst_state = edge::gfx::ResourceStateFlag::ePresent;
-		texture_barrier.texture = &current_frame->get_backbuffer();
+		// Translate backbuffer to present state
+		auto* backbuffer_resource = render_graph_->get_resource(backbuffer_handle_);
+		if (backbuffer_resource->get_state() != edge::gfx::ResourceStateFlag::ePresent) {
+			edge::gfx::TextureBarrierDesc texture_barrier{};
+			texture_barrier.src_state = backbuffer_resource->get_state();
+			texture_barrier.dst_state = edge::gfx::ResourceStateFlag::ePresent;
+			texture_barrier.texture = &current_frame->get_backbuffer();
 
-		edge::gfx::ResourceBarrierInfo barrier{};
-		barrier.texture_barriers = { &texture_barrier, 1 };
-		cmd_list->resource_barrier(barrier);
+			edge::gfx::ResourceBarrierInfo barrier{};
+			barrier.texture_barriers = { &texture_barrier, 1 };
+			cmd_list->resource_barrier(barrier);
+
+			backbuffer_resource->set_state(edge::gfx::ResourceStateFlag::ePresent);
+		}
 
 		current_frame->end();
 
@@ -310,6 +344,19 @@ namespace e2d {
 		query_pool->reset(0u);
 
 		edge::gfx::request_timestamp_frequency(&timestamp_frequency);
+
+		technique_system_ = std::make_unique<edge::gfx::TechniqueDatabase>();
+		technique_system_->load("/internal/tdbcache");
+		technique_system_->load_config({
+			"/internal_res/assets/graphics/techniques.json",
+			current_frame->get_backbuffer().get_format()
+			});
+
+		technique_system_->save("/internal/tdbcache");
+
+		render_graph_ = RenderGraph::construct(*technique_system_);
+
+		backbuffer_handle_ = render_graph_->import_texture(&current_frame->get_backbuffer(), "backbuffer");
 	}
 
 	void Renderer::update_swapchain(uint32_t width, uint32_t height) {
