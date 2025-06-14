@@ -277,10 +277,12 @@ namespace edge::gfx::vulkan
 			auto& memory_barrier = barrier.memory_barriers[i];
 
 			auto& vk_memory_barrier = memory_barriers[vk_barrier.memoryBarrierCount++];
-			vk_memory_barrier.srcAccessMask = resource_state_to_vk_access_flags(memory_barrier.src_state);
-			vk_memory_barrier.srcStageMask = resource_state_to_vk_stage_flags(memory_barrier.src_state);
-			vk_memory_barrier.dstAccessMask = resource_state_to_vk_access_flags(memory_barrier.dst_state);
-			vk_memory_barrier.dstStageMask = resource_state_to_vk_stage_flags(memory_barrier.dst_state);
+			auto src_resource_state = resource_state_to_vk_resource_state(memory_barrier.src_state);
+			vk_memory_barrier.srcAccessMask = src_resource_state.access;
+			vk_memory_barrier.srcStageMask = src_resource_state.stage;
+			auto dst_resource_state = resource_state_to_vk_resource_state(memory_barrier.dst_state);
+			vk_memory_barrier.dstAccessMask = dst_resource_state.access;
+			vk_memory_barrier.dstStageMask = dst_resource_state.stage;
 		}
 
 		// Parse buffer barriers
@@ -299,10 +301,12 @@ namespace edge::gfx::vulkan
 				vk_buffer_barrier.size = buffer->get_size();
 			}
 
-			vk_buffer_barrier.srcAccessMask = resource_state_to_vk_access_flags(buffer_barrier.src_state);
-			vk_buffer_barrier.srcStageMask = resource_state_to_vk_stage_flags(buffer_barrier.src_state);
-			vk_buffer_barrier.dstAccessMask = resource_state_to_vk_access_flags(buffer_barrier.dst_state);
-			vk_buffer_barrier.dstStageMask = resource_state_to_vk_stage_flags(buffer_barrier.dst_state);
+			auto src_resource_state = resource_state_to_vk_resource_state(buffer_barrier.src_state);
+			vk_buffer_barrier.srcAccessMask = src_resource_state.access;
+			vk_buffer_barrier.srcStageMask = src_resource_state.stage;
+			auto dst_resource_state = resource_state_to_vk_resource_state(buffer_barrier.dst_state);
+			vk_buffer_barrier.dstAccessMask = dst_resource_state.access;
+			vk_buffer_barrier.dstStageMask = dst_resource_state.stage;
 		}
 
 		// Parse image barriers
@@ -320,12 +324,14 @@ namespace edge::gfx::vulkan
 
 			vk_image_barrier.oldLayout = resource_state_to_vk_image_layout(texture_barrier.src_state);
 			//assert(vk_image_barrier.oldLayout == subresource.GetImageLayout() && "Old layout is not correct."); 
-			vk_image_barrier.srcAccessMask = resource_state_to_vk_access_flags(texture_barrier.src_state);
-			vk_image_barrier.srcStageMask = resource_state_to_vk_stage_flags(texture_barrier.src_state);
+			auto src_resource_state = resource_state_to_vk_resource_state(texture_barrier.src_state);
+			vk_image_barrier.srcAccessMask = src_resource_state.access;
+			vk_image_barrier.srcStageMask = src_resource_state.stage;
 
 			vk_image_barrier.newLayout = resource_state_to_vk_image_layout(texture_barrier.dst_state);
-			vk_image_barrier.dstAccessMask = resource_state_to_vk_access_flags(texture_barrier.dst_state);
-			vk_image_barrier.dstStageMask = resource_state_to_vk_stage_flags(texture_barrier.dst_state);
+			auto dst_resource_state = resource_state_to_vk_resource_state(texture_barrier.dst_state);
+			vk_image_barrier.dstAccessMask = dst_resource_state.access;
+			vk_image_barrier.dstStageMask = dst_resource_state.stage;
 		}
 
 		handle_.pipelineBarrier2KHR(vk_barrier);

@@ -97,47 +97,25 @@ namespace edge::gfx
 
 	enum class ResourceStateFlag : uint16_t {
 		eUndefined = 0,
-		eRead = 1 << 0,
-		eWrite = 1 << 1,
-		eCompute = 1 << 2,
-		eGraphics = 1 << 3,
-		eColorAttachment = 1 << 4,
-		eDepthAttachment = 1 << 5,
-		eStencilAttachment = 1 << 6,
-		eIndex = 1 << 7,
-		eVertex = 1 << 8,
-		eSample = 1 << 9,
-		eStorage = 1 << 10,
-		eIndirect = 1 << 11,
-		eGeneral = 1 << 12,
-		eCopy = 1 << 13,
-		ePresent = 1 << 14,
-
-		eIndexRead = eRead | eGraphics | eIndex,
-		eVertexRead = eRead | eGraphics | eVertex,
-
-		// Rendering states
-		eColorAttachmentRead = eRead | eColorAttachment,
-		eColorAttachmentWrite = eWrite | eColorAttachment,
-
-		// Depth targets
-		eDepthAttachmentRead = eRead | eDepthAttachment,
-		eDepthAttachmentWrite = eWrite | eDepthAttachment,
-
-		eStencilAttachmentRead = eRead | eStencilAttachment,
-		eStencilAttachmentWrite = eWrite | eStencilAttachment,
-
-		eDepthStencilAttachmentRead = eRead | eDepthAttachment | eStencilAttachment,
-		eDepthStencilAttachmentWrite = eWrite | eDepthAttachment | eStencilAttachment,
-
-		eShaderReadOnlyResource = eRead | eCompute | eGraphics | eSample,
-
-		// Copy states
-		eCopyDst = eWrite | eCopy,
-		eCopySrc = eRead | eCopy,
-
-		// Present states
-		ePresentSrc = eRead | ePresent
+		eVertexRead = 1 << 0,
+		eIndexRead = 1 << 1,
+		eRenderTarget = 1 << 2,
+		eUnorderedAccess = 1 << 3,
+		eDepthWrite = 1 << 4,
+		eDepthRead = 1 << 5,
+		eStencilWrite = 1 << 6,
+		eStencilRead = 1 << 7,
+		eDepthStencilWrite = eDepthWrite | eStencilWrite,
+		eDepthStencilRead = eDepthRead | eStencilRead,
+		eNonGraphicsShader = 1 << 8,
+		eGraphicsShader = 1 << 9,
+		eShaderResource = eNonGraphicsShader | eGraphicsShader,
+		eIndirectArgument = 1 << 10,
+		eCopyDst = 1 << 11,
+		eCopySrc = 1 << 12,
+		ePresent = 1 << 13,
+		eAccelerationStructureRead = 1 << 14,
+		eAccelerationStructureWrite = 1 << 15
 	};
 
 	enum class AccessTypeFlag {
@@ -425,33 +403,25 @@ EDGE_REGISTER_ENUM_FLAGS(edge::gfx, StageFlags, StageFlag,
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, ResourceStateFlags, ResourceStateFlag,
 	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eUndefined, "undefined"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eRead, "read"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eWrite, "write"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCompute, "compute"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eGraphics, "graphics"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eColorAttachment, "color_attachment"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthAttachment, "depth_attachment"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilAttachment, "stencil_attachment"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eIndex, "index"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eVertex, "vertex"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eSample, "sample"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStorage, "storage"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eIndirect, "indirect"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eGeneral, "general"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCopy, "copy"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::ePresent, "present"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eColorAttachmentRead, "color_attachment_read"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eColorAttachmentWrite, "color_attachment_write"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthAttachmentRead, "depth_attachment_read"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthAttachmentWrite, "depth_attachment_write"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilAttachmentRead, "stencil_attachment_read"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilAttachmentWrite, "stencil_attachment_write"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthStencilAttachmentRead, "depth_stencil_attachment_read"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthStencilAttachmentWrite, "depth_stencil_attachment_write"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eShaderReadOnlyResource, "shader_read_only_resource"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eVertexRead, "vertex_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eIndexRead, "index_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eRenderTarget, "render_target"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eUnorderedAccess, "unordered_access"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthWrite, "depth_write"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthRead, "depth_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilWrite, "stencil_write"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eStencilRead, "stencil_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthStencilWrite, "depth_stencil_write"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eDepthStencilRead, "depth_stencil_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eNonGraphicsShader, "non_graphics_shader"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eGraphicsShader, "graphics_shader"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eShaderResource, "shader_resource"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eIndirectArgument, "indirect_argument"),
 	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCopyDst, "copy_dst"),
 	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eCopySrc, "copy_src"),
-	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::ePresentSrc, "present_src")
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::ePresent, "present"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eAccelerationStructureRead, "acceleration_read"),
+	EDGE_ENUM_META(edge::gfx::ResourceStateFlag::eAccelerationStructureWrite, "acceleration_write")
 )
 
 EDGE_REGISTER_ENUM_FLAGS(edge::gfx, AccessTypeFlags, AccessTypeFlag,

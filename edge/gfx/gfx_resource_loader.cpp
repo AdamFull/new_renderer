@@ -284,7 +284,7 @@ namespace edge::gfx
 
 				// At first make texture readable
 				texture_barrier.src_state = resource_state;
-				texture_barrier.dst_state = ResourceStateFlag::eRead | ResourceStateFlag::eCompute | ResourceStateFlag::eSample | ResourceStateFlag::eGeneral;
+				texture_barrier.dst_state = ResourceStateFlag::eNonGraphicsShader | ResourceStateFlag::eUnorderedAccess;
 				cmd_list->resource_barrier(resource_barrier);
 				resource_state = texture_barrier.dst_state;
 
@@ -301,7 +301,7 @@ namespace edge::gfx
 
 				// Make texture writable now
 				texture_barrier.src_state = resource_state;
-				texture_barrier.dst_state = ResourceStateFlag::eWrite | ResourceStateFlag::eCompute | ResourceStateFlag::eStorage | ResourceStateFlag::eGeneral;
+				texture_barrier.dst_state = ResourceStateFlag::eNonGraphicsShader | ResourceStateFlag::eUnorderedAccess;
 				cmd_list->resource_barrier(resource_barrier);
 				resource_state = texture_barrier.dst_state;
 
@@ -591,7 +591,7 @@ namespace edge::gfx
 
 		// Transfer to final layout
 		texture_barrier.src_state = current_state;
-		current_state = texture_barrier.dst_state = ResourceStateFlag::eShaderReadOnlyResource;
+		current_state = texture_barrier.dst_state = ResourceStateFlag::eShaderResource;
 		cmd_list->resource_barrier(resource_barrier);
 	}
 
