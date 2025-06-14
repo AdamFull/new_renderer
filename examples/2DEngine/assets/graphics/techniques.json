@@ -1,3 +1,14 @@
-{
-
-}
+[
+  {
+    "name": "fullscreen",
+    "type": "graphics",
+    "stages": [
+      { "path": "/internal_res/assets/graphics/shaders/fullscreen.vert.slang" },
+      { "path": "/internal_res/assets/graphics/shaders/fullscreen.frag.slang" }
+    ],
+    "attachments": [
+      { "format": "backbuffer" }
+    ],
+    "primitive_topology": "triangle_list"
+  }
+]
