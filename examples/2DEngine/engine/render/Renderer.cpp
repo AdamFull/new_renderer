@@ -217,7 +217,7 @@ namespace e2d {
 		// TODO: needed only for now
 		edge::gfx::TextureBarrierDesc texture_barrier{};
 		texture_barrier.src_state = edge::gfx::ResourceStateFlag::eUndefined;
-		texture_barrier.dst_state = edge::gfx::ResourceStateFlag::ePresentSrc;
+		texture_barrier.dst_state = edge::gfx::ResourceStateFlag::ePresent;
 		texture_barrier.texture = &current_frame->get_backbuffer();
 
 		edge::gfx::ResourceBarrierInfo barrier{};
