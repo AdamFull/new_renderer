@@ -2,7 +2,6 @@
 
 #include <edge/gfx/gfx_context.h>
 #include <edge/gfx/gfx_resource_loader.h>
-#include <edge/gfx/gfx_frame_graph.h>
 #include <edge/gfx/technique_system/gfx_technique_system.h>
 
 #include "render_graph/ComputePass.h"
@@ -1289,9 +1288,9 @@ namespace engine::render
 #else
 			create_info.technique_name = "visibilitybuffer_write";
 #endif
-			create_info.add_write_attachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
-			create_info.add_write_attachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f });
-			create_info.add_write_attachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 0.f });
+			create_info.add_write_attachment(visbuffer_geometry_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f }, edge::gfx::LoadOp::eLoad);
+			create_info.add_write_attachment(visbuffer_vboinst_target, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 0.f }, edge::gfx::LoadOp::eLoad);
+			create_info.add_write_attachment(zbuffer_depth_target, ResourceAttachmentTypeFlag::eDepth, edge::gfx::ClearColor{ 0.f }, edge::gfx::LoadOp::eLoad);
 
 			create_info.enabled_callback = []() -> bool { return !is_culling_freezed; };
 			create_info.draw_callback = geometry_draw_fn;
@@ -2198,7 +2197,7 @@ namespace engine::render
 		{
 			RenderShaderPassCreateInfo create_info{};
 			create_info.technique_name = "screenspace";
-			create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f });
+			create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 1.f, 0.5f, 1.f, 1.f }, edge::gfx::LoadOp::eLoad);
 
 			create_info.draw_callback = [this,
 				nearest_clamp_to_edge_sampler
@@ -2232,7 +2231,7 @@ namespace engine::render
 		{
 			RenderShaderPassCreateInfo create_info{};
 			create_info.technique_name = "debug_text";
-			create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+			create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f }, edge::gfx::LoadOp::eLoad);
 			create_info.draw_callback = debug::draw_cb;
 
 			render_context->add_node(render_context->create_node(create_info));
@@ -2268,7 +2267,7 @@ namespace engine::render
 
 				RenderShaderPassCreateInfo create_info{};
 				create_info.technique_name = "imgui";
-				create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f });
+				create_info.add_write_attachment(backbuffer_resource, ResourceAttachmentTypeFlag::eColor, edge::gfx::ClearColor{ 0.f, 0.f, 0.f, 1.f }, edge::gfx::LoadOp::eLoad);
 
 				create_info.draw_callback = [this,
 					&geometry_buffer,

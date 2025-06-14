@@ -43,31 +43,29 @@ namespace engine::render {
 				continue;
 			}
 
-			edge::gfx::ResourceStateFlags new_state{ edge::gfx::ResourceStateFlag::eWrite };
-
-			auto last_access = render_resource.GetAccess();
+			edge::gfx::ResourceStateFlags new_state{};
 
 			edge::gfx::Attachment* attachment{ nullptr };
 			if (resource_attachment.flags & ResourceAttachmentTypeFlag::eDepth) {
 				attachment = &rendering_info.depth_attachment;
-				new_state |= edge::gfx::ResourceStateFlag::eDepthAttachment;
+				new_state |= edge::gfx::ResourceStateFlag::eDepthWrite;
+				if (resource_attachment.load_op == edge::gfx::LoadOp::eLoad) {
+					new_state |= edge::gfx::ResourceStateFlag::eDepthRead;
+				}
 			}
 			else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eStencil) {
 				attachment = &rendering_info.stencil_attachment;
-				new_state |= edge::gfx::ResourceStateFlag::eStencilAttachment;
+				new_state |= edge::gfx::ResourceStateFlag::eStencilWrite;
+				if (resource_attachment.load_op == edge::gfx::LoadOp::eLoad) {
+					new_state |= edge::gfx::ResourceStateFlag::eStencilRead;
+				}
 			}
 			else if (resource_attachment.flags & ResourceAttachmentTypeFlag::eColor) {
-				new_state |= edge::gfx::ResourceStateFlag::eColorAttachment;
+				new_state |= edge::gfx::ResourceStateFlag::eRenderTarget;
 				attachment = &rendering_info.attachments.emplace_back();
 			}
 
-			if (last_access == 0) {
-				attachment->load_op = edge::gfx::LoadOp::eClear;
-			}
-			else {
-				attachment->load_op = edge::gfx::LoadOp::eLoad;
-				new_state |= edge::gfx::ResourceStateFlag::eRead;
-			}
+			attachment->load_op = resource_attachment.load_op;
 
 			auto& barrier = texture_barriers.emplace_back();
 			barrier.texture = execution_context.get_texture(render_resource);

@@ -223,7 +223,7 @@ public:
 		edge::gfx::TextureBarrierDesc texture_translation{};
 		texture_translation.texture = current_frame->backbuffer;
 		texture_translation.src_state = edge::gfx::ResourceStateFlag::eUndefined;
-		texture_translation.dst_state = edge::gfx::ResourceStateFlag::eColorAttachmentWrite;
+		texture_translation.dst_state = edge::gfx::ResourceStateFlag::eRenderTarget;
 
 		edge::gfx::BufferBarrierDesc vertex_buffer_barrier{};
 		vertex_buffer_barrier.buffer = vertex_buffer;
@@ -262,7 +262,7 @@ public:
 
 		// Prepare image for present
 		texture_translation.src_state = texture_translation.dst_state;
-		texture_translation.dst_state = edge::gfx::ResourceStateFlag::ePresentSrc;
+		texture_translation.dst_state = edge::gfx::ResourceStateFlag::ePresent;
 
 		command_list->resource_barrier(barrier);
 

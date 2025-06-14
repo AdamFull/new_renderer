@@ -130,20 +130,23 @@ namespace engine::render {
 
 		auto& render_resource = execution_context.get_resource(resource_id);
 
-		edge::gfx::ResourceStateFlags new_state = edge::gfx::get_access_state(access);
+		edge::gfx::ResourceStateFlags new_state{};
 
 		auto pass_type = get_pass_type();
 		if (pass_type == ShaderPassType::eCompute) {
-			new_state |= edge::gfx::ResourceStateFlag::eCompute;
+			new_state |= edge::gfx::ResourceStateFlag::eNonGraphicsShader;
 		}
 		else if (pass_type == ShaderPassType::eGraphics) {
-			new_state |= edge::gfx::ResourceStateFlag::eGraphics;
+			new_state |= edge::gfx::ResourceStateFlag::eGraphicsShader;
 		}
 
 		if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage) {
 			// May be create another tag like unordered resource?
 			if (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget) {
-				new_state |= edge::gfx::ResourceStateFlag::eGeneral;
+				new_state |= edge::gfx::ResourceStateFlag::eUnorderedAccess;
+			}
+			else {
+				new_state |= edge::gfx::ResourceStateFlag::eShaderResource;
 			}
 
 			auto& barrier = texture_barriers.emplace_back();
@@ -154,11 +157,11 @@ namespace engine::render {
 		}
 		else if (render_resource.resource_type & RenderResourceTypeFlag::eAllBuffer) {
 			if (render_resource.resource_type & RenderResourceTypeFlag::eStorageBuffer) {
-				new_state |= edge::gfx::ResourceStateFlag::eStorage;
+				new_state |= edge::gfx::ResourceStateFlag::eUnorderedAccess;
 			}
 
 			if (render_resource.resource_type & RenderResourceTypeFlag::eIndirectBuffer) {
-				new_state |= edge::gfx::ResourceStateFlag::eIndirect;
+				new_state |= edge::gfx::ResourceStateFlag::eIndirectArgument;
 			}
 
 			auto& barrier = buffer_barriers.emplace_back();
@@ -181,20 +184,28 @@ namespace engine::render {
 		if (found != reflection.shader_resources.end()) {
 			auto& render_resource = execution_context.get_resource(resource_id);
 
-			edge::gfx::ResourceStateFlags new_state = edge::gfx::get_access_state(access);
+			edge::gfx::ResourceStateFlags new_state{};
 
 			auto pass_type = get_pass_type();
 			if (pass_type == ShaderPassType::eCompute) {
-				new_state |= edge::gfx::ResourceStateFlag::eCompute;
+				new_state |= edge::gfx::ResourceStateFlag::eNonGraphicsShader;
 			}
 			else if (pass_type == ShaderPassType::eGraphics) {
-				new_state |= edge::gfx::ResourceStateFlag::eGraphics;
+				new_state |= edge::gfx::ResourceStateFlag::eGraphicsShader;
 			}
 
 			const edge::gfx::ShaderResource& refl_resource = *found;
 			new_state |= edge::gfx::get_state_by_descriptor_type(refl_resource.type);
 
 			if (render_resource.resource_type & RenderResourceTypeFlag::eAllImage) {
+				// May be create another tag like unordered resource?
+				if (render_resource.resource_type & RenderResourceTypeFlag::eStorageTarget) {
+					new_state |= edge::gfx::ResourceStateFlag::eUnorderedAccess;
+				}
+				else {
+					new_state |= edge::gfx::ResourceStateFlag::eShaderResource;
+				}
+
 				if (render_resource.current_state == new_state) {
 					return;
 				}

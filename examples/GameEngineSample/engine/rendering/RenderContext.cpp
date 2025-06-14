@@ -441,7 +441,7 @@ namespace engine::render {
 		texture_barrier.texture = current_frame->backbuffer;
 		// TODO: get current resource state from resource itself
 		texture_barrier.src_state = backbuffer_resource.GetState();
-		texture_barrier.dst_state = edge::gfx::ResourceStateFlag::ePresentSrc;
+		texture_barrier.dst_state = edge::gfx::ResourceStateFlag::ePresent;
 
 		command_list.resource_barrier(resource_barriers);
 	}
@@ -540,9 +540,9 @@ namespace engine::render {
 			}
 
 			auto& texture_obj = static_textures.get(resource.resource_id);
-			if (resource.current_state != edge::gfx::ResourceStateFlag::eShaderReadOnlyResource && texture_obj.texture != dummy_texture) {
-				auto& barrier = texture_barriers.emplace_back(texture_obj.texture, ~0u, resource.current_state, edge::gfx::ResourceStateFlag::eShaderReadOnlyResource);
-				resource.current_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
+			if (resource.current_state != edge::gfx::ResourceStateFlag::eShaderResource && texture_obj.texture != dummy_texture) {
+				auto& barrier = texture_barriers.emplace_back(texture_obj.texture, ~0u, resource.current_state, edge::gfx::ResourceStateFlag::eShaderResource);
+				resource.current_state = edge::gfx::ResourceStateFlag::eShaderResource;
 			}
 
 			edge::gfx::TextureDescriptor texture_descriptor{};
@@ -551,7 +551,7 @@ namespace engine::render {
 
 			texture_descriptor.array_index = array_index;
 			texture_descriptor.texture = texture_obj.texture;
-			texture_descriptor.resource_state = edge::gfx::ResourceStateFlag::eShaderReadOnlyResource;
+			texture_descriptor.resource_state = edge::gfx::ResourceStateFlag::eShaderResource;
 
 			auto* current_global_binding_layout = current_frame->lookup_and_allocate_binding_layout(global_descriptor);
 			current_global_binding_layout->bind(texture_descriptor);

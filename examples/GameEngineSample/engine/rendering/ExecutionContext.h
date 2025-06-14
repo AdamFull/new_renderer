@@ -25,20 +25,6 @@ namespace engine::render {
 
 		edge::gfx::ResourceStateFlags current_state{};
 
-		edge::gfx::AccessTypeFlags GetAccess() const {
-			if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eRead)) {
-				return edge::gfx::AccessTypeFlag::eRead;
-			}
-			else if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eWrite)) {
-				return edge::gfx::AccessTypeFlag::eWrite;
-			}
-			else if (edge::eq_(current_state, edge::gfx::ResourceStateFlag::eRead | edge::gfx::ResourceStateFlag::eWrite)) {
-				return edge::gfx::AccessTypeFlag::eRead | edge::gfx::AccessTypeFlag::eWrite;
-			}
-
-			return {};
-		}
-
 		auto GetState() const noexcept -> edge::gfx::ResourceStateFlags {
 			return current_state;
 		}
@@ -67,6 +53,7 @@ namespace engine::render {
 
 		// Render resource clear color
 		edge::gfx::ClearColor clear_color{};
+		edge::gfx::LoadOp load_op{ edge::gfx::LoadOp::eClear };
 	};
 
 	struct ShaderPassCreateInfo {
@@ -87,8 +74,8 @@ namespace engine::render {
 	{
 		std::vector<RenderResourceAttachment> resource_attachments{};
 
-		void add_write_attachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, edge::gfx::ClearColor clear_color = {}) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color); }
-		void add_read_attachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eRead, flags, render_resource_id, edge::gfx::ClearColor{}); }
+		void add_write_attachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, edge::gfx::ClearColor clear_color = {}, edge::gfx::LoadOp load_op = edge::gfx::LoadOp::eClear) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eWrite, flags, render_resource_id, clear_color, load_op); }
+		void add_read_attachment(uint32_t render_resource_id, ResourceAttachmentTypeFlags flags = {}, edge::gfx::LoadOp load_op = edge::gfx::LoadOp::eLoad) { resource_attachments.emplace_back(edge::gfx::AccessTypeFlag::eRead, flags, render_resource_id, edge::gfx::ClearColor{}, load_op); }
 	};
 
 	struct TextureResourceCreateInfo {
