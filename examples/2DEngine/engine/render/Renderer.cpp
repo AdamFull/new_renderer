@@ -206,27 +206,6 @@ namespace e2d {
 		// Reset performance query
 		cmd_list.reset_query(query_pool.get(), 0u, 2u);
 		cmd_list.begin_query(query_pool.get(), 0u);
-
-		// Test pass
-		render_graph_->add_pass({
-			.name = "TestPass",
-			.technique_name = "fullscreen",
-			.setup_func = [this](IRGPass& self) -> void {
-				auto& backbuffer = current_frame->get_backbuffer();
-
-				self.add_color_attachment(backbuffer_handle_, edge::gfx::LoadOp::eClear);
-				self.set_size(backbuffer.get_width(), backbuffer.get_height());
-			},
-			.execute_func = [this](IRGPass& self, edge::gfx::ICommandList& cmd_list, float delta_time) -> void {
-				auto& backbuffer = current_frame->get_backbuffer();
-
-				cmd_list.set_viewport(0.f, 0.f, backbuffer.get_width(), backbuffer.get_height(), 0.0f, 1.0f);
-				cmd_list.set_scissor(0u, 0u, backbuffer.get_width(), backbuffer.get_height());
-				cmd_list.draw(3u, 0u, 0u, 1u);
-			} 
-			});
-
-		render_graph_->execute(current_frame->get_command_list(), delta_time);
 	}
 
 	void Renderer::end_frame(float delta_time) {
@@ -238,6 +217,7 @@ namespace e2d {
 
 		// Finish performance query
 		edge::gfx::ICommandList* cmd_list = &current_frame->get_command_list();
+		render_graph_->execute(*cmd_list, delta_time);
 		cmd_list->end_query(query_pool.get(), 1u);
 
 		// Translate backbuffer to present state
@@ -295,6 +275,18 @@ namespace e2d {
 		}
 
 		frame_active = false;
+	}
+
+	auto Renderer::get_binding_layout(edge::gfx::IDescriptorLayout* descriptor_layout) -> edge::gfx::IBindingLayout& {
+		return current_frame->get_or_allocate_binding_layout(*descriptor_layout);
+	}
+
+	auto Renderer::get_backbuffer_resource() const noexcept -> RGResourceHandle {
+		return backbuffer_handle_;
+	}
+
+	auto Renderer::get_render_graph() -> IRenderGraph& {
+		return *render_graph_;
 	}
 
 	void Renderer::on_surface_update() {

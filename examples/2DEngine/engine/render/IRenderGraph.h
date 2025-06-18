@@ -81,6 +81,8 @@ namespace e2d {
 
 		virtual auto get_graph() -> IRenderGraph& = 0;
 
+		virtual auto get_descriptor_layouts() noexcept -> std::span<edge::gfx::IDescriptorLayout*> = 0;
+		virtual auto bind_descriptors(edge::gfx::ICommandList& cmd_list, std::span<edge::gfx::IBindingLayout*> binding_layouts) -> void = 0;
 		virtual auto push_constants(edge::gfx::ICommandList& cmd_list, std::span<const char> data) -> void = 0;
 
 		virtual auto execute(edge::gfx::ICommandList& cmd_list, float delta_time) -> void = 0;

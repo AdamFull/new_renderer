@@ -12,6 +12,8 @@
 #include <edge/gfx/gfx_resource_loader.h>
 #include <edge/gfx/gfx_context.h>
 
+#include "ImGuiSubsystem.h"
+
 #include "render/Renderer.h"
 
 namespace e2d {
@@ -19,6 +21,9 @@ namespace e2d {
 	}
 
 	void App::on_input_event(const edge::InputEvent& input_event) {
+		for (auto& subsystem : subsystems_) {
+			subsystem->on_input_event(input_event);
+		}
 	}
 
 	void App::finish() {
@@ -48,7 +53,9 @@ namespace e2d {
 
 		RendererCreateInfo initial_create_info{};
 		initial_create_info.window = options.window;
-		renderer = Renderer::construct(initial_create_info);
+		renderer_ = Renderer::construct(initial_create_info);
+
+		subsystems_.emplace_back(ImGuiSubsystem::construct(*renderer_));
 
 		return result;
 	}
@@ -56,11 +63,15 @@ namespace e2d {
 	void App::update(float delta_time) {
 		EDGE_PROFILE_ZONE_SCOPED;
 
-		renderer->begin_frame(delta_time);
+		renderer_->begin_frame(delta_time);
+
+		for (auto& subsystem : subsystems_) {
+			subsystem->process(delta_time);
+		}
 
 		EDGE_GFX_PROFILER_DRAW_UI();
 
-		renderer->end_frame(delta_time);
+		renderer_->end_frame(delta_time);
 		EDGE_GFX_PROFILER_FRAME_MARK();
 	}
 }

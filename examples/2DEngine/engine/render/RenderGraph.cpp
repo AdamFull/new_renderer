@@ -122,6 +122,19 @@ namespace e2d {
             return graph_;
         }
 
+        auto get_descriptor_layouts() noexcept -> std::span<edge::gfx::IDescriptorLayout*> override {
+            return descriptor_layouts_;
+        }
+
+        auto bind_descriptors(edge::gfx::ICommandList& cmd_list, std::span<edge::gfx::IBindingLayout*> binding_layouts) -> void override {
+            edge::gfx::BindDescriptorsInfo bind_info{};
+            bind_info.first_set = 0;
+            bind_info.binding_layouts = binding_layouts;
+            bind_info.pipeline_type = pipeline_->get_type();
+            bind_info.root_signature = root_sign_;
+            cmd_list.bind_descriptors(bind_info);
+        }
+
         auto push_constants(edge::gfx::ICommandList& cmd_list, std::span<const char> data) -> void override {
             cmd_list.push_constants(shader_, root_sign_, data);
         }

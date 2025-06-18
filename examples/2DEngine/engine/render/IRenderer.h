@@ -1,6 +1,6 @@
 #pragma once
 
-#include <edge/gfx/gfx_base.h>
+#include "IRenderGraph.h"
 
 namespace e2d {
 	enum RendererBufferization {
@@ -38,6 +38,10 @@ namespace e2d {
 		
 		virtual void begin_frame(float delta_time) = 0;
 		virtual void end_frame(float delta_time) = 0;
+
+		virtual auto get_binding_layout(edge::gfx::IDescriptorLayout* descriptor_layout) -> edge::gfx::IBindingLayout& = 0;
+		virtual auto get_backbuffer_resource() const noexcept -> RGResourceHandle = 0;
+		virtual auto get_render_graph() -> IRenderGraph& = 0;
 
 		virtual void on_surface_update() = 0;
 	};

@@ -10,5 +10,24 @@
       { "format": "backbuffer" }
     ],
     "primitive_topology": "triangle_list"
+  },
+  {
+    "name": "imgui",
+    "type": "graphics",
+    "stages": [
+      { "path": "/internal_res/assets/graphics/shaders/imgui.vert.slang" },
+      { "path": "/internal_res/assets/graphics/shaders/imgui.frag.slang" }
+    ],
+    "attachments": [
+      {
+        "format": "backbuffer",
+        "blending": true,
+        "src_color": "src_alpha",
+        "dst_color": "one_minus_src_alpha",
+        "src_alpha": "one_minus_src_alpha",
+        "dst_alpha": "zero"
+      }
+    ],
+    "primitive_topology": "triangle_list"
   }
 ]

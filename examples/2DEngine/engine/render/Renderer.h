@@ -3,7 +3,6 @@
 #include <edge/gfx/gfx_uniform_pool.h>
 #include <edge/util/utl_vector.h>
 #include "IRenderer.h"
-#include "IRenderGraph.h"
 
 #include <edge/gfx/technique_system/gfx_technique_system.h>
 
@@ -54,6 +53,10 @@ namespace e2d {
 
 		void begin_frame(float delta_time) override;
 		void end_frame(float delta_time) override;
+
+		auto get_binding_layout(edge::gfx::IDescriptorLayout* descriptor_layout) -> edge::gfx::IBindingLayout& override;
+		auto get_backbuffer_resource() const noexcept -> RGResourceHandle override;
+		auto get_render_graph() -> IRenderGraph& override;
 
 		void on_surface_update() override;
 	private:
