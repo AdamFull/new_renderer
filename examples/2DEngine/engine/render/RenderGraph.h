@@ -15,14 +15,8 @@ namespace e2d {
 
 		static auto construct(edge::gfx::TechniqueDatabase& technique_database) -> std::unique_ptr<IRenderGraph>;
 
-		auto create_buffer(const edge::gfx::BufferCreateInfo& create_info, std::string_view name = "") -> RGResourceHandle override;
-		auto create_texture(const edge::gfx::TextureCreateInfo& create_info, std::string_view name = "") -> RGResourceHandle override;
-
-		auto import_buffer(edge::gfx::IBuffer* buffer, std::string_view name = "") -> RGResourceHandle override;
-		auto import_texture(edge::gfx::ITexture* texture, std::string_view name = "") -> RGResourceHandle override;
-
-		auto update_buffer(RGResourceHandle handle, edge::gfx::IBuffer* buffer) -> RGResourceHandle override;
-		auto update_texture(RGResourceHandle handle, edge::gfx::ITexture* texture) -> RGResourceHandle override;
+		auto create_resource(const RGResourceCreateInfo& create_info) -> RGResourceHandle override;
+		auto update_resource(RGResourceHandle handle, edge::gfx::IGFXResource* buffer) -> RGResourceHandle override;
 
 		auto add_pass(RGPassCreateInfo create_info) -> void override;
 

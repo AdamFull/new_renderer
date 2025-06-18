@@ -3,6 +3,8 @@
 #include <edge/gfx/gfx_base.h>
 
 namespace e2d {
+	class IRenderGraph;
+
 	using RGResourceId = uint32_t;
 	constexpr RGResourceId INVALID_RESOURCE_ID = 0;
 
@@ -33,21 +35,29 @@ namespace e2d {
 		friend class IRenderGraph;
 		virtual ~IRGResource() = default;
 
-		virtual auto evaluate() -> void = 0;
-		virtual auto get_resource() -> edge::gfx::IGFXResource* { return resource; }
-		virtual auto set_resource(edge::gfx::IGFXResource* new_res) -> void { resource = new_res; }
-		virtual auto get_state() -> edge::gfx::ResourceStateFlags { return state; }
-		virtual auto set_state(edge::gfx::ResourceStateFlags new_state) -> void { state = new_state; }
+		virtual auto evaluate(IRenderGraph& graph) -> void = 0;
+		virtual auto get_resource() -> edge::gfx::IGFXResource* { return resource_; }
+		virtual auto set_resource(edge::gfx::IGFXResource* new_res) -> void { resource_ = new_res; }
+		virtual auto get_state() -> edge::gfx::ResourceStateFlags { return state_; }
+		virtual auto set_state(edge::gfx::ResourceStateFlags new_state) -> void { state_ = new_state; }
 		virtual auto get_size() -> size_t = 0;
 
-	protected:
-		edge::gfx::IGFXResource* resource{ nullptr };
-		RGResourceVersion version{ 0u };
+		virtual auto set_parent(RGResourceHandle parent) noexcept -> void { parent_handle_ = parent; }
+		virtual auto get_parent() const noexcept -> RGResourceHandle { return parent_handle_; }
 
-		std::string name{};
-		edge::gfx::ResourceStateFlags state{ edge::gfx::ResourceStateFlag::eUndefined };
-		bool is_imported{ false };
-		bool is_persistent{ false };
+		virtual auto add_child(RGResourceHandle child) -> void { child_handles_.emplace_back(child); }
+
+	protected:
+		edge::gfx::IGFXResource* resource_{ nullptr };
+		RGResourceVersion version_{ 0u };
+
+		std::string name_{};
+		edge::gfx::ResourceStateFlags state_{ edge::gfx::ResourceStateFlag::eUndefined };
+		bool is_imported_{ false };
+		bool is_persistent_{ false };
+
+		RGResourceHandle parent_handle_{ INVALID_RESOURCE_ID };
+		std::vector<RGResourceHandle> child_handles_{};
 	};
 
 	class IRGPass {
@@ -69,11 +79,15 @@ namespace e2d {
 		virtual auto set_size(uint32_t width, int32_t height) -> void = 0;
 		virtual auto set_layers(uint32_t layer_count) -> void = 0;
 
+		virtual auto get_graph() -> IRenderGraph& = 0;
+
+		virtual auto push_constants(edge::gfx::ICommandList& cmd_list, std::span<const char> data) -> void = 0;
+
 		virtual auto execute(edge::gfx::ICommandList& cmd_list, float delta_time) -> void = 0;
 	};
 
 	using RGPassSetupFn = std::function<void(IRGPass&)>;
-	using RGPassExecuteFn = std::function<void(edge::gfx::ICommandList&, float)>;
+	using RGPassExecuteFn = std::function<void(IRGPass& , edge::gfx::ICommandList&, float)>;
 
 	struct RGPassCreateInfo {
 		std::string name;
@@ -83,23 +97,29 @@ namespace e2d {
 		RGPassExecuteFn execute_func;
 	};
 
+	struct RGResourceCreateInfo {
+		std::string name;
+		RGResourceHandle parent;
+		edge::gfx::ResourceType type;
+		edge::gfx::IGFXResource* external_resource{ nullptr };
+
+		union {
+			edge::gfx::BufferCreateInfo buffer_create_info;
+			struct {
+				edge::gfx::TextureCreateInfo texture_create_info;
+				std::array<float, 3> scale;
+			};
+		};
+	};
+
 	class IRenderGraph {
 	public:
 		virtual ~IRenderGraph() = default;
 
-		virtual auto create_buffer(const edge::gfx::BufferCreateInfo& create_info, std::string_view name = "") -> RGResourceHandle = 0;
-		virtual auto create_texture(const edge::gfx::TextureCreateInfo& create_info, std::string_view name = "") -> RGResourceHandle = 0;
-
-		virtual auto import_buffer(edge::gfx::IBuffer* buffer, std::string_view name = "") -> RGResourceHandle = 0;
-		virtual auto import_texture(edge::gfx::ITexture* texture, std::string_view name = "") -> RGResourceHandle = 0;
-
-		virtual auto update_buffer(RGResourceHandle handle, edge::gfx::IBuffer* buffer) -> RGResourceHandle = 0;
-		virtual auto update_texture(RGResourceHandle handle, edge::gfx::ITexture* texture) -> RGResourceHandle = 0;
-
+		virtual auto create_resource(const RGResourceCreateInfo& create_info) -> RGResourceHandle = 0;
+		virtual auto update_resource(RGResourceHandle handle, edge::gfx::IGFXResource* buffer) -> RGResourceHandle = 0;
 		virtual auto add_pass(RGPassCreateInfo create_info) -> void = 0;
-
 		virtual auto get_resource(RGResourceHandle handle) -> IRGResource* = 0;
-
 		virtual auto execute(edge::gfx::ICommandList& cmd_list, float delta_time) -> void = 0;
 	};
 }

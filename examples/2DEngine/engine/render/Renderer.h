@@ -24,7 +24,7 @@ namespace e2d {
 		auto get_acquired_semaphore() -> edge::gfx::ISemaphore& override;
 		auto get_ready_semaphore() -> edge::gfx::ISemaphore& override;
 		auto get_backbuffer() const -> edge::gfx::ITexture& override;
-		auto get_or_allocate_binding_layout(edge::gfx::IDescriptorLayout& descriptor_layout) -> edge::gfx::IBindingLayout & override;
+		auto get_or_allocate_binding_layout(edge::gfx::IDescriptorLayout& descriptor_layout) -> edge::gfx::IBindingLayout& override;
 		auto allocate_uniform_block(uint64_t size) -> edge::gfx::BufferSuballocation override;
 	private:
 		void create_resources(const edge::gfx::IQueue& queue, const edge::gfx::ISwapchain& swapchain);

@@ -190,7 +190,7 @@ namespace e2d {
 		auto& cmd_list = current_frame->get_command_list();
 
 		// Update graph resources
-		render_graph_->update_texture(backbuffer_handle_, &current_frame->get_backbuffer());
+		render_graph_->update_resource(backbuffer_handle_, &current_frame->get_backbuffer());
 
 		// Get previous frame time 
 		uint64_t timestamps[2] = {};
@@ -217,10 +217,7 @@ namespace e2d {
 				self.add_color_attachment(backbuffer_handle_, edge::gfx::LoadOp::eClear);
 				self.set_size(backbuffer.get_width(), backbuffer.get_height());
 			},
-			.execute_func = [this](edge::gfx::ICommandList& cmd_list, float delta_time) -> void {
-
-				// TODO: push constants
-
+			.execute_func = [this](IRGPass& self, edge::gfx::ICommandList& cmd_list, float delta_time) -> void {
 				auto& backbuffer = current_frame->get_backbuffer();
 
 				cmd_list.set_viewport(0.f, 0.f, backbuffer.get_width(), backbuffer.get_height(), 0.0f, 1.0f);
@@ -356,7 +353,11 @@ namespace e2d {
 
 		render_graph_ = RenderGraph::construct(*technique_system_);
 
-		backbuffer_handle_ = render_graph_->import_texture(&current_frame->get_backbuffer(), "backbuffer");
+		backbuffer_handle_ = render_graph_->create_resource({
+			.name = "backbuffer",
+			.type = edge::gfx::ResourceType::eTexture,
+			.external_resource = &current_frame->get_backbuffer()
+			});
 	}
 
 	void Renderer::update_swapchain(uint32_t width, uint32_t height) {

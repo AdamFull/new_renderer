@@ -118,6 +118,14 @@ namespace e2d {
             rendering_info.layer_count = layer_count;
         }
 
+        auto get_graph() -> IRenderGraph& override {
+            return graph_;
+        }
+
+        auto push_constants(edge::gfx::ICommandList& cmd_list, std::span<const char> data) -> void override {
+            cmd_list.push_constants(shader_, root_sign_, data);
+        }
+
         auto execute(edge::gfx::ICommandList& cmd_list, float delta_time) -> void override {
             EDGE_PROFILE_ZONE_SCOPED;
 
@@ -142,7 +150,7 @@ namespace e2d {
 
             // Collect rendering commands
             if (execute_func_) {
-                execute_func_(cmd_list, delta_time);
+                execute_func_(*this, cmd_list, delta_time);
             }
 
             if (is_graphics_pipeline) {
@@ -212,8 +220,8 @@ namespace e2d {
         std::vector<edge::gfx::BufferBarrierDesc> buffer_barriers_{};
         std::vector<edge::gfx::TextureBarrierDesc> texture_barriers_{};
 
-        std::function<void(IRGPass&)> setup_func_{};
-        std::function<void(edge::gfx::ICommandList&, float)> execute_func_{};
+        RGPassSetupFn setup_func_{};
+        RGPassExecuteFn execute_func_{};
     };
 
 
@@ -225,34 +233,44 @@ namespace e2d {
             create_info_{ create_info } {
         }
 
-        BufferResource(edge::gfx::IBuffer* buffer) {
-            resource = buffer;
+        BufferResource(edge::gfx::IGFXResource* buffer) {
+            resource_ = buffer;
         }
 
         ~BufferResource() override {
-            if (resource && !is_imported) {
-                edge::gfx::destroy(resource);
+            if (resource_ && !is_imported_) {
+                edge::gfx::destroy(resource_);
             }
         }
 
         static auto construct(const edge::gfx::BufferCreateInfo& create_info) -> std::unique_ptr<IRGResource> {
-            return std::make_unique<BufferResource>(create_info);
+            std::unique_ptr<BufferResource> self{};
+
+            self = std::make_unique<BufferResource>(create_info);
+            self->is_persistent_ = true;
+
+            return self;
         }
 
-        // construct from external resource
-        static auto construct(edge::gfx::IBuffer* buffer) -> std::unique_ptr<IRGResource> {
-            return std::make_unique<BufferResource>(buffer);
+        static auto construct(edge::gfx::IGFXResource* resource) -> std::unique_ptr<IRGResource> {
+            std::unique_ptr<BufferResource> self{};
+
+            self = std::make_unique<BufferResource>(resource);
+            self->is_imported_ = true;
+
+            return self;
         }
 
-        auto evaluate() -> void override {
-            if (!resource && !is_imported) {
-                resource = edge::gfx::create_buffer(create_info_);
+        auto evaluate(IRenderGraph& graph) -> void override {
+            // TODO: Implement resource attribute inherition
+            if (!resource_ && !is_imported_) {
+                resource_ = edge::gfx::create_buffer(create_info_);
             }
         }
 
         auto get_size() -> size_t override {
-            if (resource) {
-                auto* buffer = resource->as<edge::gfx::IBuffer*>();
+            if (resource_) {
+                auto* buffer = resource_->as<edge::gfx::IBuffer*>();
                 return buffer->get_size();
             }
 
@@ -270,28 +288,67 @@ namespace e2d {
             create_info_{ create_info } {
         }
 
-        TextureResource(edge::gfx::ITexture* texture) {
-            resource = texture;
+        TextureResource(edge::gfx::IGFXResource* texture) {
+            resource_ = texture;
         }
 
         ~TextureResource() override {
-            if (resource && !is_imported) {
-                edge::gfx::destroy(resource);
+            if (resource_ && !is_imported_) {
+                edge::gfx::destroy(resource_);
             }
         }
 
-        static auto construct(const edge::gfx::TextureCreateInfo& create_info) -> std::unique_ptr<IRGResource> {
-            return std::make_unique<TextureResource>(create_info);
+        static auto construct(const edge::gfx::TextureCreateInfo& create_info, const std::array<float, 3>& scale) -> std::unique_ptr<IRGResource> {
+            std::unique_ptr<TextureResource> self{};
+
+            self = std::make_unique<TextureResource>(create_info);
+            self->is_persistent_ = true;
+            self->scale_ = scale;
+
+            return self;
         }
 
-        // construct from external resource
-        static auto construct(edge::gfx::ITexture* texture) -> std::unique_ptr<IRGResource> {
-            return std::make_unique<TextureResource>(texture);
+        static auto construct(edge::gfx::IGFXResource* ext_resource) -> std::unique_ptr<IRGResource> {
+            std::unique_ptr<TextureResource> self{};
+
+            self = std::make_unique<TextureResource>(ext_resource);
+            self->is_imported_ = true;
+
+            return self;
         }
 
-        auto evaluate() -> void override {
-            if (!resource && !is_imported) {
-                resource = edge::gfx::create_texture(create_info_);
+        auto evaluate(IRenderGraph& graph) -> void override {
+            bool is_size_changed{ false };
+
+            if (parent_handle_.is_valid()) {
+                auto* parent_resouece = graph.get_resource(parent_handle_);
+                auto* texture_resouece = parent_resouece->get_resource()->as<edge::gfx::ITexture*>();
+
+                auto new_width = texture_resouece->get_width() * scale_[0];
+                auto new_height = texture_resouece->get_height() * scale_[1];
+                auto new_depth = texture_resouece->get_depth() * scale_[2];
+
+                is_size_changed = create_info_.width != new_width || 
+                    create_info_.height != new_height || 
+                    create_info_.depth != new_depth;
+
+                create_info_.width = new_width;
+                create_info_.height = new_height;
+                create_info_.depth = new_depth;
+            }
+
+            if ((!resource_ || is_size_changed) && !is_imported_) {
+                if (resource_) {
+                    edge::gfx::destroy(resource_);
+                    resource_ = nullptr;
+                }
+
+                resource_ = edge::gfx::create_texture(create_info_);
+            }
+
+            for (auto child : child_handles_) {
+                auto* child_resource = graph.get_resource(child);
+                child_resource->evaluate(graph);
             }
         }
 
@@ -300,6 +357,7 @@ namespace e2d {
         }
     private:
         edge::gfx::TextureCreateInfo create_info_{};
+        std::array<float, 3> scale_;
     };
 
 
@@ -318,55 +376,47 @@ namespace e2d {
         return self;
     }
 
-    auto RenderGraph::create_buffer(const edge::gfx::BufferCreateInfo& create_info, std::string_view name) -> RGResourceHandle {
+    auto RenderGraph::create_resource(const RGResourceCreateInfo& create_info) -> RGResourceHandle {
         auto id = next_resource_id();
 
-        auto resource = BufferResource::construct(create_info);
-        resources_[id] = std::move(resource);
-
-        return RGResourceHandle(id);
-    }
-
-    auto RenderGraph::create_texture(const edge::gfx::TextureCreateInfo& create_info, std::string_view name) -> RGResourceHandle {
-        auto id = next_resource_id();
-
-        auto resource = TextureResource::construct(create_info);
-        resources_[id] = std::move(resource);
-
-        return RGResourceHandle(id);
-    }
-
-    auto RenderGraph::import_buffer(edge::gfx::IBuffer* buffer, std::string_view name) -> RGResourceHandle {
-        auto id = next_resource_id();
-
-        auto resource = BufferResource::construct(buffer);
-        resources_[id] = std::move(resource);
-
-        return RGResourceHandle(id);
-    }
-
-    auto RenderGraph::import_texture(edge::gfx::ITexture* texture, std::string_view name) -> RGResourceHandle {
-        auto id = next_resource_id();
-
-        auto resource = TextureResource::construct(texture);
-        resources_[id] = std::move(resource);
-
-        return RGResourceHandle(id);
-    }
-
-    auto RenderGraph::update_buffer(RGResourceHandle handle, edge::gfx::IBuffer* buffer) -> RGResourceHandle {
-        if (auto* res = get_resource(handle)) {
-            res->set_state(edge::gfx::ResourceStateFlag::eUndefined);
-            res->set_resource(buffer);
+        std::unique_ptr<IRGResource> resource{};
+        if (create_info.type == edge::gfx::ResourceType::eTexture) {
+            if (create_info.external_resource) {
+                resource = TextureResource::construct(create_info.external_resource);
+            }
+            else {
+                resource = TextureResource::construct(create_info.texture_create_info, create_info.scale);
+            }
+        }
+        else if (create_info.type == edge::gfx::ResourceType::eBuffer) {
+            if (create_info.external_resource) {
+                resource = BufferResource::construct(create_info.external_resource);
+            }
+            else {
+                resource = BufferResource::construct(create_info.buffer_create_info);
+            }
+        }
+        else {
+            EDGE_LOGE("[RenderGraph] Unknown resource type.")
         }
 
+        auto handle = RGResourceHandle(id);
+        if (create_info.parent.is_valid()) {
+            // TODO: Check parent and child same type
+            resource->set_parent(create_info.parent);
+
+            auto* parent_resource = get_resource(create_info.parent);
+            parent_resource->add_child(handle);
+        }
+
+        resources_[id] = std::move(resource);
         return handle;
     }
 
-    auto RenderGraph::update_texture(RGResourceHandle handle, edge::gfx::ITexture* texture) -> RGResourceHandle {
+    auto RenderGraph::update_resource(RGResourceHandle handle, edge::gfx::IGFXResource* resource) -> RGResourceHandle {
         if (auto* res = get_resource(handle)) {
             res->set_state(edge::gfx::ResourceStateFlag::eUndefined);
-            res->set_resource(texture);
+            res->set_resource(resource);
         }
 
         return handle;
@@ -384,7 +434,10 @@ namespace e2d {
 
     auto RenderGraph::execute(edge::gfx::ICommandList& cmd_list, float delta_time) -> void {
         for (auto& [id, resource] : resources_) {
-            resource->evaluate();
+            // Evaluate only individual nodes
+            if (!resource->get_parent().is_valid()) {
+                resource->evaluate(*this);
+            }
         }
 
         for (auto& pass : passes_) {
