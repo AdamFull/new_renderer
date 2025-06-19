@@ -442,9 +442,49 @@ file(WRITE "${CGLTF_IMPL_C}"
 add_library(cgltf STATIC "${CGLTF_IMPL_C}")
 target_include_directories(cgltf SYSTEM PUBLIC ${CGLTF_DIR})
 
+# openal
+add_subdirectory(openal-soft)
+
+# dr_libs - wav, mp3, flac readers
+set(DR_LIBS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dr_libs")
+set(DR_FLAC_IMPL_C "${CMAKE_CURRENT_BINARY_DIR}/dr_flac.c")
+set(DR_MP3_IMPL_C "${CMAKE_CURRENT_BINARY_DIR}/dr_mp3.c")
+set(DR_WAV_IMPL_C "${CMAKE_CURRENT_BINARY_DIR}/dr_wav.c")
+
+file(WRITE "${DR_FLAC_IMPL_C}"
+"#ifndef DR_FLAC_IMPLEMENTATION\n"
+"#define DR_FLAC_IMPLEMENTATION\n"
+"#include \"dr_flac.h\"\n"
+"#endif\n"
+)
+
+file(WRITE "${DR_MP3_IMPL_C}"
+"#ifndef DR_MP3_IMPLEMENTATION\n"
+"#define DR_MP3_IMPLEMENTATION\n"
+"#include \"dr_mp3.h\"\n"
+"#endif\n"
+)
+
+file(WRITE "${DR_WAV_IMPL_C}"
+"#ifndef DR_WAV_IMPLEMENTATION\n"
+"#define DR_WAV_IMPLEMENTATION\n"
+"#include \"dr_wav.h\"\n"
+"#endif\n"
+)
+
+add_library(dr_libs STATIC 
+    ${DR_FLAC_IMPL_C} 
+    ${DR_MP3_IMPL_C} 
+    ${DR_WAV_IMPL_C}
+)
+target_include_directories(dr_libs SYSTEM PUBLIC ${DR_LIBS_DIR})
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
+    OpenAL
+    dr_libs
+
     glm::glm
     refl-cpp
     spdlog::spdlog

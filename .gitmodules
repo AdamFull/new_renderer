@@ -74,3 +74,6 @@
 [submodule "external/cgltf"]
 	path = external/cgltf
 	url = https://github.com/jkuhlmann/cgltf.git
+[submodule "external/openal-soft"]
+	path = external/openal-soft
+	url = https://github.com/kcat/openal-soft.git
