@@ -12,6 +12,9 @@
 #include <edge/gfx/gfx_resource_loader.h>
 #include <edge/gfx/gfx_context.h>
 
+#include "audio/AudioEngine.h"
+#include "audio/FileSource.h"
+
 #include "ImGuiSubsystem.h"
 
 #include "render/Renderer.h"
@@ -56,6 +59,13 @@ namespace e2d {
 		renderer_ = Renderer::construct(initial_create_info);
 
 		subsystems_.emplace_back(ImGuiSubsystem::construct(*renderer_));
+
+		auto audio_engine = audio::AudioEngine::construct();
+
+		auto file_source = audio::FileSource::construct("/internal_res/assets/iamtheprotectorofthissystem.wav");
+		file_source->play();
+
+		while (true);
 
 		return result;
 	}

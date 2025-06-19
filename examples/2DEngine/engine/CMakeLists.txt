@@ -3,10 +3,14 @@ project(e2d_app)
 
 file(GLOB E2D_APP_SOURCES FILES *.cpp *.h)
 file(GLOB E2D_RENDER_SOURCES FILES render/*.cpp render/*.h)
+file(GLOB E2D_EDITOR_SOURCES FILES editor/*.cpp editor/*.h)
+file(GLOB E2D_AUDIO_SOURCES FILES audio/*.cpp audio/*.h)
 
 add_library(${PROJECT_NAME} STATIC 
     ${E2D_APP_SOURCES}
     ${E2D_RENDER_SOURCES}
+    ${E2D_EDITOR_SOURCES}
+    ${E2D_AUDIO_SOURCES}
 )
 
 if(MSVC)
