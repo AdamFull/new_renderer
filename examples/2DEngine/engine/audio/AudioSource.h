@@ -8,7 +8,7 @@
 
 namespace e2d::audio {
 	constexpr const size_t k_streaming_buffer_count{ 4 };
-	constexpr const size_t K_streaming_buffer_size{ 4096 };
+	constexpr const size_t k_streaming_buffer_size{ 4096 };
 
 	class AudioSource : public IAudioSource {
 	public:
@@ -33,7 +33,7 @@ namespace e2d::audio {
 
 		uint32_t total_samples_{ 0u };
 		uint32_t samples_processed_{ 0u };
-		std::array<uint8_t, K_streaming_buffer_size> sample_buffer_{ 0 };
+		std::array<uint8_t, k_streaming_buffer_size> sample_buffer_{ 0 };
 
 		uint32_t source_{ ~0u };
 		std::array<uint32_t, k_streaming_buffer_count> buffers_{ ~0u };

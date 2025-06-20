@@ -3,6 +3,13 @@
 #include <cstdint>
 
 namespace e2d::audio {
+	enum class WaveType {
+		eSine,
+		eSquare,
+		eSaw,
+		eTriangle
+	};
+
 	struct AudioFormat {
 		uint32_t sample_rate{ 44100 };
 		uint16_t channels{ 2 };

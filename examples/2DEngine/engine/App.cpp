@@ -14,6 +14,7 @@
 
 #include "audio/AudioEngine.h"
 #include "audio/FileSource.h"
+#include "audio/SynthSource.h"
 
 #include "ImGuiSubsystem.h"
 
@@ -62,10 +63,13 @@ namespace e2d {
 
 		auto audio_engine = audio::AudioEngine::construct();
 
-		auto file_source = audio::FileSource::construct("/internal_res/assets/iamtheprotectorofthissystem.wav");
+		//auto file_source = audio::FileSource::construct("/internal_res/assets/iamtheprotectorofthissystem.wav");
+		//auto source_handle = audio_engine->add_source(std::move(file_source));
+		//audio_engine->play_source(source_handle);
 
-		auto source_handle = audio_engine->add_source(std::move(file_source));
-		audio_engine->play_source(source_handle);
+		auto synth = audio::SynthSource::construct(440.0f, 44100);
+		auto synth_handle = audio_engine->add_source(std::move(synth));
+		audio_engine->play_source(synth_handle);
 
 		while (true);
 

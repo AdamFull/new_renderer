@@ -79,7 +79,7 @@ namespace e2d::audio {
 		auto al_format = get_internal_format(format_);
 
 		// Prefetch data
-		std::array<uint8_t, K_streaming_buffer_size> streaming_buffer_;
+		std::array<uint8_t, k_streaming_buffer_size> streaming_buffer_;
 		for (int32_t i = 0; i < k_streaming_buffer_count; ++i) {
 			auto bytes_readed = file_->read_samples(streaming_buffer_);
 			alCall(alBufferData, buffers_[i], al_format, streaming_buffer_.data(), bytes_readed, format_.sample_rate);
