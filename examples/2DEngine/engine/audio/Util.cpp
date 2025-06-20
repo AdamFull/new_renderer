@@ -4,7 +4,7 @@
 #include <AL/alext.h>
 
 namespace e2d::audio {
-	auto get_internal_format(const AudioFormat& fmt) -> uint8_t {
+	auto get_internal_format(const AudioFormat& fmt) -> int32_t {
 		ALenum al_format{ AL_FORMAT_STEREO8 };
 		if (fmt.channels == 1 && fmt.bit_per_sample == 8)
 			al_format = AL_FORMAT_MONO8;

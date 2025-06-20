@@ -30,10 +30,11 @@ namespace e2d::audio {
 		// Prefetch data
 		std::array<uint8_t, K_streaming_buffer_size> streaming_buffer_;
 		for (int32_t i = 0; i < k_streaming_buffer_count; ++i) {
-			// TODO: return readed number of samples
-			auto samples_readed = file_->read_samples(streaming_buffer_);
-			alCall(alBufferData, buffers_[i], al_format, streaming_buffer_.data(), samples_readed, format_.sample_rate);
+			auto bytes_readed = file_->read_samples(streaming_buffer_);
+			alCall(alBufferData, buffers_[i], al_format, streaming_buffer_.data(), bytes_readed, format_.sample_rate);
 		}
+
+		alCall(alSourceQueueBuffers, source_, k_streaming_buffer_count, &buffers_[0]);
 
 		return file_.get();
 	}

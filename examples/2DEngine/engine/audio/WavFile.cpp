@@ -33,10 +33,12 @@ namespace e2d::audio {
 	}
 
 	auto WavFile::read_samples(std::span<uint8_t> out) -> uint32_t {
-		auto samples_avaliable = get_samples_per_channel(format_, out.size());
-		auto samples_readed = drwav_read_pcm_frames_s16(wav_.get(), samples_avaliable, reinterpret_cast<drwav_int16*>(out.data()));
-		samples_processed_ += samples_readed;
-		return samples_readed * sizeof(drwav_int16) * format_.channels;
+		auto bytes_per_sample = format_.bit_per_sample / 8;
+		auto frames_to_read = out.size() / (bytes_per_sample * format_.channels);
+
+		auto frames_readed = drwav_read_pcm_frames_s16(wav_.get(), frames_to_read, reinterpret_cast<drwav_int16*>(out.data()));
+		samples_processed_ += frames_readed;
+		return frames_readed * bytes_per_sample * format_.channels;
 	}
 
 	auto WavFile::load_from_disk(std::string_view path) -> bool {
