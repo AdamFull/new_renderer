@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <thread>
+#include <mutex>
 
 #include "IAudioEngine.h"
 #include "IAudioSource.h"
@@ -12,6 +13,12 @@ namespace e2d::audio {
 		~AudioEngine() override;
 
 		[[nodiscard]] static auto construct() -> std::unique_ptr<IAudioEngine>;
+
+		auto add_source(std::unique_ptr<IAudioSource>&& source) -> AudioSourceHandle override;
+
+		auto play_source(AudioSourceHandle handle) -> void override;
+		auto pause_source(AudioSourceHandle handle) -> void override;
+		auto stop_source(AudioSourceHandle handle) -> void override;
 	private:
 		auto initialize_context() -> bool;
 		auto run_streaming_thread() -> void;
@@ -21,5 +28,7 @@ namespace e2d::audio {
 		std::unique_ptr<_internal> internal_;
 
 		std::jthread audio_thread_;
+		std::mutex source_map_mutex_;
+		std::vector<std::unique_ptr<IAudioSource>> source_map_;
 	};
 }

@@ -1,4 +1,5 @@
 #include "AudioSource.h"
+#include "Util.h"
 
 #include "BackendHelper.h"
 
@@ -7,16 +8,11 @@
 namespace e2d::audio {
 	AudioSource::~AudioSource() {
 		alCall(alDeleteSources, 1, &source_);
-		alCall(alDeleteBuffers, 1, &buffer_);
+		alCall(alDeleteBuffers, k_streaming_buffer_count, &buffers_[0]);
 	}
 
 	auto AudioSource::play() -> void {
 		alCall(alSourcePlay, source_);
-
-		ALint state = AL_PLAYING;
-		while (state == AL_PLAYING) {
-			alCall(alGetSourcei, source_, AL_SOURCE_STATE, &state);
-		}
 	}
 
 	auto AudioSource::stop() -> void {
@@ -56,8 +52,35 @@ namespace e2d::audio {
 		return last_position_;
 	}
 
+	auto AudioSource::update() -> void {
+		ALint state = AL_PLAYING;
+		alCall(alGetSourcei, source_, AL_SOURCE_STATE, &state);
+
+		if (state != AL_PLAYING) {
+			return;
+		}
+
+		ALint buffers_processed{ 0 };
+		alCall(alGetSourcei, source_, AL_BUFFERS_PROCESSED, &buffers_processed);
+
+		if (buffers_processed <= 0) {
+			return;
+		}
+
+		while (buffers_processed--) {
+			ALuint buffer;
+			alCall(alSourceUnqueueBuffers, source_, 1, &buffer);
+
+			auto samples_readed = on_data(sample_buffer_, format_);
+
+			auto al_format = get_internal_format(format_);
+			alCall(alBufferData, buffer, al_format, sample_buffer_.data(), samples_readed, format_.sample_rate);
+			alCall(alSourceQueueBuffers, source_, 1, &buffer);
+		}
+	}
+
 	auto AudioSource::initialize_resources() -> void {
-		alCall(alGenBuffers, 1, &buffer_);
+		alCall(alGenBuffers, k_streaming_buffer_count, &buffers_[0]);
 
 		alCall(alGenSources, 1, &source_);
 		alCall(alSourcef, source_, AL_PITCH, 1.0f);

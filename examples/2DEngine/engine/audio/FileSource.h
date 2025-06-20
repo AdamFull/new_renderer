@@ -3,6 +3,7 @@
 #include <string_view>
 
 #include "AudioSource.h"
+#include "IAudioFile.h"
 
 namespace e2d::audio {
 	class FileSource final : public AudioSource {
@@ -11,8 +12,10 @@ namespace e2d::audio {
 
 		[[nodiscard]] static auto construct(std::string_view path) -> std::unique_ptr<IAudioSource>;
 
-		auto on_data(std::span<float> output, AudioFormat& format) -> void override;
+		auto on_data(std::span<uint8_t> output, AudioFormat& format) -> size_t override;
 	private:
 		auto load_file(std::string_view path) -> bool;
+	private:
+		std::unique_ptr<IAudioFile> file_;
 	};
 }

@@ -23,6 +23,8 @@ namespace e2d::audio {
 		virtual auto set_world_position(const glm::vec3& pos, bool teleport = false) -> void = 0;
 		virtual auto get_world_position() const noexcept -> const glm::vec3& = 0;
 
-		virtual auto on_data(std::span<float> output, AudioFormat& format) -> void = 0;
+		virtual auto update() -> void = 0;
+	protected:
+		virtual auto on_data(std::span<uint8_t> output, AudioFormat& format) -> size_t = 0;
 	};
 }

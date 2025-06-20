@@ -2,6 +2,8 @@
 
 #include "BackendHelper.h"
 
+#include <chrono>
+
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
@@ -35,6 +37,28 @@ namespace e2d::audio {
 		self->initialize_context();
 		self->run_streaming_thread();
 		return self;
+	}
+
+	auto AudioEngine::add_source(std::unique_ptr<IAudioSource>&& source) -> AudioSourceHandle {
+		std::lock_guard lock{ source_map_mutex_ };
+		auto id = static_cast<AudioSourceHandle>(source_map_.size());
+		source_map_.emplace_back(std::move(source));
+		return id;
+	}
+
+	auto AudioEngine::play_source(AudioSourceHandle handle) -> void {
+		std::lock_guard lock{ source_map_mutex_ };
+		source_map_[handle]->play();
+	}
+
+	auto AudioEngine::pause_source(AudioSourceHandle handle) -> void {
+		std::lock_guard lock{ source_map_mutex_ };
+		source_map_[handle]->pause();
+	}
+
+	auto AudioEngine::stop_source(AudioSourceHandle handle) -> void {
+		std::lock_guard lock{ source_map_mutex_ };
+		source_map_[handle]->stop();
 	}
 
 	auto AudioEngine::initialize_context() -> bool {
@@ -88,6 +112,12 @@ namespace e2d::audio {
 	auto AudioEngine::audio_thread(std::stop_token token) -> void {
 		while (!token.stop_requested()) {
 
+			std::lock_guard lock{ source_map_mutex_ };
+			for (auto& source : source_map_) {
+				source->update();
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
 		}
 	}
 }

@@ -63,7 +63,9 @@ namespace e2d {
 		auto audio_engine = audio::AudioEngine::construct();
 
 		auto file_source = audio::FileSource::construct("/internal_res/assets/iamtheprotectorofthissystem.wav");
-		file_source->play();
+
+		auto source_handle = audio_engine->add_source(std::move(file_source));
+		audio_engine->play_source(source_handle);
 
 		while (true);
 
