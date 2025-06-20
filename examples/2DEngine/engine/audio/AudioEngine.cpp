@@ -47,18 +47,27 @@ namespace e2d::audio {
 	}
 
 	auto AudioEngine::play_source(AudioSourceHandle handle) -> void {
-		std::lock_guard lock{ source_map_mutex_ };
-		source_map_[handle]->play();
+		AudioEngineCommand cmd;
+		cmd.type = CommandType::ePlay;
+		cmd.handle = handle;
+
+		command_list_.try_push(cmd);
 	}
 
 	auto AudioEngine::pause_source(AudioSourceHandle handle) -> void {
-		std::lock_guard lock{ source_map_mutex_ };
-		source_map_[handle]->pause();
+		AudioEngineCommand cmd;
+		cmd.type = CommandType::ePause;
+		cmd.handle = handle;
+
+		command_list_.try_push(cmd);
 	}
 
 	auto AudioEngine::stop_source(AudioSourceHandle handle) -> void {
-		std::lock_guard lock{ source_map_mutex_ };
-		source_map_[handle]->stop();
+		AudioEngineCommand cmd;
+		cmd.type = CommandType::eStop;
+		cmd.handle = handle;
+
+		command_list_.try_push(cmd);
 	}
 
 	auto AudioEngine::initialize_context() -> bool {
@@ -111,8 +120,31 @@ namespace e2d::audio {
 
 	auto AudioEngine::audio_thread(std::stop_token token) -> void {
 		while (!token.stop_requested()) {
-
 			std::lock_guard lock{ source_map_mutex_ };
+
+			while (!command_list_.empty()) {
+				AudioEngineCommand cmd;
+				if (command_list_.try_pop(cmd)) {
+					switch (cmd.type)
+					{
+					case CommandType::ePlay: {
+						source_map_[cmd.handle]->play();
+						break;
+					}
+					case CommandType::ePause: {
+						source_map_[cmd.handle]->pause();
+						break;
+					}
+					case CommandType::eStop: {
+						source_map_[cmd.handle]->stop();
+						break;
+					}
+					default:
+						break;
+					}
+				}
+			}
+
 			for (auto& source : source_map_) {
 				source->update();
 			}

@@ -7,6 +7,8 @@
 #include "IAudioEngine.h"
 #include "IAudioSource.h"
 
+#include <edge/util/utl_concurrent.hpp>
+
 namespace e2d::audio {
 	class AudioEngine final : public IAudioEngine {
 	public:
@@ -30,5 +32,7 @@ namespace e2d::audio {
 		std::jthread audio_thread_;
 		std::mutex source_map_mutex_;
 		std::vector<std::unique_ptr<IAudioSource>> source_map_;
+
+		edge::utl::spsc_ring_buffer<AudioEngineCommand, 32> command_list_;
 	};
 }
