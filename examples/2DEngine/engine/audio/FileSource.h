@@ -17,5 +17,6 @@ namespace e2d::audio {
 		auto load_file(std::string_view path) -> bool;
 	private:
 		std::unique_ptr<IAudioFile> file_;
+		std::vector<uint8_t> file_bytes_{};
 	};
 }

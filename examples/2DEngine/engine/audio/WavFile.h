@@ -1,32 +1,23 @@
 #pragma once
 
 #include <memory>
-#include <string_view>
-#include <vector>
 
 #include <dr_wav.h>
 
-#include "IAudioFile.h"
+#include "AudioFile.h"
 
 namespace e2d::audio {
-	class WavFile final : public IAudioFile {
+	class WavFile final : public AudioFile {
 	public:
 		WavFile();
-		virtual ~WavFile() = default;
+		~WavFile() override = default;
 
-		[[nodiscard]] static auto construct(std::string_view path) -> std::unique_ptr<IAudioFile>;
+		[[nodiscard]] static auto construct(std::span<const uint8_t> data) -> std::unique_ptr<IAudioFile>;
 
-		auto get_format() const noexcept -> AudioFormat const& override;
-		auto get_total_samples() const noexcept -> uint32_t override;
-		auto get_samples_done() const noexcept -> uint32_t override;
 		auto read_samples(std::span<uint8_t> out) -> uint32_t override;
 	private:
-		auto load_from_disk(std::string_view path) -> bool;
+		auto load_from_memory(std::span<const uint8_t> data) -> bool;
 	private:
-		AudioFormat format_;
 		std::unique_ptr<drwav, void(*)(drwav*)> wav_;
-		uint32_t samples_processed_{ 0u };
-
-		std::vector<uint8_t> file_bytes_{};
 	};
 }
