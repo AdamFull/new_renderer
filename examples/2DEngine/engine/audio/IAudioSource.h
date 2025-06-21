@@ -25,6 +25,6 @@ namespace e2d::audio {
 
 		virtual auto update() -> void = 0;
 	protected:
-		virtual auto on_data(std::span<uint8_t> output, AudioFormat& format) -> size_t = 0;
+		virtual auto on_data(std::span<uint8_t> output, const AudioFormat& format) -> size_t = 0;
 	};
 }

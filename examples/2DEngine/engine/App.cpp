@@ -13,7 +13,7 @@
 #include <edge/gfx/gfx_context.h>
 
 #include "audio/AudioEngine.h"
-#include "audio/FileSource.h"
+#include "audio/AudioSource.h"
 #include "audio/SynthSource.h"
 
 #include "ImGuiSubsystem.h"

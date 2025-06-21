@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include "ISynthesisNode.h"
 
 namespace e2d::audio {

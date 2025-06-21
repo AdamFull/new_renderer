@@ -4,9 +4,7 @@
 
 #include <AL/al.h>
 
-#include "FlacFile.h"
-#include "Mp3File.h"
-#include "WavFile.h"
+#include "AudioFile.h"
 
 #include <edge/fs/fs_virtual_filesystem.h>
 #include <edge/fs/fs_helper.h>
@@ -30,8 +28,7 @@ namespace e2d::audio {
 	}
 
 	auto FileInputNode::process(std::span<uint8_t> out, const AudioFormat& out_format) -> size_t {
-		auto& input_format = file_->get_format();
-		return 0;
+		return file_->read_samples(out, out_format);
 	}
 
 	auto FileInputNode::load_file(std::string_view path) -> bool {

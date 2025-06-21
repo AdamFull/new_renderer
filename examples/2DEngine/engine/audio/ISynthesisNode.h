@@ -1,6 +1,7 @@
 #pragma once
 
 #include <span>
+#include <memory>
 
 #include "Common.h"
 
@@ -10,5 +11,6 @@ namespace e2d::audio {
 		virtual ~ISynthesisNode() = default;
 
 		virtual auto process(std::span<uint8_t> out, const AudioFormat& out_format) -> size_t = 0;
+		virtual auto attach(std::unique_ptr<ISynthesisNode>&& source) -> void {};
 	};
 }
