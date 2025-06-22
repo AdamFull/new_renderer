@@ -317,7 +317,7 @@ set(IMNODES_FILES
     "${IMNODES_DIR}/imnodes.cpp"
 )
 
-add_library(imnodes STATIC ${IMGUI_FILES})
+add_library(imnodes STATIC ${IMNODES_FILES})
 target_include_directories(imnodes SYSTEM 
     PUBLIC 
     ${IMGUI_DIR}
@@ -325,6 +325,21 @@ target_include_directories(imnodes SYSTEM
 )
 
 target_link_libraries(imnodes PRIVATE imgui)
+
+# imgui knobs
+set(IMGUI_KNOBS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui-knobs")
+set(IMGUI_KNOBS_FILES
+    "${IMGUI_KNOBS_DIR}/imgui-knobs.cpp"
+)
+
+add_library(imgui_knobs STATIC ${IMGUI_KNOBS_FILES})
+target_include_directories(imgui_knobs SYSTEM 
+    PUBLIC 
+    ${IMGUI_DIR}
+    ${IMGUI_KNOBS_DIR}
+)
+
+target_link_libraries(imgui_knobs PRIVATE imgui)
 
 # glslang
 option(ENABLE_SPVREMAPPER OFF)
@@ -494,6 +509,18 @@ add_library(dr_libs STATIC
 )
 target_include_directories(dr_libs SYSTEM PUBLIC ${DR_LIBS_DIR})
 
+#nativefiledialog
+set(NFD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/nativefiledialog")
+set(NFD_SOURCE_DIR "${NFD_DIR}/src")
+set(NFD_INCLUDE_DIR "${NFD_SOURCE_DIR}/include")
+
+set(NFD_FILES
+    "${NFD_SOURCE_DIR}/nfd_win.cpp"
+    "${NFD_SOURCE_DIR}/nfd_common.c"
+)
+add_library(nfd STATIC ${NFD_FILES})
+target_include_directories(nfd SYSTEM PUBLIC ${NFD_INCLUDE_DIR})
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
@@ -518,6 +545,8 @@ target_link_libraries(${PROJECT_NAME}
 
     imgui
     imnodes
+    imgui_knobs
+    nfd
 
     meshoptimizer
     mikktspace
