@@ -46,6 +46,11 @@ namespace e2d::audio {
 		return id;
 	}
 
+	auto AudioEngine::get_source(AudioSourceHandle handle) -> IAudioSource* {
+		//std::lock_guard lock{ source_map_mutex_ };
+		return source_map_[handle].get();
+	}
+
 	auto AudioEngine::play_source(AudioSourceHandle handle) -> void {
 		AudioEngineCommand cmd;
 		cmd.type = CommandType::ePlay;

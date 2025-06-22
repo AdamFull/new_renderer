@@ -24,6 +24,7 @@ namespace e2d::audio {
 		virtual ~IAudioEngine() = default;
 
 		virtual auto add_source(std::unique_ptr<IAudioSource>&& source) -> AudioSourceHandle = 0;
+		virtual auto get_source(AudioSourceHandle handle) -> IAudioSource* = 0;
 
 		virtual auto play_source(AudioSourceHandle handle) -> void = 0;
 		virtual auto pause_source(AudioSourceHandle handle) -> void = 0;

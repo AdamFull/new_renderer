@@ -9,6 +9,8 @@
 #include "IAudioFile.h"
 #include "ISynthesisNode.h"
 
+#include "EffectGraph.h"
+
 namespace e2d::audio {
 	constexpr const size_t k_streaming_buffer_count{ 4 };
 	constexpr const size_t k_streaming_buffer_size{ 4096 };
@@ -52,7 +54,9 @@ namespace e2d::audio {
 		[[nodiscard]] static auto construct(float freq, uint32_t sample_rate) -> std::unique_ptr<IAudioSource>;
 
 		auto on_data(std::span<uint8_t> output, const AudioFormat& format) -> size_t override;
+		auto get_graph() -> EffectGraph&;
 	private:
-		std::unique_ptr<ISynthesisNode> synth_;
+		std::unique_ptr<EffectGraph> graph_;
+		//std::unique_ptr<ISynthesisNode> synth_;
 	};
 }

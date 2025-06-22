@@ -17,6 +17,7 @@ namespace e2d::audio {
 		[[nodiscard]] static auto construct() -> std::unique_ptr<IAudioEngine>;
 
 		auto add_source(std::unique_ptr<IAudioSource>&& source) -> AudioSourceHandle override;
+		auto get_source(AudioSourceHandle handle) -> IAudioSource* override;
 
 		auto play_source(AudioSourceHandle handle) -> void override;
 		auto pause_source(AudioSourceHandle handle) -> void override;

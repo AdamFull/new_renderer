@@ -30,6 +30,7 @@ namespace e2d {
 	}
 
 	void App::finish() {
+		effect_editor_->shutdown();
 	}
 
 	bool App::on_resize(uint32_t width, uint32_t height) {
@@ -58,19 +59,20 @@ namespace e2d {
 		initial_create_info.window = options.window;
 		renderer_ = Renderer::construct(initial_create_info);
 
-		subsystems_.emplace_back(ImGuiSubsystem::construct(*renderer_));
+		subsystems_.emplace_back(ImGuiSubsystem::construct(*renderer_, [this](float delta_time) { on_ui_render(delta_time); }));
 
-		auto audio_engine = audio::AudioEngine::construct();
+		audio_engine_ = audio::AudioEngine::construct();
 
 		//auto file_source = audio::FileSource::construct("/internal_res/assets/iamtheprotectorofthissystem.wav");
 		//auto source_handle = audio_engine->add_source(std::move(file_source));
 		//audio_engine->play_source(source_handle);
 
 		auto synth = audio::SynthSource::construct(440.0f, 44100);
-		auto synth_handle = audio_engine->add_source(std::move(synth));
-		audio_engine->play_source(synth_handle);
+		source_handle_ = audio_engine_->add_source(std::move(synth));
+		audio_engine_->play_source(source_handle_);
 
-		while (true);
+		effect_editor_ = std::make_unique<audio::EffectGraphEditor>();
+		effect_editor_->initialize();
 
 		return result;
 	}
@@ -88,5 +90,11 @@ namespace e2d {
 
 		renderer_->end_frame(delta_time);
 		EDGE_GFX_PROFILER_FRAME_MARK();
+	}
+
+	auto App::on_ui_render(float delta_time) -> void {
+		auto* source = audio_engine_->get_source(source_handle_);
+		auto* audio_source = static_cast<audio::SynthSource*>(source);
+		effect_editor_->render(audio_source->get_graph());
 	}
 }

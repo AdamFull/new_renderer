@@ -3,6 +3,7 @@
 #include <array>
 #include <algorithm>
 #include <vector>
+#include <random>
 
 #include <edge/util/Serialization.hpp>
 
@@ -477,4 +478,203 @@ namespace e2d::audio {
         edge::parse_from("bands", j, self.eq_bands_);
         self.create_bands();
     }
+
+
+    struct DelayLine {
+        std::vector<float> buffer_;
+        size_t write_index_{ 0 };
+        size_t delay_samples_{ 0 };
+        float feedback_{ 0.0f };
+        float mix_{ 0.5f };
+
+        DelayLine(size_t max_delay_samples = 88200) : buffer_(max_delay_samples, 0.0f) {}
+
+        auto set_delay_time(float delay_seconds, uint32_t sample_rate) -> void {
+            delay_samples_ = static_cast<size_t>(delay_seconds * sample_rate);
+            delay_samples_ = std::min(delay_samples_, buffer_.size() - 1);
+        }
+
+        auto process(float input) -> float {
+            size_t read_index = (write_index_ + buffer_.size() - delay_samples_) % buffer_.size();
+            float delayed = buffer_[read_index];
+
+            buffer_[write_index_] = input + delayed * feedback_;
+            write_index_ = (write_index_ + 1) % buffer_.size();
+
+            return input * (1.0f - mix_) + delayed * mix_;
+        }
+
+        auto reset() -> void {
+            std::fill(buffer_.begin(), buffer_.end(), 0.0f);
+            write_index_ = 0;
+        }
+    };
+
+    struct ReverbEffect {
+        static constexpr size_t NUM_COMBS = 4;
+        static constexpr size_t NUM_ALLPASS = 2;
+
+        std::array<DelayLine, NUM_COMBS> comb_filters_;
+        std::array<AllPassFilter, NUM_ALLPASS> allpass_filters_;
+
+        float room_size_{ 0.5f };
+        float damping_{ 0.5f };
+        float wet_level_{ 0.3f };
+        float dry_level_{ 0.7f };
+
+        ReverbEffect(uint32_t sample_rate = 44100) {
+            // Initialize comb filter delays (in samples)
+            std::array<size_t, NUM_COMBS> comb_delays = {
+                static_cast<size_t>(0.030f * sample_rate),  // 30ms
+                static_cast<size_t>(0.035f * sample_rate),  // 35ms
+                static_cast<size_t>(0.040f * sample_rate),  // 40ms
+                static_cast<size_t>(0.045f * sample_rate)   // 45ms
+            };
+
+            for (size_t i = 0; i < NUM_COMBS; ++i) {
+                comb_filters_[i] = DelayLine(comb_delays[i] + 100);
+                comb_filters_[i].delay_samples_ = comb_delays[i];
+                comb_filters_[i].feedback_ = 0.7f;
+            }
+
+            // Initialize allpass filters
+            allpass_filters_[0].set_delay(0.005f * sample_rate);  // 5ms
+            allpass_filters_[1].set_delay(0.010f * sample_rate);  // 10ms
+        }
+
+        auto process(float input) -> float {
+            float comb_out = 0.0f;
+
+            // Process through comb filters
+            for (auto& comb : comb_filters_) {
+                comb.feedback_ = room_size_ * 0.8f;
+                comb_out += comb.process(input);
+            }
+            comb_out *= 0.25f; // Average the combs
+
+            // Process through allpass filters
+            float allpass_out = comb_out;
+            for (auto& ap : allpass_filters_) {
+                allpass_out = ap.process(allpass_out);
+            }
+
+            return input * dry_level_ + allpass_out * wet_level_;
+        }
+
+        auto reset() -> void {
+            for (auto& comb : comb_filters_) {
+                comb.reset();
+            }
+            for (auto& ap : allpass_filters_) {
+                ap.reset();
+            }
+        }
+    };
+
+    struct CompressorEffect {
+        float threshold_{ -20.0f };  // dB
+        float ratio_{ 4.0f };
+        float attack_time_{ 0.003f }; // seconds
+        float release_time_{ 0.1f };  // seconds
+        float makeup_gain_{ 0.0f };   // dB
+
+        float envelope_{ 0.0f };
+        float attack_coeff_{ 0.0f };
+        float release_coeff_{ 0.0f };
+        uint32_t sample_rate_{ 44100 };
+
+        CompressorEffect(uint32_t sample_rate = 44100) : sample_rate_(sample_rate) {
+            update_coefficients();
+        }
+
+        auto set_sample_rate(uint32_t sample_rate) -> void {
+            sample_rate_ = sample_rate;
+            update_coefficients();
+        }
+
+        auto update_coefficients() -> void {
+            attack_coeff_ = std::exp(-1.0f / (attack_time_ * sample_rate_));
+            release_coeff_ = std::exp(-1.0f / (release_time_ * sample_rate_));
+        }
+
+        auto process(float input) -> float {
+            // Convert to dB
+            float input_level = 20.0f * std::log10(std::abs(input) + 1e-6f);
+
+            // Update envelope
+            float target_gain = 0.0f;
+            if (input_level > threshold_) {
+                float over_threshold = input_level - threshold_;
+                float compressed_over = over_threshold / ratio_;
+                target_gain = -(over_threshold - compressed_over);
+            }
+
+            // Smooth gain changes
+            float gain_coeff = (target_gain < envelope_) ? attack_coeff_ : release_coeff_;
+            envelope_ = target_gain + (envelope_ - target_gain) * gain_coeff;
+
+            // Apply gain
+            float gain_linear = std::pow(10.0f, (envelope_ + makeup_gain_) / 20.0f);
+            return input * gain_linear;
+        }
+
+        auto reset() -> void {
+            envelope_ = 0.0f;
+        }
+    };
+
+    // Noise Generator
+    struct NoiseGenerator {
+        enum class Type {
+            eWhite,
+            ePink,
+            eBrown
+        };
+
+        Type type_{ Type::eWhite };
+        float amplitude_{ 1.0f };
+        std::mt19937 rng_;
+        std::uniform_real_distribution<float> dist_{ -1.0f, 1.0f };
+
+        // For pink/brown noise
+        std::array<float, 7> pink_state_{ 0.0f };
+        float brown_state_{ 0.0f };
+
+        NoiseGenerator() : rng_(std::random_device{}()) {}
+
+        auto process() -> float {
+            switch (type_) {
+            case Type::eWhite:
+                return dist_(rng_) * amplitude_;
+
+            case Type::ePink: {
+                float white = dist_(rng_);
+                pink_state_[0] = 0.99886f * pink_state_[0] + white * 0.0555179f;
+                pink_state_[1] = 0.99332f * pink_state_[1] + white * 0.0750759f;
+                pink_state_[2] = 0.96900f * pink_state_[2] + white * 0.1538520f;
+                pink_state_[3] = 0.86650f * pink_state_[3] + white * 0.3104856f;
+                pink_state_[4] = 0.55000f * pink_state_[4] + white * 0.5329522f;
+                pink_state_[5] = -0.7616f * pink_state_[5] - white * 0.0168980f;
+                float pink = pink_state_[0] + pink_state_[1] + pink_state_[2] +
+                    pink_state_[3] + pink_state_[4] + pink_state_[5] +
+                    pink_state_[6] + white * 0.5362f;
+                pink_state_[6] = white * 0.115926f;
+                return pink * amplitude_ * 0.11f;
+            }
+
+            case Type::eBrown: {
+                float white = dist_(rng_);
+                brown_state_ = (brown_state_ + white * 0.02f);
+                brown_state_ = std::clamp(brown_state_, -8.0f, 8.0f); // Prevent drift
+                return brown_state_ * amplitude_ * 0.125f;
+            }
+            }
+            return 0.0f;
+        }
+
+        auto reset() -> void {
+            std::fill(pink_state_.begin(), pink_state_.end(), 0.0f);
+            brown_state_ = 0.0f;
+        }
+    };
 }

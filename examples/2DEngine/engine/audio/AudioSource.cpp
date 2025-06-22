@@ -5,6 +5,8 @@
 #include "BiquadFilterNode.h"
 #include "FileInputNode.h"
 
+#include "EffectNodes.h"
+
 #include <AL/al.h>
 
 #include "AudioFile.h"
@@ -120,13 +122,23 @@ namespace e2d::audio {
 		//self->synth_ = LowPassFilterNode::construct(150.0f);
 		//self->synth_ = BiquadFilterNode::construct(BiquadFilter::Mode::eLowShelf, 150.0f, 0.707f, 30.0f);
 		//self->synth_ = PhaserFilterNode::construct(0.8f, 0.9f, 0.6f, 0.7f);
-		auto eq = Equalizer5BandNode::construct();
-		self->synth_ = std::move(eq);
-		self->synth_->attach(FileInputNode::construct("/internal_res/assets/iamtheprotectorofthissystem.mp3"));
+		//auto eq = Equalizer5BandNode::construct();
+		//self->synth_ = std::move(eq);
+		//self->synth_->attach(FileInputNode::construct("/internal_res/assets/iamtheprotectorofthissystem.mp3"));
+
+		self->graph_ = std::make_unique<EffectGraph>();
+		auto output_node_id = self->graph_->add_node(std::make_unique<OutputGraphNode>());
+		self->graph_->set_output_node(output_node_id);
+
 		return self;
 	}
 
 	auto SynthSource::on_data(std::span<uint8_t> output, const AudioFormat& format) -> size_t {
-		return synth_->process(output, format);
+		return graph_->process(output, format);
+		//return synth_->process(output, format);
+	}
+
+	auto SynthSource::get_graph() -> EffectGraph& {
+		return *graph_;
 	}
 }

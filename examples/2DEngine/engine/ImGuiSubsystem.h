@@ -14,7 +14,7 @@ namespace e2d {
 		ImGuiSubsystem(IRenderer& renderer);
 		~ImGuiSubsystem() override;
 
-		static auto construct(IRenderer& renderer) -> std::unique_ptr<ISubsystem>;
+		static auto construct(IRenderer& renderer, OnSubsystemProcessCb cb) -> std::unique_ptr<ISubsystem>;
 
 		auto initialize() -> void;
 

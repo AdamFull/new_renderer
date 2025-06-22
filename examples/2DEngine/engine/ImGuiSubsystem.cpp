@@ -12,7 +12,7 @@
 #include "../assets/graphics/shaders/imgui.h"
 
 namespace e2d {
-	constexpr uint64_t initial_vertex_count = 1024ull;
+	constexpr uint64_t initial_vertex_count = 16384ull;
 	constexpr uint64_t initial_index_count = initial_vertex_count * 3ull;
 
 	ImGuiKey key_code_to_imgui_key(edge::KeyCode code) {
@@ -147,9 +147,10 @@ namespace e2d {
 		ImGui::DestroyContext();
 	}
 
-	auto ImGuiSubsystem::construct(IRenderer& renderer) -> std::unique_ptr<ISubsystem> {
+	auto ImGuiSubsystem::construct(IRenderer& renderer, OnSubsystemProcessCb cb) -> std::unique_ptr<ISubsystem> {
 		auto self = std::make_unique<ImGuiSubsystem>(renderer);
 		self->initialize();
+		self->set_on_process(cb);
 		return self;
 	}
 
