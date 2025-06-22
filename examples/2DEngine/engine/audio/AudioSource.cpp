@@ -1,6 +1,10 @@
 #include "AudioSource.h"
 #include "Util.h"
 
+#include "OscillatorNode.h"
+#include "BiquadFilterNode.h"
+#include "FileInputNode.h"
+
 #include <AL/al.h>
 
 #include "AudioFile.h"
@@ -107,69 +111,22 @@ namespace e2d::audio {
 
 
 
-	namespace ext {
-		using namespace edge;
-		constexpr auto wav = ".wav"_hash32;
-		constexpr auto wave = ".wave"_hash32;
-		constexpr auto mp3 = ".mp3"_hash32;
-		constexpr auto ogg = ".ogg"_hash32;
-		constexpr auto flac = ".flac"_hash32;
-		constexpr auto opus = ".opus"_hash32;
-	}
-
-	auto FileSource::construct(std::string_view path) -> std::unique_ptr<IAudioSource> {
-		auto self = std::make_unique<FileSource>();
+	auto SynthSource::construct(float freq, uint32_t sample_rate) -> std::unique_ptr<IAudioSource> {
+		auto self = std::make_unique<SynthSource>();
 		self->initialize_resources();
-		self->load_file(path);
+		self->format_.channels = 1;
+		self->format_.bit_per_sample = 32;
+		self->format_.sample_rate = 44100;
+		//self->synth_ = LowPassFilterNode::construct(150.0f);
+		//self->synth_ = BiquadFilterNode::construct(BiquadFilter::Mode::eLowShelf, 150.0f, 0.707f, 30.0f);
+		//self->synth_ = PhaserFilterNode::construct(0.8f, 0.9f, 0.6f, 0.7f);
+		auto eq = Equalizer5BandNode::construct();
+		self->synth_ = std::move(eq);
+		self->synth_->attach(FileInputNode::construct("/internal_res/assets/iamtheprotectorofthissystem.mp3"));
 		return self;
 	}
 
-	auto FileSource::on_data(std::span<uint8_t> output, const AudioFormat& format) -> size_t {
-		return file_->read_samples(output, format);
-	}
-
-	auto FileSource::load_file(std::string_view path) -> bool {
-		if (!edge::fs::exists(path)) {
-			EDGE_LOGE("[FileSource] File not found");
-			return false;
-		}
-
-		if (!edge::fs::read_file(path, file_bytes_)) {
-			EDGE_LOGE("[FileSource] Failed to load file");
-			return false;
-		}
-
-		auto file_ext = edge::fs::get_ext(path);
-		auto ext_hash = edge::murmur_hash(file_ext);
-		switch (ext_hash)
-		{
-		case ext::wav:
-		case ext::wave: {
-			file_ = WavFile::construct(file_bytes_);
-			break;
-		};
-		case ext::mp3: {
-			file_ = Mp3File::construct(file_bytes_);
-			break;
-		};
-		case ext::ogg: {
-			//file_ = OggFile::construct(file_bytes_);
-			break;
-		};
-		case ext::flac: {
-			file_ = FlacFile::construct(file_bytes_);
-			break;
-		};
-		case ext::opus: {
-			//file_ = OpusFile::construct(file_bytes_);
-			break;
-		};
-		default:
-			break;
-		}
-
-		format_ = file_->get_format();
-
-		return file_.get();
+	auto SynthSource::on_data(std::span<uint8_t> output, const AudioFormat& format) -> size_t {
+		return synth_->process(output, format);
 	}
 }

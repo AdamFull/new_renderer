@@ -1,39 +1,49 @@
 #pragma once
 
+#include <array>
+#include <algorithm>
+
 #include "ISynthesisNode.h"
 
-namespace e2d::audio {
-	enum class BiquadFilterMode {
-		eLowPass, 
-		eBandPass, 
-		eHighPass,
-		eAllPass,
-		eNotch
-	};
+#include "DSP.h"
 
+namespace e2d::audio {
 	class BiquadFilterNode final : public ISynthesisNode {
 	public:
-		BiquadFilterNode();
 		~BiquadFilterNode() override = default;
 
-		[[nodiscard]] static auto construct(BiquadFilterMode type = BiquadFilterMode::eLowPass, float cutoff = 1000.0f, float q = 0.707f, uint32_t sample_rate = 44100u) -> std::unique_ptr<ISynthesisNode>;
+		[[nodiscard]] static auto construct(BiquadFilter::Mode type = BiquadFilter::Mode::eLowPass, float cutoff = 1000.0f, float q = 0.707f, float gain_db = 0.0f, uint32_t sample_rate = 44100u) -> std::unique_ptr<ISynthesisNode>;
 
 		auto process(std::span<uint8_t> out, const AudioFormat& out_format) -> size_t override;
 		auto attach(std::unique_ptr<ISynthesisNode>&& source) -> void override;
-
-		auto setup(BiquadFilterMode type, float cutoff, float q, uint32_t sample_rate) -> void;
 	private:
 		std::unique_ptr<ISynthesisNode> source_;
+		BiquadFilter filter_;
+	};
 
-		float b0_, b1_, b2_;  // feedforward coefficients
-		float a1_, a2_;      // feedback coefficients (a0 is normalized to 1)
+	class PhaserFilterNode final : public ISynthesisNode {
+	public:
+		~PhaserFilterNode() override = default;
 
-		float x1_, x2_;      // input history
-		float y1_, y2_;      // output history
+		[[nodiscard]] static auto construct(float rate = 0.5f, float depth = 0.75f, float feedback = 0.3f, float mix = 0.5f, uint32_t sample_rate = 44100u) -> std::unique_ptr<ISynthesisNode>;
 
-		float cutoff_freq_;
-		float q_factor_;
+		auto process(std::span<uint8_t> out, const AudioFormat& out_format) -> size_t override;
+		auto attach(std::unique_ptr<ISynthesisNode>&& source) -> void override;
+	private:
+		std::unique_ptr<ISynthesisNode> source_;
+		PhaserFilter<16> filter_;
+	};
 
-		uint32_t last_sample_rate_;
+	class Equalizer5BandNode final : public ISynthesisNode {
+	public:
+		~Equalizer5BandNode() override = default;
+
+		[[nodiscard]] static auto construct(uint32_t sample_rate = 44100u) -> std::unique_ptr<ISynthesisNode>;
+
+		auto process(std::span<uint8_t> out, const AudioFormat& out_format) -> size_t override;
+		auto attach(std::unique_ptr<ISynthesisNode>&& source) -> void override;
+	private:
+		std::unique_ptr<ISynthesisNode> source_;
+		EqualizerFilter5Band filter_;
 	};
 }

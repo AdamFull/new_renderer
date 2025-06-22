@@ -14,7 +14,6 @@
 
 #include "audio/AudioEngine.h"
 #include "audio/AudioSource.h"
-#include "audio/SynthSource.h"
 
 #include "ImGuiSubsystem.h"
 
