@@ -311,6 +311,21 @@ target_compile_definitions(imgui PUBLIC
 )
 target_include_directories(imgui SYSTEM PUBLIC ${IMGUI_DIR})
 
+# imnodes
+set(IMNODES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imnodes")
+set(IMNODES_FILES
+    "${IMNODES_DIR}/imnodes.cpp"
+)
+
+add_library(imnodes STATIC ${IMGUI_FILES})
+target_include_directories(imnodes SYSTEM 
+    PUBLIC 
+    ${IMGUI_DIR}
+    ${IMNODES_DIR}
+)
+
+target_link_libraries(imnodes PRIVATE imgui)
+
 # glslang
 option(ENABLE_SPVREMAPPER OFF)
 option(ENABLE_GLSLANG_BINARIES OFF)
@@ -502,6 +517,7 @@ target_link_libraries(${PROJECT_NAME}
     taskflow
 
     imgui
+    imnodes
 
     meshoptimizer
     mikktspace
