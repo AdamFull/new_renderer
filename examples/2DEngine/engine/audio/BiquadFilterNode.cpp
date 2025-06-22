@@ -31,7 +31,7 @@ namespace e2d::audio {
 
 	auto PhaserFilterNode::construct(float rate, float depth, float feedback, float mix, uint32_t sample_rate) -> std::unique_ptr<ISynthesisNode> {
 		auto self = std::make_unique<PhaserFilterNode>();
-		self->filter_ = PhaserFilter<16>{ rate, depth, feedback, mix, sample_rate };
+		self->filter_ = PhaserFilter{ rate, depth, feedback, mix, sample_rate };
 		return self;
 	}
 
@@ -56,7 +56,7 @@ namespace e2d::audio {
 
 	auto Equalizer5BandNode::construct(uint32_t sample_rate) -> std::unique_ptr<ISynthesisNode> {
 		auto self = std::make_unique<Equalizer5BandNode>();
-		self->filter_ = EqualizerFilter5Band{ sample_rate };
+		self->filter_ = EqualizerFilter{ EqualizerFilter::Type::e10Band, sample_rate };
 		return self;
 	}
 

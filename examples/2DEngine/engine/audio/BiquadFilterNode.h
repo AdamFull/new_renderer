@@ -31,7 +31,7 @@ namespace e2d::audio {
 		auto attach(std::unique_ptr<ISynthesisNode>&& source) -> void override;
 	private:
 		std::unique_ptr<ISynthesisNode> source_;
-		PhaserFilter<16> filter_;
+		PhaserFilter filter_;
 	};
 
 	class Equalizer5BandNode final : public ISynthesisNode {
@@ -44,6 +44,6 @@ namespace e2d::audio {
 		auto attach(std::unique_ptr<ISynthesisNode>&& source) -> void override;
 	private:
 		std::unique_ptr<ISynthesisNode> source_;
-		EqualizerFilter5Band filter_;
+		EqualizerFilter filter_;
 	};
 }

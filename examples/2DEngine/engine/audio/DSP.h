@@ -2,17 +2,20 @@
 
 #include <array>
 #include <algorithm>
+#include <vector>
+
+#include <edge/util/Serialization.hpp>
 
 #include "Util.h"
 
 namespace e2d::audio {
     struct AllPassFilter {
-		float delay_;
-		float feedback_;
-		float a1_;
-		float x1_, y1_;
+        float delay_{ 0.0f };
+        float feedback_{ 0.0f };
+        float a1_{ 0.0f };
+        float x1_{ 0.0f }, y1_{ 0.0f };
 
-		AllPassFilter() : delay_(0.0f), feedback_(0.0f), a1_(0.0f), x1_(0.0f), y1_(0.0f) {}
+        AllPassFilter() = default;
 
         auto set_delay(float delay_samples) noexcept -> void {
             delay_ = delay_samples;
@@ -31,6 +34,16 @@ namespace e2d::audio {
         }
 	};
 
+    inline auto to_json(nlohmann::json& j, const AllPassFilter& self) -> void {
+        j["delay"] = self.delay_;
+        j["feedback"] = self.feedback_;
+    }
+
+    inline auto from_json(const nlohmann::json& j, AllPassFilter& self) -> void {
+        edge::parse_from("delay", j, self.delay_);
+        edge::parse_from("feedback", j, self.feedback_);
+    }
+
     struct BiquadFilter {
         enum class Mode {
             eLowPass,
@@ -44,48 +57,31 @@ namespace e2d::audio {
         };
 
         // feedforward coefficients
-        float b0_, b1_, b2_;
+        float b0_{ 1.0f }, b1_{ 0.0f }, b2_{ 0.0f };
         // feedback coefficients (a0 is normalized to 1)
-        float a1_, a2_;
+        float a1_{ 0.0f }, a2_{ 0.0f };
 
         // input history
-        float x1_, x2_;
+        float x1_{ 0.0f }, x2_{ 0.0f };
         // output history
-        float y1_, y2_;
+        float y1_{ 0.0f }, y2_{ 0.0f };
 
-        float cutoff_freq_;
-        float q_factor_;
-        float gain_db_;
-        uint32_t last_sample_rate_;
-        Mode mode_;
+        float cutoff_freq_{ 1000.0f };
+        float q_factor_{ 0.707f };
+        float gain_db_{ 1.0f };
+        uint32_t last_sample_rate_{ 44100 };
+        Mode mode_{ Mode::eLowPass };
 
-        BiquadFilter()
-            : b0_(1.0f), b1_(0.0f), b2_(0.0f)
-            , a1_(0.0f), a2_(0.0f)
-            , x1_(0.0f), x2_(0.0f)
-            , y1_(0.0f), y2_(0.0f)
-            , cutoff_freq_(1000.0f)
-            , gain_db_(0.0f)
-            , q_factor_(0.707f)
-            , last_sample_rate_(0)
-            , mode_(Mode::eLowPass) {
-            dirty_ = true;
+        BiquadFilter() {
             update_coefficients();
         }
 
         BiquadFilter(float cutoff, float gain_db, float q, uint32_t sample_rate, Mode mode)
-            : b0_(1.0f), b1_(0.0f), b2_(0.0f)
-            , a1_(0.0f), a2_(0.0f)
-            , x1_(0.0f), x2_(0.0f)
-            , y1_(0.0f), y2_(0.0f)
-            , cutoff_freq_(cutoff)
+            : cutoff_freq_(cutoff)
             , gain_db_(gain_db)
             , q_factor_(q)
             , last_sample_rate_(sample_rate)
-            , mode_(mode) {
-            dirty_ = true;
-            update_coefficients();
-        }
+            , mode_(mode) {}
 
         auto process(float input) -> float {
             update_coefficients();
@@ -139,7 +135,7 @@ namespace e2d::audio {
             x1_ = x2_ = y1_ = y2_ = 0.0f;
         }
     private:
-        bool dirty_{ false };
+        bool dirty_{ true };
         auto update_coefficients() -> void {
             if (!dirty_) {
                 return;
@@ -236,37 +232,54 @@ namespace e2d::audio {
         }
     };
 
-    template<size_t NUM_STAGES = 6>
+    inline auto to_json(nlohmann::json& j, const BiquadFilter& self) -> void {
+        j["cutoff_frequency"] = self.cutoff_freq_;
+        j["q"] = self.q_factor_;
+        j["gain_db"] = self.gain_db_;
+        j["sample_rate"] = self.last_sample_rate_;
+        j["mode"] = static_cast<int32_t>(self.mode_);
+    }
+
+    inline auto from_json(const nlohmann::json& j, BiquadFilter& self) -> void {
+        edge::parse_from("cutoff_frequency", j, self.cutoff_freq_);
+        edge::parse_from("q", j, self.q_factor_);
+        edge::parse_from("gain_db", j, self.gain_db_);
+        edge::parse_from("sample_rate", j, self.last_sample_rate_);
+
+        int32_t mode{ 0 };
+        edge::parse_from("mode", j, mode);
+        self.mode_ = static_cast<BiquadFilter::Mode>(mode);
+    }
+
     struct PhaserFilter {
+        static constexpr size_t NUM_STAGES = 12;
         std::array<AllPassFilter, NUM_STAGES> all_pass_filters_;
 
         // Phaser parameters
-        float rate_;           // LFO rate in Hz
-        float depth_;          // Modulation depth (0.0 to 1.0)
-        float feedback_;       // Amount of output fed back to input
-        float mix_;            // Dry/wet mix (0.0 = dry, 1.0 = wet)
-        float center_freq_;    // Center frequency for modulation
-        float freq_range_;     // Frequency range for modulation
+        float rate_{ 0.5f };            // LFO rate in Hz
+        float depth_{ 0.75f };          // Modulation depth (0.0 to 1.0)
+        float feedback_{ 0.3f };        // Amount of output fed back to input
+        float mix_{ 0.5f };             // Dry/wet mix (0.0 = dry, 1.0 = wet)
+        float center_freq_{ 1000.0f };  // Center frequency for modulation
+        float freq_range_{ 800.0f };    // Frequency range for modulation
 
         // LFO state
-        float lfo_phase_;
-        uint32_t last_sample_rate_;
-        float lfo_phase_increment_;
+        float lfo_phase_{ 0.0f };
+        uint32_t last_sample_rate_{ 44100u };
+        float lfo_phase_increment_{ 0.0f };
+
+        bool dirty_{ true };
 
         PhaserFilter(float rate = 0.5f, float depth = 0.75f, float feedback = 0.3f, float mix = 0.5f, uint32_t sample_rate = 44100u)
             : rate_(rate)
             , depth_(depth)
             , feedback_(feedback)
             , mix_(mix)
-            , center_freq_(1000.0f)
-            , freq_range_(800.0f)
-            , lfo_phase_(0.0f)
-            , last_sample_rate_(0)
-            , lfo_phase_increment_(0.0f) {
-            set_sample_rate(sample_rate);
-        }
+            , last_sample_rate_(sample_rate) {}
 
         auto process(float input) -> float {
+            update_lfo();
+
             // Generate LFO (sine wave)
             float lfo_value = std::sin(lfo_phase_);
             lfo_phase_ += lfo_phase_increment_;
@@ -300,11 +313,17 @@ namespace e2d::audio {
         auto set_sample_rate(uint32_t sample_rate) {
             if (sample_rate != last_sample_rate_) {
                 last_sample_rate_ = sample_rate;
-                lfo_phase_increment_ = 2.0f * std::numbers::pi_v<float> *rate_ / static_cast<float>(sample_rate);
+                dirty_ = true;
             }
         }
 
-        auto set_rate(float rate) -> void { rate_ = rate; last_sample_rate_ = 0; }
+        auto set_rate(float rate) -> void  { 
+            if (rate != rate_) {
+                rate_ = rate;
+                dirty_ = true;
+            }
+        }
+
         auto set_depth(float depth) -> void { depth_ = std::clamp(depth, 0.0f, 1.0f); }
         auto set_feedback(float feedback) -> void { feedback_ = std::clamp(feedback, -0.95f, 0.95f); }
         auto set_mix(float mix) -> void { mix_ = std::clamp(mix, 0.0f, 1.0f); }
@@ -317,11 +336,52 @@ namespace e2d::audio {
                 filter.reset();
             }
         }
+    private:
+        auto update_lfo() -> void {
+            if (!dirty_) {
+                return;
+            }
+            dirty_ = false;
+
+            lfo_phase_increment_ = math::two_pi * rate_ / static_cast<float>(last_sample_rate_);
+        }
     };
 
-    template<size_t N_BANDS>
+    inline auto to_json(nlohmann::json& j, const PhaserFilter& self) -> void {
+        j["rate"] = self.rate_;
+        j["depth"] = self.depth_;
+        j["feedback"] = self.feedback_;
+        j["mix"] = self.mix_;
+        j["center_frequency"] = self.center_freq_;
+        j["frequency_range"] = self.freq_range_;
+        j["sample_rate"] = self.last_sample_rate_;
+    }
+
+    inline auto from_json(const nlohmann::json& j, PhaserFilter& self) -> void {
+        edge::parse_from("rate", j, self.rate_);
+        edge::parse_from("depth", j, self.depth_);
+        edge::parse_from("feedback", j, self.feedback_);
+        edge::parse_from("mix", j, self.mix_);
+        edge::parse_from("center_frequency", j, self.center_freq_);
+        edge::parse_from("frequency_range", j, self.freq_range_);
+        edge::parse_from("sample_rate", j, self.last_sample_rate_);
+    }
+
     struct EqualizerFilter {
-        std::array<BiquadFilter, N_BANDS> eq_bands_;
+        enum class Type {
+            e5Band,
+            e10Band
+        };
+
+        Type type_{ Type::e10Band };
+        uint32_t last_sample_rate_{ 44100u };
+        std::vector<BiquadFilter> eq_bands_;
+
+        EqualizerFilter(Type type = Type::e10Band, uint32_t sample_rate = 44100u) 
+            : type_{ type }
+            , last_sample_rate_{ sample_rate } {
+            create_bands();
+        }
 
         auto process(float input) -> float {
             for (auto& band : eq_bands_) {
@@ -352,37 +412,69 @@ namespace e2d::audio {
             return eq_bands_.size();
         }
 
+        auto set_sample_rate(uint32_t sample_rate) -> void {
+            if (sample_rate != last_sample_rate_) {
+                last_sample_rate_ = sample_rate;
+
+                for (auto& band : eq_bands_) {
+                    band.set_sample_rate(last_sample_rate_);
+                }
+            }
+        }
+
         auto reset() -> void {
             for (auto& band : eq_bands_) {
                 band.reset();
             }
         }
-    };
 
-    struct EqualizerFilter5Band : EqualizerFilter<5> {
+        auto create_bands() -> void {
+            eq_bands_.clear();
 
-        EqualizerFilter5Band(uint32_t sample_rate = 44100u) {
-            eq_bands_[0] = { 80.0f, 0.0f, 0.707f, sample_rate, BiquadFilter::Mode::eLowShelf };
-            eq_bands_[1] = { 250.0f, 0.0f, 1.0f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[2] = { 1000.0f, 0.0f, 1.0f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[3] = { 4000.0f, 0.0f, 1.0f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[4] = { 12000.0f, 0.0f, 0.707f, sample_rate, BiquadFilter::Mode::eHighShelf };
+            switch (type_)
+            {
+            case Type::e5Band: {
+                eq_bands_.reserve(5);
+                eq_bands_.emplace_back(80.0f, 0.0f, 0.707f, last_sample_rate_, BiquadFilter::Mode::eLowShelf);
+                eq_bands_.emplace_back(250.0f, 0.0f, 1.0f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(1000.0f, 0.0f, 1.0f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(4000.0f, 0.0f, 1.0f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(12000.0f, 0.0f, 0.707f, last_sample_rate_, BiquadFilter::Mode::eHighShelf);
+                break;
+            }
+            case Type::e10Band: {
+                eq_bands_.reserve(10);
+                eq_bands_.emplace_back(31.5f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eLowShelf);
+                eq_bands_.emplace_back(63.0f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(125.0f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(250.0f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(500.0f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(1000.0f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(2000.0f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(4000.0f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(8000.0f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eBell);
+                eq_bands_.emplace_back(16000.0f, 0.0f, 1.414f, last_sample_rate_, BiquadFilter::Mode::eHighShelf);
+                break;
+            }
+            default:
+                break;
+            }
         }
     };
 
-    struct EqualizerFilter10Band : EqualizerFilter<10> {
+    inline auto to_json(nlohmann::json& j, const EqualizerFilter& self) -> void {
+        j["type"] = static_cast<int32_t>(self.type_);
+        j["sample_rate"] = static_cast<int32_t>(self.last_sample_rate_);
+        j["bands"] = self.eq_bands_;
+    }
 
-        EqualizerFilter10Band(uint32_t sample_rate = 44100u) {
-            eq_bands_[0] = { 31.5f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eLowShelf };
-            eq_bands_[1] = { 63.0f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[2] = { 125.0f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[3] = { 250.0f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[4] = { 500.0f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[5] = { 1000.0f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[6] = { 2000.0f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[7] = { 4000.0f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[8] = { 8000.0f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eBell };
-            eq_bands_[9] = { 16000.0f, 0.0f, 1.414f, sample_rate, BiquadFilter::Mode::eHighShelf };
-        }
-    };
+    inline auto from_json(const nlohmann::json& j, EqualizerFilter& self) -> void {
+        int32_t type{ 0 };
+        edge::parse_from("type", j, type);
+        self.type_ = static_cast<EqualizerFilter::Type>(type);
+
+        edge::parse_from("sample_rate", j, self.last_sample_rate_);
+        edge::parse_from("bands", j, self.eq_bands_);
+        self.create_bands();
+    }
 }
