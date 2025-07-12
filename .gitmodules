@@ -80,9 +80,9 @@
 [submodule "external/imnodes"]
 	path = external/imnodes
 	url = https://github.com/Nelarius/imnodes.git
-[submodule "external/nativefiledialog"]
-	path = external/nativefiledialog
-	url = https://github.com/mlabbe/nativefiledialog.git
 [submodule "external/imgui-knobs"]
 	path = external/imgui-knobs
 	url = https://github.com/altschuler/imgui-knobs.git
+[submodule "external/flecs"]
+	path = external/flecs
+	url = https://github.com/SanderMertens/flecs.git
