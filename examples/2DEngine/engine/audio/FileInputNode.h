@@ -4,7 +4,7 @@
 #include <string_view>
 
 #include "ISynthesisNode.h"
-#include "IAudioFile.h"
+#include "IAudioInput.h"
 
 namespace e2d::audio {
 	class FileInputNode final : public ISynthesisNode {
@@ -17,7 +17,7 @@ namespace e2d::audio {
 	private:
 		auto load_file(std::string_view path) -> bool;
 	private:
-		std::unique_ptr<IAudioFile> file_;
+		std::unique_ptr<IAudioInput> file_;
 		std::vector<uint8_t> file_bytes_{};
 	};
 }

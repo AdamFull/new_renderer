@@ -6,7 +6,7 @@
 
 #include "Common.h"
 #include "IAudioSource.h"
-#include "IAudioFile.h"
+#include "IAudioInput.h"
 #include "ISynthesisNode.h"
 
 #include "EffectGraph.h"

@@ -2,7 +2,7 @@
 
 #include "EffectGraph.h"
 #include "DSP.h"
-#include "IAudioFile.h"
+#include "IAudioInput.h"
 #include "Common.h"
 
 #include <memory>
@@ -88,10 +88,29 @@ namespace e2d::audio {
         auto is_looping() const -> bool { return loop_; }
 
     private:
-        std::unique_ptr<IAudioFile> file_;
+        std::unique_ptr<IAudioInput> file_;
         std::vector<uint8_t> file_bytes_;
         std::string file_path_;
         bool loop_{ false };
+    };
+
+    class MicrophoneInputGraphNode : public EffectGraphNode {
+    public:
+        MicrophoneInputGraphNode();
+        ~MicrophoneInputGraphNode() override = default;
+
+        auto get_type_name() const -> std::string_view override { return "MicrophoneInputNode"; }
+
+        auto process(std::span<uint8_t> out, const AudioFormat& format,
+            const std::vector<std::span<const uint8_t>>& inputs) -> size_t override;
+
+        auto render() -> bool override;
+
+        auto to_json() const->nlohmann::json override;
+        auto from_json(const nlohmann::json& json) -> void override;
+
+    private:
+        std::unique_ptr<IAudioInput> mic_;
     };
 
 

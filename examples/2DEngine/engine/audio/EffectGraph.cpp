@@ -166,44 +166,6 @@ namespace e2d::audio {
 
         process_node_recursive(output_node_id_, output, format);
 
-        //// Ensure all nodes have buffers allocated
-        //for (NodeID id : execution_order_) {
-        //    auto& buffer = node_buffers_[id];
-        //    if (buffer.size() < output.size()) {
-        //        buffer.resize(output.size());
-        //    }
-        //    std::fill(buffer.begin(), buffer.end(), 0);
-        //}
-        //
-        //// Process nodes in execution order
-        //for (NodeID id : execution_order_) {
-        //    auto node = get_node(id);
-        //    if (!node) continue;
-        //
-        //    auto& node_buffer = node_buffers_[id];
-        //
-        //    // Collect inputs
-        //    auto input_connections = get_node_inputs(id);
-        //    std::vector<std::span<const uint8_t>> inputs;
-        //    inputs.reserve(input_connections.size());
-        //
-        //    for (const auto& conn : input_connections) {
-        //        auto& input_buffer = node_buffers_[conn.output.node_id];
-        //        inputs.emplace_back(input_buffer.data(), input_buffer.size());
-        //    }
-        //
-        //    // Process the node
-        //    auto processed_bytes = node->process(
-        //        std::span<uint8_t>(node_buffer.data(), output.size()),
-        //        format,
-        //        inputs
-        //    );
-        //}
-        //
-        //// Copy output from the output node
-        //auto& output_buffer = node_buffers_[output_node_id_];
-        //std::copy_n(output_buffer.begin(), std::min(output.size(), output_buffer.size()), output.begin());
-
         return output.size();
     }
 

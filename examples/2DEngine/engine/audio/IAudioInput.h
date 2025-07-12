@@ -5,9 +5,9 @@
 #include "Common.h"
 
 namespace e2d::audio {
-	class IAudioFile {
+	class IAudioInput {
 	public:
-		virtual ~IAudioFile() = default;
+		virtual ~IAudioInput() = default;
 
 		virtual auto get_format() const noexcept -> AudioFormat const& = 0;
 		virtual auto get_total_samples() const noexcept -> uint32_t = 0;

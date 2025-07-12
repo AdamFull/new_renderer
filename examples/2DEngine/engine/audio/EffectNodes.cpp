@@ -1,5 +1,5 @@
 #include "EffectNodes.h"
-#include "AudioFile.h"
+#include "AudioInput.h"
 #include "Util.h"
 
 #include <edge/util/Logger.h>
@@ -9,6 +9,8 @@
 #include <edge/util/Logger.h>
 
 #include <imgui-knobs.h>
+
+#include <edge/fs/fs_file_dialog.h>
 
 namespace e2d::audio {
 	OutputGraphNode::OutputGraphNode() {
@@ -170,10 +172,10 @@ namespace e2d::audio {
 
         ImGui::Text("File: %s", file_path_.c_str());
         if (ImGui::Button("Browse...")) {
-            const char* path = "/internal_res/assets/iamtheprotectorofthissystem.mp3";
-            if (load_file(path)) {
-                changed = true;
-            }
+            edge::fs::ui::open_file_dialog("audio_file", "Open Audio FIle", "/",
+                { {"Audio Files", {".mp3", ".wav", ".wave", ".flac"}} }, {
+                    .on_selected = [this](std::string_view path) { load_file(path.data()); }
+                });
         }
 
         if (ImGui::Checkbox("Loop", &loop_)) {
@@ -224,13 +226,13 @@ namespace e2d::audio {
 
         switch (ext_hash) {
         case wav:
-            file_ = WavFile::construct(file_bytes_);
+            file_ = WavInput::construct(file_bytes_);
             break;
         case mp3:
-            file_ = Mp3File::construct(file_bytes_);
+            file_ = Mp3Input::construct(file_bytes_);
             break;
         case flac:
-            file_ = FlacFile::construct(file_bytes_);
+            file_ = FlacInput::construct(file_bytes_);
             break;
         default:
             EDGE_LOGE("[FileInputGraphNode] Unsupported file format: {}", file_ext);
@@ -238,6 +240,34 @@ namespace e2d::audio {
         }
 
         return file_ != nullptr;
+    }
+
+
+
+    MicrophoneInputGraphNode::MicrophoneInputGraphNode() {
+        mic_ = MicrophoneInput::construct();
+        output_sockets_.emplace_back(id_, 0, NodeSocket::Type::eOutput, "Output");
+    }
+
+    auto MicrophoneInputGraphNode::process(std::span<uint8_t> out, const AudioFormat& format,
+        const std::vector<std::span<const uint8_t>>& inputs) -> size_t {
+        if (!mic_) {
+            std::fill(out.begin(), out.end(), 0);
+            return 0;
+        }
+
+        return mic_->read_samples(out, format);
+    }
+
+    auto MicrophoneInputGraphNode::render() -> bool {
+        return ImGui::Button("Biba");
+    }
+
+    auto MicrophoneInputGraphNode::to_json() const->nlohmann::json {
+        return {};
+    }
+
+    auto MicrophoneInputGraphNode::from_json(const nlohmann::json& json) -> void {
     }
 
 
@@ -1041,6 +1071,7 @@ namespace e2d::audio {
     //REGISTER_AUDIO_NODE(OutputGraphNode);
     REGISTER_AUDIO_NODE(OscillatorGraphNode);
     REGISTER_AUDIO_NODE(FileInputGraphNode);
+    REGISTER_AUDIO_NODE(MicrophoneInputGraphNode);
     REGISTER_AUDIO_NODE(BiquadFilterGraphNode);
     REGISTER_AUDIO_NODE(EqualizerGraphNode);
     REGISTER_AUDIO_NODE(GainGraphNode);

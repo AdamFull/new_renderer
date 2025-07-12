@@ -9,7 +9,7 @@
 
 #include <AL/al.h>
 
-#include "AudioFile.h"
+#include "AudioInput.h"
 #include "BackendHelper.h"
 
 #include <edge/fs/fs_virtual_filesystem.h>

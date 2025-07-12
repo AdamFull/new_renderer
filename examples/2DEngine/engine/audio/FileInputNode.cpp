@@ -4,7 +4,7 @@
 
 #include <AL/al.h>
 
-#include "AudioFile.h"
+#include "AudioInput.h"
 
 #include <edge/fs/fs_virtual_filesystem.h>
 #include <edge/fs/fs_helper.h>
@@ -48,11 +48,11 @@ namespace e2d::audio {
 		{
 		case ext::wav:
 		case ext::wave: {
-			file_ = WavFile::construct(file_bytes_);
+			file_ = WavInput::construct(file_bytes_);
 			break;
 		};
 		case ext::mp3: {
-			file_ = Mp3File::construct(file_bytes_);
+			file_ = Mp3Input::construct(file_bytes_);
 			break;
 		};
 		case ext::ogg: {
@@ -60,7 +60,7 @@ namespace e2d::audio {
 			break;
 		};
 		case ext::flac: {
-			file_ = FlacFile::construct(file_bytes_);
+			file_ = FlacInput::construct(file_bytes_);
 			break;
 		};
 		case ext::opus: {

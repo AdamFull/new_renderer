@@ -4,102 +4,13 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 #include <edge/fs/fs_virtual_filesystem.h>
+#include <edge/fs/fs_file_dialog.h>
 #include <edge/util/Logger.h>
 
 #include <fstream>
 
-#include <nfd.h>
-
 namespace e2d::audio {
     namespace ui_helpers {
-        auto knob_float(const char* label, float* value, float min_val, float max_val, float default_val = 0.0f) -> bool {
-            // Enhanced knob implementation with better visual feedback
-            ImGuiWindow* window = ImGui::GetCurrentWindow();
-            if (window->SkipItems) return false;
-
-            const ImGuiID id = window->GetID(label);
-            const float radius = 20.0f;
-            const ImVec2 pos = window->DC.CursorPos;
-            const ImRect bb(pos, ImVec2(pos.x + radius * 2, pos.y + radius * 2 + ImGui::GetTextLineHeight()));
-
-            ImGui::ItemSize(bb);
-            if (!ImGui::ItemAdd(bb, id)) return false;
-
-            bool hovered, held;
-            bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, ImGuiButtonFlags_None);
-
-            if (held) {
-                ImVec2 mouse_delta = ImGui::GetIO().MouseDelta;
-                float delta = (-mouse_delta.y * 0.01f);
-                *value = ImClamp(*value + delta * (max_val - min_val), min_val, max_val);
-            }
-
-            // Draw knob
-            ImDrawList* draw_list = ImGui::GetWindowDrawList();
-            const ImVec2 center = ImVec2(bb.Min.x + radius, bb.Min.y + radius);
-
-            // Background circle
-            ImU32 bg_color = hovered ? IM_COL32(70, 70, 70, 255) : IM_COL32(50, 50, 50, 255);
-            draw_list->AddCircleFilled(center, radius, bg_color);
-
-            // Value arc
-            float angle = -2.5f + ((*value - min_val) / (max_val - min_val)) * 5.0f;
-            float cos_a = cosf(angle), sin_a = sinf(angle);
-            ImVec2 pointer_end = ImVec2(center.x + cos_a * (radius - 5), center.y + sin_a * (radius - 5));
-
-            draw_list->AddLine(center, pointer_end, IM_COL32(255, 255, 255, 255), 2.0f);
-            draw_list->AddCircle(center, radius, IM_COL32(150, 150, 150, 255), 32, 1.0f);
-
-            // Label
-            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
-            ImGui::Text("%s: %.2f", label, *value);
-
-            return held;
-        }
-
-        auto frequency_knob(const char* label, float* frequency, float min_freq = 20.0f, float max_freq = 20000.0f) -> bool {
-            return knob_float(label, frequency, min_freq, max_freq, 1000.0f);
-        }
-
-        auto gain_knob(const char* label, float* gain_db, float min_db = -60.0f, float max_db = 20.0f) -> bool {
-            return knob_float(label, gain_db, min_db, max_db, 0.0f);
-        }
-
-        auto q_knob(const char* label, float* q, float min_q = 0.1f, float max_q = 10.0f) -> bool {
-            return knob_float(label, q, min_q, max_q, 0.707f);
-        }
-
-        auto volume_knob(const char* label, float* volume, float min_vol = 0.0f, float max_vol = 2.0f) -> bool {
-            return knob_float(label, volume, min_vol, max_vol, 1.0f);
-        }
-
-        // Wave type selector
-        auto wave_type_selector(const char* label, WaveType* wave_type) -> bool {
-            const char* items[] = { "Sine", "Square", "Saw", "Triangle" };
-            int current_item = static_cast<int>(*wave_type);
-
-            if (ImGui::Combo(label, &current_item, items, IM_ARRAYSIZE(items))) {
-                *wave_type = static_cast<WaveType>(current_item);
-                return true;
-            }
-            return false;
-        }
-
-        // Filter type selector
-        auto filter_mode_selector(const char* label, BiquadFilter::Mode* mode) -> bool {
-            const char* items[] = {
-                "Low Pass", "Band Pass", "High Pass", "All Pass",
-                "Notch", "Bell", "Low Shelf", "High Shelf"
-            };
-            int current_item = static_cast<int>(*mode);
-
-            if (ImGui::Combo(label, &current_item, items, IM_ARRAYSIZE(items))) {
-                *mode = static_cast<BiquadFilter::Mode>(current_item);
-                return true;
-            }
-            return false;
-        }
-
         // Color schemes for different node types
         auto get_node_color(std::string_view node_type) -> ImU32 {
             if (node_type == "OscillatorNode") return IM_COL32(100, 200, 100, 255);
@@ -190,6 +101,8 @@ namespace e2d::audio {
             show_create_node_popup_ = true;
         }
 
+        edge::fs::ui::render_file_dialogs();
+
         // Render popups
         render_node_creation_popup(graph);
     }
@@ -204,19 +117,10 @@ namespace e2d::audio {
                 }
 
                 if (ImGui::MenuItem("Open...")) {
-                    nfdchar_t* out_path;
-                    if (NFD_OpenDialog("json", NULL, &out_path) == NFD_OKAY) {
-                        load_graph(graph, out_path);
-                        free(out_path);
-                    }
-                }
-
-                if (ImGui::MenuItem("Save As...")) {
-                    nfdchar_t* out_path;
-                    if (NFD_SaveDialog("json", "untitled.json", &out_path) == NFD_OKAY) {
-                        save_graph(graph, out_path);
-                        free(out_path);
-                    }
+                    edge::fs::ui::open_file_dialog("load_graph", "Open Effect", "/",
+                        { { "Json File", {".json", ".sfx"}} }, {
+                            .on_selected = [this, &graph](std::string_view path) {  load_graph(graph, path.data()); }
+                        });
                 }
 
                 ImGui::EndMenu();
@@ -416,6 +320,31 @@ namespace e2d::audio {
     }
 
     auto EffectGraphEditor::handle_link_deletion(EffectGraph& graph) -> void {
+        const int num_selected = ImNodes::NumSelectedLinks();
+        if (num_selected > 0 && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+            std::vector<int> selected_links(num_selected);
+            ImNodes::GetSelectedLinks(selected_links.data());
+
+            for (int link_id : selected_links) {
+                auto it = link_id_to_connection_.find(link_id);
+                if (it != link_id_to_connection_.end()) {
+                    auto [output_node, input_node] = it->second;
+
+                    // Find the actual connection to remove
+                    const auto& connections = graph.get_connections();
+                    for (const auto& conn : connections) {
+                        if (conn.output.node_id == output_node && conn.input.node_id == input_node) {
+                            graph.disconnect(conn.output, conn.input);
+                            break;
+                        }
+                    }
+
+                    connection_to_link_id_.erase(std::make_pair(output_node, input_node));
+                    link_id_to_connection_.erase(link_id);
+                }
+            }
+        }
+
         int link_id;
         if (ImNodes::IsLinkDestroyed(&link_id)) {
             auto it = link_id_to_connection_.find(link_id);
