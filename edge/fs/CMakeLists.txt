@@ -2,6 +2,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}/fs_directory_iterator.h" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/fs_file.h" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/fs_filesystem.h" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/fs_file_dialog.cpp" 
+	"${CMAKE_CURRENT_SOURCE_DIR}/fs_file_dialog.h" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/fs_helper.h" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/fs_virtual_filesystem.cpp" 
 	"${CMAKE_CURRENT_SOURCE_DIR}/fs_virtual_filesystem.h" 

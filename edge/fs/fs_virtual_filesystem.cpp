@@ -31,6 +31,14 @@ namespace edge::fs
 			filesystems.erase(found);
 	}
 
+	auto get_mount_points() -> std::vector<std::string_view> {
+		std::vector<std::string_view> mount_points{};
+		for (auto& [mp, fs] : filesystems) {
+			mount_points.emplace_back(mp);
+		}
+		return mount_points;
+	}
+
 	auto open_file(std::string_view path, FileModeFlags mode) -> IFile* {
 		auto* filesystem = get_filesystem(path);
 		if (!filesystem)

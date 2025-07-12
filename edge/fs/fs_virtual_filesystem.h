@@ -13,6 +13,8 @@ namespace edge::fs
 	auto mount(std::string_view mount_point, IFilesystem* filesystem) -> void;
 	auto unmount(std::string_view mount_point) -> void;
 
+	auto get_mount_points() -> std::vector<std::string_view>;
+
 	auto open_file(std::string_view path, FileModeFlags mode) -> IFile*;
 	auto file_size(std::string_view path) -> size_t;
 	auto read_file(std::string_view path, std::string& buffer) -> bool;
