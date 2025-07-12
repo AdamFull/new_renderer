@@ -509,17 +509,8 @@ add_library(dr_libs STATIC
 )
 target_include_directories(dr_libs SYSTEM PUBLIC ${DR_LIBS_DIR})
 
-#nativefiledialog
-set(NFD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/nativefiledialog")
-set(NFD_SOURCE_DIR "${NFD_DIR}/src")
-set(NFD_INCLUDE_DIR "${NFD_SOURCE_DIR}/include")
-
-set(NFD_FILES
-    "${NFD_SOURCE_DIR}/nfd_win.cpp"
-    "${NFD_SOURCE_DIR}/nfd_common.c"
-)
-add_library(nfd STATIC ${NFD_FILES})
-target_include_directories(nfd SYSTEM PUBLIC ${NFD_INCLUDE_DIR})
+# flecs
+add_subdirectory(flecs)
 
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
@@ -540,13 +531,14 @@ target_link_libraries(${PROJECT_NAME}
     spirv-cross-core
 	spirv-cross-glsl
 
+    flecs::flecs_static
+
     nlohmann_json::nlohmann_json
     taskflow
 
     imgui
     imnodes
     imgui_knobs
-    nfd
 
     meshoptimizer
     mikktspace
