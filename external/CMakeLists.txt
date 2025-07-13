@@ -509,9 +509,6 @@ add_library(dr_libs STATIC
 )
 target_include_directories(dr_libs SYSTEM PUBLIC ${DR_LIBS_DIR})
 
-# flecs
-add_subdirectory(flecs)
-
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
@@ -530,8 +527,6 @@ target_link_libraries(${PROJECT_NAME}
 
     spirv-cross-core
 	spirv-cross-glsl
-
-    flecs::flecs_static
 
     nlohmann_json::nlohmann_json
     taskflow
